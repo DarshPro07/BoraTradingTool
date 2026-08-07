@@ -24,9 +24,12 @@ describe("context window is enforced at request time", () => {
     expect(wasLookbackClamped({ checkpoint: "Kronos-mini", lookbackBars: 2000 })).toBe(false);
   });
 
-  it("defaults to the checkpoint whose window suits daily bars", () => {
+  it("defaults to the owner's chosen checkpoint, within its context window", () => {
+    // Kronos-base by owner decision. The assertion that matters is the second one: whichever
+    // checkpoint is default, the default lookback must fit inside its window — base attends to
+    // 512 bars against mini's 2048, and exceeding it fails silently rather than loudly.
     const manifest = buildForecastManifest([AAPL], { now: AT });
-    expect(manifest.requests[0].checkpoint).toBe("Kronos-mini");
+    expect(manifest.requests[0].checkpoint).toBe("Kronos-base");
     expect(DEFAULTS.lookbackBars).toBeLessThanOrEqual(KRONOS_CHECKPOINTS["Kronos-mini"].contextLength);
   });
 });

@@ -17,7 +17,16 @@ import { getDb, schema } from "@/lib/db";
  * place. What this gives is a stated target and a measurable gap against it.
  */
 
-export type SourceKind = "paper" | "repository" | "blog" | "official" | "video";
+/**
+ * `dataset` is distinct from `repository` on purpose.
+ *
+ * A repository is read for *ideas* — the intake question is whether the method is sound and the
+ * licence permits reuse. A dataset is read for *bars*, and the intake question is entirely
+ * different: is it split-adjusted, does it include delisted instruments, and what licence covers
+ * the data rather than the code. `lib/market/dataset-import.ts` refuses on exactly those three,
+ * and a registry that filed both under one kind would send them down one intake path.
+ */
+export type SourceKind = "paper" | "repository" | "blog" | "official" | "video" | "dataset";
 export type Cadence = "daily" | "weekly" | "monthly" | "ad_hoc";
 
 export interface ResearchSource {
@@ -115,6 +124,41 @@ export const RESEARCH_SOURCES: readonly ResearchSource[] = Object.freeze([
     url: "https://www.federalreserve.gov/newsevents/speeches.htm",
     cadence: "weekly",
     why: "Macro regime context for the US book.",
+  },
+  // ── Datasets ──────────────────────────────────────────────────────────────────────────
+  //
+  // Depth the live feed cannot supply. Yahoo serves roughly sixty days at 1-minute resolution,
+  // which is enough to explore an intraday idea and not enough to validate one — and the window
+  // slides, so waiting never fixes it. These are where the missing history comes from.
+  //
+  // Every one of them enters through `dataset-import.ts`, which refuses to let an undeclared
+  // series produce a trial. Being listed here is permission to *look*, not to trust.
+  {
+    id: "huggingface_financial",
+    name: "HuggingFace financial datasets",
+    kind: "dataset",
+    url: "https://huggingface.co/datasets?search=stock+ohlcv",
+    cadence: "monthly",
+    why: "Deep intraday OHLCV history for backtests the live feed cannot reach. Check the dataset card for split adjustment before importing.",
+    terms: "Per-dataset licence, stated on the card. An unstated licence blocks use in validation.",
+  },
+  {
+    id: "kaggle_nse",
+    name: "Kaggle — NSE and BSE datasets",
+    kind: "dataset",
+    url: "https://www.kaggle.com/datasets?search=NSE+India+stock",
+    cadence: "monthly",
+    why: "The main free source of deep Indian intraday history. Quality varies sharply; most are silent on adjustment and survivorship.",
+    terms: "Per-dataset licence. CC0 and CC-BY are reusable; many carry none, which blocks validation.",
+  },
+  {
+    id: "huggingface_models",
+    name: "HuggingFace time-series models",
+    kind: "dataset",
+    url: "https://huggingface.co/models?pipeline_tag=time-series-forecasting",
+    cadence: "monthly",
+    why: "Where Kronos came from. A published checkpoint is a reason to look, never a reason to skip the gauntlet.",
+    terms: "Per-model licence. Kronos is MIT.",
   },
   {
     id: "sec_edgar",

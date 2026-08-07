@@ -16,6 +16,7 @@ import { runValidationRehearsal, type CandleLoader, type RehearsalReport } from 
 import { fetchInstrumentBars, fetchMarketSample, marketCandleLoader } from "./dataset";
 import { recordCycleRun } from "./run-log";
 import { withCycleLease, type LeaseHolder } from "./lease";
+import { promotionPass } from "@/lib/strategy/promotion";
 
 export interface CycleReport {
   mode: string;
@@ -277,6 +278,15 @@ async function runCycleBody(
   // are invisible in every other view, because nothing links to them.
   report.introspection = inspectMemory();
   actions.push(report.introspection.summary);
+
+  // The promotion ladder, at `observing` because it only reads. Every rung is crossed by evidence
+  // written elsewhere, so this persists nothing — it says what the evidence now means, which is
+  // exactly what was absent while five strategies sat at `draft` and nothing explained why.
+  const promotion = promotionPass();
+  actions.push(promotion.summary);
+  for (const entry of promotion.advanced) {
+    actions.push(`${entry.name} is at ${entry.stage}: ${entry.because}`);
+  }
 
   // Named precisely, because these three states have three different remedies and the loop used
   // to print "unreachable" for all of them. On a machine with no quant core installed that reads

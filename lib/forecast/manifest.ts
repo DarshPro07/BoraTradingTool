@@ -49,7 +49,16 @@ export interface ManifestOptions {
 }
 
 export const DEFAULTS = Object.freeze({
-  checkpoint: "Kronos-mini" as KronosCheckpoint,
+  // Kronos-base at the owner's choice: 102.3M parameters, 512-bar context.
+  //
+  // Worth stating what the choice costs, because it is not free. `Kronos-mini` has a 2048-bar
+  // context — four times the history — at 4.1M parameters. Base trades that reach for capacity,
+  // so on daily bars it attends to roughly two years rather than eight.
+  //
+  // `lookbackBars` is 512 rather than the old value for exactly that reason: base cannot attend
+  // past it, and asking for more is the one mistake invisible at runtime — the model silently
+  // reads the last 512 and returns a forecast that looks like it used the whole window.
+  checkpoint: "Kronos-base" as KronosCheckpoint,
   timeframe: "1d",
   lookbackBars: 512,
   horizonBars: 5,

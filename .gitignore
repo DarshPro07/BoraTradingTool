@@ -57,6 +57,11 @@ marketpulse.db-wal
 /dist/
 /playwright-report/
 /test-results/
+# Browser-verification scratch: page snapshots and console logs written on every Playwright MCP
+# navigation. Useful while diagnosing, worthless afterwards, and they accumulate one file per
+# page view — committing them buries real diffs under generated noise.
+/.playwright-mcp/
+npm-ci.log
 
 # runtime-generated agent context files (rewritten when pages are viewed)
 /context/

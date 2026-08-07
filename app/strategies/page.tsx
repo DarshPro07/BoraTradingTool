@@ -3,6 +3,7 @@ import { GATES } from "@/lib/strategy/gauntlet";
 import { EmptyState, Panel, StatTile } from "@/components/system/Panel";
 import { FeatureSupportPanel } from "@/components/strategy/FeatureSupportPanel";
 import { GraveyardPanel } from "@/components/strategy/GraveyardPanel";
+import { standings } from "@/lib/strategy/promotion";
 import { RunGauntletButton } from "@/components/strategy/RunGauntletButton";
 import { StrategyAuthor } from "@/components/strategy/StrategyAuthor";
 import { StarMap } from "@/components/strategy/StarMap";
@@ -25,6 +26,10 @@ function metric(value: number | null, digits = 2): string {
 
 export default async function StrategyLabPage() {
   const strategies = strategyLab();
+  // Computed once and indexed, not re-derived per cell — each standing reads the trial ledger and
+  // the forward record, and calling it four times per row would make the page O(rows × reads).
+  const byId = new Map(standings().map((standing) => [standing.specId, standing]));
+  const stageOf = (specId: string) => byId.get(specId);
   const challengers = strategies.filter((strategy) => strategy.status === "paper_challenger");
   const rejected = strategies.filter((strategy) => strategy.status === "rejected");
 
@@ -94,6 +99,7 @@ export default async function StrategyLabPage() {
                   <th className="pb-1">PBO</th>
                   <th className="pb-1">2× cost PF</th>
                   <th className="pb-1">Lineage</th>
+                  <th className="pb-1">Stage</th>
                   <th className="pb-1">Validate</th>
                 </tr>
               </thead>
@@ -123,7 +129,18 @@ export default async function StrategyLabPage() {
                     <td className="py-1.5">{metric(strategy.validation?.pbo ?? null, 2)}</td>
                     <td className="py-1.5">{metric(strategy.validation?.costMultiplePf ?? null)}</td>
                     <td className="py-1.5 text-muted-foreground">{strategy.parentId ? "child" : "root"}</td>
-                    <td className="py-1.5">
+                    <td className="py-1.5 align-top">
+                      {/* The rung *and* what it is waiting for. A stage on its own reads as a
+                          label; the reason is what tells the owner whether the next move is
+                          theirs or the system's. */}
+                      <span className={stageOf(strategy.id)?.stage === "graveyard" ? "text-loss" : "text-amber"}>
+                        {(stageOf(strategy.id)?.stage ?? "unknown").replace(/_/g, " ")}
+                      </span>
+                      <div className="text-[10px] text-muted-foreground max-w-[26rem] leading-relaxed mt-0.5">
+                        {stageOf(strategy.id)?.advance.because}
+                      </div>
+                    </td>
+                    <td className="py-1.5 align-top">
                       {/* Offered on every strategy, including ones already validated: re-running is
                           a legitimate act that costs another trial, and hiding the button would
                           make the ledger look cheaper than it is. */}
