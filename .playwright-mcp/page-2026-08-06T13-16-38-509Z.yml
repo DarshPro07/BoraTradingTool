@@ -1,0 +1,189 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - link "MARKETPULSE" [ref=f1e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f1e9]:
+        - button "US" [pressed] [ref=f1e10] [cursor=pointer]
+        - button "NSE" [ref=f1e11] [cursor=pointer]
+        - button "BSE" [ref=f1e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f1e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f1e16]: LINKING
+      - search [ref=f1e19]:
+        - generic [ref=f1e23]: Search instrument
+        - textbox "Search instrument" [ref=f1e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f1e25] [cursor=pointer]
+    - navigation "Primary navigation" [ref=f1e26]:
+      - link "TERMINAL" [ref=f1e27] [cursor=pointer]:
+        - /url: /command
+      - link "ANALYST" [ref=f1e28] [cursor=pointer]:
+        - /url: /analyst
+      - link "RESEARCH" [ref=f1e29] [cursor=pointer]:
+        - /url: /research
+      - link "PORTFOLIO" [ref=f1e30] [cursor=pointer]:
+        - /url: /portfolio
+      - link "SYSTEM" [ref=f1e31] [cursor=pointer]:
+        - /url: /system
+    - navigation "SYSTEM sections" [ref=f1e32]:
+      - generic [ref=f1e33]: How is it running, and what has it done?
+      - link "Overview" [ref=f1e34] [cursor=pointer]:
+        - /url: /system
+      - link "Learning" [ref=f1e35] [cursor=pointer]:
+        - /url: /learning
+      - link "Jobs" [ref=f1e36] [cursor=pointer]:
+        - /url: /jobs
+      - link "Data Quality" [ref=f1e37] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Audit" [ref=f1e38] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=f1e39] [cursor=pointer]:
+        - /url: /settings
+  - generic "US and India market tape" [ref=f1e40]:
+    - generic [ref=f1e41]:
+      - generic [ref=f1e42]:
+        - link "USAAPL" [ref=f1e43] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f1e44]: $313.80
+        - generic [ref=f1e45]: +1.43%
+      - generic [ref=f1e46]:
+        - link "USMSFT" [ref=f1e47] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f1e48]: $484.84
+        - generic [ref=f1e49]: "-1.62%"
+      - generic [ref=f1e50]:
+        - link "USNVDA" [ref=f1e51] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f1e52]: $221.12
+        - generic [ref=f1e53]: +4.33%
+      - generic [ref=f1e54]:
+        - link "USSPY" [ref=f1e55] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f1e56]: $769.96
+        - generic [ref=f1e57]: "-0.18%"
+      - generic [ref=f1e58]:
+        - link "NSERELIANCE" [ref=f1e59] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f1e60]: ₹1,325.00
+        - generic [ref=f1e61]: +3.52%
+      - generic [ref=f1e62]:
+        - link "NSETCS" [ref=f1e63] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f1e64]: ₹2,373.00
+        - generic [ref=f1e65]: "-1.66%"
+      - generic [ref=f1e66]:
+        - link "NSEHDFCBANK" [ref=f1e67] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f1e68]: ₹734.30
+        - generic [ref=f1e69]: "-0.10%"
+      - generic [ref=f1e70]:
+        - link "NSENIFTYBEES" [ref=f1e71] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f1e72]: ₹280.59
+        - generic [ref=f1e73]: +0.23%
+      - generic [ref=f1e74]:
+        - link "USAAPL" [ref=f1e75] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f1e76]: $313.80
+        - generic [ref=f1e77]: +1.43%
+      - generic [ref=f1e78]:
+        - link "USMSFT" [ref=f1e79] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f1e80]: $484.84
+        - generic [ref=f1e81]: "-1.62%"
+      - generic [ref=f1e82]:
+        - link "USNVDA" [ref=f1e83] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f1e84]: $221.12
+        - generic [ref=f1e85]: +4.33%
+      - generic [ref=f1e86]:
+        - link "USSPY" [ref=f1e87] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f1e88]: $769.96
+        - generic [ref=f1e89]: "-0.18%"
+      - generic [ref=f1e90]:
+        - link "NSERELIANCE" [ref=f1e91] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f1e92]: ₹1,325.00
+        - generic [ref=f1e93]: +3.52%
+      - generic [ref=f1e94]:
+        - link "NSETCS" [ref=f1e95] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f1e96]: ₹2,373.00
+        - generic [ref=f1e97]: "-1.66%"
+      - generic [ref=f1e98]:
+        - link "NSEHDFCBANK" [ref=f1e99] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f1e100]: ₹734.30
+        - generic [ref=f1e101]: "-0.10%"
+      - generic [ref=f1e102]:
+        - link "NSENIFTYBEES" [ref=f1e103] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f1e104]: ₹280.59
+        - generic [ref=f1e105]: +0.23%
+  - main [ref=f1e106]:
+    - generic [ref=f1e107]:
+      - generic [ref=f1e108]:
+        - heading "DATA QUALITY" [level=1] [ref=f1e109]
+        - generic [ref=f1e110]: Missing data is reported as missing. It is never rendered as zero.
+      - generic [ref=f1e111]:
+        - generic [ref=f1e112]:
+          - generic [ref=f1e113]: Resources provided
+          - generic [ref=f1e114]: 0/6
+        - generic [ref=f1e115]:
+          - generic [ref=f1e116]: Stale
+          - generic [ref=f1e117]: "0"
+        - generic [ref=f1e118]:
+          - generic [ref=f1e119]: Not provided
+          - generic [ref=f1e120]: "4"
+          - generic [ref=f1e121]: open bridge requests
+        - generic [ref=f1e122]:
+          - generic [ref=f1e123]: Malformed
+          - generic [ref=f1e124]: "0"
+      - generic [ref=f1e125]:
+        - generic [ref=f1e126]:
+          - generic [ref=f1e127]:
+            - generic [ref=f1e128]: health
+            - generic [ref=f1e129]: QUANT_CORE_UNAVAILABLE
+          - paragraph [ref=f1e130]: No board packet found under reports/board_history and the HTTP transport did not respond.
+        - generic [ref=f1e131]:
+          - generic [ref=f1e132]:
+            - generic [ref=f1e133]: board
+            - generic [ref=f1e134]: QUANT_CORE_UNAVAILABLE
+          - paragraph [ref=f1e135]: No board packet found under reports/board_history.
+        - generic [ref=f1e136]:
+          - generic [ref=f1e137]:
+            - generic [ref=f1e138]: forward
+            - generic [ref=f1e139]: RESOURCE_NOT_PROVIDED
+          - paragraph [ref=f1e140]: data/forward_journal.jsonl is not present in the quant core.
+        - generic [ref=f1e141]:
+          - generic [ref=f1e142]:
+            - generic [ref=f1e143]: universe
+            - generic [ref=f1e144]: RESOURCE_NOT_PROVIDED
+          - paragraph [ref=f1e145]: data/universe.json is not produced by the quant core yet (bridge request open).
+        - generic [ref=f1e146]:
+          - generic [ref=f1e147]:
+            - generic [ref=f1e148]: regime
+            - generic [ref=f1e149]: RESOURCE_NOT_PROVIDED
+          - paragraph [ref=f1e150]: data/regime_state.json is not produced by the quant core yet (bridge request open).
+        - generic [ref=f1e151]:
+          - generic [ref=f1e152]:
+            - generic [ref=f1e153]: trials
+            - generic [ref=f1e154]: RESOURCE_NOT_PROVIDED
+          - paragraph [ref=f1e155]: data/trial_ledger.jsonl is not produced by the quant core yet (bridge request 0003).
+      - generic [ref=f1e156]:
+        - generic [ref=f1e157]: FORECAST MODEL — KRONOS
+        - generic [ref=f1e159]:
+          - generic [ref=f1e160]:
+            - generic [ref=f1e161]: Decoder-only foundation model over candlestick tokens (MIT, AAAI 2026). See docs/adr/0004.
+            - generic [ref=f1e162]: RESOURCE_NOT_PROVIDED
+          - paragraph [ref=f1e163]: data/forecasts/kronos does not exist under the quant core. Kronos is a PyTorch model and runs there, not here — no forecast has ever been delivered to this deployment.
+          - paragraph [ref=f1e164]: A delivered forecast is not_forward_validated and stays that way until it beats the persistence baseline — “the next close equals this close” — by more than resampling explains. A published benchmark result is a reason to look, never a reason to skip the gauntlet.
+      - generic [ref=f1e165]:
+        - generic [ref=f1e166]: QUANT CORE DATA STATUS
+        - generic [ref=f1e169]:
+          - generic [ref=f1e170]: QUANT CORE UNAVAILABLE
+          - paragraph [ref=f1e172]: No board packet found under reports/board_history and the HTTP transport did not respond.
+  - contentinfo [ref=f1e173]:
+    - generic [ref=f1e174]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f1e175]: PAPER MODE

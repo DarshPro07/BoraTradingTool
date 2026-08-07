@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { requireMutationAccess } from "@/lib/security/request";
+import { readBoundedString, readJsonObject } from "@/lib/http/input";
 
 export async function GET() {
   const db = getDb();
@@ -9,12 +11,16 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { ticker } = await req.json();
-  if (!ticker || typeof ticker !== "string") {
-    return NextResponse.json({ error: "ticker required" }, { status: 400 });
-  }
-  const normalized = ticker.trim().toUpperCase();
-  if (!normalized || normalized.length > 10) {
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  const parsed = await readJsonObject(req);
+  if (!parsed.ok) return parsed.response;
+  const normalized = readBoundedString(parsed.value.ticker, {
+    min: 1,
+    max: 40,
+    pattern: /^[A-Za-z0-9:._^-]+$/,
+  })?.toUpperCase();
+  if (!normalized) {
     return NextResponse.json({ error: "invalid ticker" }, { status: 400 });
   }
   const db = getDb();
@@ -26,10 +32,16 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const { ticker } = await req.json();
-  if (!ticker || typeof ticker !== "string") {
-    return NextResponse.json({ error: "ticker required" }, { status: 400 });
-  }
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  const parsed = await readJsonObject(req);
+  if (!parsed.ok) return parsed.response;
+  const ticker = readBoundedString(parsed.value.ticker, {
+    min: 1,
+    max: 40,
+    pattern: /^[A-Za-z0-9:._^-]+$/,
+  });
+  if (!ticker) return NextResponse.json({ error: "invalid ticker" }, { status: 400 });
   const db = getDb();
   db.delete(schema.userWatchlist).where(eq(schema.userWatchlist.ticker, ticker.toUpperCase())).run();
   return NextResponse.json({ ok: true });

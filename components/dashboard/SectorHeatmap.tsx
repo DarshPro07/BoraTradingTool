@@ -17,7 +17,7 @@ export function SectorHeatmap({ sectors }: Props) {
   const sorted = [...sectors].sort((a, b) => b.changePct - a.changePct);
 
   return (
-    <div className="bg-panel border border-panel rounded p-4">
+    <div className="terminal-panel rise-2 p-4">
       <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Sector Performance</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
         {sorted.map((s) => {
@@ -37,6 +37,11 @@ export function SectorHeatmap({ sectors }: Props) {
             </div>
           );
         })}
+        {!sorted.length && (
+          <p className="col-span-full py-8 text-center text-xs text-muted-foreground">
+            Sector breadth is unavailable for this market source.
+          </p>
+        )}
       </div>
     </div>
   );

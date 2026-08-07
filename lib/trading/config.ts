@@ -27,8 +27,6 @@ export type AgentConfigPatch = Partial<
     | "watchlistOnly"
     | "dailyTradeCap"
     | "activeStrategyId"
-    | "telegramBotToken"
-    | "telegramChatId"
   >
 >;
 

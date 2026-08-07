@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { rejectOrder } from "@/lib/trading/engine";
+import { requireMutationAccess } from "@/lib/security/request";
+import { executionCapabilities } from "@/lib/trading/capabilities";
 
 export const dynamic = "force-dynamic";
 
-// Reject a Pending Trade (in-app button / push deep-link target).
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const order = rejectOrder(Number(id));
-  if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
-  return NextResponse.json({ ok: true, order });
+// Retired live-order compatibility surface. It is intentionally fail-closed.
+export async function POST(req: Request, _context: { params: Promise<{ id: string }> }) {
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  return NextResponse.json(
+    { error: executionCapabilities.reason, message: "Legacy trade decisions are disabled." },
+    { status: 503 },
+  );
 }

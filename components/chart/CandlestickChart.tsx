@@ -12,6 +12,8 @@ interface Props {
   sma20: number | null;
   sma50: number | null;
   sma200: number | null;
+  /** Who produced the initial series. Provenance is a fact; it is never inferred from prices. */
+  candleProvider?: "YAHOO" | "FINNHUB" | "INDIAN_API" | "TEST_FIXTURE";
 }
 
 const TIMEFRAME_CONFIG: Record<Timeframe, { resolution: string; days: number }> = {
@@ -33,30 +35,63 @@ function computeSMA(candles: Candle[], period: number): { time: number; value: n
   return result;
 }
 
-function isSimulated(candles: Candle[], quotePrice: number): boolean {
-  if (candles.length === 0) return false;
+/** Beyond this the candle series and the live quote cannot be describing the same instrument. */
+const DIVERGENCE_LIMIT = 0.3;
+
+type Divergence = { state: "aligned" } | { state: "unknown" } | { state: "diverged"; pct: number };
+
+/**
+ * How far the last candle sits from the live quote.
+ *
+ * This used to be called `isSimulated`, and a divergence over 30% printed "chart shows
+ * simulated price history". That was never what the number measured, and it has not been
+ * possible since the mock provider was removed — `EmptyProvider.getCandles()` returns an empty
+ * array, so no fabricated candle enters the app at all. What a large gap actually indicates is
+ * a stale series, a symbol that resolved to a different listing, or an unadjusted corporate
+ * action. Those are worth showing. Calling them "simulated" told the user the data was fake
+ * when it was real, and hid the live-quote price line as a side effect.
+ */
+function divergence(candles: Candle[], quotePrice: number): Divergence {
+  // A zero or non-finite quote makes the ratio NaN, and `NaN > 0.3` is false — which used to
+  // read as "aligned". Unknown must never fall through to reassurance.
+  if (candles.length === 0 || !Number.isFinite(quotePrice) || quotePrice <= 0) return { state: "unknown" };
   const lastClose = candles[candles.length - 1].close;
-  return Math.abs(lastClose - quotePrice) / quotePrice > 0.3;
+  if (!Number.isFinite(lastClose)) return { state: "unknown" };
+  const pct = Math.abs(lastClose - quotePrice) / quotePrice;
+  return pct > DIVERGENCE_LIMIT ? { state: "diverged", pct } : { state: "aligned" };
 }
 
-export function CandlestickChart({ ticker, initialCandles, quotePrice }: Props) {
+export function CandlestickChart({ ticker, initialCandles, quotePrice, candleProvider }: Props) {
   const chartRef = useRef<HTMLDivElement>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("1Y");
   const [candles, setCandles] = useState<Candle[]>(initialCandles);
   const [loading, setLoading] = useState(false);
-  const simulated = isSimulated(candles, quotePrice);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const gap = divergence(candles, quotePrice);
+  const fixture = candleProvider === "TEST_FIXTURE";
 
   async function loadCandles(tf: Timeframe) {
     setLoading(true);
+    setLoadError(null);
     try {
       const { days, resolution } = TIMEFRAME_CONFIG[tf];
       const to = Math.floor(Date.now() / 1000);
       const from = to - days * 86400;
       const res = await fetch(`/api/candles?ticker=${ticker}&resolution=${resolution}&from=${from}&to=${to}`);
       const data = await res.json();
-      setCandles(data.candles ?? initialCandles);
-    } catch {
-      setCandles(initialCandles);
+      // Falling back to `initialCandles` silently re-drew the 1Y series under a highlighted 5D
+      // button — the chart then showed a different timeframe than it claimed. Say so instead.
+      if (!res.ok || !Array.isArray(data.candles)) {
+        setLoadError(`${tf} data unavailable${data.error ? `: ${String(data.error).slice(0, 120)}` : ""}. Still showing the previous range.`);
+        return;
+      }
+      if (data.candles.length === 0) {
+        setLoadError(`No candles returned for ${tf}. Still showing the previous range.`);
+        return;
+      }
+      setCandles(data.candles);
+    } catch (error) {
+      setLoadError(`${tf} request failed: ${error instanceof Error ? error.message : "unknown error"}. Still showing the previous range.`);
     } finally {
       setLoading(false);
     }
@@ -87,12 +122,12 @@ export function CandlestickChart({ ticker, initialCandles, quotePrice }: Props) 
         borderDownColor: "#cc3333",
         wickUpColor: "#00cc66",
         wickDownColor: "#cc3333",
-        // Hide the default last-candle price line + axis label; we draw our own
-        // at the live quote so daily timeframes reflect the latest (extended-
-        // hours) price instead of the regular-session close. Keep the default
-        // for simulated data, where the real quote wouldn't match the fake candles.
-        priceLineVisible: simulated,
-        lastValueVisible: simulated,
+        // Hide the default last-candle price line + axis label; we draw our own at the live
+        // quote so daily timeframes reflect the latest (extended-hours) price instead of the
+        // regular-session close. Keep the default when the quote cannot be trusted to belong
+        // to this series — fixture data, or a series that has diverged from the quote.
+        priceLineVisible: fixture || gap.state !== "aligned",
+        lastValueVisible: fixture || gap.state !== "aligned",
       });
 
       const volumeSeries = chart.addSeries(lc.HistogramSeries, {
@@ -115,7 +150,7 @@ export function CandlestickChart({ ticker, initialCandles, quotePrice }: Props) 
 
       // Current-price line at the live (extended-hours) quote, consistent across
       // all timeframes and matching the header.
-      if (!simulated && quotePrice > 0) {
+      if (!fixture && gap.state === "aligned") {
         candleSeries.createPriceLine({
           price: quotePrice,
           color: "#e0e0e0",
@@ -171,10 +206,39 @@ export function CandlestickChart({ ticker, initialCandles, quotePrice }: Props) 
           </div>
         </div>
       </div>
-      {simulated && (
-        <div className="mb-2 px-2 py-1.5 bg-amber/10 border border-amber/30 rounded text-xs text-amber flex items-center gap-2">
+      {fixture && (
+        <div
+          className="mb-2 px-2 py-1.5 bg-amber/10 border border-amber/30 rounded text-xs text-amber flex items-center gap-2"
+          data-testid="chart-fixture-warning"
+        >
           <span>⚠</span>
-          <span>Chart shows simulated price history — Finnhub candle data unavailable for this symbol on the free tier. Quote prices above are real.</span>
+          <span>Fixture data. This series came from the test provider, not a market feed.</span>
+        </div>
+      )}
+      {!fixture && gap.state === "diverged" && (
+        <div
+          className="mb-2 px-2 py-1.5 bg-amber/10 border border-amber/30 rounded text-xs text-amber flex items-center gap-2"
+          data-testid="chart-divergence-warning"
+        >
+          <span>⚠</span>
+          <span>
+            The last candle closes {(gap.pct * 100).toFixed(0)}% away from the live quote. The
+            series may be stale, unadjusted for a corporate action, or for a different listing —
+            it is not fabricated.
+          </span>
+        </div>
+      )}
+      {!fixture && gap.state === "unknown" && (
+        <div className="mb-2 px-2 py-1.5 border border-panel rounded text-xs text-muted-foreground">
+          No live quote to compare this series against, so alignment is unknown — not confirmed.
+        </div>
+      )}
+      {loadError && (
+        <div
+          className="mb-2 px-2 py-1.5 bg-amber/10 border border-amber/30 rounded text-xs text-amber"
+          data-testid="chart-load-error"
+        >
+          {loadError}
         </div>
       )}
       <div className="relative">

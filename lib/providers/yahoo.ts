@@ -10,6 +10,27 @@ const MOVERS_UNIVERSE = [
 ];
 
 const YAHOO_UA = "Mozilla/5.0";
+/**
+ * Four seconds, not ten.
+ *
+ * These calls block a server render, so the timeout is what the operator waits when the network
+ * is unreachable — and a page that hangs for ten seconds per instrument before reporting
+ * "unavailable" is the single largest source of the product feeling slow.
+ *
+ * Yahoo answers a healthy request in well under a second, so four leaves a wide margin while
+ * turning an outage into a fast, honest refusal. The panel-state vocabulary already renders that
+ * refusal correctly; it just had to arrive before the operator gave up.
+ */
+const YAHOO_TIMEOUT_MS = 4_000;
+
+type NextFetchInit = RequestInit & { next?: { revalidate?: number } };
+
+function yahooFetch(url: string, init: NextFetchInit = {}) {
+  return fetch(url, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(YAHOO_TIMEOUT_MS),
+  });
+}
 
 // Yahoo's quoteSummary endpoint (which carries analyst price targets) requires a
 // cookie + crumb. Fetch them once and cache — they're stable for a while.
@@ -19,7 +40,7 @@ const CRUMB_TTL_MS = 30 * 60 * 1000;
 async function getYahooCrumb(): Promise<{ cookie: string; crumb: string }> {
   if (_crumb && Date.now() - _crumb.at < CRUMB_TTL_MS) return _crumb;
   // 1. Hit Yahoo to receive a session cookie (status may be 404; we only want the cookie).
-  const cookieRes = await fetch("https://fc.yahoo.com/", { headers: { "User-Agent": YAHOO_UA } });
+  const cookieRes = await yahooFetch("https://fc.yahoo.com/", { headers: { "User-Agent": YAHOO_UA } });
   const setCookies =
     typeof cookieRes.headers.getSetCookie === "function"
       ? cookieRes.headers.getSetCookie()
@@ -30,7 +51,7 @@ async function getYahooCrumb(): Promise<{ cookie: string; crumb: string }> {
     .join("; ");
   if (!cookie) throw new Error("Yahoo: no session cookie");
   // 2. Exchange the cookie for a crumb.
-  const crumbRes = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+  const crumbRes = await yahooFetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
     headers: { "User-Agent": YAHOO_UA, cookie },
   });
   const crumb = (await crumbRes.text()).trim();
@@ -53,9 +74,9 @@ function rawNum(v: unknown): number | null {
 export async function getYahooPriceTarget(ticker: string): Promise<PriceTarget> {
   const { cookie, crumb } = await getYahooCrumb();
   const url =
-    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker}` +
+    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}` +
     `?modules=financialData&crumb=${encodeURIComponent(crumb)}`;
-  const res = await fetch(url, {
+  const res = await yahooFetch(url, {
     headers: { "User-Agent": YAHOO_UA, cookie },
     next: { revalidate: 3600 },
   });
@@ -120,13 +141,13 @@ export async function getYahooCandles(
     // Short timeframe: use range param for clean session-aware data. Include
     // pre/post-market so the intraday chart (and its last-price line) extends
     // into extended hours instead of freezing at the regular-session close.
-    url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${rangeConf.range}&interval=${rangeConf.interval}&includePrePost=true`;
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${rangeConf.range}&interval=${rangeConf.interval}&includePrePost=true`;
   } else {
     const interval = PERIOD_INTERVAL[resolution] ?? "1d";
-    url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${from}&period2=${to}&interval=${interval}`;
+    url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${from}&period2=${to}&interval=${interval}`;
   }
 
-  const res = await fetch(url, {
+  const res = await yahooFetch(url, {
     headers: { "User-Agent": "Mozilla/5.0" },
     // Short cache for intraday, longer for daily+
     next: { revalidate: rangeConf ? 60 : 300 },
@@ -175,9 +196,9 @@ interface YahooQuoteMeta {
 // pre/post print. Change is measured against the prior regular close.
 export async function getYahooQuote(ticker: string): Promise<Quote> {
   const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}` +
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
     `?range=1d&interval=5m&includePrePost=true`;
-  const res = await fetch(url, {
+  const res = await yahooFetch(url, {
     headers: { "User-Agent": "Mozilla/5.0" },
     next: { revalidate: 30 },
   });
@@ -230,6 +251,8 @@ export async function getYahooQuote(ticker: string): Promise<Quote> {
     volume: meta.regularMarketVolume ?? 0,
     avgVolume: meta.regularMarketVolume ?? 0,
     fetchedAt: new Date(),
+    sourceEventAt: lastTs ? new Date(lastTs * 1000) : undefined,
+    provider: "YAHOO",
     mock: false,
   };
 }
@@ -287,7 +310,7 @@ async function runYahooScreener(
     userId: "",
     userIdType: "guid",
   };
-  const res = await fetch(
+  const res = await yahooFetch(
     `https://query1.finance.yahoo.com/v1/finance/screener?crumb=${encodeURIComponent(crumb)}`,
     {
       method: "POST",
@@ -362,7 +385,7 @@ async function topMoversFromUniverse(): Promise<{ gainers: MarketMover[]; losers
 export async function getYahooSectorPerformance(): Promise<SectorPerformance[]> {
   const results = await Promise.allSettled(
     SECTOR_ETFS.map(async ({ etf, sector }) => {
-      const res = await fetch(
+      const res = await yahooFetch(
         `https://query1.finance.yahoo.com/v8/finance/chart/${etf}?range=1d&interval=1d`,
         { headers: { "User-Agent": "Mozilla/5.0" }, next: { revalidate: 60 } }
       );

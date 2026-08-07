@@ -1,0 +1,356 @@
+- generic [active] [ref=f7e1]:
+  - banner [ref=f7e2]:
+    - generic [ref=f7e3]:
+      - link "MARKETPULSE" [ref=f7e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f7e9]:
+        - button "US" [pressed] [ref=f7e10] [cursor=pointer]
+        - button "NSE" [ref=f7e11] [cursor=pointer]
+        - button "BSE" [ref=f7e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f7e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f7e16]: LINKING
+      - search [ref=f7e19]:
+        - generic [ref=f7e23]: Search instrument
+        - textbox "Search instrument" [ref=f7e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f7e25] [cursor=pointer]
+    - navigation "Workspace" [ref=f7e26]:
+      - link "RESEARCH" [ref=f7e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=f7e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=f7e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=f7e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=f7e32] [cursor=pointer]:
+        - /url: /settings
+    - navigation "RESEARCH sections" [ref=f7e33]:
+      - generic [ref=f7e34]: What is it finding out while I am away?
+      - link "Command" [ref=f7e35] [cursor=pointer]:
+        - /url: /command
+      - link "Markets" [ref=f7e36] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=f7e37] [cursor=pointer]:
+        - /url: /premarket
+      - link "Studio" [ref=f7e38] [cursor=pointer]:
+        - /url: /strategies
+      - link "Memory" [ref=f7e39] [cursor=pointer]:
+        - /url: /memory
+      - link "Paper" [ref=f7e40] [cursor=pointer]:
+        - /url: /paper
+  - generic [ref=f7e41]:
+    - link "LEARNING" [ref=f7e42] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=f7e45]: ·
+    - generic [ref=f7e46]: last cycle 20m ago
+    - generic [ref=f7e48]: ·
+    - generic [ref=f7e49]: 4 actions · 2 rehearsed · 1 need attention · 0.0s
+    - generic [ref=f7e50]: 48 cycles today
+  - generic "US and India market tape" [ref=f7e51]:
+    - generic [ref=f7e52]:
+      - generic [ref=f7e53]:
+        - link "USAAPL" [ref=f7e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f7e55]: $311.34
+        - generic [ref=f7e56]: +0.11%
+      - generic [ref=f7e57]:
+        - link "USMSFT" [ref=f7e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f7e59]: $493.78
+        - generic [ref=f7e60]: +1.30%
+      - generic [ref=f7e61]:
+        - link "USNVDA" [ref=f7e62] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f7e63]: $219.11
+        - generic [ref=f7e64]: "-0.05%"
+      - generic [ref=f7e65]:
+        - link "USSPY" [ref=f7e66] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f7e67]: $768.32
+        - generic [ref=f7e68]: "-0.19%"
+      - generic [ref=f7e69]:
+        - link "NSERELIANCE" [ref=f7e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f7e71]: ₹1,325.00
+        - generic [ref=f7e72]: +3.52%
+      - generic [ref=f7e73]:
+        - link "NSETCS" [ref=f7e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f7e75]: ₹2,373.00
+        - generic [ref=f7e76]: "-1.66%"
+      - generic [ref=f7e77]:
+        - link "NSEHDFCBANK" [ref=f7e78] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f7e79]: ₹734.30
+        - generic [ref=f7e80]: "-0.10%"
+      - generic [ref=f7e81]:
+        - link "NSENIFTYBEES" [ref=f7e82] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f7e83]: ₹280.59
+        - generic [ref=f7e84]: +0.23%
+      - generic [ref=f7e85]:
+        - link "USAAPL" [ref=f7e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f7e87]: $311.34
+        - generic [ref=f7e88]: +0.11%
+      - generic [ref=f7e89]:
+        - link "USMSFT" [ref=f7e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f7e91]: $493.78
+        - generic [ref=f7e92]: +1.30%
+      - generic [ref=f7e93]:
+        - link "USNVDA" [ref=f7e94] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f7e95]: $219.11
+        - generic [ref=f7e96]: "-0.05%"
+      - generic [ref=f7e97]:
+        - link "USSPY" [ref=f7e98] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f7e99]: $768.32
+        - generic [ref=f7e100]: "-0.19%"
+      - generic [ref=f7e101]:
+        - link "NSERELIANCE" [ref=f7e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f7e103]: ₹1,325.00
+        - generic [ref=f7e104]: +3.52%
+      - generic [ref=f7e105]:
+        - link "NSETCS" [ref=f7e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f7e107]: ₹2,373.00
+        - generic [ref=f7e108]: "-1.66%"
+      - generic [ref=f7e109]:
+        - link "NSEHDFCBANK" [ref=f7e110] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f7e111]: ₹734.30
+        - generic [ref=f7e112]: "-0.10%"
+      - generic [ref=f7e113]:
+        - link "NSENIFTYBEES" [ref=f7e114] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f7e115]: ₹280.59
+        - generic [ref=f7e116]: +0.23%
+  - main [ref=f7e117]:
+    - generic [ref=f7e118]:
+      - generic [ref=f7e119]:
+        - heading "COMMAND CENTER" [level=1] [ref=f7e120]
+        - generic [ref=f7e121]:
+          - generic [ref=f7e122]: EXECUTION DISABLED
+          - generic [ref=f7e123]: ·
+          - generic [ref=f7e124]: LEARNING LEARNING
+      - generic [ref=f7e125]:
+        - generic [ref=f7e126]:
+          - generic [ref=f7e127]:
+            - generic [ref=f7e128]: WHAT IT DID
+            - button "Run cycle now" [ref=f7e130] [cursor=pointer]
+          - list [ref=f7e134]:
+            - listitem [ref=f7e135]:
+              - generic [ref=f7e136]:
+                - generic [ref=f7e137]: 22:17
+                - generic [ref=f7e138]: learning
+                - generic [ref=f7e139]: 0.0s
+              - list [ref=f7e140]:
+                - listitem [ref=f7e141]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e142]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e143]: Processed 0 research job(s).
+                - listitem [ref=f7e144]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e145]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e146]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e147]:
+              - generic [ref=f7e148]:
+                - generic [ref=f7e149]: 22:10
+                - generic [ref=f7e150]: learning
+                - generic [ref=f7e151]: 0.0s
+              - list [ref=f7e152]:
+                - listitem [ref=f7e153]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e154]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e155]: Processed 0 research job(s).
+                - listitem [ref=f7e156]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e157]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e158]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e159]:
+              - generic [ref=f7e160]:
+                - generic [ref=f7e161]: 22:10
+                - generic [ref=f7e162]: learning
+                - generic [ref=f7e163]: 0.0s
+              - list [ref=f7e164]:
+                - listitem [ref=f7e165]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e166]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e167]: Processed 0 research job(s).
+                - listitem [ref=f7e168]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e169]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e170]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e171]:
+              - generic [ref=f7e172]:
+                - generic [ref=f7e173]: 22:10
+                - generic [ref=f7e174]: learning
+                - generic [ref=f7e175]: 0.0s
+              - list [ref=f7e176]:
+                - listitem [ref=f7e177]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e178]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e179]: Processed 0 research job(s).
+                - listitem [ref=f7e180]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e181]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e182]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e183]:
+              - generic [ref=f7e184]:
+                - generic [ref=f7e185]: 22:10
+                - generic [ref=f7e186]: learning
+                - generic [ref=f7e187]: 0.0s
+              - list [ref=f7e188]:
+                - listitem [ref=f7e189]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e190]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e191]: Processed 0 research job(s).
+                - listitem [ref=f7e192]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e193]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e194]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e195]:
+              - generic [ref=f7e196]:
+                - generic [ref=f7e197]: 22:10
+                - generic [ref=f7e198]: learning
+                - generic [ref=f7e199]: 0.0s
+              - list [ref=f7e200]:
+                - listitem [ref=f7e201]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e202]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e203]: Processed 0 research job(s).
+                - listitem [ref=f7e204]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e205]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e206]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e207]:
+              - generic [ref=f7e208]:
+                - generic [ref=f7e209]: 22:10
+                - generic [ref=f7e210]: learning
+                - generic [ref=f7e211]: 0.0s
+              - list [ref=f7e212]:
+                - listitem [ref=f7e213]: Collected system state, study queue and mastery.
+                - listitem [ref=f7e214]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+                - listitem [ref=f7e215]: Processed 0 research job(s).
+                - listitem [ref=f7e216]: Rehearsed 2 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - listitem [ref=f7e217]: Quant core unreachable; candidate review was skipped rather than guessed.
+                - listitem [ref=f7e218]: "Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+            - listitem [ref=f7e219]:
+              - generic [ref=f7e220]:
+                - generic [ref=f7e221]: 20:30
+                - generic [ref=f7e222]: learning
+                - generic [ref=f7e223]: 0.0s
+              - list [ref=f7e224]:
+                - listitem [ref=f7e225]: Collected system state.
+                - listitem [ref=f7e226]: Rehearsed 2 candidates.
+                - listitem [ref=f7e227]: Quant core unreachable.
+            - listitem [ref=f7e228]:
+              - generic [ref=f7e229]:
+                - generic [ref=f7e230]: 20:30
+                - generic [ref=f7e231]: "off"
+                - generic [ref=f7e232]: 0.0s
+              - list [ref=f7e233]:
+                - listitem [ref=f7e234]: Collected system state.
+                - listitem [ref=f7e235]: Rehearsed 2 candidates.
+                - listitem [ref=f7e236]: Quant core unreachable.
+            - listitem [ref=f7e237]:
+              - generic [ref=f7e238]:
+                - generic [ref=f7e239]: 20:30
+                - generic [ref=f7e240]: learning
+                - generic [ref=f7e241]: 0.0s
+              - list [ref=f7e242]:
+                - listitem [ref=f7e243]: Collected system state.
+                - listitem [ref=f7e244]: Rehearsed 2 candidates.
+                - listitem [ref=f7e245]: Quant core unreachable.
+        - generic [ref=f7e246]:
+          - generic [ref=f7e247]: WHAT NEEDS ME
+          - list [ref=f7e250]:
+            - listitem [ref=f7e251]:
+              - generic [ref=f7e252]:
+                - generic [ref=f7e253]: orphan knowledge
+                - generic [ref=f7e254]: 2 strategy(ies) implement no hypothesis and have never been tested.
+              - paragraph [ref=f7e255]: → Attach the hypothesis each one came from, or retire it with a reason. A strategy with no stated reason to exist cannot be falsified.
+      - generic [ref=f7e256]:
+        - generic [ref=f7e257]:
+          - generic [ref=f7e258]: Sources
+          - generic [ref=f7e259]: "4"
+          - generic [ref=f7e260]: 16 claims extracted
+        - generic [ref=f7e261]:
+          - generic [ref=f7e262]: Hypotheses
+          - generic [ref=f7e263]: "3"
+          - generic [ref=f7e264]: 0 rejected as duplicates
+        - generic [ref=f7e265]:
+          - generic [ref=f7e266]: Strategies
+          - generic [ref=f7e267]: "2"
+          - generic [ref=f7e268]: 0 paper challengers
+        - generic [ref=f7e269]:
+          - generic [ref=f7e270]: Trials
+          - generic [ref=f7e271]: "0"
+          - generic [ref=f7e272]: 0 failed — kept on record
+      - generic [ref=f7e273]:
+        - generic [ref=f7e274]:
+          - generic [ref=f7e275]:
+            - generic [ref=f7e276]: LIVE OPPORTUNITIES
+            - link "SCANNER →" [ref=f7e277] [cursor=pointer]:
+              - /url: /scanner
+          - generic [ref=f7e279]:
+            - generic [ref=f7e280]: QUANT CORE UNAVAILABLE
+            - paragraph [ref=f7e282]: No board packet found under reports/board_history.
+        - generic [ref=f7e283]:
+          - generic [ref=f7e284]: FORWARD EVIDENCE
+          - generic [ref=f7e287]:
+            - generic [ref=f7e288]: QUANT CORE UNAVAILABLE
+            - paragraph [ref=f7e290]: No board packet found under reports/board_history.
+        - generic [ref=f7e291]:
+          - generic [ref=f7e292]:
+            - generic [ref=f7e293]: RESEARCH FACTORY
+            - link "FACTORY →" [ref=f7e294] [cursor=pointer]:
+              - /url: /edge-factory
+          - generic [ref=f7e295]:
+            - generic [ref=f7e296]:
+              - generic [ref=f7e297]:
+                - generic [ref=f7e298]: queued
+                - generic [ref=f7e299]: "0"
+              - generic [ref=f7e300]:
+                - generic [ref=f7e301]: running
+                - generic [ref=f7e302]: "0"
+              - generic [ref=f7e303]:
+                - generic [ref=f7e304]: succeeded
+                - generic [ref=f7e305]: "0"
+              - generic [ref=f7e306]:
+                - generic [ref=f7e307]: failed
+                - generic [ref=f7e308]: "0"
+              - generic [ref=f7e309]:
+                - generic [ref=f7e310]: dead
+                - generic [ref=f7e311]: "0"
+            - generic [ref=f7e312]:
+              - generic [ref=f7e313]: Evolution proposals
+              - generic [ref=f7e314]:
+                - generic [ref=f7e315]: "draft: 0"
+                - generic [ref=f7e316]: "tests pending: 0"
+                - generic [ref=f7e317]: "tests passed: 0"
+                - generic [ref=f7e318]: "reviewed: 0"
+                - generic [ref=f7e319]: "approved: 0"
+                - generic [ref=f7e320]: "merged: 1"
+                - generic [ref=f7e321]: "rejected: 1"
+        - generic [ref=f7e322]:
+          - generic [ref=f7e323]:
+            - generic [ref=f7e324]: SYSTEM HEALTH
+            - link "DATA →" [ref=f7e325] [cursor=pointer]:
+              - /url: /data-quality
+          - generic [ref=f7e326]:
+            - generic [ref=f7e327]:
+              - generic [ref=f7e328]:
+                - generic [ref=f7e329]: Quant core
+                - generic [ref=f7e330]: UNREACHABLE
+              - generic [ref=f7e331]:
+                - generic [ref=f7e332]: Quant core mode
+                - generic [ref=f7e333]: —
+              - generic [ref=f7e334]:
+                - generic [ref=f7e335]: Broker execution
+                - generic [ref=f7e336]: EXECUTION_ADAPTER_MISSING
+              - generic [ref=f7e337]:
+                - generic [ref=f7e338]: Learning mode
+                - generic [ref=f7e339]: learning
+            - paragraph [ref=f7e340]: No board packet found under reports/board_history and the HTTP transport did not respond.
+      - generic [ref=f7e341]:
+        - generic [ref=f7e342]:
+          - generic [ref=f7e343]: RECENT ANALYSES
+          - link "ANALYST →" [ref=f7e344] [cursor=pointer]:
+            - /url: /analyst
+        - paragraph [ref=f7e346]: No analyses recorded yet. Connect Claude Code to the MarketPulse MCP server and record one.
+  - contentinfo [ref=f7e347]:
+    - generic [ref=f7e348]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f7e349]: PAPER MODE

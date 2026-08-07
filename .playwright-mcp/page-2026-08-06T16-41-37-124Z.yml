@@ -1,0 +1,164 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "MARKETPULSE" [ref=e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=e9]:
+        - button "US" [pressed] [ref=e10] [cursor=pointer]
+        - button "NSE" [ref=e11] [cursor=pointer]
+        - button "BSE" [ref=e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=e16]: LINKING
+      - search [ref=e19]:
+        - generic [ref=e23]: Search instrument
+        - textbox "Search instrument" [ref=e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=e25] [cursor=pointer]
+    - navigation "Workspace" [ref=e26]:
+      - link "RESEARCH" [ref=e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=e32] [cursor=pointer]:
+        - /url: /settings
+    - navigation "RESEARCH sections" [ref=e33]:
+      - generic [ref=e34]: What is it finding out while I am away?
+      - link "Command" [ref=e35] [cursor=pointer]:
+        - /url: /command
+      - link "Markets" [ref=e36] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=e37] [cursor=pointer]:
+        - /url: /premarket
+      - link "Studio" [ref=e38] [cursor=pointer]:
+        - /url: /strategies
+      - link "Memory" [ref=e39] [cursor=pointer]:
+        - /url: /memory
+      - link "Paper" [ref=e40] [cursor=pointer]:
+        - /url: /paper
+  - generic [ref=e41]:
+    - link "LEARNING" [ref=e42] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=e45]: ·
+    - generic [ref=e46]: last cycle 1m ago
+    - generic [ref=e48]: ·
+    - generic [ref=e49]: 4 actions · 2 rehearsed · 1 need attention · 0.0s
+    - generic [ref=e50]: 47 cycles today
+  - generic "US and India market tape" [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - link "USAAPL" [ref=e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=e55]: $311.53
+        - generic [ref=e56]: +0.17%
+      - generic [ref=e57]:
+        - link "USMSFT" [ref=e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=e59]: $494.26
+        - generic [ref=e60]: +1.39%
+      - generic [ref=e61]:
+        - link "USNVDA" [ref=e62] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=e63]: $219.22
+        - generic [ref=e64]: +0.00%
+      - generic [ref=e65]:
+        - link "USSPY" [ref=e66] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=e67]: $768.66
+        - generic [ref=e68]: "-0.15%"
+      - generic [ref=e69]:
+        - link "NSERELIANCE" [ref=e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=e71]: ₹1,325.00
+        - generic [ref=e72]: +3.52%
+      - generic [ref=e73]:
+        - link "NSETCS" [ref=e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=e75]: ₹2,373.00
+        - generic [ref=e76]: "-1.66%"
+      - generic [ref=e77]:
+        - link "NSEHDFCBANK" [ref=e78] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=e79]: ₹734.30
+        - generic [ref=e80]: "-0.10%"
+      - generic [ref=e81]:
+        - link "NSENIFTYBEES" [ref=e82] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=e83]: ₹280.59
+        - generic [ref=e84]: +0.23%
+      - generic [ref=e85]:
+        - link "USAAPL" [ref=e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=e87]: $311.53
+        - generic [ref=e88]: +0.17%
+      - generic [ref=e89]:
+        - link "USMSFT" [ref=e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=e91]: $494.26
+        - generic [ref=e92]: +1.39%
+      - generic [ref=e93]:
+        - link "USNVDA" [ref=e94] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=e95]: $219.22
+        - generic [ref=e96]: +0.00%
+      - generic [ref=e97]:
+        - link "USSPY" [ref=e98] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=e99]: $768.66
+        - generic [ref=e100]: "-0.15%"
+      - generic [ref=e101]:
+        - link "NSERELIANCE" [ref=e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=e103]: ₹1,325.00
+        - generic [ref=e104]: +3.52%
+      - generic [ref=e105]:
+        - link "NSETCS" [ref=e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=e107]: ₹2,373.00
+        - generic [ref=e108]: "-1.66%"
+      - generic [ref=e109]:
+        - link "NSEHDFCBANK" [ref=e110] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=e111]: ₹734.30
+        - generic [ref=e112]: "-0.10%"
+      - generic [ref=e113]:
+        - link "NSENIFTYBEES" [ref=e114] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=e115]: ₹280.59
+        - generic [ref=e116]: +0.23%
+  - main [ref=e117]:
+    - generic [ref=e119]:
+      - generic [ref=e121]:
+        - paragraph [ref=e122]: INVESTMENT MODE / SIMULATION BATTERY
+        - heading "Simulation Lab" [level=1] [ref=e123]
+        - paragraph [ref=e124]: Five independent attacks on one return series. They can disagree, and the disagreement is the point.
+      - generic [ref=e125]: SYNTHETIC — these are worked examples with known properties, not market data. No result here says anything about a real instrument.
+      - generic [ref=e128]:
+        - heading "Series" [level=2] [ref=e132]
+        - generic [ref=e133]:
+          - button "60 trades Steady edge Four wins to one loss, spread evenly. Should survive every simulation. RUN BATTERY →" [ref=e134] [cursor=pointer]:
+            - generic [ref=e135]: 60 trades
+            - generic [ref=e136]: Steady edge
+            - generic [ref=e137]: Four wins to one loss, spread evenly. Should survive every simulation.
+            - generic [ref=e138]: RUN BATTERY →
+          - button "60 trades Symmetric noise Alternating equal wins and losses. No edge exists; nothing should pass. RUN BATTERY →" [ref=e139] [cursor=pointer]:
+            - generic [ref=e140]: 60 trades
+            - generic [ref=e141]: Symmetric noise
+            - generic [ref=e142]: Alternating equal wins and losses. No edge exists; nothing should pass.
+            - generic [ref=e143]: RUN BATTERY →
+          - button "60 trades One lucky stretch Flat for most of the record, then a burst carries everything. Walk-forward should catch it. RUN BATTERY →" [ref=e144] [cursor=pointer]:
+            - generic [ref=e145]: 60 trades
+            - generic [ref=e146]: One lucky stretch
+            - generic [ref=e147]: Flat for most of the record, then a burst carries everything. Walk-forward should catch it.
+            - generic [ref=e148]: RUN BATTERY →
+          - button "60 trades Edge thinner than costs Profitable on paper until costs are charged twice. Cost stress should catch it. RUN BATTERY →" [ref=e149] [cursor=pointer]:
+            - generic [ref=e150]: 60 trades
+            - generic [ref=e151]: Edge thinner than costs
+            - generic [ref=e152]: Profitable on paper until costs are charged twice. Cost stress should catch it.
+            - generic [ref=e153]: RUN BATTERY →
+  - contentinfo [ref=e154]:
+    - generic [ref=e155]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=e156]: PAPER MODE

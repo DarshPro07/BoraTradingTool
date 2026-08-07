@@ -1,271 +1,96 @@
+import path from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
-import path from "path";
+import { backupDefaultDatabase, migrateDatabase } from "./migrate";
 
-const DB_PATH = path.join(process.cwd(), "marketpulse.db");
+let database: ReturnType<typeof drizzle<typeof schema>> | null = null;
+let sqliteConnection: Database.Database | null = null;
 
-let _db: ReturnType<typeof drizzle> | null = null;
+export function databasePath(): string {
+  const configured = process.env.MARKETPULSE_DB_PATH?.trim();
+  const resolved = path.resolve(/* turbopackIgnore: true */ process.cwd(), configured || "marketpulse.db");
+  const defaultPath = path.resolve(process.cwd(), "marketpulse.db");
+  if (process.env.MARKETPULSE_TEST_MODE === "1" && resolved === defaultPath) {
+    throw new Error("MARKETPULSE_TEST_MODE requires an explicit isolated database path.");
+  }
+  return resolved;
+}
+
+export function openDatabase(filePath: string) {
+  mkdirSync(path.dirname(filePath), { recursive: true });
+  const sourceExisted = existsSync(filePath);
+  const sqlite = new Database(filePath);
+  backupDefaultDatabase(sqlite, filePath, sourceExisted);
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
+  sqlite.pragma("busy_timeout = 5000");
+  migrateDatabase(sqlite);
+  seedDefaults(sqlite);
+  return { db: drizzle(sqlite, { schema }), sqlite };
+}
 
 export function getDb() {
-  if (!_db) {
-    const sqlite = new Database(DB_PATH);
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("foreign_keys = ON");
-    _db = drizzle(sqlite, { schema });
-    runMigrations(sqlite);
+  if (!database) {
+    const opened = openDatabase(databasePath());
+    database = opened.db;
+    sqliteConnection = opened.sqlite;
   }
-  return _db;
+  return database;
 }
 
-function runMigrations(sqlite: Database.Database) {
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS stocks (
-      ticker TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      exchange TEXT,
-      sector TEXT,
-      industry TEXT,
-      market_cap REAL,
-      updated_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS quote_snapshots (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT NOT NULL,
-      price REAL NOT NULL,
-      open REAL,
-      high REAL,
-      low REAL,
-      prev_close REAL,
-      change REAL,
-      change_pct REAL,
-      volume INTEGER,
-      avg_volume INTEGER,
-      fetched_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS price_candles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT NOT NULL,
-      resolution TEXT NOT NULL,
-      time INTEGER NOT NULL,
-      open REAL NOT NULL,
-      high REAL NOT NULL,
-      low REAL NOT NULL,
-      close REAL NOT NULL,
-      volume INTEGER,
-      UNIQUE(ticker, resolution, time)
-    );
-
-    CREATE TABLE IF NOT EXISTS news_articles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT,
-      headline TEXT NOT NULL,
-      summary TEXT,
-      source TEXT,
-      url TEXT,
-      sentiment REAL,
-      published_at INTEGER NOT NULL,
-      fetched_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS market_briefings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      spx_close REAL,
-      spx_change REAL,
-      spx_change_pct REAL,
-      ndx_close REAL,
-      ndx_change REAL,
-      ndx_change_pct REAL,
-      dji_close REAL,
-      dji_change REAL,
-      dji_change_pct REAL,
-      market_status TEXT,
-      sector_data TEXT,
-      top_movers TEXT,
-      fetched_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS watchlist_suggestions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT NOT NULL,
-      name TEXT NOT NULL,
-      catalysts TEXT,
-      risk_level TEXT,
-      thesis TEXT,
-      added_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS stock_analysis_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT NOT NULL,
-      pe REAL,
-      eps REAL,
-      revenue REAL,
-      revenue_growth REAL,
-      gross_margin REAL,
-      net_margin REAL,
-      debt_to_equity REAL,
-      free_cash_flow REAL,
-      rsi REAL,
-      macd_line REAL,
-      macd_signal REAL,
-      macd_hist REAL,
-      sma20 REAL,
-      sma50 REAL,
-      sma200 REAL,
-      bb_upper REAL,
-      bb_lower REAL,
-      support REAL,
-      resistance REAL,
-      trend TEXT,
-      analyst_buy INTEGER,
-      analyst_hold INTEGER,
-      analyst_sell INTEGER,
-      price_target REAL,
-      price_target_high REAL,
-      price_target_low REAL,
-      bull_signals TEXT,
-      bear_signals TEXT,
-      overall_signal TEXT,
-      generated_at INTEGER NOT NULL
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_quote_ticker ON quote_snapshots(ticker, fetched_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_candles_ticker ON price_candles(ticker, resolution, time DESC);
-    CREATE INDEX IF NOT EXISTS idx_news_ticker ON news_articles(ticker, published_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_report_ticker ON stock_analysis_reports(ticker, generated_at DESC);
-
-    CREATE TABLE IF NOT EXISTS user_watchlist (
-      ticker TEXT PRIMARY KEY,
-      added_at INTEGER NOT NULL
-    );
-
-    -- Autonomous Trading
-    CREATE TABLE IF NOT EXISTS agent_config (
-      id INTEGER PRIMARY KEY,
-      mode TEXT NOT NULL DEFAULT 'off',
-      broker TEXT NOT NULL DEFAULT 'real',
-      halt INTEGER NOT NULL DEFAULT 0,
-      poll_minutes INTEGER NOT NULL DEFAULT 30,
-      max_position_pct REAL NOT NULL DEFAULT 15,
-      watchlist_only INTEGER NOT NULL DEFAULT 1,
-      daily_trade_cap INTEGER NOT NULL DEFAULT 5,
-      active_strategy_id INTEGER,
-      telegram_bot_token TEXT,
-      telegram_chat_id TEXT,
-      telegram_last_offset INTEGER NOT NULL DEFAULT 0,
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS strategies (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      prompt TEXT NOT NULL,
-      risk_profile TEXT NOT NULL DEFAULT 'medium',
-      max_position_pct REAL,
-      is_default INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticker TEXT NOT NULL,
-      side TEXT NOT NULL,
-      quantity REAL NOT NULL,
-      order_type TEXT NOT NULL DEFAULT 'market',
-      limit_price REAL,
-      stop_loss REAL,
-      status TEXT NOT NULL,
-      mode TEXT NOT NULL,
-      broker TEXT NOT NULL,
-      thesis TEXT,
-      est_price REAL,
-      est_cost REAL,
-      fill_price REAL,
-      fence_check TEXT,
-      rejection_reason TEXT,
-      proposed_at INTEGER NOT NULL,
-      decided_at INTEGER,
-      filled_at INTEGER
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, proposed_at DESC);
-
-    -- Real broker (Robinhood) portfolio snapshot the agent pushes via the MCP.
-    CREATE TABLE IF NOT EXISTS robinhood_portfolio (
-      id INTEGER PRIMARY KEY,
-      account TEXT NOT NULL,
-      account_number TEXT,
-      total_value REAL,
-      cash REAL,
-      buying_power REAL,
-      positions TEXT,
-      fetched_at INTEGER NOT NULL
-    );
-
-    -- Paper trading was removed — every order is real money now. Drop the legacy
-    -- paper tables if a pre-existing DB still has them.
-    DROP TABLE IF EXISTS paper_account;
-    DROP TABLE IF EXISTS paper_positions;
-  `);
-
-  // Columns added after agent_config first shipped — add if missing (SQLite has
-  // no ADD COLUMN IF NOT EXISTS).
-  addColumnIfMissing(sqlite, "agent_config", "robinhood_connected_at", "INTEGER");
-  addColumnIfMissing(sqlite, "agent_config", "robinhood_account", "TEXT");
-
-  seedTradingDefaults(sqlite);
+export function closeDatabase(): void {
+  sqliteConnection?.close();
+  sqliteConnection = null;
+  database = null;
 }
 
-function addColumnIfMissing(
-  sqlite: Database.Database,
-  table: string,
-  column: string,
-  type: string
-) {
-  const cols = sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-  if (!cols.some((c) => c.name === column)) {
-    sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
-  }
-}
+/**
+ * Historical name, kept because the test suite calls it in many places.
+ *
+ * It is no longer test-only: `scripts/cycle-entry.ts` closes the handle so a scheduled process
+ * does not leave a `-wal` and `-shm` pair behind every fifteen minutes. A production script
+ * calling something named `forTests` reads as a mistake, so that path uses `closeDatabase`.
+ */
+export const closeDbForTests = closeDatabase;
 
-const DEFAULT_STRATEGY_PROMPT = `You are a medium-risk swing trader managing a stock portfolio.
+const DEFAULT_STRATEGY_PROMPT = `You are a medium-risk research analyst evaluating cash equities.
 
 Goals:
-- Grow the account steadily while protecting capital. Prefer high-quality, liquid names.
-- Only take a position when the Research Report shows a clear edge (technical setup + supportive fundamentals or catalyst). Skip ambiguous setups — no trade is a valid decision.
-- Size each position at no more than the configured max-per-position cap of the account.
-- Always set a stop-loss when opening a position; cut losers, let winners run.
-- Trim into strength and fully exit when the thesis breaks or the stop is hit.
+- Protect capital and prefer liquid, high-quality names.
+- Require technical evidence plus fundamentals or a catalyst before proposing a paper order.
+- Treat missing, stale, or conflicting evidence as a reason to abstain.
+- Keep every paper position within the configured maximum allocation.
+- State invalidation conditions and downside risks clearly.
 
-Risk posture: medium. Avoid options, leverage, and illiquid micro-caps unless the user changes this strategy.`;
+This strategy is decision support. It cannot authorize or place a broker order.`;
 
-function seedTradingDefaults(sqlite: Database.Database) {
-  // Drizzle `timestamp` mode stores epoch SECONDS; match it in raw seed SQL.
+function seedDefaults(sqlite: Database.Database): void {
   const now = Math.floor(Date.now() / 1000);
-
-  const stratCount = sqlite
-    .prepare("SELECT COUNT(*) AS c FROM strategies")
-    .get() as { c: number };
-  if (stratCount.c === 0) {
-    const info = sqlite
+  const count = sqlite.prepare("SELECT COUNT(*) AS count FROM strategies").get() as { count: number };
+  if (count.count === 0) {
+    const result = sqlite
       .prepare(
-        `INSERT INTO strategies (name, prompt, risk_profile, max_position_pct, is_default, created_at)
-         VALUES (?, ?, 'medium', 15, 1, ?)`
+        `INSERT INTO strategies
+          (name, prompt, risk_profile, max_position_pct, is_default, created_at)
+         VALUES (?, ?, 'medium', 15, 1, ?)`,
       )
-      .run("Default — Medium Risk", DEFAULT_STRATEGY_PROMPT, now);
+      .run("Default - Medium Risk", DEFAULT_STRATEGY_PROMPT, now);
     sqlite
       .prepare(
-        `INSERT OR IGNORE INTO agent_config (id, updated_at, active_strategy_id) VALUES (1, ?, ?)`
+        `INSERT OR IGNORE INTO agent_config
+          (id, mode, broker, halt, updated_at, active_strategy_id)
+         VALUES (1, 'off', 'real', 1, ?, ?)`,
       )
-      .run(now, info.lastInsertRowid);
+      .run(now, result.lastInsertRowid);
   }
-
   sqlite
-    .prepare(`INSERT OR IGNORE INTO agent_config (id, updated_at) VALUES (1, ?)`)
+    .prepare(
+      `INSERT OR IGNORE INTO agent_config
+        (id, mode, broker, halt, updated_at)
+       VALUES (1, 'off', 'real', 1, ?)`,
+    )
     .run(now);
 }
 

@@ -14,22 +14,19 @@ export { FinnhubProvider };
 export type { DataProvider };
 export * from "./types";
 
-/** True once a Finnhub API key is configured. The app requires one — see getProvider. */
+/** True once optional Finnhub enrichment is configured. */
 export function isConfigured(): boolean {
   return !!process.env.FINNHUB_API_KEY?.trim();
 }
 
-// The product requires a real data provider — there is NO mock/demo data. Finnhub
-// supplies fundamentals/ratings/earnings/insider/news/profile; Yahoo supplies
-// quotes/candles/sectors/price-targets/movers. On a per-call error we fall back to
-// EmptyProvider (neutral, never fabricated), so missing data shows as "unavailable".
+// Yahoo supplies the shared US/India quote and candle baseline. Finnhub adds
+// optional US enrichment. Missing enrichment stays unavailable; it never blocks
+// the rest of the product or turns into fabricated data.
 export function getProvider(): DataProvider {
   const key = process.env.FINNHUB_API_KEY?.trim();
-  if (!key) {
-    throw new Error("Finnhub API key required — configure it in Settings before using the app.");
-  }
+  const enrichment = key ? new FinnhubProvider(key) : new EmptyProvider();
   return new CachingProvider(
-    new YahooCandleProvider(new FallbackProvider(new FinnhubProvider(key), new EmptyProvider()))
+    new YahooCandleProvider(new FallbackProvider(enrichment, new EmptyProvider()))
   );
 }
 

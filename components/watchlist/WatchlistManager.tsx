@@ -5,10 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Plus, X, Loader2 } from "lucide-react";
 import type { Quote } from "@/lib/providers/types";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 export interface WatchlistEntry {
   ticker: string;
   quote: Quote | null;
+  /**
+   * Canonical instrument id, e.g. `US:XNAS:NVDA`.
+   *
+   * `/analyze` rejects a bare symbol by design — `parseInstrument` needs the exchange — so a
+   * link built from `ticker` alone is dead on arrival. Optional because a watchlist row may
+   * predate the catalog; the link falls back to the ticker and fails visibly rather than the
+   * page pretending the destination exists.
+   */
+  instrumentId?: string;
   thesis?: string;
   catalysts?: string[];
   riskLevel?: "low" | "medium" | "high";
@@ -38,7 +48,7 @@ export function WatchlistManager({ entries }: { entries: WatchlistEntry[] }) {
     setAdding(true);
     setError(null);
     try {
-      const res = await fetch("/api/watchlist", {
+      const res = await mutationFetch("/api/watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticker }),
@@ -55,7 +65,7 @@ export function WatchlistManager({ entries }: { entries: WatchlistEntry[] }) {
   }
 
   async function handleRemove(ticker: string) {
-    await fetch("/api/watchlist", {
+    await mutationFetch("/api/watchlist", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticker }),
@@ -117,12 +127,24 @@ export function WatchlistManager({ entries }: { entries: WatchlistEntry[] }) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     <div className="shrink-0">
-                      <Link
-                        href={`/analyze/${item.ticker}`}
-                        className="text-terminal font-bold text-base hover:underline font-mono"
-                      >
-                        {item.ticker}
-                      </Link>
+                      {/* No canonical id means the instrument is not in the catalog, and
+                          /analyze would reject a bare symbol. Rendering a link that is known to
+                          fail is worse than rendering none: it invites a click that 500s. */}
+                      {item.instrumentId ? (
+                        <Link
+                          href={`/analyze/${encodeURIComponent(item.instrumentId)}`}
+                          className="text-terminal font-bold text-base hover:underline font-mono"
+                        >
+                          {item.ticker}
+                        </Link>
+                      ) : (
+                        <span
+                          className="text-muted-foreground font-bold text-base font-mono"
+                          title="Not in the instrument catalog, so there is no analysis page for it"
+                        >
+                          {item.ticker}
+                        </span>
+                      )}
                       {item.riskLevel && (
                         <span className={`inline-flex items-center px-1.5 py-0.5 border rounded text-xs ml-2 ${RISK_STYLES[item.riskLevel]}`}>
                           {item.riskLevel} risk
@@ -150,18 +172,36 @@ export function WatchlistManager({ entries }: { entries: WatchlistEntry[] }) {
                   </div>
 
                   <div className="flex items-start gap-3 shrink-0">
-                    {item.quote && (
-                      <div className="text-right">
-                        <div className="text-base font-bold font-mono">${item.quote.price.toFixed(2)}</div>
+                    {/* The object existing does not mean its fields are populated. A quote can
+                        arrive with a null price or changePct — `item.quote &&` passed that
+                        through and `.toFixed()` on null took the whole page down with a 500.
+                        Each number is now checked individually, and an absent one is shown as
+                        absent rather than as a zero. */}
+                    <div className="text-right">
+                      <div className="text-base font-bold font-mono">
+                        {typeof item.quote?.price === "number" && Number.isFinite(item.quote.price)
+                          ? `$${item.quote.price.toFixed(2)}`
+                          : <span className="text-muted-foreground text-xs font-normal">no quote</span>}
+                      </div>
+                      {typeof item.quote?.changePct === "number" && Number.isFinite(item.quote.changePct) ? (
                         <div className={`flex items-center gap-1 text-xs font-semibold justify-end ${isGain ? "text-gain" : "text-loss"}`}>
                           {isGain ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                           {isGain ? "+" : ""}{item.quote.changePct.toFixed(2)}%
                         </div>
-                        <Link href={`/analyze/${item.ticker}`} className="text-xs text-terminal hover:underline mt-1 block">
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground">change unavailable</div>
+                      )}
+                      {item.instrumentId ? (
+                        <Link
+                          href={`/analyze/${encodeURIComponent(item.instrumentId)}`}
+                          className="text-xs text-terminal hover:underline mt-1 block"
+                        >
                           Analyze →
                         </Link>
-                      </div>
-                    )}
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground mt-1 block">not in catalog</span>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleRemove(item.ticker)}
                       className="p-1 text-muted-foreground hover:text-loss transition-colors rounded hover:bg-accent"

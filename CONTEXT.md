@@ -1,84 +1,85 @@
-# MarketPulse — Domain Glossary
+# MarketPulse OS Domain Glossary
 
-> This file is a glossary only. No implementation details, no specs, no architecture decisions.
+This glossary describes the active product. Earlier real-money Confirm and Autopilot concepts are retired and are not capabilities of the system.
 
-## Core Concepts
+## System Planes
 
-**Data Layer**
-The web application (Next.js). Responsible for fetching market data from external APIs, storing it locally, and rendering it as UI. Does not contain AI logic.
+**Product Surface**
+The Next.js application that renders market, research, paper, learning, governance, and audit views. It persists local state in SQLite.
 
-**Agent Layer**
-Claude Code (or Codex CLI) running in the repository terminal. Responsible for AI reasoning, market interpretation, and trading actions. Users bring their own Claude Code session — no AI API key is required in the app.
+**Control Plane**
+Claude Code operating through the project MCP server. It reads bounded evidence and may record local research artifacts. It has no broker or financial-mutation tool.
 
-**Context Files**
-Structured JSON files written by the Data Layer to the `context/` directory. The Agent Layer reads these files to understand the current state of the market and individual stocks before reasoning or acting.
+**Learning Plane**
+The governed source-to-outcome chain: source, claim, concept, hypothesis, strategy specification, trial, validation, forward outcome, failure memory, and lesson.
 
-**Research Report**
-A structured section on the Stock Analyzer page that displays all available data about a single stock — technicals, fundamentals, earnings, news, analyst ratings, insider activity, and bull/bear signals. Primarily populated by aggregating data from multiple financial APIs. Rule-based signals fill gaps where APIs don't provide interpretation. Not LLM-generated text.
+**Quant Core**
+The separate Python system in `E:/Trading_BOT`. MarketPulse reads its versioned contract over loopback HTTP or approved filesystem artifacts. An unavailable core is shown explicitly.
 
-**API Aggregation**
-The practice of pulling different data types from whichever API provides them best (e.g. analyst ratings from Finnhub, fundamentals from FMP, technicals from Twelve Data), then combining them into a single unified view.
+## Market Evidence
 
-**Rule-based Signals**
-Algorithmically derived buy/sell/hold indicators calculated from raw price and fundamental data when no API-provided interpretation is available. Examples: price vs. SMA crossovers, RSI overbought/oversold thresholds, P/E vs. sector average.
+**Canonical Instrument**
+A stable identifier in the form `MARKET:EXCHANGE:SYMBOL`, such as `US:XNAS:AAPL` or `IN:XNSE:RELIANCE`. Provider symbols are mappings, not identities.
 
-**Stock Analyzer**
-The anchor feature of the app. A dedicated page per ticker that shows quote, chart, technicals, fundamentals, earnings, news, and the Research Report section.
+**Normalized Quote**
+A quote paired with instrument identity, currency, source, retrieval time, market time, and quality. A price without provenance is not a normalized quote.
 
-**Setup Gate**
-The app requires a real data provider — there is no mock/demo mode. Until a Finnhub API key is configured, the app shows a setup screen and nothing else. Once a key is set, the product runs on live data only; any datum a source can't supply is shown as "unavailable" (—), never fabricated.
+**Evidence Quality**
+An explicit source state such as live, delayed, stale, conflicted, authentication-required, or unavailable. Missing data is never treated as zero.
 
-**Local Database**
-SQLite managed by Drizzle ORM. A single file (`marketpulse.db`) stored in the repo. Zero server setup required. Stores cached API responses, candles, quotes, news, analysis snapshots, and context data. Also serves as the source the Agent Layer reads when Claude Code needs structured market state.
+**Fixture Mode**
+Deterministic research data enabled only by `MARKETPULSE_TEST_MODE=1`. Fixtures require an explicit disposable database and paper orders persist their fixture provenance; fixture results never mix silently into the owner database.
 
-**Primary Data Provider**
-Finnhub. The single financial data API implemented in the MVP. Covers quotes, candles, fundamentals, analyst ratings, price targets, earnings, insider transactions, and news with sentiment — all under one free-tier API key.
+**Research Snapshot**
+A bounded, hashable packet of normalized evidence used by an analyst or model. The snapshot hash makes a recorded opinion attributable to the exact evidence it received.
 
-**Chart Engine**
-Lightweight Charts (TradingView's open-source library). Used for all financial time series visualization — candlestick charts, volume bars, SMA/EMA overlays. Fed directly from Finnhub candle data. Not an iframe embed; fully controlled by the app.
+**Epistemic Status**
+A claim label such as known, historically observed, inferred, not forward validated, conflicting, or unknown.
 
-**Data Provider Adapter**
-An abstraction layer that wraps a financial data API. All adapters implement the same interface so providers can be swapped or added without changing the UI or agent logic.
+## Research and Learning
 
-## Autonomous Trading
+**Analysis Record**
+A cited bull, bear, and neutral debate with stance, conviction, risks, invalidation conditions, and missing evidence. Directional analysis requires more than inference alone.
 
-**Trading Mode**
-The single setting that governs how much human gating sits between the Agent Layer deciding on a trade and that trade reaching the broker. Exactly one mode is active at a time — the modes are mutually exclusive, never run in parallel.
+**Strategy Specification**
+A bounded, versioned research hypothesis expressed in the local Strategy DSL. It is not an order instruction.
 
-**Confirm Mode**
-The default Trading Mode. The Agent Layer does all the research and forms a complete order, but before anything reaches the broker it notifies the human and waits for explicit approval. This is the documented "never place a real order without confirmation" rule expressed as the default.
+**Trial Ledger**
+The append-only record of every validation attempt, including failures and inconclusive results. Trial count is part of the multiple-testing denominator.
 
-**Autopilot Mode**
-The opt-in Trading Mode. The Agent Layer places trades on its own with no human action required, then notifies the human after the fact. A human flips a single switch to enter it.
+**Locked Holdout**
+The limited unbiased validation sample. Re-querying it outside its budget is prohibited because repeated access converts it into training data.
 
-**Scheduled Research System**
-The shared cadence both Trading Modes ride on. The Agent Layer, running in the terminal, wakes itself on a fixed interval (default every 30 minutes during market hours), refreshes Context Files, evaluates the active Strategy against current conditions, and decides whether to act. Both Confirm Mode and Autopilot Mode use the same wake loop; the mode only changes what happens once a trade is decided.
+**Paper Challenger**
+A strategy that passed the configured historical gauntlet and may collect forward paper evidence. It is not approved for live execution.
 
-**Guarded Order Tool**
-The authorization-and-record endpoint every order must pass through before placement. The Data Layer runs the Trade Fence, the active Trading Mode, and the Halt flag, and records the order. It cannot place the trade itself — all trades are real money and execute via the Robinhood MCP in the Agent Layer's own session — so it returns an **authorized** order that the Agent Layer then places via the MCP and reports back. The rule that keeps the fence meaningful: the Agent Layer never places via the MCP without first receiving an `authorized` from this tool.
+**Forward Outcome**
+An observation created after a decision point. Forward-resolved outcomes are distinguished from historical or in-sample results.
 
-**Robinhood MCP**
-The brokerage integration that actually executes real-money trades. It runs inside the Agent Layer's Claude Code session (not the app), so the Data Layer cannot place real orders directly — it can only authorize them and record the fills the Agent Layer reports.
+**Failure Memory**
+A durable record of failed ideas, causes, and lessons. It prevents deletion or accidental repetition of negative evidence.
 
-**MCP Heartbeat**
-The Agent Layer's proof to the Data Layer that the Robinhood MCP is connected and live. Because the app cannot inspect the agent's MCP session, the agent verifies the MCP (e.g. by calling a read tool) and posts a timestamped heartbeat. The connection counts as live only while a recent heartbeat exists (a fixed freshness window). Real-money controls — arming trading and placing orders — are gated on a live heartbeat; if it goes stale, the gate closes and trades are blocked.
+**Learning Mode**
+The governed state machine `off -> observing -> learning -> evolving`. Higher modes permit more local research work but never permit financial mutation, risk-kernel edits, trial deletion, or unreviewed deployment.
 
-**Trade Fence**
-The configurable, code-enforced limits the Guarded Order Tool applies to every order: maximum percent of account per position (default 15%), watchlist-only restriction, daily trade cap, real-money arming, a live MCP heartbeat, and a fresh account snapshot. Account size for the percent and buying-power checks comes from the Robinhood snapshot the Agent Layer syncs via the MCP; with no fresh snapshot, orders are blocked (fail-safe). Enforced hard (rejected in code) and also stated to the Agent Layer as guidance (soft). Every limit is editable, including removing it.
+## Paper and Execution Boundary
 
-**Strategy**
-The trading mandate, expressed as an editable prompt plus its mechanical limits. The Default Strategy is medium-risk with a 15%-per-position cap. Users can edit the default prompt or add their own Strategy prompts and select which is active.
+**Paper Research Mode**
+The only in-application order lifecycle. It uses separate USD and INR ledgers, deterministic fill rules, eligible quotes, session checks, and estimated fees.
 
-**Pending Trade**
-In Confirm Mode, a trade the Agent Layer has proposed and is holding while it waits for human approval. Surfaced both as a push proposal (Telegram) and an in-app approve/reject screen; approving authorizes it through the Guarded Order Tool for the Agent Layer to place via the MCP.
+**Manual Advisory Ticket**
+A research suggestion the owner may use when placing an order manually outside MarketPulse. It carries no authorization or execution capability.
 
-**Halt**
-A hard stop the Guarded Order Tool checks immediately before every placement. Independent of the Trading Mode toggle, it lets the human freeze all order placement at once.
+**Confirmed Live**
+A reserved, unavailable capability state. It remains false until a separate owner decision, broker architecture, compliance review, and security review are completed.
 
-**Notification Channel**
-How the Agent Layer reaches the human off-terminal — a Telegram bot (free, self-hosted, two-way: it sends proposals/receipts and reads approve/reject replies). Confirm Mode uses it to ask; Autopilot Mode uses it to report.
+**Execution Adapter Missing**
+The fail-closed response returned by retired live-order endpoints. `EXECUTION_ADAPTER_MISSING` means the application cannot authorize or place an order.
+
+**MCP Capability Class**
+Every MCP tool is classified as `READ`, `WRITE_LOCAL`, `EXTERNAL_WRITE`, `FINANCIAL_MUTATION`, or `UNKNOWN`. Research agents are limited to `READ` and `WRITE_LOCAL`; external, financial, and unknown capabilities are denied. The exact served tool set is checked against an owner-protected manifest.
 
 ## Distribution
 
-**Self-hosted**
-Users clone the GitHub repository and run the app locally. Each user configures their own API keys. No shared deployment, no multi-tenancy, no user accounts required.
+**Local First**
+The application binds to loopback, uses a local SQLite database, and has no multi-tenant account system. Mutation routes still enforce loopback, origin, CSRF, or local bearer-token checks.

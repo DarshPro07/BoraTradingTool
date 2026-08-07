@@ -1,0 +1,587 @@
+- generic [active] [ref=f3e1]:
+  - banner [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - link "MARKETPULSE" [ref=f3e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f3e9]:
+        - button "US" [pressed] [ref=f3e10] [cursor=pointer]
+        - button "NSE" [ref=f3e11] [cursor=pointer]
+        - button "BSE" [ref=f3e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f3e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f3e16]: LINKING
+      - search [ref=f3e19]:
+        - generic [ref=f3e23]: Search instrument
+        - textbox "Search instrument" [ref=f3e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f3e25] [cursor=pointer]
+    - navigation "Primary navigation" [ref=f3e26]:
+      - link "TERMINAL" [ref=f3e27] [cursor=pointer]:
+        - /url: /command
+      - link "ANALYST" [ref=f3e28] [cursor=pointer]:
+        - /url: /analyst
+      - link "RESEARCH" [ref=f3e29] [cursor=pointer]:
+        - /url: /research
+      - link "PORTFOLIO" [ref=f3e30] [cursor=pointer]:
+        - /url: /portfolio
+      - link "SYSTEM" [ref=f3e31] [cursor=pointer]:
+        - /url: /system
+    - navigation "ANALYST sections" [ref=f3e32]:
+      - generic [ref=f3e33]: What should I make of it?
+      - link "Analyst" [ref=f3e34] [cursor=pointer]:
+        - /url: /analyst
+      - link "AI Desk" [ref=f3e35] [cursor=pointer]:
+        - /url: /ai
+  - generic "US and India market tape" [ref=f3e36]:
+    - generic [ref=f3e37]:
+      - generic [ref=f3e38]:
+        - link "USAAPL" [ref=f3e39] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f3e40]: $314.47
+        - generic [ref=f3e41]: +1.11%
+      - generic [ref=f3e42]:
+        - link "USMSFT" [ref=f3e43] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f3e44]: $493.68
+        - generic [ref=f3e45]: +1.28%
+      - generic [ref=f3e46]:
+        - link "USNVDA" [ref=f3e47] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f3e48]: $222.58
+        - generic [ref=f3e49]: +1.53%
+      - generic [ref=f3e50]:
+        - link "USSPY" [ref=f3e51] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f3e52]: $770.56
+        - generic [ref=f3e53]: +0.10%
+      - generic [ref=f3e54]:
+        - link "NSERELIANCE" [ref=f3e55] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f3e56]: ₹1,325.00
+        - generic [ref=f3e57]: +3.52%
+      - generic [ref=f3e58]:
+        - link "NSETCS" [ref=f3e59] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f3e60]: ₹2,373.00
+        - generic [ref=f3e61]: "-1.66%"
+      - generic [ref=f3e62]:
+        - link "NSEHDFCBANK" [ref=f3e63] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f3e64]: ₹734.30
+        - generic [ref=f3e65]: "-0.10%"
+      - generic [ref=f3e66]:
+        - link "NSENIFTYBEES" [ref=f3e67] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f3e68]: ₹280.59
+        - generic [ref=f3e69]: +0.23%
+      - generic [ref=f3e70]:
+        - link "USAAPL" [ref=f3e71] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f3e72]: $314.47
+        - generic [ref=f3e73]: +1.11%
+      - generic [ref=f3e74]:
+        - link "USMSFT" [ref=f3e75] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f3e76]: $493.68
+        - generic [ref=f3e77]: +1.28%
+      - generic [ref=f3e78]:
+        - link "USNVDA" [ref=f3e79] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f3e80]: $222.58
+        - generic [ref=f3e81]: +1.53%
+      - generic [ref=f3e82]:
+        - link "USSPY" [ref=f3e83] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f3e84]: $770.56
+        - generic [ref=f3e85]: +0.10%
+      - generic [ref=f3e86]:
+        - link "NSERELIANCE" [ref=f3e87] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f3e88]: ₹1,325.00
+        - generic [ref=f3e89]: +3.52%
+      - generic [ref=f3e90]:
+        - link "NSETCS" [ref=f3e91] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f3e92]: ₹2,373.00
+        - generic [ref=f3e93]: "-1.66%"
+      - generic [ref=f3e94]:
+        - link "NSEHDFCBANK" [ref=f3e95] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f3e96]: ₹734.30
+        - generic [ref=f3e97]: "-0.10%"
+      - generic [ref=f3e98]:
+        - link "NSENIFTYBEES" [ref=f3e99] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f3e100]: ₹280.59
+        - generic [ref=f3e101]: +0.23%
+  - main [ref=f3e102]:
+    - generic [ref=f3e104]:
+      - generic [ref=f3e105]:
+        - link "Analyze with AI" [ref=f3e106] [cursor=pointer]:
+          - /url: /ai?instrument=US%3AXNAS%3AAAPL
+        - link "Open paper ticket" [ref=f3e119] [cursor=pointer]:
+          - /url: /paper?instrument=US%3AXNAS%3AAAPL
+      - generic [ref=f3e122]:
+        - generic [ref=f3e123]:
+          - generic [ref=f3e124]:
+            - generic [ref=f3e125]:
+              - heading "AAPL" [level=1] [ref=f3e126]
+              - generic [ref=f3e127]: Apple
+              - generic [ref=f3e128]: XNAS
+              - generic [ref=f3e129]: Technology
+            - generic [ref=f3e130]:
+              - generic [ref=f3e131]: $314.47
+              - generic [ref=f3e132]:
+                - generic [ref=f3e136]: "+3.46"
+                - generic [ref=f3e137]: (+1.11%)
+              - generic [ref=f3e138]: RESEARCH DATA
+          - generic [ref=f3e141]:
+            - generic [ref=f3e142]: BUY
+            - generic [ref=f3e146]: Research Signal
+        - generic [ref=f3e147]:
+          - generic [ref=f3e148]:
+            - generic [ref=f3e149]: OPEN
+            - generic [ref=f3e150]: $313.55
+          - generic [ref=f3e151]:
+            - generic [ref=f3e152]: HIGH
+            - generic [ref=f3e153]: $316.13
+          - generic [ref=f3e154]:
+            - generic [ref=f3e155]: LOW
+            - generic [ref=f3e156]: $313.49
+          - generic [ref=f3e157]:
+            - generic [ref=f3e158]: PREV CLOSE
+            - generic [ref=f3e159]: $311.00
+          - generic [ref=f3e160]:
+            - generic [ref=f3e161]: VOLUME
+            - generic [ref=f3e162]: 3.87M
+          - generic [ref=f3e163]:
+            - generic [ref=f3e164]: AVG VOL
+            - generic [ref=f3e165]: 3.87M
+      - generic [ref=f3e166]:
+        - generic [ref=f3e168]:
+          - heading "Price Chart" [level=2] [ref=f3e169]
+          - generic [ref=f3e170]:
+            - generic [ref=f3e171]: SMA20 SMA50 SMA200
+            - generic [ref=f3e175]:
+              - button "1D" [ref=f3e176] [cursor=pointer]
+              - button "5D" [ref=f3e177] [cursor=pointer]
+              - button "1M" [ref=f3e178] [cursor=pointer]
+              - button "6M" [ref=f3e179] [cursor=pointer]
+              - button "YTD" [ref=f3e180] [cursor=pointer]
+              - button "1Y" [ref=f3e181] [cursor=pointer]
+              - button "5Y" [ref=f3e182] [cursor=pointer]
+        - generic [ref=f3e183]:
+          - heading "Technicals" [level=2] [ref=f3e184]
+          - generic [ref=f3e185]:
+            - generic [ref=f3e186]:
+              - generic [ref=f3e187]: RSI (14)
+              - generic [ref=f3e188]: "48.6"
+            - generic [ref=f3e189]:
+              - generic [ref=f3e190]: MACD
+              - generic [ref=f3e191]:
+                - text: "1.578"
+                - generic [ref=f3e192]: "Hist: -3.316"
+            - generic [ref=f3e193]:
+              - generic [ref=f3e194]: SMA 20
+              - generic [ref=f3e195]:
+                - text: $323.66
+                - generic [ref=f3e196]: ▼ below
+            - generic [ref=f3e197]:
+              - generic [ref=f3e198]: SMA 50
+              - generic [ref=f3e199]:
+                - text: $309.79
+                - generic [ref=f3e200]: ▲ above
+            - generic [ref=f3e201]:
+              - generic [ref=f3e202]: SMA 200
+              - generic [ref=f3e203]:
+                - text: $279.17
+                - generic [ref=f3e204]: ▲ above
+            - generic [ref=f3e205]:
+              - generic [ref=f3e206]: BB Upper
+              - generic [ref=f3e207]: $345.28
+            - generic [ref=f3e208]:
+              - generic [ref=f3e209]: BB Lower
+              - generic [ref=f3e210]: $302.04
+            - generic [ref=f3e211]:
+              - generic [ref=f3e212]: Support
+              - generic [ref=f3e213]: $273.75
+            - generic [ref=f3e214]:
+              - generic [ref=f3e215]: Resistance
+              - generic [ref=f3e216]: $344.57
+          - generic [ref=f3e217]:
+            - generic [ref=f3e218]: TREND
+            - generic [ref=f3e219]: neutral
+          - generic [ref=f3e221]:
+            - generic [ref=f3e222]: Oversold
+            - generic [ref=f3e223]: RSI 48.63
+            - generic [ref=f3e224]: Overbought
+      - generic [ref=f3e227]:
+        - generic [ref=f3e228]:
+          - heading "Fundamentals" [level=2] [ref=f3e229]
+          - generic [ref=f3e230]:
+            - generic [ref=f3e231]: P/E Ratio
+            - generic [ref=f3e232]: 40.35x
+          - generic [ref=f3e233]:
+            - generic [ref=f3e234]: EPS (TTM)
+            - generic [ref=f3e235]: $7.46
+          - generic [ref=f3e236]:
+            - generic [ref=f3e237]: Revenue (TTM)
+            - generic [ref=f3e238]: $27.74
+          - generic [ref=f3e239]:
+            - generic [ref=f3e240]: Revenue Growth
+            - generic [ref=f3e241]: —
+          - generic [ref=f3e242]:
+            - generic [ref=f3e243]: Gross Margin
+            - generic [ref=f3e244]: 4691.0%
+          - generic [ref=f3e245]:
+            - generic [ref=f3e246]: Net Margin
+            - generic [ref=f3e247]: 2692.0%
+          - generic [ref=f3e248]:
+            - generic [ref=f3e249]: Debt/Equity
+            - generic [ref=f3e250]: "1.35"
+          - generic [ref=f3e251]:
+            - generic [ref=f3e252]: Free Cash Flow
+            - generic [ref=f3e253]: —
+          - generic [ref=f3e254]:
+            - generic [ref=f3e255]: Book Value/Share
+            - generic [ref=f3e256]: $4.99
+          - generic [ref=f3e257]:
+            - generic [ref=f3e258]: Dividend Yield
+            - generic [ref=f3e259]: 34.91%
+          - generic [ref=f3e260]:
+            - generic [ref=f3e261]: Beta
+            - generic [ref=f3e262]: "1.08"
+          - generic [ref=f3e263]:
+            - generic [ref=f3e264]: 52W High
+            - generic [ref=f3e265]: $344.57
+          - generic [ref=f3e266]:
+            - generic [ref=f3e267]: 52W Low
+            - generic [ref=f3e268]: $201.68
+        - generic [ref=f3e269]:
+          - heading "Analyst Ratings" [level=2] [ref=f3e270]
+          - generic [ref=f3e271]:
+            - generic [ref=f3e272]:
+              - generic [ref=f3e273]: "37"
+              - generic [ref=f3e274]: Buy
+            - generic [ref=f3e275]:
+              - generic [ref=f3e276]: "14"
+              - generic [ref=f3e277]: Hold
+            - generic [ref=f3e278]:
+              - generic [ref=f3e279]: "3"
+              - generic [ref=f3e280]: Sell
+          - generic [ref=f3e285]:
+            - heading "Price Target" [level=3] [ref=f3e286]
+            - generic [ref=f3e287]:
+              - generic [ref=f3e288]: $324.01
+              - generic [ref=f3e289]: +3.0% upside
+            - generic [ref=f3e293]:
+              - generic [ref=f3e294]:
+                - text: "Low:"
+                - generic [ref=f3e295]: $215.00
+              - generic [ref=f3e296]:
+                - text: "Median:"
+                - generic [ref=f3e297]: $330.00
+              - generic [ref=f3e298]:
+                - text: "High:"
+                - generic [ref=f3e299]: $400.00
+        - generic [ref=f3e300]:
+          - heading "Earnings History" [level=2] [ref=f3e301]
+          - table [ref=f3e303]:
+            - rowgroup [ref=f3e304]:
+              - row [ref=f3e305]:
+                - columnheader "Period" [ref=f3e306]
+                - columnheader "Actual" [ref=f3e307]
+                - columnheader "Est." [ref=f3e308]
+                - columnheader "Surprise" [ref=f3e309]
+            - rowgroup [ref=f3e310]:
+              - row [ref=f3e311]:
+                - cell "2026-03-31" [ref=f3e312]
+                - cell "$1.91" [ref=f3e313]
+                - cell "$1.93" [ref=f3e314]
+                - cell "-0.9%" [ref=f3e315]
+              - row [ref=f3e316]:
+                - cell "2026-06-30" [ref=f3e317]
+                - cell "$1.91" [ref=f3e318]
+                - cell "$2.05" [ref=f3e319]
+                - cell "-6.9%" [ref=f3e320]
+              - row [ref=f3e321]:
+                - cell "2025-12-31" [ref=f3e322]
+                - cell "$2.01" [ref=f3e323]
+                - cell "$1.99" [ref=f3e324]
+                - cell "+1.1%" [ref=f3e325]
+              - row [ref=f3e326]:
+                - cell "2025-09-30" [ref=f3e327]
+                - cell "$1.85" [ref=f3e328]
+                - cell "$1.81" [ref=f3e329]
+                - cell "+2.4%" [ref=f3e330]
+          - generic [ref=f3e331]:
+            - generic [ref=f3e332]:
+              - generic [ref=f3e333]: 2025-09-30
+              - generic [ref=f3e336]: +2%
+            - generic [ref=f3e337]:
+              - generic [ref=f3e338]: 2025-12-31
+              - generic [ref=f3e341]: +1%
+            - generic [ref=f3e342]:
+              - generic [ref=f3e343]: 2026-06-30
+              - generic [ref=f3e346]: "-7%"
+            - generic [ref=f3e347]:
+              - generic [ref=f3e348]: 2026-03-31
+              - generic [ref=f3e351]: "-1%"
+      - generic [ref=f3e352]:
+        - generic [ref=f3e353]:
+          - generic [ref=f3e354]:
+            - heading "Insider Activity" [level=2] [ref=f3e355]
+            - generic [ref=f3e356]: "Net: -413,061 shares"
+          - generic [ref=f3e360]:
+            - generic [ref=f3e361]: 2 purchases
+            - generic [ref=f3e362]: /
+            - generic [ref=f3e363]: 18 sales
+          - table [ref=f3e365]:
+            - rowgroup [ref=f3e366]:
+              - row [ref=f3e367]:
+                - columnheader "Insider" [ref=f3e368]
+                - columnheader "Shares" [ref=f3e369]
+                - columnheader "Price" [ref=f3e370]
+                - columnheader "Date" [ref=f3e371]
+            - rowgroup [ref=f3e372]:
+              - row [ref=f3e373]:
+                - cell "LEVINSON ARTHUR D SALE" [ref=f3e374]:
+                  - generic [ref=f3e375]: LEVINSON ARTHUR D
+                  - generic [ref=f3e376]: SALE
+                - cell "-65,000" [ref=f3e377]
+                - cell "—" [ref=f3e378]
+                - cell "2026-05-27" [ref=f3e379]
+              - row [ref=f3e380]:
+                - cell "LEVINSON ARTHUR D SALE" [ref=f3e381]:
+                  - generic [ref=f3e382]: LEVINSON ARTHUR D
+                  - generic [ref=f3e383]: SALE
+                - cell "-50,000" [ref=f3e384]
+                - cell "$311.02" [ref=f3e385]
+                - cell "2026-05-27" [ref=f3e386]
+              - row [ref=f3e387]:
+                - cell "Borders Ben SALE" [ref=f3e388]:
+                  - generic [ref=f3e389]: Borders Ben
+                  - generic [ref=f3e390]: SALE
+                - cell "-1,274" [ref=f3e391]
+                - cell "$290.00" [ref=f3e392]
+                - cell "2026-05-08" [ref=f3e393]
+              - row [ref=f3e394]:
+                - cell "LEVINSON ARTHUR D SALE" [ref=f3e395]:
+                  - generic [ref=f3e396]: LEVINSON ARTHUR D
+                  - generic [ref=f3e397]: SALE
+                - cell "-5,000" [ref=f3e398]
+                - cell "—" [ref=f3e399]
+                - cell "2026-05-06" [ref=f3e400]
+              - row [ref=f3e401]:
+                - cell "LEVINSON ARTHUR D SALE" [ref=f3e402]:
+                  - generic [ref=f3e403]: LEVINSON ARTHUR D
+                  - generic [ref=f3e404]: SALE
+                - cell "-100,473" [ref=f3e405]
+                - cell "$285.04" [ref=f3e406]
+                - cell "2026-05-06" [ref=f3e407]
+              - row [ref=f3e408]:
+                - cell "LEVINSON ARTHUR D SALE" [ref=f3e409]:
+                  - generic [ref=f3e410]: LEVINSON ARTHUR D
+                  - generic [ref=f3e411]: SALE
+                - cell "-149,527" [ref=f3e412]
+                - cell "$284.57" [ref=f3e413]
+                - cell "2026-05-06" [ref=f3e414]
+              - row [ref=f3e415]:
+                - cell "Parekh Kevan SALE" [ref=f3e416]:
+                  - generic [ref=f3e417]: Parekh Kevan
+                  - generic [ref=f3e418]: SALE
+                - cell "-1,534" [ref=f3e419]
+                - cell "$275.00" [ref=f3e420]
+                - cell "2026-04-23" [ref=f3e421]
+              - row [ref=f3e422]:
+                - cell "Borders Ben SALE" [ref=f3e423]:
+                  - generic [ref=f3e424]: Borders Ben
+                  - generic [ref=f3e425]: SALE
+                - cell "-331" [ref=f3e426]
+                - cell "—" [ref=f3e427]
+                - cell "2026-04-15" [ref=f3e428]
+        - generic [ref=f3e429]:
+          - heading "Recent News" [level=2] [ref=f3e430]
+          - generic [ref=f3e431]:
+            - generic [ref=f3e435]:
+              - link "This Comment From Apple CEO Tim Cook Supports Buying the Dip in Micron Stock" [ref=f3e436] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=491f42d24b72282141ff3d90ebcfda1623256ba6f63da152f284be8dbac0aa8f
+              - generic [ref=f3e442]:
+                - generic [ref=f3e443]: Yahoo
+                - generic [ref=f3e444]: ·
+                - generic [ref=f3e445]: 2h ago
+                - generic [ref=f3e446]: ·
+                - generic [ref=f3e447]: Neutral
+              - paragraph [ref=f3e448]: Tim Cook spent considerable time talking about memory prices during Apple's latest earnings call.
+            - generic [ref=f3e452]:
+              - link "Nigeria Tries to Revive 50 Year-Old Mill That Never Made Steel" [ref=f3e453] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=d4125ed4f2fa8ef10854fc1acb1731360053d36425bed010bdb9dd4a061da469
+              - generic [ref=f3e459]:
+                - generic [ref=f3e460]: Yahoo
+                - generic [ref=f3e461]: ·
+                - generic [ref=f3e462]: 5h ago
+                - generic [ref=f3e463]: ·
+                - generic [ref=f3e464]: Neutral
+              - paragraph [ref=f3e465]: (Bloomberg) -- Nigeria agreed a gas deal that moves it closer to reviving a giant steel plant that hasn’t produced any metal since being built half a century ago.Most Read from BloombergIran Says Agreement on Hormuz Shipping Reached With OmanGoogle AI Veterans Depart During Seismic Leadership ShiftMajor Hedge Funds Targeted in Wave of Attempted CyberattacksMicrosoft’s AI Sales Mostly Come From OpenAI, Disclosures ShowSpaceX’s AI Splurge Puts a Damper on First Earnings After IPOThe agreement with
+            - generic [ref=f3e469]:
+              - link "OpenAI moves to dismiss Apple's trade secret lawsuit" [ref=f3e470] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=5a24af8291ec928ccda7906e84cd6eb3facd6a336536923adddc7ff2e0ffd018
+              - generic [ref=f3e476]:
+                - generic [ref=f3e477]: Yahoo
+                - generic [ref=f3e478]: ·
+                - generic [ref=f3e479]: 7h ago
+                - generic [ref=f3e480]: ·
+                - generic [ref=f3e481]: Negative
+              - paragraph [ref=f3e482]: OpenAI asked a federal judge Wednesday to dismiss Apple's lawsuit accusing the AI giant and two former Apple employees of stealing trade secrets and soliciting confidential information from job candidates.
+            - generic [ref=f3e486]:
+              - link "OpenAI Asks Judge to Toss Apple Suit Alleging Trade Secret Theft" [ref=f3e487] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=59d1420d017534e51cc524d1cf11b283bc0e192f2d11f451b5583ff157f300bb
+              - generic [ref=f3e493]:
+                - generic [ref=f3e494]: Yahoo
+                - generic [ref=f3e495]: ·
+                - generic [ref=f3e496]: 7h ago
+                - generic [ref=f3e497]: ·
+                - generic [ref=f3e498]: Negative
+              - paragraph [ref=f3e499]: (Bloomberg) -- OpenAI is asking a federal judge to dismiss a lawsuit filed by Apple Inc. accusing the artificial intelligence company of stealing trade secrets, saying that the iPhone maker’s allegations are meritless.Most Read from BloombergIran Says Agreement on Hormuz Shipping Reached With OmanGoogle AI Veterans Depart During Seismic Leadership ShiftSpaceX’s AI Splurge Puts a Damper on First Earnings After IPOMicrosoft’s AI Sales Mostly Come From OpenAI, Disclosures ShowMajor Hedge Funds Targ
+            - generic [ref=f3e503]:
+              - link "Divorced at 60 With Half the Savings You Planned On. These 3 ETFs Help Rebuild a Retirement" [ref=f3e504] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=685a666429b3dba564b693c1cc43e2c9092736ebebd4e7b69124ef988880f2ee
+              - generic [ref=f3e510]:
+                - generic [ref=f3e511]: Yahoo
+                - generic [ref=f3e512]: ·
+                - generic [ref=f3e513]: 9h ago
+                - generic [ref=f3e514]: ·
+                - generic [ref=f3e515]: Neutral
+              - paragraph [ref=f3e516]: A grey divorce at 60 can cut your retirement savings in half and leave you with a compressed timeline that punishes the wrong investment choices. Here is how three ETFs can rebuild both the growth and the income you lost.
+            - generic [ref=f3e520]:
+              - link "As AI spend continues to soar, when will investors start to be rewarded?" [ref=f3e521] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=9df7f49084994b8b6f6ecb8f6802dbdb49a8907c58da0df8f078d0437b59cb15
+              - generic [ref=f3e527]:
+                - generic [ref=f3e528]: Yahoo
+                - generic [ref=f3e529]: ·
+                - generic [ref=f3e530]: 9h ago
+                - generic [ref=f3e531]: ·
+                - generic [ref=f3e532]: Positive
+              - paragraph [ref=f3e533]: The main ‘big tech’ names recently reported quarterly financial results. We look at what is being signalled to investors.
+            - generic [ref=f3e537]:
+              - link "Apple Seeks Injunction Against OpenAI in Trade Secrets Lawsuit, Says It Faces 'Irreparable Harm'— Jim Cramer Says 'Gloves Off'" [ref=f3e538] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=0ddb9659a254ba7a9a0e9b27abba752b12bae6448178c63af2fc6215fcb35cc9
+              - generic [ref=f3e544]:
+                - generic [ref=f3e545]: Yahoo
+                - generic [ref=f3e546]: ·
+                - generic [ref=f3e547]: 11h ago
+                - generic [ref=f3e548]: ·
+                - generic [ref=f3e549]: Negative
+              - paragraph [ref=f3e550]: Apple Inc. has asked a U.S. judge to issue a preliminary injunction preventing two former employees and OpenAI from accessing, using, or disclosing alleged confidential information while its trade secrets lawsuit proceeds. Apple asked the court to require former employees...
+            - generic [ref=f3e554]:
+              - link "The Calm Surface of Alphabet Stock Hides a Turbulent Forecast" [ref=f3e555] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=958a56e55bcf167d88870236ffbc50ea29b2df0de4e6fe292166b4ca4d3050e7
+              - generic [ref=f3e561]:
+                - generic [ref=f3e562]: Yahoo
+                - generic [ref=f3e563]: ·
+                - generic [ref=f3e564]: 17h ago
+                - generic [ref=f3e565]: ·
+                - generic [ref=f3e566]: Neutral
+              - paragraph [ref=f3e567]: If you hold shares, you're already carrying exposure to a potential swing that could redefine the stock's value over the coming year.
+            - generic [ref=f3e571]:
+              - link "Price hikes on consumer electronics could be here to stay. Here's why." [ref=f3e572] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=3ab3ff34ea34ed48c24c018beeafa326d117b1a8e1e6679df8a2b521c4821d8c
+              - generic [ref=f3e578]:
+                - generic [ref=f3e579]: Yahoo
+                - generic [ref=f3e580]: ·
+                - generic [ref=f3e581]: 17h ago
+                - generic [ref=f3e582]: ·
+                - generic [ref=f3e583]: Neutral
+              - paragraph [ref=f3e584]: Yahoo Finance Technology Editor Dan Howley explains how the AI boom is driving up the cost of consumer electronics.
+            - generic [ref=f3e588]:
+              - link "Amazon Web Services Will Continue to Drive Growth and Create Value" [ref=f3e589] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=2636ef77b69d42a63916d61ae3e5bd6a3e9de64bd23513814269cf4c9057c3ca
+              - generic [ref=f3e595]:
+                - generic [ref=f3e596]: Yahoo
+                - generic [ref=f3e597]: ·
+                - generic [ref=f3e598]: 18h ago
+                - generic [ref=f3e599]: ·
+                - generic [ref=f3e600]: Positive
+              - paragraph [ref=f3e601]: Amazon recently joined an exclusive group of companies with market caps worth more than $3 trillion.
+            - generic [ref=f3e605]:
+              - link "Spain's 'Warren Buffett' Bets Against the Crowd--and It's Paying Off" [ref=f3e606] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=ba00a689658c78c82e908006b0ce190991e0734b2c6de4be1377d9367955fd68
+              - generic [ref=f3e612]:
+                - generic [ref=f3e613]: Yahoo
+                - generic [ref=f3e614]: ·
+                - generic [ref=f3e615]: 18h ago
+                - generic [ref=f3e616]: ·
+                - generic [ref=f3e617]: Positive
+              - paragraph [ref=f3e618]: Spanish Investor's Buffett-Style Strategy Surges as Value Makes a Comeback
+            - generic [ref=f3e622]:
+              - link "The companies emerging as new leaders in this renewed AI rally" [ref=f3e623] [cursor=pointer]:
+                - /url: https://finnhub.io/api/news?id=932eea13db773920965e98a45010824861bd09e9fa716b1d398590a9be2fe5a9
+              - generic [ref=f3e629]:
+                - generic [ref=f3e630]: Yahoo
+                - generic [ref=f3e631]: ·
+                - generic [ref=f3e632]: 18h ago
+                - generic [ref=f3e633]: ·
+                - generic [ref=f3e634]: Positive
+              - paragraph [ref=f3e635]: Yahoo Finance Markets and Data Editor Jared Blikre examines the comeback seen across the semiconductor landscape over the past five trading days, while also analyzing which companies are emerging as leaders in the renewed AI rally.
+      - generic [ref=f3e636]:
+        - generic [ref=f3e637]:
+          - generic [ref=f3e638]:
+            - heading "Research Report" [level=2] [ref=f3e639]
+            - paragraph [ref=f3e640]: AAPL · Generated Aug 6, 2026
+          - generic [ref=f3e641]: BUY
+        - generic [ref=f3e646]:
+          - generic [ref=f3e647]:
+            - heading "Bull Signals (3)" [level=3] [ref=f3e648]
+            - generic [ref=f3e652]:
+              - generic [ref=f3e653]:
+                - generic [ref=f3e654]: ▲
+                - generic [ref=f3e655]:
+                  - generic [ref=f3e656]: Golden Cross (20/50)
+                  - generic [ref=f3e657]: SMA20 above SMA50 — short-term bullish momentum
+              - generic [ref=f3e658]:
+                - generic [ref=f3e659]: ▲
+                - generic [ref=f3e660]:
+                  - generic [ref=f3e661]: Above 200 SMA
+                  - generic [ref=f3e662]: Price trading above long-term trend line
+              - generic [ref=f3e663]:
+                - generic [ref=f3e664]: ▲
+                - generic [ref=f3e665]:
+                  - generic [ref=f3e666]: Analyst Consensus Buy
+                  - generic [ref=f3e667]: 37 Buy vs 3 Sell ratings — strong consensus
+          - generic [ref=f3e668]:
+            - heading "Bear Signals (1)" [level=3] [ref=f3e669]
+            - generic [ref=f3e674]:
+              - generic [ref=f3e675]: ▼
+              - generic [ref=f3e676]:
+                - generic [ref=f3e677]: MACD Negative
+                - generic [ref=f3e678]: MACD histogram negative — bearish momentum
+        - generic [ref=f3e679]:
+          - generic [ref=f3e680]:
+            - generic [ref=f3e681]: Price
+            - generic [ref=f3e682]: $314.46
+          - generic [ref=f3e683]:
+            - generic [ref=f3e684]: Price Target
+            - generic [ref=f3e685]: $324.01
+            - generic [ref=f3e686]: +3.0% upside
+          - generic [ref=f3e687]:
+            - generic [ref=f3e688]: P/E Ratio
+            - generic [ref=f3e689]: 40.3x
+          - generic [ref=f3e690]:
+            - generic [ref=f3e691]: Trend
+            - generic [ref=f3e692]: NEUTRAL
+        - paragraph [ref=f3e696]:
+          - text: This Research Report is generated by rule-based algorithms and API data aggregation. It is
+          - strong [ref=f3e697]: not financial advice
+          - text: . All signals are model-generated research opinions. Consult a licensed financial advisor before making investment decisions.
+      - generic [ref=f3e698]:
+        - generic [ref=f3e699]:
+          - heading "External agent handoff" [level=2] [ref=f3e703]
+          - generic [ref=f3e704]:
+            - link "Open AI Desk" [ref=f3e705] [cursor=pointer]:
+              - /url: /ai?instrument=US%3AXNAS%3AAAPL
+            - button "Copy MCP prompt" [ref=f3e718] [cursor=pointer]
+        - paragraph [ref=f3e722]: Claude Code, Codex, or another MCP client can inspect the same bounded evidence through read-only tools.
+        - generic [ref=f3e723]: Use the MarketPulse MCP tool marketpulse_get_research_snapshot with instrumentId "US:XNAS:AAPL" and format "detailed". Review AAPL at $314.47. The deterministic research signal is BUY. Return a cited bull case, bear case, missing evidence, downside risks, and invalidation conditions. If you record the analysis, use the returned evidencePackage.snapshotHash and cite only IDs from that package. Do not create or execute an order.
+      - paragraph [ref=f3e724]: Decision support only. Provider data and model output may be delayed or incomplete.
+  - contentinfo [ref=f3e725]:
+    - generic [ref=f3e726]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f3e727]: PAPER MODE

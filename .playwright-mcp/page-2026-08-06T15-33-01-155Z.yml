@@ -1,0 +1,412 @@
+- generic [active] [ref=f18e1]:
+  - banner [ref=f18e2]:
+    - generic [ref=f18e3]:
+      - link "MARKETPULSE" [ref=f18e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f18e9]:
+        - button "US" [pressed] [ref=f18e10] [cursor=pointer]
+        - button "NSE" [ref=f18e11] [cursor=pointer]
+        - button "BSE" [ref=f18e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f18e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f18e16]: LINKING
+      - search [ref=f18e19]:
+        - generic [ref=f18e23]: Search instrument
+        - textbox "Search instrument" [ref=f18e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f18e25] [cursor=pointer]
+    - navigation "Workspace" [ref=f18e26]:
+      - link "RESEARCH" [ref=f18e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=f18e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=f18e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=f18e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=f18e32] [cursor=pointer]:
+        - /url: /settings
+    - navigation "RESEARCH sections" [ref=f18e33]:
+      - generic [ref=f18e34]: What is it finding out while I am away?
+      - link "Command" [ref=f18e35] [cursor=pointer]:
+        - /url: /command
+      - link "Markets" [ref=f18e36] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=f18e37] [cursor=pointer]:
+        - /url: /premarket
+      - link "Studio" [ref=f18e38] [cursor=pointer]:
+        - /url: /strategies
+      - link "Memory" [ref=f18e39] [cursor=pointer]:
+        - /url: /memory
+      - link "Paper" [ref=f18e40] [cursor=pointer]:
+        - /url: /paper
+  - generic [ref=f18e41]:
+    - link "LEARNING" [ref=f18e42] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=f18e45]: ·
+    - generic [ref=f18e46]: last cycle 2m ago
+    - generic [ref=f18e48]: ·
+    - generic [ref=f18e49]: 4 actions · 2 rehearsed · 1 need attention · 1.4s
+    - generic [ref=f18e50]: 5 cycles today
+  - generic "US and India market tape" [ref=f18e51]:
+    - generic [ref=f18e52]:
+      - generic [ref=f18e53]:
+        - link "USAAPL" [ref=f18e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f18e55]: $309.83
+        - generic [ref=f18e56]: "-0.38%"
+      - generic [ref=f18e57]:
+        - link "USMSFT" [ref=f18e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f18e59]: $496.30
+        - generic [ref=f18e60]: +1.81%
+      - generic [ref=f18e61]:
+        - link "USNVDA" [ref=f18e62] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f18e63]: $218.26
+        - generic [ref=f18e64]: "-0.44%"
+      - generic [ref=f18e65]:
+        - link "USSPY" [ref=f18e66] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f18e67]: $769.26
+        - generic [ref=f18e68]: "-0.07%"
+      - generic [ref=f18e69]:
+        - link "NSERELIANCE" [ref=f18e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f18e71]: ₹1,325.00
+        - generic [ref=f18e72]: +3.52%
+      - generic [ref=f18e73]:
+        - link "NSETCS" [ref=f18e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f18e75]: ₹2,373.00
+        - generic [ref=f18e76]: "-1.66%"
+      - generic [ref=f18e77]:
+        - link "NSEHDFCBANK" [ref=f18e78] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f18e79]: ₹734.30
+        - generic [ref=f18e80]: "-0.10%"
+      - generic [ref=f18e81]:
+        - link "NSENIFTYBEES" [ref=f18e82] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f18e83]: ₹280.59
+        - generic [ref=f18e84]: +0.23%
+      - generic [ref=f18e85]:
+        - link "USAAPL" [ref=f18e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f18e87]: $309.83
+        - generic [ref=f18e88]: "-0.38%"
+      - generic [ref=f18e89]:
+        - link "USMSFT" [ref=f18e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f18e91]: $496.30
+        - generic [ref=f18e92]: +1.81%
+      - generic [ref=f18e93]:
+        - link "USNVDA" [ref=f18e94] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f18e95]: $218.26
+        - generic [ref=f18e96]: "-0.44%"
+      - generic [ref=f18e97]:
+        - link "USSPY" [ref=f18e98] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f18e99]: $769.26
+        - generic [ref=f18e100]: "-0.07%"
+      - generic [ref=f18e101]:
+        - link "NSERELIANCE" [ref=f18e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f18e103]: ₹1,325.00
+        - generic [ref=f18e104]: +3.52%
+      - generic [ref=f18e105]:
+        - link "NSETCS" [ref=f18e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f18e107]: ₹2,373.00
+        - generic [ref=f18e108]: "-1.66%"
+      - generic [ref=f18e109]:
+        - link "NSEHDFCBANK" [ref=f18e110] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f18e111]: ₹734.30
+        - generic [ref=f18e112]: "-0.10%"
+      - generic [ref=f18e113]:
+        - link "NSENIFTYBEES" [ref=f18e114] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f18e115]: ₹280.59
+        - generic [ref=f18e116]: +0.23%
+  - main [ref=f18e117]:
+    - generic [ref=f18e119]:
+      - generic [ref=f18e120]:
+        - generic [ref=f18e121]:
+          - paragraph [ref=f18e122]: MKT / XNAS
+          - heading "United States" [level=1] [ref=f18e123]
+          - paragraph [ref=f18e124]: NASDAQ and NYSE cash equities
+        - generic [ref=f18e127]:
+          - strong [ref=f18e128]: REGULAR
+          - generic [ref=f18e129]: 2026-08-06 11:32 · America/New_York
+      - generic [ref=f18e130]:
+        - link "Apple AAPL $309.83 -1.17 (-0.38%)" [ref=f18e131] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+          - generic [ref=f18e133]:
+            - generic [ref=f18e134]: Apple
+            - generic [ref=f18e135]: AAPL
+          - generic [ref=f18e139]:
+            - generic [ref=f18e140]: $309.83
+            - generic [ref=f18e141]:
+              - generic [ref=f18e142]: "-1.17"
+              - generic [ref=f18e143]: (-0.38%)
+        - link "Microsoft MSFT $496.30 +8.84 (+1.81%)" [ref=f18e144] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+          - generic [ref=f18e146]:
+            - generic [ref=f18e147]: Microsoft
+            - generic [ref=f18e148]: MSFT
+          - generic [ref=f18e152]:
+            - generic [ref=f18e153]: $496.30
+            - generic [ref=f18e154]:
+              - generic [ref=f18e155]: "+8.84"
+              - generic [ref=f18e156]: (+1.81%)
+        - link "NVIDIA NVDA $218.26 -0.97 (-0.44%)" [ref=f18e157] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+          - generic [ref=f18e159]:
+            - generic [ref=f18e160]: NVIDIA
+            - generic [ref=f18e161]: NVDA
+          - generic [ref=f18e165]:
+            - generic [ref=f18e166]: $218.26
+            - generic [ref=f18e167]:
+              - generic [ref=f18e168]: "-0.97"
+              - generic [ref=f18e169]: (-0.44%)
+        - link "Alphabet Class A GOOGL $359.97 -2.46 (-0.68%)" [ref=f18e170] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AGOOGL
+          - generic [ref=f18e172]:
+            - generic [ref=f18e173]: Alphabet Class A
+            - generic [ref=f18e174]: GOOGL
+          - generic [ref=f18e178]:
+            - generic [ref=f18e179]: $359.97
+            - generic [ref=f18e180]:
+              - generic [ref=f18e181]: "-2.46"
+              - generic [ref=f18e182]: (-0.68%)
+      - generic [ref=f18e183]:
+        - generic [ref=f18e184]:
+          - heading "Sector Performance" [level=2] [ref=f18e185]
+          - generic [ref=f18e186]:
+            - generic [ref=f18e187]:
+              - generic [ref=f18e188]: Energy
+              - generic [ref=f18e189]: +0.65%
+            - generic [ref=f18e190]:
+              - generic [ref=f18e191]: Technology
+              - generic [ref=f18e192]: +0.33%
+            - generic [ref=f18e193]:
+              - generic [ref=f18e194]: Consumer
+              - generic [ref=f18e195]: +0.29%
+            - generic [ref=f18e196]:
+              - generic [ref=f18e197]: Broad Market
+              - generic [ref=f18e198]: "-0.04%"
+            - generic [ref=f18e199]:
+              - generic [ref=f18e200]: Financials
+              - generic [ref=f18e201]: "-0.70%"
+        - generic [ref=f18e202]:
+          - heading "Top Movers" [level=2] [ref=f18e203]
+          - generic [ref=f18e204]:
+            - generic [ref=f18e205]:
+              - heading "▲ Gainers" [level=3] [ref=f18e206]
+              - link "AMD Advanced Micro Devices $492.04 +2.07%" [ref=f18e207] [cursor=pointer]:
+                - /url: /analyze/US%3AXNAS%3AAMD
+                - generic [ref=f18e208]:
+                  - text: AMD
+                  - generic [ref=f18e209]: Advanced Micro Devices
+                - generic [ref=f18e210]:
+                  - generic [ref=f18e211]: $492.04
+                  - generic [ref=f18e212]: +2.07%
+              - link "MSFT Microsoft $496.30 +1.81%" [ref=f18e213] [cursor=pointer]:
+                - /url: /analyze/US%3AXNAS%3AMSFT
+                - generic [ref=f18e214]:
+                  - text: MSFT
+                  - generic [ref=f18e215]: Microsoft
+                - generic [ref=f18e216]:
+                  - generic [ref=f18e217]: $496.30
+                  - generic [ref=f18e218]: +1.81%
+              - link "DIS Walt Disney $103.46 +1.67%" [ref=f18e219] [cursor=pointer]:
+                - /url: /analyze/US%3AXNYS%3ADIS
+                - generic [ref=f18e220]:
+                  - text: DIS
+                  - generic [ref=f18e221]: Walt Disney
+                - generic [ref=f18e222]:
+                  - generic [ref=f18e223]: $103.46
+                  - generic [ref=f18e224]: +1.67%
+              - link "AVGO Broadcom $423.90 +1.34%" [ref=f18e225] [cursor=pointer]:
+                - /url: /analyze/US%3AXNAS%3AAVGO
+                - generic [ref=f18e226]:
+                  - text: AVGO
+                  - generic [ref=f18e227]: Broadcom
+                - generic [ref=f18e228]:
+                  - generic [ref=f18e229]: $423.90
+                  - generic [ref=f18e230]: +1.34%
+              - link "XOM Exxon Mobil $152.61 +0.65%" [ref=f18e231] [cursor=pointer]:
+                - /url: /analyze/US%3AXNYS%3AXOM
+                - generic [ref=f18e232]:
+                  - text: XOM
+                  - generic [ref=f18e233]: Exxon Mobil
+                - generic [ref=f18e234]:
+                  - generic [ref=f18e235]: $152.61
+                  - generic [ref=f18e236]: +0.65%
+            - generic [ref=f18e237]:
+              - heading "▼ Losers" [level=3] [ref=f18e238]
+              - link "BA Boeing $234.27 -2.46%" [ref=f18e239] [cursor=pointer]:
+                - /url: /analyze/US%3AXNYS%3ABA
+                - generic [ref=f18e240]:
+                  - text: BA
+                  - generic [ref=f18e241]: Boeing
+                - generic [ref=f18e242]:
+                  - generic [ref=f18e243]: $234.27
+                  - generic [ref=f18e244]: "-2.46%"
+              - link "JPM JPMorgan Chase $356.02 -0.90%" [ref=f18e245] [cursor=pointer]:
+                - /url: /analyze/US%3AXNYS%3AJPM
+                - generic [ref=f18e246]:
+                  - text: JPM
+                  - generic [ref=f18e247]: JPMorgan Chase
+                - generic [ref=f18e248]:
+                  - generic [ref=f18e249]: $356.02
+                  - generic [ref=f18e250]: "-0.90%"
+              - link "NFLX Netflix $73.62 -0.78%" [ref=f18e251] [cursor=pointer]:
+                - /url: /analyze/US%3AXNAS%3ANFLX
+                - generic [ref=f18e252]:
+                  - text: NFLX
+                  - generic [ref=f18e253]: Netflix
+                - generic [ref=f18e254]:
+                  - generic [ref=f18e255]: $73.62
+                  - generic [ref=f18e256]: "-0.78%"
+              - link "GOOGL Alphabet Class A $359.97 -0.68%" [ref=f18e257] [cursor=pointer]:
+                - /url: /analyze/US%3AXNAS%3AGOOGL
+                - generic [ref=f18e258]:
+                  - text: GOOGL
+                  - generic [ref=f18e259]: Alphabet Class A
+                - generic [ref=f18e260]:
+                  - generic [ref=f18e261]: $359.97
+                  - generic [ref=f18e262]: "-0.68%"
+              - link "JNJ Johnson & Johnson $256.23 -0.53%" [ref=f18e263] [cursor=pointer]:
+                - /url: /analyze/US%3AXNYS%3AJNJ
+                - generic [ref=f18e264]:
+                  - text: JNJ
+                  - generic [ref=f18e265]: Johnson & Johnson
+                - generic [ref=f18e266]:
+                  - generic [ref=f18e267]: $256.23
+                  - generic [ref=f18e268]: "-0.53%"
+      - generic [ref=f18e269]:
+        - generic [ref=f18e270]:
+          - heading "Research queue" [level=2] [ref=f18e274]
+          - generic [ref=f18e275]: CANONICAL INSTRUMENTS · NATIVE CURRENCY
+        - generic [ref=f18e276]:
+          - link "AAPL XNAS · USD" [ref=f18e277] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AAAPL
+            - generic [ref=f18e278]: AAPL
+            - generic [ref=f18e279]: XNAS · USD
+          - link "MSFT XNAS · USD" [ref=f18e280] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AMSFT
+            - generic [ref=f18e281]: MSFT
+            - generic [ref=f18e282]: XNAS · USD
+          - link "NVDA XNAS · USD" [ref=f18e283] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3ANVDA
+            - generic [ref=f18e284]: NVDA
+            - generic [ref=f18e285]: XNAS · USD
+          - link "GOOGL XNAS · USD" [ref=f18e286] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AGOOGL
+            - generic [ref=f18e287]: GOOGL
+            - generic [ref=f18e288]: XNAS · USD
+          - link "META XNAS · USD" [ref=f18e289] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AMETA
+            - generic [ref=f18e290]: META
+            - generic [ref=f18e291]: XNAS · USD
+          - link "AMZN XNAS · USD" [ref=f18e292] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AAMZN
+            - generic [ref=f18e293]: AMZN
+            - generic [ref=f18e294]: XNAS · USD
+          - link "TSLA XNAS · USD" [ref=f18e295] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3ATSLA
+            - generic [ref=f18e296]: TSLA
+            - generic [ref=f18e297]: XNAS · USD
+          - link "AMD XNAS · USD" [ref=f18e298] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AAMD
+            - generic [ref=f18e299]: AMD
+            - generic [ref=f18e300]: XNAS · USD
+          - link "AVGO XNAS · USD" [ref=f18e301] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3AAVGO
+            - generic [ref=f18e302]: AVGO
+            - generic [ref=f18e303]: XNAS · USD
+          - link "NFLX XNAS · USD" [ref=f18e304] [cursor=pointer]:
+            - /url: /analyze/US%3AXNAS%3ANFLX
+            - generic [ref=f18e305]: NFLX
+            - generic [ref=f18e306]: XNAS · USD
+      - generic [ref=f18e307]:
+        - heading "Market News" [level=2] [ref=f18e308]
+        - generic [ref=f18e309]:
+          - generic [ref=f18e313]:
+            - link "NASA engineer spent $200 to start a side hustle from her closet—now it brings in over $32,000 a month" [ref=f18e314] [cursor=pointer]:
+              - /url: https://www.cnbc.com/2026/08/06/how-nasa-engineer-built-lucrative-voiceover-acting-side-hustle.html
+            - generic [ref=f18e320]:
+              - generic [ref=f18e321]: CNBC
+              - generic [ref=f18e322]: ·
+              - generic [ref=f18e323]: 1h ago
+            - paragraph [ref=f18e324]: Voiceover actor Eryn Andrews brings in more money from her side hustle than her full-time human performance engineering job at NASA. Here's how she got started.
+          - generic [ref=f18e328]:
+            - link "Fox won't renegotiate NFL media rights before current deal expires, CEO Lachlan Murdoch says" [ref=f18e329] [cursor=pointer]:
+              - /url: https://www.cnbc.com/2026/08/06/fox-nfl-media-rights-renegotiations-opt-out.html
+            - generic [ref=f18e335]:
+              - generic [ref=f18e336]: CNBC
+              - generic [ref=f18e337]: ·
+              - generic [ref=f18e338]: 1h ago
+            - paragraph [ref=f18e339]: Fox has decided not to renegotiate its current TV deal with the NFL until the expiration of the league's opt-out clause in 2030, said CEO Lachlan Murdoch.
+          - generic [ref=f18e343]:
+            - link "Most Gulf bourses in red as markets eye diplomacy - Reuters" [ref=f18e344] [cursor=pointer]:
+              - /url: https://news.google.com/rss/articles/CBMiuwFBVV95cUxOcmoybDZrTmNjbmJtdGZpdVhGZ2hfNkswOFpjS3hBclJiSzIybTlRQ09sdGY4S2dablB5bGwwMFRJeHZUdHFsZkRzU29DWTZ6aFVLZmE2UFEwdldSN3dZSmlyVkgxMXkzS2pnN2tRMlRRRUtaMVh5UHJadEhUa3FPVkI0c3kyaHNEWFR6MDhkY1BYXzNBQ3p1WkVPRU1EX2JGeVRvbWlOMTJqY1hmakVnakE0RVF3anRLSXZv?oc=5
+            - generic [ref=f18e350]:
+              - generic [ref=f18e351]: Reuters
+              - generic [ref=f18e352]: ·
+              - generic [ref=f18e353]: 2h ago
+            - paragraph [ref=f18e354]: Most Gulf bourses in red as markets eye diplomacy Reuters
+          - generic [ref=f18e358]:
+            - link "Family offices back clean energy and sustainability startups in July as dealmaking holds steady" [ref=f18e359] [cursor=pointer]:
+              - /url: https://www.cnbc.com/2026/08/06/family-offices-sustainability-startups-july-dealmaking.html
+            - generic [ref=f18e365]:
+              - generic [ref=f18e366]: CNBC
+              - generic [ref=f18e367]: ·
+              - generic [ref=f18e368]: 2h ago
+            - paragraph [ref=f18e369]: Private investment firms of John Doerr and other billionaires are backing geothermal energy, nylon recycling and more.
+          - generic [ref=f18e373]:
+            - link "We're exiting our position in a spin-off play gone wrong" [ref=f18e374] [cursor=pointer]:
+              - /url: https://www.cnbc.com/2026/08/06/were-exiting-our-position-in-a-spin-off-play-gone-wrong-.html
+            - generic [ref=f18e380]:
+              - generic [ref=f18e381]: CNBC
+              - generic [ref=f18e382]: ·
+              - generic [ref=f18e383]: 2h ago
+            - paragraph [ref=f18e384]: It will take time to restore credibility with investors after a disappointing first earnings report.
+          - generic [ref=f18e388]:
+            - 'link "EXCLUSIVE: Iran warns Gulf states: tell Trump to desist or we hit you hard - Reuters" [ref=f18e389] [cursor=pointer]':
+              - /url: https://news.google.com/rss/articles/CBMisAFBVV95cUxOV0dwSU95VFRkYTBfdlZyQVRjek1GbUp0d285UjJ5SUFlV2RvNm00S0dWZ0JBbXFUbGx5OG5pV2drM0l6UGVCTFdNeGxIRU00REVTYkZZa2VZVjlEZzhtcmdBejgtclFqd3VrOUVWSVNQUi14a2s1VEI1TTgxa0U1RmdscUFlVGJqTW9yNFVhQlZDZ1RYMG4wazBwSjlZVG1SMEhpbDNqQm4xNDNVeHN6NQ?oc=5
+            - generic [ref=f18e395]:
+              - generic [ref=f18e396]: Reuters
+              - generic [ref=f18e397]: ·
+              - generic [ref=f18e398]: 3h ago
+            - paragraph [ref=f18e399]: "EXCLUSIVE: Iran warns Gulf states: tell Trump to desist or we hit you hard Reuters"
+          - generic [ref=f18e403]:
+            - link "Shaquille O'Neal says WNBA players' treatment of Caitlin Clark is a rite of passage" [ref=f18e404] [cursor=pointer]:
+              - /url: https://www.cnbc.com/2026/08/06/shaquille-oneal-caitlin-clark-rite-of-passage.html
+            - generic [ref=f18e410]:
+              - generic [ref=f18e411]: CNBC
+              - generic [ref=f18e412]: ·
+              - generic [ref=f18e413]: 3h ago
+            - paragraph [ref=f18e414]: Harsh fouls against Clark and WNBA officiating have fueled a national debate, with some lawmakers demanding accountability from the league.
+          - generic [ref=f18e418]:
+            - link "As Iran war drags on, Americans are bracing for more chaos in Middle East, Reuters/Ipsos poll finds - Reuters" [ref=f18e419] [cursor=pointer]:
+              - /url: https://news.google.com/rss/articles/CBMiywFBVV95cUxQMXI5TE1EUEdoRUpxYzZfdDNOck5jT29pcUNLdnl4TjE2Q1Y1bnlkZS02MmFzY25KUUwxTnZxNTVxWTQybmkxUExnUWN4OXdTT2xCR3RDcmU2eHpZdEhIMWU5QURfWjl5eDNQaGliMUlRYVhYdEgxY1hPbU1zOS1rTXhRX1F2MjRaajl5cmw1Y3ZrSUpBQnNKMFFWV2E1bHN4NXR3cEFwSWJhMjN0bkxkcFV1UmNiNFpKMjdLQ3REbEt3Z1dUbXB2TlU2MA?oc=5
+            - generic [ref=f18e425]:
+              - generic [ref=f18e426]: Reuters
+              - generic [ref=f18e427]: ·
+              - generic [ref=f18e428]: 4h ago
+            - paragraph [ref=f18e429]: As Iran war drags on, Americans are bracing for more chaos in Middle East, Reuters/Ipsos poll finds Reuters
+          - generic [ref=f18e433]:
+            - 'link "Morning Bid: Gold stirs - Reuters" [ref=f18e434] [cursor=pointer]':
+              - /url: https://news.google.com/rss/articles/CBMilwFBVV95cUxPUVgtbWFpX004ano5Mkw5RkRZWUdETjMwZjJJYzBkMDNDNGNBaElDMTA0Yk9NYy10T0o1eGxSMjdMWGQtVnJZOUdMcXY3QXFYRGtmWGV2Ri1vQ1ItUlNHNkh4T0ZVald5OG9pUkRDOE9xdFgxYVRDMjJiT3lYeGRiR2ZjU1oyekNTalFlOV9COFdTbmdqa0lZ?oc=5
+            - generic [ref=f18e440]:
+              - generic [ref=f18e441]: Reuters
+              - generic [ref=f18e442]: ·
+              - generic [ref=f18e443]: 4h ago
+            - paragraph [ref=f18e444]: "Morning Bid: Gold stirs Reuters"
+      - generic [ref=f18e445]: Yahoo-derived research data may be delayed. Source quality is shown on detailed evidence screens.
+  - contentinfo [ref=f18e451]:
+    - generic [ref=f18e452]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f18e453]: PAPER MODE

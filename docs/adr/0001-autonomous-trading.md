@@ -1,6 +1,8 @@
 # ADR 0001 — Autonomous Trading (Confirm Mode / Autopilot Mode)
 
-Status: Accepted · Date: 2026-06-14
+Status: Superseded by ADR 0003. Historical context only; not an operating guide.
+
+Date: 2026-06-14
 
 ## Context
 

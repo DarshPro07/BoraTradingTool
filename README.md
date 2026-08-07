@@ -1,88 +1,86 @@
-# MarketPulse
+# MarketPulse OS
 
-A Bloomberg Terminal-style stock research web app. Self-hosted. AI-powered via Claude Code in your terminal.
+A local-first equity research terminal for US, NSE, and BSE instruments. It combines normalized market evidence, deterministic paper trading, a governed research and learning ledger, a read-only quant-core bridge, and optional structured AI analysis.
 
-## What it does
+## Safety Boundary
 
-- **Stock Analyzer** — full research page per ticker: live quote, candlestick chart (TradingView Lightweight Charts), technicals (RSI, MACD, Bollinger Bands, SMAs), fundamentals, analyst ratings, earnings history, insider activity, news, bull/bear signals, and a Research Report.
-- **Market Dashboard** — indices, sector heatmap, top movers, market status, news feed.
-- **Watchlist** — curated tech/AI positions with thesis, catalysts, and risk levels.
-- **News Feed** — market news with sentiment scores.
-- **Claude Code integration** — the app writes context files that Claude Code reads for AI-powered analysis and optional trading via Robinhood MCP.
+- Broker execution is not installed.
+- Legacy live-order endpoints return `EXECUTION_ADAPTER_MISSING`.
+- There is no Autopilot or remote order-approval path.
+- The MCP server exposes research reads and local knowledge writes only.
+- The owner places any real order manually, outside this software.
 
-## Quick start
+## Quick Start
 
-```bash
-git clone <your-repo-url>
-cd marketpulse
-npm install
-cp .env.example .env.local
+Requirements: Node.js 20.9 or newer.
+
+```powershell
+npm ci
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000 — on first run you'll be prompted to enter a **free Finnhub API key**. MarketPulse uses **real market data only — there is no demo/mock mode**, so a key is required before the app loads. (Prices and charts come from Yahoo; Finnhub supplies fundamentals, ratings, earnings, insider activity, and news.)
+Open `http://127.0.0.1:3000`. The app binds to loopback by default.
 
-> **Setting up fully (data, real-money trading, notifications)?** Follow [`SETUP.md`](./SETUP.md) — the operator checklist of everything required to make the system fully functional, plus the per-session checklist any Claude Code agent runs.
+For a deterministic credential-free demo, set `MARKETPULSE_TEST_MODE=1`. Fixture data is always labeled and is never presented as live market data.
 
-## API Keys
+## Capabilities
 
-### Finnhub (required — free tier is generous)
+- US, NSE, and BSE market views with canonical instrument identifiers and native currencies
+- Market session awareness, quote provenance, and explicit unavailable/stale states
+- Instrument research, scanner, strategy lab, experiment ledger, and data-quality views
+- Separate USD and INR paper accounts with deterministic fills and estimated fee policies
+- Evidence-linked analyst, research library, memory graph, curriculum, jobs, and audit views
+- Optional Anthropic or OpenAI API analysis for unattended model runs
+- Claude Code control plane through a classified local stdio MCP server
+- Quant-core bridge with HTTP-first and filesystem fallback semantics
 
-The app will not load without a key — the first-run screen prompts for one.
+## Configuration
 
-1. Sign up at https://finnhub.io
-2. Copy your API key
-3. Paste it into the first-run setup screen (or `/settings`), which saves it to `.env.local`.
-   You can also set it directly:
-   ```
-   FINNHUB_API_KEY=your_key_here
-   ```
+Yahoo-derived research data is the default shared source. Finnhub can optionally enrich supported data. AI keys are optional. Never expose keys through client-side variables.
 
-Free tier includes: real-time quotes, candles, company profile, financials, earnings, insider transactions, analyst ratings, news. **There is no mock/demo mode** — missing data shows as "unavailable", never fabricated.
+See [`.env.example`](./.env.example) for the supported variables and [`SETUP.md`](./SETUP.md) for operational details.
 
-## Claude Code (AI layer)
+## Claude Code and MCP
 
-MarketPulse has no AI API key. Claude Code running in your terminal **is** the AI.
+Build the local MCP server, then start Claude Code in this repository:
 
-```bash
-npm install -g @anthropic-ai/claude-code
+```powershell
+npm run build:mcp
 claude
 ```
 
-When you view a stock page, the app writes `context/stock-TICKER.json`. Paste the generated prompt from the stock page into your Claude Code session.
+The project `.mcp.json` registers `dist/mcp/server.mjs`. Claude Code can read bounded evidence and record local analyses, claims, hypotheses, lessons, failures, and research jobs. Directional analyses must resolve citations against the exact stored evidence package. The protected MCP manifest permits only `READ` and `WRITE_LOCAL` capabilities; it cannot place, approve, cancel, or fill an order.
 
-## Robinhood MCP (optional trading)
+## Commands
 
-See `/settings` in the app for setup instructions. **All trading is real money** — there is no paper/simulated mode. Orders only place when the trading **mode** permits it (not `off`/`halt`), the Robinhood MCP heartbeat is live, the agent has synced your portfolio, and the order clears the Trade Fence. See [`SETUP.md`](./SETUP.md).
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the loopback development server |
+| `npm run typecheck` | Compile TypeScript without emitting files |
+| `npm test` | Run unit and integration tests |
+| `npm run test:mcp` | Build and test the spawned MCP server |
+| `npm run test:e2e` | Run Playwright browser tests |
+| `npm run build` | Build the app and MCP bundle |
+| `npm run check` | Run typecheck, tests, and production build |
+| `npm run audit:prod` | Audit production dependencies at high severity |
 
-## Tech stack
+## Main Screens
+
+`/command`, `/dashboard`, `/scanner`, `/analyst`, `/ai`, `/analyze/[instrument]`, `/edge-factory`, `/strategies`, `/experiments`, `/library`, `/memory`, `/paper`, `/portfolio`, `/learning`, `/jobs`, `/data-quality`, `/audit`, and `/settings`.
+
+## Architecture
 
 | Layer | Choice |
-|-------|--------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Charts | Lightweight Charts (TradingView) |
-| Database | SQLite + Drizzle ORM |
-| Data | Yahoo (quotes/charts/targets/movers) + Finnhub (fundamentals/news; required) |
-| AI | Claude Code (terminal) |
-
-## Routes
-
-| Route | Description |
-|-------|-------------|
-| `/` | → redirect to dashboard |
-| `/dashboard` | Market overview |
-| `/analyze/[ticker]` | Stock analyzer (anchor feature) |
-| `/watchlist` | Tech watchlist |
-| `/news` | News feed |
-| `/portfolio` | Portfolio (requires Robinhood MCP) |
-| `/settings` | API keys, Claude Code setup |
+|---|---|
+| Web | Next.js 16.3, React 19, TypeScript |
+| UI | Tailwind CSS 4, shadcn/ui, Lightweight Charts |
+| Storage | SQLite, Drizzle ORM, additive migrations |
+| Market data | Yahoo research source, optional Finnhub enrichment |
+| AI | Official Anthropic and OpenAI server SDKs |
+| Agent interface | MCP over local stdio |
+| Quant bridge | Versioned JSON contract to `E:/Trading_BOT` |
 
 ## Disclaimer
 
-**Not financial advice.** All data is for informational purposes only. Research signals are model-generated opinions, not investment recommendations. Always consult a licensed financial advisor.
-
-**Real-money trading is at your own risk.** MarketPulse has no paper/simulated mode — every order placed through the trading feature uses real funds in your connected Robinhood account. The authors accept no liability for losses. The optional trading feature uses Robinhood's **official Agentic Trading MCP** (`agent.robinhood.com/mcp/trading`, per Robinhood's "Connect your AI agent" docs); you're still responsible for complying with Robinhood's terms. Trading is **off by default** (`mode: off`) — you must explicitly set a mode (Confirm or Autopilot) before anything can place.
-
-**Localhost only.** The app has no authentication. Run it locally and never expose the port to the internet; anyone who can reach it can move real money. See [`SETUP.md`](./SETUP.md) for the full security/secrets notes.
+MarketPulse is decision-support software, not financial advice. Market data may be delayed or unavailable, simulations omit real-world effects, and model output can be wrong. Validate evidence independently. Real orders remain the owner's manual responsibility outside this application.

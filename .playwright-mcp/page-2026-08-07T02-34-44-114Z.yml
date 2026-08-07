@@ -1,0 +1,274 @@
+- generic [active] [ref=f12e1]:
+  - banner [ref=f12e2]:
+    - generic [ref=f12e3]:
+      - link "MARKETPULSE" [ref=f12e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f12e9]:
+        - button "US" [pressed] [ref=f12e10] [cursor=pointer]
+        - button "NSE" [ref=f12e11] [cursor=pointer]
+        - button "BSE" [ref=f12e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f12e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f12e16]: LINKING
+      - search [ref=f12e19]:
+        - generic [ref=f12e23]: Search instrument
+        - textbox "Search instrument" [ref=f12e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f12e25] [cursor=pointer]
+    - navigation "Workspace" [ref=f12e26]:
+      - link "RESEARCH" [ref=f12e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=f12e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=f12e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=f12e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=f12e32] [cursor=pointer]:
+        - /url: /settings
+    - navigation "RESEARCH sections" [ref=f12e33]:
+      - generic [ref=f12e34]: What is it finding out while I am away?
+      - link "Command" [ref=f12e35] [cursor=pointer]:
+        - /url: /command
+      - link "Markets" [ref=f12e36] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=f12e37] [cursor=pointer]:
+        - /url: /premarket
+      - link "Studio" [ref=f12e38] [cursor=pointer]:
+        - /url: /strategies
+      - link "Memory" [ref=f12e39] [cursor=pointer]:
+        - /url: /memory
+      - link "Paper" [ref=f12e40] [cursor=pointer]:
+        - /url: /paper
+  - generic [ref=f12e41]:
+    - link "LEARNING" [ref=f12e42] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=f12e45]: ·
+    - generic [ref=f12e46]: last cycle 2m ago
+    - generic [ref=f12e48]: ·
+    - generic [ref=f12e49]: 4 actions · 2 rehearsed · 1 need attention · 0.0s
+    - generic [ref=f12e50]: 2 cycles today
+  - generic "US and India market tape" [ref=f12e51]:
+    - generic [ref=f12e52]:
+      - generic [ref=f12e53]:
+        - link "USAAPL" [ref=f12e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f12e55]: $312.56
+        - generic [ref=f12e56]: +0.50%
+      - generic [ref=f12e57]:
+        - link "USMSFT" [ref=f12e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f12e59]: $498.97
+        - generic [ref=f12e60]: +2.36%
+      - generic [ref=f12e61]:
+        - link "USNVDA" [ref=f12e62] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f12e63]: $219.42
+        - generic [ref=f12e64]: +0.09%
+      - generic [ref=f12e65]:
+        - link "USSPY" [ref=f12e66] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f12e67]: $769.00
+        - generic [ref=f12e68]: "-0.10%"
+      - generic [ref=f12e69]:
+        - link "NSERELIANCE" [ref=f12e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f12e71]: ₹1,325.00
+        - generic [ref=f12e72]: +3.52%
+      - generic [ref=f12e73]:
+        - link "NSETCS" [ref=f12e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f12e75]: ₹2,373.00
+        - generic [ref=f12e76]: "-1.66%"
+      - generic [ref=f12e77]:
+        - link "NSEHDFCBANK" [ref=f12e78] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f12e79]: ₹734.30
+        - generic [ref=f12e80]: "-0.10%"
+      - generic [ref=f12e81]:
+        - link "NSENIFTYBEES" [ref=f12e82] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f12e83]: ₹280.59
+        - generic [ref=f12e84]: +0.23%
+      - generic [ref=f12e85]:
+        - link "USAAPL" [ref=f12e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f12e87]: $312.56
+        - generic [ref=f12e88]: +0.50%
+      - generic [ref=f12e89]:
+        - link "USMSFT" [ref=f12e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f12e91]: $498.97
+        - generic [ref=f12e92]: +2.36%
+      - generic [ref=f12e93]:
+        - link "USNVDA" [ref=f12e94] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f12e95]: $219.42
+        - generic [ref=f12e96]: +0.09%
+      - generic [ref=f12e97]:
+        - link "USSPY" [ref=f12e98] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f12e99]: $769.00
+        - generic [ref=f12e100]: "-0.10%"
+      - generic [ref=f12e101]:
+        - link "NSERELIANCE" [ref=f12e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f12e103]: ₹1,325.00
+        - generic [ref=f12e104]: +3.52%
+      - generic [ref=f12e105]:
+        - link "NSETCS" [ref=f12e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f12e107]: ₹2,373.00
+        - generic [ref=f12e108]: "-1.66%"
+      - generic [ref=f12e109]:
+        - link "NSEHDFCBANK" [ref=f12e110] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f12e111]: ₹734.30
+        - generic [ref=f12e112]: "-0.10%"
+      - generic [ref=f12e113]:
+        - link "NSENIFTYBEES" [ref=f12e114] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f12e115]: ₹280.59
+        - generic [ref=f12e116]: +0.23%
+  - main [ref=f12e117]:
+    - generic [ref=f12e118]:
+      - generic [ref=f12e119]:
+        - heading "STRATEGY LAB" [level=1] [ref=f12e120]
+        - generic [ref=f12e121]: A strategy is evidence only after it survives the gauntlet at the trial count it actually used.
+      - generic [ref=f12e122]:
+        - generic [ref=f12e123]:
+          - generic [ref=f12e124]: Strategies
+          - generic [ref=f12e125]: "2"
+        - generic [ref=f12e126]:
+          - generic [ref=f12e127]: Paper challengers
+          - generic [ref=f12e128]: "0"
+        - generic [ref=f12e129]:
+          - generic [ref=f12e130]: Rejected
+          - generic [ref=f12e131]: "0"
+          - generic [ref=f12e132]: kept on record
+        - generic [ref=f12e133]:
+          - generic [ref=f12e134]: Total trials
+          - generic [ref=f12e135]: "0"
+          - generic [ref=f12e136]: the multiple-testing denominator
+      - generic [ref=f12e137]:
+        - generic [ref=f12e138]: AUTHOR A STRATEGY
+        - generic [ref=f12e141]:
+          - generic [ref=f12e142]:
+            - button "SMA crossover" [ref=f12e143] [cursor=pointer]
+            - button "RSI mean reversion" [ref=f12e144] [cursor=pointer]
+            - button "Gap momentum (NSE)" [ref=f12e145] [cursor=pointer]
+            - button "Large-cap filter (demonstrates a gap)" [ref=f12e146] [cursor=pointer]
+          - paragraph [ref=f12e147]: Classic trend entry. Every feature derivable — the battery can run this today.
+          - textbox [ref=f12e148]: "{ \"name\": \"sma_cross_20_50\", \"description\": \"Long when the 20-day mean crosses above the 50-day.\", \"universe\": { \"market\": \"US\", \"maxPositions\": 10 }, \"entry\": { \"crossover\": [ \"sma20\", \"sma50\" ] }, \"exit\": { \"afterDays\": 20, \"stopLossPct\": 5 }, \"sizing\": { \"maxPositionPct\": 5 }, \"costs\": { \"commissionBps\": 5, \"slippageBps\": 5 } }"
+          - generic [ref=f12e149]:
+            - button "Compile and save" [ref=f12e150] [cursor=pointer]
+            - generic [ref=f12e152]:
+              - text: Saved as
+              - strong [ref=f12e153]: draft
+              - text: . Nothing is validated until you spend a trial.
+      - generic [ref=f12e154]:
+        - generic [ref=f12e155]: FEATURE SUPPORT
+        - generic [ref=f12e157]:
+          - generic [ref=f12e158]:
+            - generic [ref=f12e159]:
+              - generic [ref=f12e160]: Derivable from price data · 19
+              - generic [ref=f12e161]:
+                - generic [ref=f12e162]: close
+                - generic [ref=f12e163]: open
+                - generic [ref=f12e164]: high
+                - generic [ref=f12e165]: low
+                - generic [ref=f12e166]: volume
+                - generic [ref=f12e167]: sma20
+                - generic [ref=f12e168]: sma50
+                - generic [ref=f12e169]: sma200
+                - generic [ref=f12e170]: ema12
+                - generic [ref=f12e171]: ema26
+                - generic [ref=f12e172]: rsi14
+                - generic [ref=f12e173]: atr14
+                - generic [ref=f12e174]: rvol
+                - generic [ref=f12e175]: gap_pct
+                - generic [ref=f12e176]: momentum_20d
+                - generic [ref=f12e177]: momentum_60d
+                - generic [ref=f12e178]: distance_from_52w_high
+                - generic [ref=f12e179]: distance_from_52w_low
+                - generic [ref=f12e180]: adv_20d
+            - generic [ref=f12e181]:
+              - generic [ref=f12e182]: Permitted, but no engine here supplies them · 4
+              - generic [ref=f12e183]:
+                - generic [ref=f12e184]: sector_relative_strength
+                - generic [ref=f12e185]: earnings_surprise_pct
+                - generic [ref=f12e186]: days_since_earnings
+                - generic [ref=f12e187]: market_cap
+              - paragraph [ref=f12e188]: A strategy using these compiles and is a legitimate idea — the gap is in the data, not the strategy. It simply cannot be backtested until a source supplies them, so the compiler now says so at authoring time instead of at replay time.
+          - generic [ref=f12e189]:
+            - generic [ref=f12e190]: Rejected outright — they encode the future · 11
+            - generic [ref=f12e191]:
+              - generic [ref=f12e192]: future_return
+              - generic [ref=f12e193]: next_close
+              - generic [ref=f12e194]: next_open
+              - generic [ref=f12e195]: forward_return
+              - generic [ref=f12e196]: max_future_price
+              - generic [ref=f12e197]: min_future_price
+              - generic [ref=f12e198]: label
+              - generic [ref=f12e199]: target_return
+              - generic [ref=f12e200]: outcome
+              - generic [ref=f12e201]: realized_return
+              - generic [ref=f12e202]: final_pnl
+            - paragraph [ref=f12e203]: These fail compilation rather than producing a warning. A strategy referencing them would be tested against information it could not have had, and every result it produced would be meaningless.
+      - generic [ref=f12e204]:
+        - generic [ref=f12e205]:
+          - generic [ref=f12e206]: GRAVEYARD
+          - generic [ref=f12e208]:
+            - generic [ref=f12e209]:
+              - generic "The source answered successfully and returned nothing. This is a real, observed zero." [ref=f12e210]: EMPTY
+              - paragraph [ref=f12e211]: Nothing has been rejected yet. This is an observed zero — no strategy has been through the gauntlet and failed — not a missing record.
+            - paragraph [ref=f12e212]: Identity is hashed from the strategy alone, not from the compiler that produced it — so a compiler release does not empty the graveyard and let every buried strategy look new.
+        - generic [ref=f12e213]:
+          - generic [ref=f12e214]: GATES
+          - generic [ref=f12e216]:
+            - generic [ref=f12e217]:
+              - generic [ref=f12e218]: OOS PF ≥ 1.1
+              - generic [ref=f12e219]: PBO ≤ 0.5
+              - generic [ref=f12e220]: DSR ≥ 0.95
+              - generic [ref=f12e221]: 2× cost PF ≥ 1
+              - generic [ref=f12e222]: Min trades 30
+              - generic [ref=f12e223]: P(loss) ≤ 0.35
+            - paragraph [ref=f12e224]: Running the gauntlet consumes holdout budget and permanently raises this strategy's bar. The rehearsal in the autonomous cycle answers “is it worth a trial?” without spending one.
+      - generic [ref=f12e225]:
+        - generic [ref=f12e226]: REGISTRY
+        - table [ref=f12e230]:
+          - rowgroup [ref=f12e231]:
+            - row [ref=f12e232]:
+              - columnheader "Strategy" [ref=f12e233]
+              - columnheader "Status" [ref=f12e234]
+              - columnheader "Trials" [ref=f12e235]
+              - columnheader "OOS PF" [ref=f12e236]
+              - columnheader "DSR" [ref=f12e237]
+              - columnheader "PBO" [ref=f12e238]
+              - columnheader "2× cost PF" [ref=f12e239]
+              - columnheader "Lineage" [ref=f12e240]
+          - rowgroup [ref=f12e241]:
+            - row [ref=f12e242]:
+              - cell "gap_largecap_premarket v1" [ref=f12e243]:
+                - text: gap_largecap_premarket
+                - generic [ref=f12e244]: v1
+              - cell "draft" [ref=f12e245]
+              - cell "0" [ref=f12e246]
+              - cell "—" [ref=f12e247]
+              - cell "—" [ref=f12e248]
+              - cell "—" [ref=f12e249]
+              - cell "—" [ref=f12e250]
+              - cell "root" [ref=f12e251]
+            - row [ref=f12e252]:
+              - cell "gap_smallcap_premarket v1" [ref=f12e253]:
+                - text: gap_smallcap_premarket
+                - generic [ref=f12e254]: v1
+              - cell "draft" [ref=f12e255]
+              - cell "0" [ref=f12e256]
+              - cell "—" [ref=f12e257]
+              - cell "—" [ref=f12e258]
+              - cell "—" [ref=f12e259]
+              - cell "—" [ref=f12e260]
+              - cell "root" [ref=f12e261]
+  - contentinfo [ref=f12e262]:
+    - generic [ref=f12e263]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f12e264]: PAPER MODE

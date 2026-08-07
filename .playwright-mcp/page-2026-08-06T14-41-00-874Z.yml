@@ -1,0 +1,298 @@
+- generic [active] [ref=f11e1]:
+  - banner [ref=f11e2]:
+    - generic [ref=f11e3]:
+      - link "MARKETPULSE" [ref=f11e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f11e9]:
+        - button "US" [pressed] [ref=f11e10] [cursor=pointer]
+        - button "NSE" [ref=f11e11] [cursor=pointer]
+        - button "BSE" [ref=f11e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f11e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f11e16]: LINKING
+      - search [ref=f11e19]:
+        - generic [ref=f11e23]: Search instrument
+        - textbox "Search instrument" [ref=f11e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f11e25] [cursor=pointer]
+    - navigation "Primary navigation" [ref=f11e26]:
+      - link "TERMINAL" [ref=f11e27] [cursor=pointer]:
+        - /url: /command
+      - link "ANALYST" [ref=f11e28] [cursor=pointer]:
+        - /url: /analyst
+      - link "RESEARCH" [ref=f11e29] [cursor=pointer]:
+        - /url: /research
+      - link "PORTFOLIO" [ref=f11e30] [cursor=pointer]:
+        - /url: /portfolio
+      - link "SYSTEM" [ref=f11e31] [cursor=pointer]:
+        - /url: /system
+    - navigation "SYSTEM sections" [ref=f11e32]:
+      - generic [ref=f11e33]: How is it running, and what has it done?
+      - link "Overview" [ref=f11e34] [cursor=pointer]:
+        - /url: /system
+      - link "Learning" [ref=f11e35] [cursor=pointer]:
+        - /url: /learning
+      - link "Jobs" [ref=f11e36] [cursor=pointer]:
+        - /url: /jobs
+      - link "Data Quality" [ref=f11e37] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Audit" [ref=f11e38] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=f11e39] [cursor=pointer]:
+        - /url: /settings
+  - generic "US and India market tape" [ref=f11e40]:
+    - generic [ref=f11e41]:
+      - generic [ref=f11e42]:
+        - link "USAAPL" [ref=f11e43] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f11e44]: $312.06
+        - generic [ref=f11e45]: +0.34%
+      - generic [ref=f11e46]:
+        - link "USMSFT" [ref=f11e47] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f11e48]: $496.22
+        - generic [ref=f11e49]: +1.80%
+      - generic [ref=f11e50]:
+        - link "USNVDA" [ref=f11e51] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f11e52]: $219.17
+        - generic [ref=f11e53]: "-0.03%"
+      - generic [ref=f11e54]:
+        - link "USSPY" [ref=f11e55] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f11e56]: $769.95
+        - generic [ref=f11e57]: +0.02%
+      - generic [ref=f11e58]:
+        - link "NSERELIANCE" [ref=f11e59] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f11e60]: ₹1,325.00
+        - generic [ref=f11e61]: +3.52%
+      - generic [ref=f11e62]:
+        - link "NSETCS" [ref=f11e63] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f11e64]: ₹2,373.00
+        - generic [ref=f11e65]: "-1.66%"
+      - generic [ref=f11e66]:
+        - link "NSEHDFCBANK" [ref=f11e67] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f11e68]: ₹734.30
+        - generic [ref=f11e69]: "-0.10%"
+      - generic [ref=f11e70]:
+        - link "NSENIFTYBEES" [ref=f11e71] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f11e72]: ₹280.59
+        - generic [ref=f11e73]: +0.23%
+      - generic [ref=f11e74]:
+        - link "USAAPL" [ref=f11e75] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f11e76]: $312.06
+        - generic [ref=f11e77]: +0.34%
+      - generic [ref=f11e78]:
+        - link "USMSFT" [ref=f11e79] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f11e80]: $496.22
+        - generic [ref=f11e81]: +1.80%
+      - generic [ref=f11e82]:
+        - link "USNVDA" [ref=f11e83] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f11e84]: $219.17
+        - generic [ref=f11e85]: "-0.03%"
+      - generic [ref=f11e86]:
+        - link "USSPY" [ref=f11e87] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f11e88]: $769.95
+        - generic [ref=f11e89]: +0.02%
+      - generic [ref=f11e90]:
+        - link "NSERELIANCE" [ref=f11e91] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f11e92]: ₹1,325.00
+        - generic [ref=f11e93]: +3.52%
+      - generic [ref=f11e94]:
+        - link "NSETCS" [ref=f11e95] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f11e96]: ₹2,373.00
+        - generic [ref=f11e97]: "-1.66%"
+      - generic [ref=f11e98]:
+        - link "NSEHDFCBANK" [ref=f11e99] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f11e100]: ₹734.30
+        - generic [ref=f11e101]: "-0.10%"
+      - generic [ref=f11e102]:
+        - link "NSENIFTYBEES" [ref=f11e103] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f11e104]: ₹280.59
+        - generic [ref=f11e105]: +0.23%
+  - main [ref=f11e106]:
+    - generic [ref=f11e107]:
+      - generic [ref=f11e108]:
+        - heading "LEARNING MODE" [level=1] [ref=f11e109]
+        - generic [ref=f11e110]: CURRENT LEARNING
+      - generic [ref=f11e111]:
+        - generic [ref=f11e112]:
+          - generic [ref=f11e113]: Queued jobs
+          - generic [ref=f11e114]: "0"
+        - generic [ref=f11e115]:
+          - generic [ref=f11e116]: Dead jobs
+          - generic [ref=f11e117]: "0"
+        - generic [ref=f11e118]:
+          - generic [ref=f11e119]: Open proposals
+          - generic [ref=f11e120]: "0"
+        - generic [ref=f11e121]:
+          - generic [ref=f11e122]: Awaiting approval
+          - generic [ref=f11e123]: "0"
+      - generic [ref=f11e124]:
+        - generic [ref=f11e125]: MODE
+        - generic [ref=f11e128]:
+          - generic [ref=f11e129]:
+            - button "OFF Nothing runs autonomously." [ref=f11e130] [cursor=pointer]:
+              - generic [ref=f11e131]: "OFF"
+              - generic [ref=f11e132]: Nothing runs autonomously.
+            - button "OBSERVING Reads state and surfaces what is due. Changes nothing." [ref=f11e133] [cursor=pointer]:
+              - generic [ref=f11e134]: OBSERVING
+              - generic [ref=f11e135]: Reads state and surfaces what is due. Changes nothing.
+            - button "LEARNING Also drains the research queue and extracts knowledge." [pressed] [ref=f11e136] [cursor=pointer]:
+              - generic [ref=f11e137]: LEARNING
+              - generic [ref=f11e138]: Also drains the research queue and extracts knowledge.
+            - button "EVOLVING Also prepares code and strategy proposals for your review." [ref=f11e139] [cursor=pointer]:
+              - generic [ref=f11e140]: EVOLVING
+              - generic [ref=f11e141]: Also prepares code and strategy proposals for your review.
+          - generic [ref=f11e142]:
+            - generic [ref=f11e143]:
+              - text: Owner token
+              - textbox "Owner token" [ref=f11e144]
+            - button "UNLOCK OWNER CONTROLS" [ref=f11e145] [cursor=pointer]
+          - generic [ref=f11e146]:
+            - button "RUN ONE CYCLE" [ref=f11e147] [cursor=pointer]
+            - generic [ref=f11e148]: Proposals always require your approval, in every mode.
+      - generic [ref=f11e149]:
+        - generic [ref=f11e150]:
+          - generic [ref=f11e151]: WHAT IS ENABLED NOW
+          - list [ref=f11e154]:
+            - listitem [ref=f11e155]:
+              - generic [ref=f11e156]: Discover papers, videos and repositories
+              - generic [ref=f11e157]: "ON"
+            - listitem [ref=f11e158]:
+              - generic [ref=f11e159]: Extract claims and code links from a source
+              - generic [ref=f11e160]: "ON"
+            - listitem [ref=f11e161]:
+              - generic [ref=f11e162]: Propose a bounded Strategy DSL specification
+              - generic [ref=f11e163]: "ON"
+            - listitem [ref=f11e164]:
+              - generic [ref=f11e165]: Generate a feature implementation
+              - generic [ref=f11e166]: "ON"
+            - listitem [ref=f11e167]:
+              - generic [ref=f11e168]: Write tests for generated code
+              - generic [ref=f11e169]: "ON"
+            - listitem [ref=f11e170]:
+              - generic [ref=f11e171]: Run historical replay over stored data
+              - generic [ref=f11e172]: "ON"
+            - listitem [ref=f11e173]:
+              - generic [ref=f11e174]: Run Monte Carlo simulation
+              - generic [ref=f11e175]: "ON"
+            - listitem [ref=f11e176]:
+              - generic [ref=f11e177]: Diagnose why a strategy failed
+              - generic [ref=f11e178]: "ON"
+            - listitem [ref=f11e179]:
+              - generic [ref=f11e180]: Generate a safer or simpler child strategy
+              - generic [ref=f11e181]: needs evolving
+            - listitem [ref=f11e182]:
+              - generic [ref=f11e183]: Create an isolated git worktree and branch
+              - generic [ref=f11e184]: needs evolving
+            - listitem [ref=f11e185]:
+              - generic [ref=f11e186]: Submit a code change for human review
+              - generic [ref=f11e187]: needs evolving
+            - listitem [ref=f11e188]:
+              - generic [ref=f11e189]: Improve a dashboard page
+              - generic [ref=f11e190]: needs evolving
+            - listitem [ref=f11e191]:
+              - generic [ref=f11e192]: Write a verified finding to durable memory
+              - generic [ref=f11e193]: "ON"
+            - listitem [ref=f11e194]:
+              - generic [ref=f11e195]: Retire a strategy whose edge has decayed
+              - generic [ref=f11e196]: needs evolving
+        - generic [ref=f11e197]:
+          - generic [ref=f11e198]: NEVER PERMITTED
+          - generic [ref=f11e200]:
+            - paragraph [ref=f11e201]: These stay off in every mode. They are enforced by the policy module, by database triggers, and by tests that fail the build if any of them becomes reachable.
+            - list [ref=f11e202]:
+              - listitem [ref=f11e203]:
+                - generic [ref=f11e204]: modify risk kernel
+                - generic [ref=f11e205]: BLOCKED
+              - listitem [ref=f11e206]:
+                - generic [ref=f11e207]: change loss ceiling
+                - generic [ref=f11e208]: BLOCKED
+              - listitem [ref=f11e209]:
+                - generic [ref=f11e210]: change position ceiling
+                - generic [ref=f11e211]: BLOCKED
+              - listitem [ref=f11e212]:
+                - generic [ref=f11e213]: delete trial record
+                - generic [ref=f11e214]: BLOCKED
+              - listitem [ref=f11e215]:
+                - generic [ref=f11e216]: requery locked holdout
+                - generic [ref=f11e217]: BLOCKED
+              - listitem [ref=f11e218]:
+                - generic [ref=f11e219]: deploy unreviewed code
+                - generic [ref=f11e220]: BLOCKED
+              - listitem [ref=f11e221]:
+                - generic [ref=f11e222]: change mcp permissions
+                - generic [ref=f11e223]: BLOCKED
+              - listitem [ref=f11e224]:
+                - generic [ref=f11e225]: add broker mutation tool
+                - generic [ref=f11e226]: BLOCKED
+              - listitem [ref=f11e227]:
+                - generic [ref=f11e228]: place order
+                - generic [ref=f11e229]: BLOCKED
+              - listitem [ref=f11e230]:
+                - generic [ref=f11e231]: rewrite verification rules
+                - generic [ref=f11e232]: BLOCKED
+              - listitem [ref=f11e233]:
+                - generic [ref=f11e234]: mark failed strategy profitable
+                - generic [ref=f11e235]: BLOCKED
+      - generic [ref=f11e236]:
+        - generic [ref=f11e237]: SELF-INSPECTION
+        - generic [ref=f11e239]:
+          - paragraph [ref=f11e240]:
+            - text: What the system finds when it examines its own memory — after
+            - generic [ref=f11e241]: 15 min
+            - text: of silence for light passes,
+            - generic [ref=f11e242]: 60 min
+            - text: "for the expensive ones. It cannot read papers unattended: there is no model inside this application, so each finding becomes work for the next agent connection rather than a conclusion drawn here."
+          - generic [ref=f11e243]: 2 finding(s), 1 needing attention, across 28 memory nodes.
+          - list [ref=f11e245]:
+            - listitem [ref=f11e246]:
+              - generic [ref=f11e247]:
+                - generic [ref=f11e248]: orphan knowledge
+                - generic [ref=f11e249]: 2 strategy(ies) implement no hypothesis and have never been tested.
+                - generic [ref=f11e250]: "2"
+              - paragraph [ref=f11e251]: → Attach the hypothesis each one came from, or retire it with a reason. A strategy with no stated reason to exist cannot be falsified.
+            - listitem [ref=f11e252]:
+              - generic [ref=f11e253]:
+                - generic [ref=f11e254]: stalled strategy
+                - generic [ref=f11e255]: 2 strategy(ies) still sitting in draft or validating.
+                - generic [ref=f11e256]: "2"
+              - paragraph [ref=f11e257]: → Run the gauntlet on each or reject it explicitly. A strategy in limbo consumes attention without producing evidence.
+      - generic [ref=f11e258]:
+        - generic [ref=f11e259]: STUDY QUEUE
+        - generic [ref=f11e261]:
+          - list [ref=f11e262]:
+            - listitem [ref=f11e263]:
+              - generic [ref=f11e264]: Lookahead bias
+              - generic [ref=f11e265]: never studied
+            - listitem [ref=f11e266]:
+              - generic [ref=f11e267]: Indicator warm-up sufficiency
+              - generic [ref=f11e268]: never studied
+            - listitem [ref=f11e269]:
+              - generic [ref=f11e270]: Screen versus strategy
+              - generic [ref=f11e271]: never studied
+            - listitem [ref=f11e272]:
+              - generic [ref=f11e273]: Collector/judge separation
+              - generic [ref=f11e274]: never studied
+            - listitem [ref=f11e275]:
+              - generic [ref=f11e276]: Independent second opinion
+              - generic [ref=f11e277]: never studied
+          - generic [ref=f11e278]:
+            - generic [ref=f11e279]: "computational finance: 0/2 studied"
+            - generic [ref=f11e280]: "market microstructure: 0/1 studied"
+            - generic [ref=f11e281]: "system: 0/2 studied"
+  - contentinfo [ref=f11e282]:
+    - generic [ref=f11e283]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f11e284]: PAPER MODE

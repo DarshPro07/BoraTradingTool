@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+/**
+ * PreToolUse guard.
+ *
+ * Blocks two classes of edit before they happen:
+ *   1. Writes to protected paths — the governance policy, the risk kernel, the security
+ *      boundary, hooks, MCP permissions, applied migrations, and credentials.
+ *   2. Writes into the Python quant core, which is owned by a different agent.
+ *
+ * This mirrors lib/governance/paths.ts. It is duplicated deliberately: the hook must run
+ * without importing the application, and the thing being constrained must not be able to
+ * edit its own constraint.
+ */
+
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import path from "node:path";
+
+const PROTECTED = [
+  { pattern: "lib/governance/", reason: "The governance policy cannot amend itself." },
+  { pattern: "lib/security/", reason: "The request trust boundary changes only under human review." },
+  { pattern: "lib/trading/capabilities.ts", reason: "The disabled execution boundary is owner-set." },
+  { pattern: "lib/paper/risk.ts", reason: "Risk sizing is part of the risk kernel." },
+  { pattern: "lib/quantcore/contract.ts", reason: "The quant-core contract is frozen and shared with another agent." },
+  { pattern: ".claude/hooks/", reason: "Hooks enforce the policy and cannot be edited by the thing they constrain." },
+  { pattern: ".claude/settings.json", reason: "Tool permissions are owner-set." },
+  { pattern: ".mcp.json", reason: "MCP server permissions are owner-set." },
+  { pattern: "mcp/", reason: "MCP tools and policy tests change the agent capability boundary." },
+  { pattern: "dist/mcp/", reason: "The generated MCP runtime is part of the capability boundary." },
+  { pattern: "esbuild.mcp.mjs", reason: "The MCP build entry point is owner-reviewed." },
+  { pattern: ".github/workflows/", reason: "CI enforcement is owner-reviewed." },
+  { pattern: "app/api/owner/", reason: "Owner authentication routes are owner-reviewed." },
+  { pattern: "app/api/learning/", reason: "Learning-mode authority is owner-reviewed." },
+  { pattern: "app/api/proposals/", reason: "Proposal approval authority is owner-reviewed." },
+  { pattern: "app/api/agent/config/", reason: "Paper-risk policy routes are owner-reviewed." },
+  { pattern: "app/api/agent/strategies/", reason: "Strategy risk limits are owner-reviewed." },
+  { pattern: "app/api/paper/orders/", reason: "Paper-order authorization is owner-reviewed." },
+  { pattern: "lib/paper/engine.ts", reason: "Paper-order enforcement is part of the risk kernel." },
+  { pattern: "lib/paper/repository.ts", reason: "Transactional paper-risk enforcement is owner-reviewed." },
+  { pattern: "lib/ai/evidence.ts", reason: "Evidence hashing and citation rules are owner-reviewed." },
+  { pattern: "lib/ai/evidence-store.ts", reason: "Server-issued evidence snapshots are owner-reviewed." },
+  { pattern: "lib/analyst/schema.ts", reason: "Directional evidence requirements are owner-reviewed." },
+  { pattern: "lib/analyst/service.ts", reason: "Analysis provenance enforcement is owner-reviewed." },
+  { pattern: "lib/learning/evolution.ts", reason: "Proposal evidence and approval gates are owner-reviewed." },
+  { pattern: "lib/knowledge/repository.ts", reason: "Archived source integrity is owner-reviewed." },
+  { pattern: "lib/db/migrate.ts", reason: "Migration integrity and compatibility logic are owner-reviewed." },
+  { pattern: "package.json", reason: "Verification and build scripts are owner-reviewed." },
+  { pattern: "vitest.config.ts", reason: "Test selection is owner-reviewed." },
+  { pattern: "playwright.config.ts", reason: "Browser verification configuration is owner-reviewed." },
+  { pattern: ".git/config", reason: "Git helpers can execute commands and are owner-controlled." },
+  { pattern: ".git/", reason: "Git runtime state and hooks are owner-controlled." },
+  { pattern: ".gitattributes", reason: "Git filters and diff drivers are owner-controlled." },
+  { pattern: "node_modules/", reason: "Runtime dependencies cannot be patched by an autonomous agent." },
+  { pattern: ".next/", reason: "Generated application runtime cannot be patched directly." },
+  { pattern: ".backups/", reason: "Database backups may contain owner data or retired credentials." },
+  { pattern: ".tmp/", reason: "Runtime databases and test state are not agent-writable." },
+  { pattern: "marketpulse.db", reason: "The owner database is not agent-writable." },
+  { pattern: "marketpulse.db-wal", reason: "The owner database WAL is not agent-writable." },
+  { pattern: "marketpulse.db-shm", reason: "The owner database shared-memory file is not agent-writable." },
+  { pattern: ".env", reason: "Credentials are never read or written by an agent." },
+];
+
+/** Applied migrations are immutable, but adding a new migration file is the correct action. */
+const APPEND_ONLY = [{ pattern: "drizzle/", reason: "Applied migrations are immutable; add a new migration instead." }];
+
+const FOREIGN_TREES = [
+  {
+    prefix: "e:/trading_bot/",
+    allow: "e:/trading_bot/runtime/bridge/",
+    reason: "The Python quant core is owned by the OpenCode agent. Use runtime/bridge/ to coordinate.",
+  },
+];
+
+const PROJECT_ROOT = path.resolve(process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+
+function normalise(value) {
+  return String(value ?? "").replace(/\\/g, "/").toLowerCase();
+}
+
+function canonical(value, base = PROJECT_ROOT) {
+  if (typeof value !== "string" || value.length === 0 || value.includes("\0")) return null;
+  const resolved = path.resolve(base, value);
+  const missing = [];
+  let existing = resolved;
+  while (!existsSync(existing)) {
+    const parent = path.dirname(existing);
+    if (parent === existing) break;
+    missing.unshift(path.basename(existing));
+    existing = parent;
+  }
+  const real = existsSync(existing) ? realpathSync.native(existing) : existing;
+  return path.resolve(real, ...missing);
+}
+
+function isWithin(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+}
+
+function matches(relativePath, pattern) {
+  const relative = normalise(relativePath);
+  const expected = normalise(pattern);
+  if (expected.endsWith("/")) return relative.startsWith(expected);
+  if (expected === ".env") return relative === ".env" || relative.startsWith(".env.");
+  return relative === expected;
+}
+
+function deny(reason) {
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: reason,
+      },
+    }),
+  );
+  process.exit(0);
+}
+
+let payload = {};
+try {
+  payload = JSON.parse(readFileSync(0, "utf8") || "{}");
+} catch {
+  deny("GOVERNANCE: Malformed hook input was denied.");
+}
+
+const toolName = payload.tool_name ?? "";
+if (toolName === "Bash") {
+  deny("GOVERNANCE: Bash is disabled for this autonomous agent because shell commands can bypass write guards.");
+}
+if (!["Write", "Edit", "NotebookEdit", "MultiEdit"].includes(toolName)) process.exit(0);
+
+const filePath = payload.tool_input?.file_path ?? payload.tool_input?.notebook_path;
+if (!filePath) deny("GOVERNANCE: A write without a valid target path was denied.");
+
+const candidate = canonical(filePath);
+if (!candidate) deny(`GOVERNANCE: Invalid write path ${filePath}`);
+const projectRoot = canonical(PROJECT_ROOT);
+const tradingRoot = canonical("E:/Trading_BOT");
+const sharedRoot = canonical("E:/Trading_BOT/runtime/bridge");
+
+if (sharedRoot && isWithin(sharedRoot, candidate)) process.exit(0);
+if (tradingRoot && isWithin(tradingRoot, candidate)) {
+  deny(`GOVERNANCE: ${FOREIGN_TREES[0].reason} Blocked write to ${filePath}`);
+}
+if (!projectRoot || !isWithin(projectRoot, candidate)) {
+  deny(`GOVERNANCE: Path resolves outside every writable tree. Blocked write to ${filePath}`);
+}
+
+const relative = path.relative(projectRoot, candidate);
+
+for (const rule of PROTECTED) {
+  if (matches(relative, rule.pattern)) {
+    deny(`GOVERNANCE: ${rule.reason} Blocked write to ${filePath}`);
+  }
+}
+
+for (const rule of APPEND_ONLY) {
+  if (matches(relative, rule.pattern) && existsSync(candidate)) {
+    deny(`GOVERNANCE: ${rule.reason} Blocked modification of ${filePath}`);
+  }
+}
+
+process.exit(0);

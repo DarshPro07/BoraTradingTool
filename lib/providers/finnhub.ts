@@ -26,9 +26,18 @@ export class FinnhubProvider implements DataProvider {
 
   private async fetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
     const url = new URL(`${BASE_URL}${path}`);
-    url.searchParams.set("token", this.apiKey);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    // No `next: { revalidate }` here, and not merely because it fails a strict typecheck —
+    // `RequestInit` has no such field, so `tsc` was right to reject it.
+    //
+    // Every production construction of this provider goes through `getProvider()`, which wraps it
+    // in `CachingProvider` with per-method TTLs and single-flight. A 60-second Next fetch cache
+    // underneath that made the app's own 15-second quote TTL untrue: the cache would expire, ask
+    // again, and be handed back data up to a minute old with no indication it was stale. One
+    // cache that states its age beats two that disagree about it.
+    const res = await fetch(url.toString(), {
+      headers: { "X-Finnhub-Token": this.apiKey },
+    });
     if (!res.ok) throw new Error(`Finnhub ${path} → ${res.status}`);
     return res.json();
   }

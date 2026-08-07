@@ -14,8 +14,12 @@ export async function GET(req: NextRequest) {
   try {
     const provider = getProvider();
     const candles = await provider.getCandles(ticker, resolution, from, to);
-    return NextResponse.json({ candles });
+    // `count` so the client can distinguish "no bars in this range" from a failed request.
+    // An empty array is a legitimate answer for a closed market, not an error.
+    return NextResponse.json({ candles, count: candles.length, resolution });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    // The raw error can carry upstream URLs and file paths. Log it, return a bounded message.
+    console.error("[api/candles] provider failed", err);
+    return NextResponse.json({ error: "Candle provider failed for this range." }, { status: 502 });
   }
 }

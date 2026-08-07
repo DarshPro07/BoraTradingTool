@@ -1,6 +1,8 @@
 # ADR 0002 — Remove paper trading (real-money only)
 
-Status: Accepted · Date: 2026-06-15 · Supersedes part of [ADR 0001](./0001-autonomous-trading.md)
+Status: Superseded by ADR 0003. Historical context only; not an operating guide.
+
+Date: 2026-06-15
 
 ## Context
 

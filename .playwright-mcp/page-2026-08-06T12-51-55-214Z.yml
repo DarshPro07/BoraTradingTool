@@ -1,0 +1,322 @@
+- generic [active] [ref=f13e1]:
+  - banner [ref=f13e2]:
+    - generic [ref=f13e3]:
+      - link "MARKETPULSE" [ref=f13e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f13e9]:
+        - button "US" [pressed] [ref=f13e10] [cursor=pointer]
+        - button "NSE" [ref=f13e11] [cursor=pointer]
+        - button "BSE" [ref=f13e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f13e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f13e16]: LINKING
+      - search [ref=f13e19]:
+        - generic [ref=f13e23]: Search instrument
+        - textbox "Search instrument" [ref=f13e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f13e25] [cursor=pointer]
+    - navigation "Primary navigation" [ref=f13e26]:
+      - link "TERMINAL" [ref=f13e27] [cursor=pointer]:
+        - /url: /command
+      - link "ANALYST" [ref=f13e28] [cursor=pointer]:
+        - /url: /analyst
+      - link "RESEARCH" [ref=f13e29] [cursor=pointer]:
+        - /url: /research
+      - link "PORTFOLIO" [ref=f13e30] [cursor=pointer]:
+        - /url: /portfolio
+      - link "SYSTEM" [ref=f13e31] [cursor=pointer]:
+        - /url: /system
+    - navigation "RESEARCH sections" [ref=f13e32]:
+      - generic [ref=f13e33]: Where does an edge come from?
+      - link "Overview" [ref=f13e34] [cursor=pointer]:
+        - /url: /research
+      - link "Edge Factory" [ref=f13e35] [cursor=pointer]:
+        - /url: /edge-factory
+      - link "Strategies" [ref=f13e36] [cursor=pointer]:
+        - /url: /strategies
+      - link "Trials" [ref=f13e37] [cursor=pointer]:
+        - /url: /experiments
+      - link "Simulations" [ref=f13e38] [cursor=pointer]:
+        - /url: /simulations
+      - link "Library" [ref=f13e39] [cursor=pointer]:
+        - /url: /library
+      - link "Memory" [ref=f13e40] [cursor=pointer]:
+        - /url: /memory
+  - generic "US and India market tape" [ref=f13e41]:
+    - generic [ref=f13e42]:
+      - generic [ref=f13e43]:
+        - link "USAAPL" [ref=f13e44] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f13e45]: $313.81
+        - generic [ref=f13e46]: +1.43%
+      - generic [ref=f13e47]:
+        - link "USMSFT" [ref=f13e48] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f13e49]: $484.03
+        - generic [ref=f13e50]: "-1.78%"
+      - generic [ref=f13e51]:
+        - link "USNVDA" [ref=f13e52] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f13e53]: $221.88
+        - generic [ref=f13e54]: +4.69%
+      - generic [ref=f13e55]:
+        - link "USSPY" [ref=f13e56] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f13e57]: $770.57
+        - generic [ref=f13e58]: "-0.10%"
+      - generic [ref=f13e59]:
+        - link "NSERELIANCE" [ref=f13e60] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f13e61]: ₹1,325.00
+        - generic [ref=f13e62]: +3.52%
+      - generic [ref=f13e63]:
+        - link "NSETCS" [ref=f13e64] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f13e65]: ₹2,373.00
+        - generic [ref=f13e66]: "-1.66%"
+      - generic [ref=f13e67]:
+        - link "NSEHDFCBANK" [ref=f13e68] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f13e69]: ₹734.30
+        - generic [ref=f13e70]: "-0.10%"
+      - generic [ref=f13e71]:
+        - link "NSENIFTYBEES" [ref=f13e72] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f13e73]: ₹280.59
+        - generic [ref=f13e74]: +0.23%
+      - generic [ref=f13e75]:
+        - link "USAAPL" [ref=f13e76] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f13e77]: $313.81
+        - generic [ref=f13e78]: +1.43%
+      - generic [ref=f13e79]:
+        - link "USMSFT" [ref=f13e80] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f13e81]: $484.03
+        - generic [ref=f13e82]: "-1.78%"
+      - generic [ref=f13e83]:
+        - link "USNVDA" [ref=f13e84] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f13e85]: $221.88
+        - generic [ref=f13e86]: +4.69%
+      - generic [ref=f13e87]:
+        - link "USSPY" [ref=f13e88] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f13e89]: $770.57
+        - generic [ref=f13e90]: "-0.10%"
+      - generic [ref=f13e91]:
+        - link "NSERELIANCE" [ref=f13e92] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f13e93]: ₹1,325.00
+        - generic [ref=f13e94]: +3.52%
+      - generic [ref=f13e95]:
+        - link "NSETCS" [ref=f13e96] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f13e97]: ₹2,373.00
+        - generic [ref=f13e98]: "-1.66%"
+      - generic [ref=f13e99]:
+        - link "NSEHDFCBANK" [ref=f13e100] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f13e101]: ₹734.30
+        - generic [ref=f13e102]: "-0.10%"
+      - generic [ref=f13e103]:
+        - link "NSENIFTYBEES" [ref=f13e104] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f13e105]: ₹280.59
+        - generic [ref=f13e106]: +0.23%
+  - main [ref=f13e107]:
+    - generic [ref=f13e108]:
+      - generic [ref=f13e109]:
+        - heading "MEMORY GRAPH" [level=1] [ref=f13e110]
+        - generic [ref=f13e111]: Every conclusion traces back to a source. Nothing in this system is believed without provenance.
+      - generic [ref=f13e112]:
+        - generic [ref=f13e113]:
+          - generic [ref=f13e114]: Sources
+          - generic [ref=f13e115]: "4"
+        - generic [ref=f13e116]:
+          - generic [ref=f13e117]: Strategies
+          - generic [ref=f13e118]: "2"
+        - generic [ref=f13e119]:
+          - generic [ref=f13e120]: Lessons
+          - generic [ref=f13e121]: "3"
+        - generic [ref=f13e122]:
+          - generic [ref=f13e123]: Contradictions
+          - generic [ref=f13e124]: "0"
+          - generic [ref=f13e125]: 0 unresolved
+      - generic [ref=f13e126]:
+        - generic [ref=f13e127]: THE WHOLE GRAPH
+        - generic [ref=f13e131]:
+          - 'img "Memory graph: 26 nodes across 6 stages" [ref=f13e133]':
+            - generic [ref=f13e134]: SOURCES 4
+            - generic [ref=f13e135]: CLAIMS 14/16
+            - generic [ref=f13e136]: HYPOTHESES 3
+            - generic [ref=f13e137]: STRATEGIES 2
+            - generic [ref=f13e138]: TESTS
+            - generic [ref=f13e139]: OUTCOMES 3
+            - generic [ref=f13e140]:
+              - generic "src_63eaa83413d4dde8 — asserts → clm_d65a8d11c202027c" [ref=f13e141]
+              - generic "src_63eaa83413d4dde8 — asserts → clm_b820ac48d2eb30c4" [ref=f13e142]
+              - generic "src_63eaa83413d4dde8 — asserts → clm_174d553dbfa9c23e" [ref=f13e143]
+              - generic "src_20a0f6958fc38a62 — asserts → clm_3640b8d0982f3161" [ref=f13e144]
+              - generic "src_20a0f6958fc38a62 — asserts → clm_6f989e4109a1e734" [ref=f13e145]
+              - generic "src_20a0f6958fc38a62 — asserts → clm_c152c1c82c2499b1" [ref=f13e146]
+              - generic "src_20a0f6958fc38a62 — asserts → clm_4a6bedd42b77ca56" [ref=f13e147]
+              - generic "src_20a0f6958fc38a62 — asserts → clm_271b9cb760f8fd9a" [ref=f13e148]
+              - generic "src_2c4147e0c7dc3d9f — asserts → clm_9d4f3b3e23b69a17"
+              - generic "src_fed8456d5b66977b — asserts → clm_11d820e27b1d9023"
+              - generic "src_fed8456d5b66977b — asserts → clm_c6b38de948ee2cf5" [ref=f13e149]
+              - generic "src_fed8456d5b66977b — asserts → clm_697c5a843d5c645a" [ref=f13e150]
+              - generic "src_fed8456d5b66977b — asserts → clm_879cc8831237ecb0" [ref=f13e151]
+              - generic "src_fed8456d5b66977b — asserts → clm_b25fc86af4642617" [ref=f13e152]
+              - generic "clm_174d553dbfa9c23e — motivates → hyp_beeeb8efac8f37f1" [ref=f13e153]
+              - generic "clm_6f989e4109a1e734 — motivates → hyp_da09d664b45aba1d" [ref=f13e154]
+              - generic "clm_c6b38de948ee2cf5 — motivates → hyp_19f5f541183cb55b" [ref=f13e155]
+              - generic "src_63eaa83413d4dde8 — taught_as → les_db0eeeeaccfaf52e" [ref=f13e156]
+              - generic "clm_d65a8d11c202027c — taught_as → les_db0eeeeaccfaf52e" [ref=f13e157]
+              - generic "clm_174d553dbfa9c23e — taught_as → les_db0eeeeaccfaf52e" [ref=f13e158]
+              - generic "src_20a0f6958fc38a62 — taught_as → les_0691307539f54790" [ref=f13e159]
+              - generic "clm_3640b8d0982f3161 — taught_as → les_0691307539f54790" [ref=f13e160]
+              - generic "clm_6f989e4109a1e734 — taught_as → les_0691307539f54790" [ref=f13e161]
+              - generic "clm_c152c1c82c2499b1 — taught_as → les_0691307539f54790" [ref=f13e162]
+              - generic "clm_271b9cb760f8fd9a — taught_as → les_0691307539f54790" [ref=f13e163]
+              - generic "src_fed8456d5b66977b — taught_as → les_79c3f6f67bd01f50" [ref=f13e164]
+              - generic "clm_c6b38de948ee2cf5 — taught_as → les_79c3f6f67bd01f50" [ref=f13e165]
+              - generic "clm_11d820e27b1d9023 — taught_as → les_79c3f6f67bd01f50" [ref=f13e166]
+              - generic "clm_879cc8831237ecb0 — taught_as → les_79c3f6f67bd01f50" [ref=f13e167]
+              - generic "clm_b25fc86af4642617 — taught_as → les_79c3f6f67bd01f50" [ref=f13e168]
+            - generic "Humbled Trader — I Built an AI Trading System With Claude + TradingView · archived" [ref=f13e169]:
+              - generic [ref=f13e171]: SOURCE
+              - generic [ref=f13e172]: Humbled Trader — I Bu…
+            - generic "Humbled Trader — Claude + Codex AI Premarket Analyst (video 23:29 + full write-up) · archived" [ref=f13e173]:
+              - generic [ref=f13e175]: SOURCE
+              - generic [ref=f13e176]: Humbled Trader — Clau…
+            - generic "Humbled Trader — Trade Ideas Scanner Tutorial 2026 · archived" [ref=f13e177]:
+              - generic [ref=f13e179]: SOURCE
+              - generic [ref=f13e180]: Humbled Trader — Trad…
+            - generic "Freqtrade — lookahead and recursive analysis methodology · archived" [ref=f13e181]:
+              - generic [ref=f13e183]: SOURCE
+              - generic [ref=f13e184]: Freqtrade — lookahead…
+            - generic "The TradingView-to-Claude MCP connection is demonstrated working on macOS only; the presenter states it failed on a PC due to a different de · known" [ref=f13e185]:
+              - generic [ref=f13e187]: CLAIM
+              - generic [ref=f13e188]: The TradingView-to-Cl…
+            - generic "Separating data collection from judgement — a collector that performs zero analysis and writes one packet, with models reading only that pac · known" [ref=f13e189]:
+              - generic [ref=f13e191]: CLAIM
+              - generic [ref=f13e192]: Separating data colle…
+            - generic "Running two models independently over the same evidence packet, with neither seeing the other's output, and merging without averaging their · known" [ref=f13e193]:
+              - generic [ref=f13e195]: CLAIM
+              - generic [ref=f13e196]: Running two models in…
+            - 'generic "Deterministic eligibility computed in code before any model sees the data: day_eligible = gap>3%, price>$3, mcap>$1B, RVOL>1.5, price>prior · known" [ref=f13e197]':
+              - generic [ref=f13e199]: CLAIM
+              - generic [ref=f13e200]: Deterministic eligibi…
+            - generic "yfinance reports approximately zero pre-market volume, so a pre-market relative-volume figure computed from it is not a true RVOL; full-day · known" [ref=f13e201]:
+              - generic [ref=f13e203]: CLAIM
+              - generic [ref=f13e204]: yfinance reports appr…
+            - generic "Neither source presents a backtest, win rate, expectancy, sample size, or forward performance for the pipeline or for its eligibility thresh · known" [ref=f13e205]:
+              - generic [ref=f13e207]: CLAIM
+              - generic [ref=f13e208]: Neither source presen…
+            - 'generic "A large/mid-cap pre-market gap screen used in practice: gap >= 3% from previous close, price >= $1, pre-market volume >= 20,000 shares, mark · known" [ref=f13e209]':
+              - generic [ref=f13e211]: CLAIM
+              - generic [ref=f13e212]: A large/mid-cap pre-m…
+            - 'generic "A small-cap pre-market gap screen used in practice: change from close >= 10%, price >= $1, volume >= 20,000, relative volume >= 1, market ca · known" [ref=f13e213]':
+              - generic [ref=f13e215]: CLAIM
+              - generic [ref=f13e216]: A small-cap pre-marke…
+            - generic "Applying a filter on a field the data vendor does not populate silently removes those symbols from results, so a screen can lose valid candi · known" [ref=f13e217]:
+              - generic [ref=f13e219]: CLAIM
+              - generic [ref=f13e220]: Applying a filter on …
+            - generic "During a sustained breakout the same symbol re-alerts repeatedly; suppressing repeat alerts per symbol for a fixed window keeps the feed rea · known" [ref=f13e221]:
+              - generic [ref=f13e223]: CLAIM
+              - generic [ref=f13e224]: During a sustained br…
+            - generic "No backtest, win rate, expectancy, sample size, cost model, or forward performance is presented for any of these criteria in the source. · known" [ref=f13e225]:
+              - generic [ref=f13e227]: CLAIM
+              - generic [ref=f13e228]: No backtest, win rate…
+            - generic "Lookahead bias arises in vectorised backtests because all indicators are computed over the full dataframe at once, so a strategy can read va · known" [ref=f13e229]:
+              - generic [ref=f13e231]: CLAIM
+              - generic [ref=f13e232]: Lookahead bias arises…
+            - generic "Lookahead bias can be detected by re-running the backtest per entry/exit signal and reporting any column whose value differs from the baseli · known" [ref=f13e233]:
+              - generic [ref=f13e235]: CLAIM
+              - generic [ref=f13e236]: Lookahead bias can be…
+            - 'generic "Signal-replay lookahead detection produces false negatives: signals that never trigger in the tested range are never verified, so a strategy · known" [ref=f13e237]':
+              - generic [ref=f13e239]: CLAIM
+              - generic [ref=f13e240]: Signal-replay lookahe…
+            - generic "Model disagreement as a risk filter · proposed" [ref=f13e241]:
+              - generic [ref=f13e243]: HYPOTHESIS
+              - generic [ref=f13e244]: Model disagreement as…
+            - generic "Gap-and-RVOL screen transferred to NSE liquid mid-caps · proposed" [ref=f13e245]:
+              - generic [ref=f13e247]: HYPOTHESIS
+              - generic [ref=f13e248]: Gap-and-RVOL screen t…
+            - generic "Untriggered-signal blind spot in our own gauntlet · proposed" [ref=f13e249]:
+              - generic [ref=f13e251]: HYPOTHESIS
+              - generic [ref=f13e252]: Untriggered-signal bl…
+            - generic "gap_largecap_premarket v1 · draft · connected to nothing" [ref=f13e253]:
+              - generic [ref=f13e255]: STRATEGY · ORPHAN
+              - generic [ref=f13e256]: gap_largecap_premarke…
+            - generic "gap_smallcap_premarket v1 · draft · connected to nothing" [ref=f13e257]:
+              - generic [ref=f13e259]: STRATEGY · ORPHAN
+              - generic [ref=f13e260]: gap_smallcap_premarke…
+            - generic "Two brains, one packet, no averaging · system" [ref=f13e261]:
+              - generic [ref=f13e263]: LESSON
+              - generic [ref=f13e264]: Two brains, one packe…
+            - generic "What a scanner tutorial can and cannot give you · market_microstructure" [ref=f13e265]:
+              - generic [ref=f13e267]: LESSON
+              - generic [ref=f13e268]: What a scanner tutori…
+            - generic "Preventing lookahead beats detecting it, but neither is complete · computational_finance" [ref=f13e269]:
+              - generic [ref=f13e271]: LESSON
+              - generic [ref=f13e272]: Preventing lookahead …
+          - paragraph [ref=f13e273]: Showing the 14 most recent per stage. Lane totals above are the real counts — this view is capped for legibility, not because the rest is gone.
+      - generic [ref=f13e274]:
+        - generic [ref=f13e275]:
+          - generic [ref=f13e276]: CONNECTED TO NOTHING
+          - generic [ref=f13e278]:
+            - paragraph [ref=f13e279]: Ingested, then never used. A claim nobody turned into a hypothesis is not knowledge the system has — it is knowledge it is sitting on.
+            - list [ref=f13e280]:
+              - listitem [ref=f13e281]:
+                - generic [ref=f13e282]: strategy
+                - generic [ref=f13e283]: gap_largecap_premarket v1
+              - listitem [ref=f13e284]:
+                - generic [ref=f13e285]: strategy
+                - generic [ref=f13e286]: gap_smallcap_premarket v1
+        - generic [ref=f13e287]:
+          - generic [ref=f13e288]: FAILURES SEEN MORE THAN ONCE
+          - paragraph [ref=f13e291]: No failure mode has recurred.
+      - generic [ref=f13e292]:
+        - generic [ref=f13e293]:
+          - generic [ref=f13e294]: ROOTS
+          - list [ref=f13e297]:
+            - listitem [ref=f13e298]:
+              - link "Humbled Trader — I Built an AI Trading System With Claude + TradingView video" [ref=f13e299] [cursor=pointer]:
+                - /url: /memory?node=src_2c4147e0c7dc3d9f
+                - text: Humbled Trader — I Built an AI Trading System With Claude + TradingView
+                - generic [ref=f13e300]: video
+            - listitem [ref=f13e301]:
+              - link "Humbled Trader — Claude + Codex AI Premarket Analyst (video 23:29 + full write-up) documentation" [ref=f13e302] [cursor=pointer]:
+                - /url: /memory?node=src_fed8456d5b66977b
+                - text: Humbled Trader — Claude + Codex AI Premarket Analyst (video 23:29 + full write-up)
+                - generic [ref=f13e303]: documentation
+            - listitem [ref=f13e304]:
+              - link "Humbled Trader — Trade Ideas Scanner Tutorial 2026 video" [ref=f13e305] [cursor=pointer]:
+                - /url: /memory?node=src_20a0f6958fc38a62
+                - text: Humbled Trader — Trade Ideas Scanner Tutorial 2026
+                - generic [ref=f13e306]: video
+            - listitem [ref=f13e307]:
+              - link "Freqtrade — lookahead and recursive analysis methodology repository" [ref=f13e308] [cursor=pointer]:
+                - /url: /memory?node=src_63eaa83413d4dde8
+                - text: Freqtrade — lookahead and recursive analysis methodology
+                - generic [ref=f13e309]: repository
+        - generic [ref=f13e310]:
+          - generic [ref=f13e311]: DOWNSTREAM
+          - generic [ref=f13e314]:
+            - list [ref=f13e315]:
+              - listitem [ref=f13e316]:
+                - generic [ref=f13e317]: source
+                - generic [ref=f13e318]: Humbled Trader — I Built an AI Trading System With Claude + TradingView
+                - generic [ref=f13e319]: archived
+              - listitem [ref=f13e320]:
+                - generic [ref=f13e321]: claim
+                - generic [ref=f13e322]: The TradingView-to-Claude MCP connection is demonstrated working on macOS only; the presenter states it failed on a PC due to a different de
+                - generic [ref=f13e323]: known
+            - generic [ref=f13e324]:
+              - generic [ref=f13e325]: Edges
+              - list [ref=f13e326]:
+                - listitem [ref=f13e327]: src_2c4147e0… asserts → clm_9d4f3b3e…
+  - contentinfo [ref=f13e328]:
+    - generic [ref=f13e329]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f13e330]: PAPER MODE

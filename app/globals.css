@@ -51,42 +51,42 @@
 
 :root {
   /* Bloomberg-style dark terminal palette */
-  --background: #0a0a0a;
-  --foreground: #e0e0e0;
-  --card: #111111;
-  --card-foreground: #e0e0e0;
-  --popover: #111111;
-  --popover-foreground: #e0e0e0;
-  --primary: #ff6600;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #a0a0a0;
-  --muted: #1a1a1a;
-  --muted-foreground: #666666;
-  --accent: #1e1e1e;
-  --accent-foreground: #e0e0e0;
-  --destructive: #cc3333;
-  --border: #2a2a2a;
-  --input: #1a1a1a;
-  --ring: #ff6600;
-  --radius: 0.25rem;
-  --chart-1: #ff6600;
-  --chart-2: #00cc66;
-  --chart-3: #3399ff;
-  --chart-4: #ffcc00;
-  --chart-5: #cc33ff;
-  --sidebar: #0f0f0f;
-  --sidebar-foreground: #e0e0e0;
-  --sidebar-primary: #ff6600;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #e0e0e0;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #ff6600;
-  --green: #00cc66;
-  --red: #cc3333;
-  --amber: #ffcc00;
-  --terminal: #ff6600;
+  --background: #080b0d;
+  --foreground: #e7ecef;
+  --card: #0e1316;
+  --card-foreground: #e7ecef;
+  --popover: #0e1316;
+  --popover-foreground: #e7ecef;
+  --primary: #ff7a1a;
+  --primary-foreground: #090b0c;
+  --secondary: #151b1f;
+  --secondary-foreground: #b3bec5;
+  --muted: #151b1f;
+  --muted-foreground: #8a969e;
+  --accent: #171e22;
+  --accent-foreground: #e7ecef;
+  --destructive: #f05b5b;
+  --border: #253038;
+  --input: #11171a;
+  --ring: #ff8b3d;
+  --radius: 0.2rem;
+  --chart-1: #ff7a1a;
+  --chart-2: #30d17c;
+  --chart-3: #5aa9ff;
+  --chart-4: #f3bd43;
+  --chart-5: #b989ff;
+  --sidebar: #0c1012;
+  --sidebar-foreground: #e7ecef;
+  --sidebar-primary: #ff7a1a;
+  --sidebar-primary-foreground: #090b0c;
+  --sidebar-accent: #171e22;
+  --sidebar-accent-foreground: #e7ecef;
+  --sidebar-border: #253038;
+  --sidebar-ring: #ff8b3d;
+  --green: #30d17c;
+  --red: #f05b5b;
+  --amber: #f3bd43;
+  --terminal: #ff7a1a;
 }
 
 @layer base {
@@ -97,6 +97,10 @@
     @apply bg-background text-foreground;
     font-family: var(--font-mono), 'Courier New', monospace;
     font-size: 13px;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
   html {
     @apply font-mono;
@@ -105,15 +109,15 @@
 }
 
 /* Bloomberg terminal utility classes */
-.text-gain { color: #00cc66; }
-.text-loss { color: #cc3333; }
-.text-neutral { color: #a0a0a0; }
-.text-terminal { color: #ff6600; }
-.text-amber { color: #ffcc00; }
+.text-gain { color: var(--green); }
+.text-loss { color: var(--red); }
+.text-neutral { color: #b3bec5; }
+.text-terminal { color: var(--terminal); }
+.text-amber { color: var(--amber); }
 
-.bg-panel { background: #111111; }
-.bg-panel-alt { background: #161616; }
-.border-panel { border-color: #2a2a2a; }
+.bg-panel { background: rgba(14, 19, 22, 0.96); }
+.bg-panel-alt { background: #13191d; }
+.border-panel { border-color: var(--border); }
 
 .ticker-gain { color: #00cc66; font-weight: 600; }
 .ticker-loss { color: #cc3333; font-weight: 600; }
@@ -123,15 +127,674 @@
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+/* 60s for a full cycle crawls so slowly it reads as a static strip. 32s is still calm enough
+   to read a symbol without chasing it, and visibly moving. */
 .animate-ticker {
-  animation: ticker 60s linear infinite;
+  animation: ticker 32s linear infinite;
   display: flex;
   width: max-content;
 }
 .animate-ticker:hover { animation-play-state: paused; }
 
+/* The next-step card. Deliberately the brightest thing on the page: for someone who has not
+   traded before it is the only element that says what to do rather than what is true. */
+.next-step {
+  border: 1px solid rgba(255, 122, 26, 0.35);
+  background: linear-gradient(180deg, rgba(255, 122, 26, 0.07), rgba(255, 122, 26, 0.02));
+  padding: 0.85rem 1rem;
+}
+
+/* Workspace switch — the primary act of navigation, so it reads as a choice, not a menu. */
+.workspace-switch {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.workspace-tab {
+  padding: 0.55rem 1.6rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.workspace-tab:hover { color: var(--foreground); background: rgba(255, 122, 26, 0.06); }
+.workspace-tab-active {
+  color: var(--terminal);
+  border-bottom-color: var(--terminal);
+  background: rgba(255, 122, 26, 0.08);
+}
+.workspace-spacer { flex: 1; }
+.workspace-utility {
+  padding: 0.55rem 0.8rem;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5c6a73;
+}
+.workspace-utility:hover { color: var(--muted-foreground); }
+
+/* Autonomy strip — always visible, always specific about when the loop last ran. */
+.autonomy-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 1rem;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  background: #0b1114;
+  border-bottom: 1px solid var(--border);
+}
+.autonomy-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+.autonomy-mode:hover { text-decoration: underline; }
+.autonomy-sep { color: #2a353c; }
+.autonomy-spacer { flex: 1; }
+
+.autonomy-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+/* Pulses only while autonomy is on and not stalled: motion here means "work is happening",
+   so a stalled loop must go still rather than keep reassuring. */
+@keyframes autonomy-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.5); }
+}
+.autonomy-dot-live { animation: autonomy-pulse 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .autonomy-dot-live { animation: none; opacity: 1; }
+}
+
+/* Memory map: evidence flowing along an edge, drawn with dashes rather than a moving element,
+   so the whole graph stays a static server-rendered SVG with no client JavaScript. */
+@keyframes memory-flow {
+  to { stroke-dashoffset: -14; }
+}
+.memory-map-edge {
+  stroke-dasharray: 5 9;
+  animation: memory-flow 2.2s linear infinite;
+}
+/* A backwards edge does not flow — it is standing still on purpose, so it reads as an anomaly. */
+.memory-map-edge-back { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-map-edge { animation: none; stroke-dasharray: none; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+::-webkit-scrollbar-track { background: #080b0d; }
+::-webkit-scrollbar-thumb { background: #2a353c; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3b4850; }
+
+button,
+a,
+select,
+input,
+textarea {
+  touch-action: manipulation;
+}
+
+button,
+a,
+select {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.terminal-panel {
+  background: linear-gradient(180deg, rgba(17, 23, 27, 0.98), rgba(11, 15, 18, 0.98));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025), 0 14px 40px rgba(0, 0, 0, 0.18);
+}
+
+.terminal-kicker {
+  color: var(--terminal);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.panel-heading {
+  min-height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8, 11, 13, 0.94);
+  backdrop-filter: blur(16px);
+}
+
+.top-nav-primary {
+  min-height: 52px;
+  padding: 7px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--terminal);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.market-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  background: #0b0f11;
+}
+
+.market-switch button {
+  min-width: 45px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.market-switch button:last-child { border-right: 0; }
+.market-switch button:hover { color: var(--foreground); background: var(--accent); }
+.market-switch .market-switch-active { color: #0a0b0c; background: var(--terminal); }
+
+.mode-badge {
+  min-height: 30px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(48, 209, 124, 0.38);
+  color: var(--green);
+  background: rgba(48, 209, 124, 0.07);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.market-search {
+  margin-left: auto;
+  min-height: 38px;
+  width: min(420px, 38vw);
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: #0b0f11;
+}
+
+.market-search > svg { margin-left: 11px; color: var(--muted-foreground); }
+.market-search input { min-width: 0; flex: 1; height: 36px; padding: 0 10px; background: transparent; outline: none; font-size: 12px; }
+.market-search button { align-self: stretch; padding: 0 14px; border-left: 1px solid var(--border); color: var(--terminal); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
+.market-search button:hover { background: var(--terminal); color: #080b0d; }
+
+.top-nav-links {
+  min-height: 38px;
+  padding: 0 12px;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  border-top: 1px solid rgba(37, 48, 56, 0.65);
+}
+
+.top-nav-links a {
+  min-height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.top-nav-links a:hover { color: var(--foreground); background: rgba(255, 255, 255, 0.02); }
+.top-nav-links .top-nav-link-active { color: var(--terminal); border-bottom-color: var(--terminal); }
+
+.ticker-tape {
+  height: 31px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: #07090a;
+}
+
+.ticker-tape .animate-ticker { gap: 28px; padding: 0 18px; }
+.ticker-item { display: inline-flex; align-items: center; gap: 8px; font-size: 10px; white-space: nowrap; }
+.ticker-item a { color: var(--foreground); font-weight: 800; }
+.ticker-exchange { margin-right: 5px; color: var(--muted-foreground); font-size: 8px; }
+
+.ticker-degraded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 100%;
+  color: var(--amber);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.ticker-degraded-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--amber); flex: 0 0 auto; }
+
+.market-hero {
+  min-height: 118px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(100deg, rgba(255, 122, 26, 0.08), transparent 42%),
+    linear-gradient(180deg, #11171a, #0b0f11);
+}
+
+.market-hero h1 { margin-top: 5px; font-size: clamp(20px, 2vw, 30px); font-weight: 800; letter-spacing: -0.04em; }
+.market-hero p:not(.terminal-kicker) { margin-top: 4px; color: var(--muted-foreground); font-size: 12px; }
+.market-hero-status { min-width: 230px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; text-align: right; }
+.market-hero-status strong { display: block; font-size: 12px; letter-spacing: 0.08em; }
+.market-hero-status small { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 10px; }
+
+.status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 999px; background: #58646b; box-shadow: 0 0 0 3px rgba(88, 100, 107, 0.12); }
+.status-dot-live { background: var(--green); box-shadow: 0 0 0 3px rgba(48, 209, 124, 0.12), 0 0 14px rgba(48, 209, 124, 0.35); }
+
+.research-queue { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.research-queue a { min-height: 56px; padding: 10px; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.012); }
+.research-queue a:hover { border-color: rgba(255, 122, 26, 0.5); background: rgba(255, 122, 26, 0.05); }
+.research-queue span { color: var(--foreground); font-size: 12px; font-weight: 800; }
+.research-queue small { margin-top: 4px; color: var(--muted-foreground); font-size: 9px; }
+
+.secondary-action {
+  min-height: 40px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: rgba(14, 19, 22, 0.9);
+  font-size: 10px;
+  font-weight: 700;
+}
+.secondary-action:hover { color: var(--terminal); border-color: rgba(255, 122, 26, 0.45); }
+
+.terminal-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  background: #0a0e10;
+  font: inherit;
+}
+.terminal-input:focus { border-color: rgba(255, 122, 26, 0.7); }
+.terminal-input:disabled { opacity: 0.45; cursor: not-allowed; }
+.field-label { display: block; color: var(--muted-foreground); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.terminal-action {
+  min-height: 46px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--terminal);
+  color: #080b0d;
+  background: var(--terminal);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.terminal-action:hover:not(:disabled) { background: #ff934c; }
+.terminal-action:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.inline-notice {
+  min-height: 38px;
+  padding: 9px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: rgba(14, 19, 22, 0.85);
+  font-size: 10px;
+}
+.inline-notice-warning { border-color: rgba(243, 189, 67, 0.35); color: var(--amber); background: rgba(243, 189, 67, 0.05); }
+
+.ai-desk {
+  display: grid;
+  grid-template-columns: 300px minmax(420px, 1fr) 330px;
+  gap: 12px;
+  align-items: start;
+}
+.ai-control-panel, .ai-evidence-panel { position: sticky; top: 132px; max-height: calc(100dvh - 150px); overflow: auto; }
+.ai-result-panel { min-height: 660px; }
+.provider-options { display: grid; gap: 7px; }
+.provider-option { min-height: 54px; padding: 9px 10px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; border: 1px solid var(--border); background: #0a0e10; }
+.provider-option-active { border-color: rgba(255, 122, 26, 0.7); background: rgba(255, 122, 26, 0.06); }
+.provider-option input { accent-color: var(--terminal); }
+.provider-option strong, .provider-option small { display: block; }
+.provider-option strong { color: var(--foreground); font-size: 11px; text-transform: uppercase; }
+.provider-option small { margin-top: 2px; color: var(--muted-foreground); font-size: 9px; }
+
+.ai-result-body { min-height: 620px; }
+.analysis-state { min-height: 620px; padding: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.analysis-state h2 { margin-top: 16px; font-size: 16px; font-weight: 800; }
+.analysis-state p { max-width: 500px; margin-top: 8px; color: var(--muted-foreground); font-size: 11px; line-height: 1.7; }
+.analysis-state-error { background: linear-gradient(180deg, rgba(240, 91, 91, 0.035), transparent); }
+.capability-strip { margin-top: 24px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.capability-strip span { min-height: 32px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); color: var(--muted-foreground); font-size: 9px; }
+
+.analysis-report { padding: clamp(18px, 2.5vw, 34px); display: grid; gap: 24px; }
+.analysis-report-header { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.analysis-report-header h2 { margin-top: 5px; font-size: clamp(20px, 2.4vw, 30px); font-weight: 800; letter-spacing: -0.04em; }
+.analysis-report-header p:not(.terminal-kicker) { margin-top: 10px; max-width: 720px; color: #bac4ca; font-size: 12px; line-height: 1.7; }
+.verdict { min-height: 112px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); background: #0a0e10; }
+.verdict span { font-size: 13px; font-weight: 900; letter-spacing: 0.12em; }
+.verdict strong { margin-top: 6px; font-size: 28px; }
+.verdict small { color: var(--muted-foreground); font-size: 9px; text-transform: uppercase; }
+.verdict-buy { border-color: rgba(48, 209, 124, 0.4); color: var(--green); }
+.verdict-sell { border-color: rgba(240, 91, 91, 0.4); color: var(--red); }
+.verdict-hold, .verdict-abstain { border-color: rgba(243, 189, 67, 0.4); color: var(--amber); }
+.analysis-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.report-section-title { margin-bottom: 9px; color: var(--muted-foreground); font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.analysis-list { display: grid; gap: 7px; }
+.analysis-list li { position: relative; padding-left: 14px; color: #c7d0d5; font-size: 11px; line-height: 1.55; }
+.analysis-list li::before { content: ""; position: absolute; left: 0; top: 7px; width: 5px; height: 1px; background: #6e7a81; }
+.analysis-list-gain li::before { background: var(--green); }
+.analysis-list-loss li::before { background: var(--red); }
+.analysis-list-amber li::before { background: var(--amber); }
+.citation-list { display: grid; gap: 8px; }
+.citation-list > div { padding: 10px 11px; display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.012); }
+.citation-list code { color: var(--terminal); font-size: 9px; }
+.citation-list p { color: #bac4ca; font-size: 10px; line-height: 1.5; }
+.analysis-disclaimer { padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 9px; line-height: 1.6; }
+
+.empty-ledger { min-height: 300px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #59656c; text-align: center; }
+.empty-ledger p { max-width: 190px; margin-top: 10px; font-size: 10px; line-height: 1.6; }
+.evidence-list { padding: 10px; display: grid; gap: 8px; }
+.evidence-meta { padding: 8px 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+.evidence-meta span { padding: 3px 5px; border: 1px solid var(--border); color: var(--muted-foreground); font-size: 8px; }
+.evidence-row { padding: 10px; border-left: 2px solid #344047; background: rgba(255, 255, 255, 0.018); }
+.evidence-row code { color: var(--terminal); font-size: 9px; }
+.evidence-row p { margin-top: 7px; color: #c0c9ce; font-size: 10px; line-height: 1.45; }
+.evidence-row small { margin-top: 7px; display: block; overflow: hidden; color: #66727a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.quality-tag { padding: 2px 5px; color: var(--muted-foreground); background: #151b1f; font-size: 7px; font-weight: 800; }
+.quality-live { color: var(--green); }
+.quality-delayed, .quality-stale, .quality-auth_required { color: var(--amber); }
+.quality-conflicted, .quality-unavailable { color: var(--red); }
+
+.paper-grid { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.paper-ticket { position: sticky; top: 132px; }
+.terminal-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 10px; }
+.terminal-table th { height: 34px; padding: 0 12px; color: var(--muted-foreground); background: rgba(255, 255, 255, 0.015); font-size: 9px; font-weight: 700; text-align: left; text-transform: uppercase; }
+.terminal-table td { height: 42px; padding: 0 12px; border-top: 1px solid rgba(37, 48, 56, 0.65); }
+.terminal-table tr:hover td { background: rgba(255, 255, 255, 0.012); }
+
+@media (max-width: 1200px) {
+  .ai-desk { grid-template-columns: 280px minmax(0, 1fr); }
+  .ai-evidence-panel { position: static; grid-column: 1 / -1; max-height: none; }
+  .evidence-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .top-nav-primary { flex-wrap: wrap; }
+  .market-search { order: 2; width: 100%; margin-left: 0; }
+  .ai-desk, .paper-grid { grid-template-columns: 1fr; }
+  .ai-control-panel, .paper-ticket { position: static; max-height: none; }
+  .ai-result-panel, .ai-result-body, .analysis-state { min-height: 460px; }
+  .evidence-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .research-queue { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  body { font-size: 14px; }
+  input, select, textarea { font-size: 16px !important; }
+  .top-nav-primary { padding-inline: 10px; gap: 8px; }
+  .brand-mark { flex: 1; font-size: 13px; }
+  .market-switch { order: 3; width: 100%; }
+  .market-switch button { flex: 1; min-height: 44px; }
+  .mode-badge { min-height: 34px; }
+  .top-nav-links a { min-height: 44px; padding-inline: 12px; }
+  .ticker-tape { height: 34px; }
+  .market-hero { min-height: 150px; padding: 18px; align-items: flex-start; flex-direction: column; }
+  .market-hero-status { min-width: 0; justify-content: flex-start; text-align: left; }
+  .analysis-report-header { grid-template-columns: 1fr; }
+  .verdict { min-height: 90px; }
+  .analysis-columns { grid-template-columns: 1fr; }
+  .citation-list > div { grid-template-columns: 1fr; }
+  .evidence-list { grid-template-columns: 1fr; }
+  .research-queue { grid-template-columns: 1fr 1fr; }
+}
+
+@media (pointer: coarse) {
+  button, .secondary-action, .top-nav-links a { min-height: 44px; }
+}
+
+/* Grid and flex children default to min-width:auto, which makes them refuse to shrink
+   below their content. That defeats any inner overflow-x container and pushes the whole
+   page into horizontal scroll on narrow screens. */
+.terminal-panel { min-width: 0; }
+.terminal-panel table { max-width: 100%; }
+
+/* Section sub-navigation: five top-level sections, detail one level down. */
+.sub-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 0.35rem 1rem 0.5rem;
+  border-top: 1px solid var(--border);
+  background: rgba(10, 14, 17, 0.6);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+.sub-nav-question {
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin-right: 0.35rem;
+  opacity: 0.75;
+}
+.sub-nav a {
+  color: var(--muted-foreground);
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.sub-nav a:hover { color: var(--foreground); }
+.sub-nav-link-active {
+  color: var(--amber) !important;
+  border-bottom-color: var(--amber) !important;
+}
+
+/* Live system indicator in the primary nav */
+.system-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  position: relative;
+  padding-right: 0.25rem;
+}
+.system-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+.system-pulse-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion layer.
+   A terminal should feel awake: live data pulses, values flash when they move,
+   panels settle in rather than snapping. Every rule here is disabled wholesale
+   by the reduced-motion block at the end of this file.
+   --------------------------------------------------------------------------- */
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(48, 209, 124, 0.45); }
+  50% { opacity: 0.75; box-shadow: 0 0 0 5px rgba(48, 209, 124, 0); }
+}
+
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(243, 189, 67, 0.45); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(243, 189, 67, 0); }
+}
+
+/* An unreachable core is still a live page. It keeps a heartbeat so the chrome never looks
+   frozen, but in red and slower — the motion says "running", the colour says "degraded". */
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(240, 91, 91, 0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(240, 91, 91, 0); }
+}
+
+@keyframes pulse-dim {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes flash-gain {
+  0% { background-color: rgba(48, 209, 124, 0.22); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-loss {
+  0% { background-color: rgba(240, 91, 91, 0.22); }
+  100% { background-color: transparent; }
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+/* Live indicators */
+.pulse-live { animation: pulse-live 2.4s ease-in-out infinite; border-radius: 9999px; }
+.pulse-amber { animation: pulse-amber 2.4s ease-in-out infinite; border-radius: 9999px; }
+.pulse-red { animation: pulse-red 3.2s ease-in-out infinite; border-radius: 9999px; }
+.pulse-dim { animation: pulse-dim 1.6s ease-in-out infinite; border-radius: 9999px; }
+.status-dot-live { animation: pulse-live 2.4s ease-in-out infinite; }
+
+/* Panels settle in, staggered so a dense screen reads top-to-bottom. .rise-N carries the
+   animation itself (not just a delay) so it also works on plain layout wrappers that are not
+   .terminal-panel — e.g. the leader-card grid on the dashboard. */
+.terminal-panel { animation: rise-in 260ms ease-out both; }
+.rise-1 { animation: rise-in 260ms ease-out both; animation-delay: 40ms; }
+.rise-2 { animation: rise-in 260ms ease-out both; animation-delay: 80ms; }
+.rise-3 { animation: rise-in 260ms ease-out both; animation-delay: 120ms; }
+.rise-4 { animation: rise-in 260ms ease-out both; animation-delay: 160ms; }
+
+/* Values that just changed */
+.flash-gain { animation: flash-gain 900ms ease-out; }
+.flash-loss { animation: flash-loss 900ms ease-out; }
+
+/* Activity bar shown while the system is working on its own */
+.working-bar {
+  position: relative;
+  overflow: hidden;
+  height: 2px;
+  background: rgba(243, 189, 67, 0.12);
+}
+.working-bar::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 33%;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  animation: sweep 1.4s ease-in-out infinite;
+}
+
+.spin-slow { animation: spin-slow 2.2s linear infinite; }
+
+/* Interactive lift */
+.terminal-panel,
+.stat-tile {
+  transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+.stat-tile:hover { transform: translateY(-1px); border-color: rgba(243, 189, 67, 0.4); }
+.top-nav-links a { transition: color 140ms ease, border-color 140ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-ticker,
+  .pulse-live,
+  .pulse-amber,
+  .pulse-red,
+  .pulse-dim,
+  .status-dot-live,
+  .terminal-panel,
+  .rise-1,
+  .rise-2,
+  .rise-3,
+  .rise-4,
+  .working-bar::after,
+  .spin-slow { animation: none; }
+  .stat-tile:hover { transform: none; }
+}

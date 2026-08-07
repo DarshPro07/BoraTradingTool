@@ -1,0 +1,273 @@
+- generic [active] [ref=f11e1]:
+  - banner [ref=f11e2]:
+    - generic [ref=f11e3]:
+      - link "MARKETPULSE" [ref=f11e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f11e9]:
+        - button "US" [pressed] [ref=f11e10] [cursor=pointer]
+        - button "NSE" [ref=f11e11] [cursor=pointer]
+        - button "BSE" [ref=f11e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f11e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f11e16]: LINKING
+      - search [ref=f11e19]:
+        - generic [ref=f11e23]: Search instrument
+        - textbox "Search instrument" [ref=f11e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f11e25] [cursor=pointer]
+    - navigation "Primary navigation" [ref=f11e26]:
+      - link "TERMINAL" [ref=f11e27] [cursor=pointer]:
+        - /url: /command
+      - link "ANALYST" [ref=f11e28] [cursor=pointer]:
+        - /url: /analyst
+      - link "RESEARCH" [ref=f11e29] [cursor=pointer]:
+        - /url: /research
+      - link "PORTFOLIO" [ref=f11e30] [cursor=pointer]:
+        - /url: /portfolio
+      - link "SYSTEM" [ref=f11e31] [cursor=pointer]:
+        - /url: /system
+    - navigation "TERMINAL sections" [ref=f11e32]:
+      - generic [ref=f11e33]: What is happening right now?
+      - link "Command" [ref=f11e34] [cursor=pointer]:
+        - /url: /command
+      - link "Market" [ref=f11e35] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=f11e36] [cursor=pointer]:
+        - /url: /premarket
+      - link "Scanner" [ref=f11e37] [cursor=pointer]:
+        - /url: /scanner
+      - link "Watchlist" [ref=f11e38] [cursor=pointer]:
+        - /url: /watchlist
+      - link "News" [ref=f11e39] [cursor=pointer]:
+        - /url: /news
+  - generic "US and India market tape" [ref=f11e40]:
+    - generic [ref=f11e41]:
+      - generic [ref=f11e42]:
+        - link "USAAPL" [ref=f11e43] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f11e44]: $314.34
+        - generic [ref=f11e45]: +1.60%
+      - generic [ref=f11e46]:
+        - link "USMSFT" [ref=f11e47] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f11e48]: $484.16
+        - generic [ref=f11e49]: "-1.75%"
+      - generic [ref=f11e50]:
+        - link "USNVDA" [ref=f11e51] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f11e52]: $221.83
+        - generic [ref=f11e53]: +4.67%
+      - generic [ref=f11e54]:
+        - link "USSPY" [ref=f11e55] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f11e56]: $770.89
+        - generic [ref=f11e57]: "-0.06%"
+      - generic [ref=f11e58]:
+        - link "NSERELIANCE" [ref=f11e59] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f11e60]: ₹1,325.00
+        - generic [ref=f11e61]: +3.52%
+      - generic [ref=f11e62]:
+        - link "NSETCS" [ref=f11e63] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f11e64]: ₹2,373.00
+        - generic [ref=f11e65]: "-1.66%"
+      - generic [ref=f11e66]:
+        - link "NSEHDFCBANK" [ref=f11e67] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f11e68]: ₹734.30
+        - generic [ref=f11e69]: "-0.10%"
+      - generic [ref=f11e70]:
+        - link "NSENIFTYBEES" [ref=f11e71] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f11e72]: ₹280.59
+        - generic [ref=f11e73]: +0.23%
+      - generic [ref=f11e74]:
+        - link "USAAPL" [ref=f11e75] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f11e76]: $314.34
+        - generic [ref=f11e77]: +1.60%
+      - generic [ref=f11e78]:
+        - link "USMSFT" [ref=f11e79] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f11e80]: $484.16
+        - generic [ref=f11e81]: "-1.75%"
+      - generic [ref=f11e82]:
+        - link "USNVDA" [ref=f11e83] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f11e84]: $221.83
+        - generic [ref=f11e85]: +4.67%
+      - generic [ref=f11e86]:
+        - link "USSPY" [ref=f11e87] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f11e88]: $770.89
+        - generic [ref=f11e89]: "-0.06%"
+      - generic [ref=f11e90]:
+        - link "NSERELIANCE" [ref=f11e91] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f11e92]: ₹1,325.00
+        - generic [ref=f11e93]: +3.52%
+      - generic [ref=f11e94]:
+        - link "NSETCS" [ref=f11e95] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f11e96]: ₹2,373.00
+        - generic [ref=f11e97]: "-1.66%"
+      - generic [ref=f11e98]:
+        - link "NSEHDFCBANK" [ref=f11e99] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f11e100]: ₹734.30
+        - generic [ref=f11e101]: "-0.10%"
+      - generic [ref=f11e102]:
+        - link "NSENIFTYBEES" [ref=f11e103] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f11e104]: ₹280.59
+        - generic [ref=f11e105]: +0.23%
+  - main [ref=f11e106]:
+    - generic [ref=f11e108]:
+      - generic [ref=f11e110]:
+        - paragraph [ref=f11e111]: PRE-MARKET / INDIA & UNITED STATES
+        - heading "Pre-market Command Center" [level=1] [ref=f11e112]
+        - paragraph [ref=f11e113]: Where each market is in its session, what moved overnight, and what could not be seen.
+      - generic [ref=f11e114]:
+        - generic [ref=f11e115]:
+          - generic [ref=f11e116]:
+            - heading "India (NSE)" [level=2] [ref=f11e117]
+            - generic [ref=f11e118]: CLOSED
+          - generic [ref=f11e119]:
+            - generic [ref=f11e120]: 2026-08-06 18:04 · Asia/Kolkata
+            - paragraph [ref=f11e124]: Outside session hours.
+            - paragraph [ref=f11e125]: Opens Fri 2026-08-07 at 09:00 · PRE OPEN COLLECTION
+          - generic [ref=f11e126]:
+            - generic [ref=f11e127]:
+              - generic [ref=f11e128]: Advancing
+              - generic [ref=f11e129]: "8"
+            - generic [ref=f11e130]:
+              - generic [ref=f11e131]: Declining
+              - generic [ref=f11e132]: "11"
+            - generic [ref=f11e133]:
+              - generic [ref=f11e134]: Unchanged
+              - generic [ref=f11e135]: "0"
+            - generic [ref=f11e136]:
+              - generic [ref=f11e137]: Median
+              - generic [ref=f11e138]: "-0.28%"
+          - generic [ref=f11e139]:
+            - link "RELIANCE Reliance Industries +3.52%" [ref=f11e140] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ARELIANCE
+              - generic [ref=f11e141]: RELIANCE
+              - generic [ref=f11e142]: Reliance Industries
+              - generic [ref=f11e143]: +3.52%
+            - link "SBIN State Bank of India +2.84%" [ref=f11e144] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ASBIN
+              - generic [ref=f11e145]: SBIN
+              - generic [ref=f11e146]: State Bank of India
+              - generic [ref=f11e147]: +2.84%
+            - link "TITAN Titan Company +1.74%" [ref=f11e148] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ATITAN
+              - generic [ref=f11e149]: TITAN
+              - generic [ref=f11e150]: Titan Company
+              - generic [ref=f11e151]: +1.74%
+            - link "TCS Tata Consultancy Services -1.66%" [ref=f11e152] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ATCS
+              - generic [ref=f11e153]: TCS
+              - generic [ref=f11e154]: Tata Consultancy Services
+              - generic [ref=f11e155]: "-1.66%"
+            - link "BHARTIARTL Bharti Airtel -1.52%" [ref=f11e156] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ABHARTIARTL
+              - generic [ref=f11e157]: BHARTIARTL
+              - generic [ref=f11e158]: Bharti Airtel
+              - generic [ref=f11e159]: "-1.52%"
+            - link "KOTAKBANK Kotak Mahindra Bank -1.50%" [ref=f11e160] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3AKOTAKBANK
+              - generic [ref=f11e161]: KOTAKBANK
+              - generic [ref=f11e162]: Kotak Mahindra Bank
+              - generic [ref=f11e163]: "-1.50%"
+            - link "NTPC NTPC -1.40%" [ref=f11e164] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ANTPC
+              - generic [ref=f11e165]: NTPC
+              - generic [ref=f11e166]: NTPC
+              - generic [ref=f11e167]: "-1.40%"
+            - link "BAJFINANCE Bajaj Finance -1.21%" [ref=f11e168] [cursor=pointer]:
+              - /url: /analyze/IN%3AXNSE%3ABAJFINANCE
+              - generic [ref=f11e169]: BAJFINANCE
+              - generic [ref=f11e170]: Bajaj Finance
+              - generic [ref=f11e171]: "-1.21%"
+          - paragraph [ref=f11e172]: "1 instrument(s) returned no usable quote: TATAMOTORS"
+          - generic [ref=f11e173]:
+            - generic [ref=f11e174]: Not visible to this deployment
+            - list [ref=f11e180]:
+              - listitem [ref=f11e181]: NSE pre-open equilibrium price and imbalance — Requires NSE's licensed real-time feed; no entitlement configured.
+              - listitem [ref=f11e182]: F&O ban list, price bands, ASM/GSM stage — Requires official NSE/BSE daily files; no ingestion configured.
+              - listitem [ref=f11e183]: Scheduled earnings dates — The provider returns historical earnings records, not a forward calendar.
+          - paragraph [ref=f11e184]: 3 pre-market input(s) are unavailable to this deployment. Treat this as an overnight-move summary, not a complete pre-market picture.
+        - generic [ref=f11e185]:
+          - generic [ref=f11e186]:
+            - heading "United States" [level=2] [ref=f11e187]
+            - generic [ref=f11e188]: PRE MARKET
+          - generic [ref=f11e189]:
+            - generic [ref=f11e190]: 2026-08-06 08:34 · America/New_York
+            - paragraph [ref=f11e194]: Extended-hours trading with earnings and macro releases landing. Gap versus prior official close is meaningful.
+            - paragraph [ref=f11e195]: 51 min to OPENING AUCTION IMBALANCE
+          - generic [ref=f11e196]:
+            - generic [ref=f11e197]:
+              - generic [ref=f11e198]: Advancing
+              - generic [ref=f11e199]: "12"
+            - generic [ref=f11e200]:
+              - generic [ref=f11e201]: Declining
+              - generic [ref=f11e202]: "8"
+            - generic [ref=f11e203]:
+              - generic [ref=f11e204]: Unchanged
+              - generic [ref=f11e205]: "0"
+            - generic [ref=f11e206]:
+              - generic [ref=f11e207]: Median
+              - generic [ref=f11e208]: 0.38%
+          - generic [ref=f11e209]:
+            - link "AMD Advanced Micro Devices -8.21%" [ref=f11e210] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3AAMD
+              - generic [ref=f11e211]: AMD
+              - generic [ref=f11e212]: Advanced Micro Devices
+              - generic [ref=f11e213]: "-8.21%"
+            - link "NVDA NVIDIA +4.67%" [ref=f11e214] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3ANVDA
+              - generic [ref=f11e215]: NVDA
+              - generic [ref=f11e216]: NVIDIA
+              - generic [ref=f11e217]: +4.67%
+            - link "DIS Walt Disney +4.52%" [ref=f11e218] [cursor=pointer]:
+              - /url: /analyze/US%3AXNYS%3ADIS
+              - generic [ref=f11e219]: DIS
+              - generic [ref=f11e220]: Walt Disney
+              - generic [ref=f11e221]: +4.52%
+            - link "GOOGL Alphabet Class A -4.41%" [ref=f11e222] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3AGOOGL
+              - generic [ref=f11e223]: GOOGL
+              - generic [ref=f11e224]: Alphabet Class A
+              - generic [ref=f11e225]: "-4.41%"
+            - link "JNJ Johnson & Johnson +1.87%" [ref=f11e226] [cursor=pointer]:
+              - /url: /analyze/US%3AXNYS%3AJNJ
+              - generic [ref=f11e227]: JNJ
+              - generic [ref=f11e228]: Johnson & Johnson
+              - generic [ref=f11e229]: +1.87%
+            - link "TSLA Tesla -1.77%" [ref=f11e230] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3ATSLA
+              - generic [ref=f11e231]: TSLA
+              - generic [ref=f11e232]: Tesla
+              - generic [ref=f11e233]: "-1.77%"
+            - link "MSFT Microsoft -1.75%" [ref=f11e234] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3AMSFT
+              - generic [ref=f11e235]: MSFT
+              - generic [ref=f11e236]: Microsoft
+              - generic [ref=f11e237]: "-1.75%"
+            - link "AAPL Apple +1.60%" [ref=f11e238] [cursor=pointer]:
+              - /url: /analyze/US%3AXNAS%3AAAPL
+              - generic [ref=f11e239]: AAPL
+              - generic [ref=f11e240]: Apple
+              - generic [ref=f11e241]: +1.60%
+          - generic [ref=f11e242]:
+            - generic [ref=f11e243]: Not visible to this deployment
+            - list [ref=f11e249]:
+              - listitem [ref=f11e250]: Opening-cross imbalance (NOII) — Requires a Nasdaq/NYSE entitlement; not available to this deployment.
+              - listitem [ref=f11e251]: LULD bands and halt state — Requires the consolidated SIP feed; not available to this deployment.
+              - listitem [ref=f11e252]: Scheduled earnings dates — The provider returns historical earnings records, not a forward calendar.
+          - paragraph [ref=f11e253]: 3 pre-market input(s) are unavailable to this deployment. Treat this as an overnight-move summary, not a complete pre-market picture.
+      - generic [ref=f11e254]: Overnight-move summary only. Auction imbalance, ban lists and price bands require licensed exchange feeds this deployment does not have — their absence is listed, never assumed benign.
+  - contentinfo [ref=f11e257]:
+    - generic [ref=f11e258]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f11e259]: PAPER MODE

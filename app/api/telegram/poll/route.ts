@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { applyTelegramDecisions } from "@/lib/trading/engine";
+import { requireMutationAccess } from "@/lib/security/request";
+import { executionCapabilities } from "@/lib/trading/capabilities";
 
 export const dynamic = "force-dynamic";
 
-// Drain approve/reject replies from Telegram and apply them to Pending Trades.
-// The agent's wake/wait loop calls this so a phone tap resolves a proposal
-// without the app being open.
-export async function POST() {
-  const changed = await applyTelegramDecisions();
-  return NextResponse.json({ changed });
+// Retired remote-decision compatibility surface. It is intentionally fail-closed.
+export async function POST(req: Request) {
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  return NextResponse.json(
+    { error: executionCapabilities.reason, message: "Telegram trade decisions are disabled." },
+    { status: 503 },
+  );
 }

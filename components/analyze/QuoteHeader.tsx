@@ -9,7 +9,8 @@ interface Props {
   quote: Quote;
   profile: CompanyProfile;
   overallSignal: "buy" | "hold" | "sell";
-  ticker: string;
+  instrumentId: string;
+  currency: "USD" | "INR";
 }
 
 const SIGNAL_STYLES = {
@@ -20,7 +21,7 @@ const SIGNAL_STYLES = {
 
 const POLL_INTERVAL = 10_000; // 10 seconds
 
-export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: Props) {
+export function QuoteHeader({ quote: initial, profile, overallSignal, instrumentId, currency }: Props) {
   const [quote, setQuote] = useState(initial);
   const [flash, setFlash] = useState<"up" | "down" | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -31,9 +32,23 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: 
     async function refresh() {
       setTicking(true);
       try {
-        const res = await fetch(`/api/quote/${ticker}`);
+        const res = await fetch(`/api/market/quote?instrumentId=${encodeURIComponent(instrumentId)}`);
         if (!res.ok) return;
-        const data: Quote = await res.json();
+        const normalized = await res.json();
+        const data: Quote = {
+          ticker: normalized.instrument.symbol,
+          price: normalized.price,
+          open: normalized.open ?? 0,
+          high: normalized.high ?? 0,
+          low: normalized.low ?? 0,
+          prevClose: normalized.previousClose ?? 0,
+          change: normalized.change ?? 0,
+          changePct: normalized.changePct ?? 0,
+          volume: normalized.volume ?? 0,
+          avgVolume: normalized.volume ?? 0,
+          fetchedAt: new Date(normalized.provenance.ingestedAt),
+          mock: false,
+        };
 
         // Flash the price if it moved
         if (data.price !== prevPrice.current) {
@@ -53,7 +68,7 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: 
 
     const id = setInterval(refresh, POLL_INTERVAL);
     return () => clearInterval(id);
-  }, [ticker]);
+  }, [instrumentId]);
 
   const isGain = quote.changePct >= 0;
 
@@ -83,7 +98,7 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: 
           {/* Price row */}
           <div className="flex items-baseline gap-3 mt-2">
             <span className={`text-4xl font-bold font-mono ${priceColor}`}>
-              ${quote.price.toFixed(2)}
+              {formatMoney(quote.price, currency)}
             </span>
             <div className={`flex items-center gap-1 text-lg font-semibold ${isGain ? "text-gain" : "text-loss"}`}>
               {isGain ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
@@ -105,7 +120,7 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: 
                 <span className="text-xs text-muted-foreground/60 font-mono">
                   {lastUpdated
                     ? `${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-                    : "LIVE"}
+                    : "RESEARCH DATA"}
                 </span>
               </div>
             )}
@@ -126,15 +141,23 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, ticker }: 
 
       {/* Stats bar */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mt-4 pt-4 border-t border-panel">
-        <Stat label="OPEN"       value={`$${quote.open?.toFixed(2)      ?? "—"}`} />
-        <Stat label="HIGH"       value={`$${quote.high?.toFixed(2)      ?? "—"}`} />
-        <Stat label="LOW"        value={`$${quote.low?.toFixed(2)       ?? "—"}`} />
-        <Stat label="PREV CLOSE" value={`$${quote.prevClose?.toFixed(2) ?? "—"}`} />
+        <Stat label="OPEN"       value={quote.open ? formatMoney(quote.open, currency) : "—"} />
+        <Stat label="HIGH"       value={quote.high ? formatMoney(quote.high, currency) : "—"} />
+        <Stat label="LOW"        value={quote.low ? formatMoney(quote.low, currency) : "—"} />
+        <Stat label="PREV CLOSE" value={quote.prevClose ? formatMoney(quote.prevClose, currency) : "—"} />
         <Stat label="VOLUME"     value={fmtVol(quote.volume)} />
         <Stat label="AVG VOL"    value={fmtVol(quote.avgVolume)} />
       </div>
     </div>
   );
+}
+
+function formatMoney(value: number, currency: "USD" | "INR") {
+  return new Intl.NumberFormat(currency === "USD" ? "en-US" : "en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

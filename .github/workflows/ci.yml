@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  MARKETPULSE_TEST_MODE: "1"
+  # No quant core in CI: the bridge must degrade to explicit unavailable states, and the
+  # conformance tests skip themselves rather than failing.
+  QUANT_CORE_URL: "off"
+  QUANT_CORE_ROOT: "./.no-quant-core"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build MCP server
+        run: npm run build:mcp
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Spawned MCP integration
+        run: npm run test:mcp
+
+      - name: Governance guardrails
+        run: npx vitest run lib/governance
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Production dependency audit
+        run: npm run audit:prod
+
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No broker execution path may be introduced
+        run: |
+          if grep -rInE "place_equity_order|placeEquityOrder|submit_order|submitOrder|force_close" \
+            lib app mcp components 2>/dev/null; then
+            echo "::error::A broker order-mutation call reached source. This system has no execution path."
+            exit 1
+          fi
+          echo "No broker mutation found."
+
+      - name: Prohibited actions must remain declared
+        run: |
+          for action in modify_risk_kernel change_loss_ceiling change_position_ceiling \
+                        delete_trial_record requery_locked_holdout deploy_unreviewed_code \
+                        change_mcp_permissions add_broker_mutation_tool place_order \
+                        rewrite_verification_rules mark_failed_strategy_profitable; do
+            if ! grep -q "$action" lib/governance/policy.ts; then
+              echo "::error::Prohibition \"$action\" was removed from the governance policy."
+              exit 1
+            fi
+          done
+          echo "All prohibitions present."
+
+      - name: Hooks must be executable and syntactically valid
+        run: |
+          node --check .claude/hooks/guard-writes.mjs
+          node --check .claude/hooks/block-secrets.mjs
+          echo "Hooks parse."

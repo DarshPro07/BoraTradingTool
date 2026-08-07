@@ -10,6 +10,8 @@ export interface Quote {
   volume: number;
   avgVolume: number;
   fetchedAt: Date;
+  sourceEventAt?: Date;
+  provider?: "YAHOO" | "FINNHUB" | "TEST_FIXTURE";
   mock?: boolean; // true when this quote is simulated demo data, not a live price
 }
 

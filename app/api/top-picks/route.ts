@@ -8,6 +8,10 @@ import type { Candle } from "@/lib/providers/types";
 
 // In-memory cache so the scan doesn't re-run on every dashboard load / poll.
 let _cache: { picks: PickResult[]; at: number } | null = null;
+// A scan costs ~2 provider calls per symbol across the whole universe. Without single-flight,
+// concurrent requests — and every `?bust` — each launched their own, so one polling tab could
+// multiply provider load and burn the rate limit for everybody.
+let _inflight: Promise<PickResult[]> | null = null;
 const CACHE_TTL = 10 * 60 * 1000; // 10 min
 
 // Build the scan universe dynamically each day: today's most actively traded
@@ -31,6 +35,11 @@ export interface PickResult {
   price: number;
   changePct: number;
   score: number;
+  /**
+   * Score before clamping. The component weights can total 110, so a clamped 100 used to
+   * hide both double-counting and drift in the weighting — the raw figure makes it visible.
+   */
+  rawScore: number;
   tags: string[];
   headline: string;
   rsi: number | null;
@@ -58,8 +67,11 @@ function findNearestSupport(candles: Candle[], currentPrice: number): number | n
   }
 
   if (swingLows.length === 0) {
-    // Fall back to 20-day low
-    return +Math.min(...lows.slice(-20)).toFixed(2);
+    // Fall back to the 20-bar low over *confirmed* bars. Including the bar that is still
+    // forming lets support move under the same price the entry decision is reading.
+    const confirmed = lows.slice(0, -1).slice(-20);
+    if (confirmed.length === 0) return null;
+    return +Math.min(...confirmed).toFixed(2);
   }
 
   // Cluster nearby levels (within 1.5%)
@@ -70,13 +82,16 @@ function findNearestSupport(candles: Candle[], currentPrice: number): number | n
     else clusters.push([low]);
   }
 
-  // Most-tested support levels, filtered to below/near current price
+  // Most-tested support levels. A level must sit *below* the current price: the old
+  // `< price * 1.04` admitted levels up to 4% overhead, which produced a negative
+  // "distance to support" and a headline claiming the stock was testing a level it had
+  // already traded through. Ties break on proximity so the nearest level wins.
   const supports = clusters
-    .sort((a, b) => b.length - a.length)
-    .map((c) => c.reduce((a, b) => a + b) / c.length)
-    .filter((s) => s < currentPrice * 1.04);
+    .map((c) => ({ level: c.reduce((a, b) => a + b) / c.length, touches: c.length }))
+    .filter((s) => s.level < currentPrice)
+    .sort((a, b) => b.touches - a.touches || b.level - a.level);
 
-  return supports.length ? +supports[0].toFixed(2) : null;
+  return supports.length ? +supports[0].level.toFixed(2) : null;
 }
 
 function scoreSetup(
@@ -184,6 +199,7 @@ function scoreSetup(
     price: +price.toFixed(2),
     changePct: +changePct.toFixed(2),
     score: Math.max(0, Math.min(100, score)),
+    rawScore: score,
     tags: [...new Set(tags)].slice(0, 3),
     headline,
     rsi: tech.rsi,
@@ -197,12 +213,30 @@ function scoreSetup(
 
 export async function GET(req: Request) {
   const force = new URL(req.url).searchParams.has("bust");
+  const fresh = _cache !== null && Date.now() - _cache.at < CACHE_TTL;
 
-  // Serve cache if fresh (unless force-refresh)
-  if (!force && _cache && Date.now() - _cache.at < CACHE_TTL) {
-    return NextResponse.json(_cache.picks);
+  if (fresh && !force) {
+    return NextResponse.json(_cache!.picks, { headers: { "cache-control": "no-store" } });
   }
 
+  // A scan already running serves every waiter, including a forced refresh. One rescan
+  // at a time, no matter how many callers ask.
+  if (!_inflight) {
+    _inflight = runScan()
+      .then((picks) => {
+        _cache = { picks, at: Date.now() };
+        return picks;
+      })
+      .finally(() => {
+        _inflight = null;
+      });
+  }
+
+  const picks = await _inflight;
+  return NextResponse.json(picks, { headers: { "cache-control": "no-store" } });
+}
+
+async function runScan(): Promise<PickResult[]> {
   const provider = getProvider();
   const universe = await buildScanUniverse();
   const to = Math.floor(Date.now() / 1000);
@@ -219,13 +253,10 @@ export async function GET(req: Request) {
     })
   );
 
-  const picks: PickResult[] = results
+  return results
     .filter((r): r is PromiseFulfilledResult<PickResult | null> => r.status === "fulfilled")
     .map((r) => r.value)
     .filter((v): v is PickResult => v !== null && v.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
-
-  _cache = { picks, at: Date.now() };
-  return NextResponse.json(picks);
 }

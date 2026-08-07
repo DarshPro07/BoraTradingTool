@@ -1,40 +1,52 @@
-import { getProvider } from "@/lib/providers";
+import Link from "next/link";
+import { parseInstrument } from "@/lib/market/instruments";
+import { getNormalizedQuote } from "@/lib/market/service";
 
-const TAPE_TICKERS = ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AMD", "SPY", "QQQ"];
-
-async function getTapeData() {
-  const provider = getProvider();
-  const quotes = await Promise.allSettled(TAPE_TICKERS.map((t) => provider.getQuote(t)));
-  return quotes
-    .map((r, i) => {
-      if (r.status !== "fulfilled") return null;
-      const { ticker: _t, ...rest } = r.value;
-      return { ticker: TAPE_TICKERS[i], ...rest };
-    })
-    .filter(Boolean);
-}
-
-function fmt(n: number) {
-  return n.toFixed(2);
-}
+const TAPE_INSTRUMENTS = [
+  "US:XNAS:AAPL",
+  "US:XNAS:MSFT",
+  "US:XNAS:NVDA",
+  "US:XNYS:SPY",
+  "IN:XNSE:RELIANCE",
+  "IN:XNSE:TCS",
+  "IN:XNSE:HDFCBANK",
+  "IN:XNSE:NIFTYBEES",
+];
 
 export async function TickerTape() {
-  const items = await getTapeData();
+  const settled = await Promise.allSettled(
+    TAPE_INSTRUMENTS.map((id) => getNormalizedQuote(parseInstrument(id))),
+  );
+  const quotes = settled.flatMap((item) => item.status === "fulfilled" ? [item.value] : []);
+
+  // Never vanish. The tape disappearing silently when the quote source rate-limits reads as
+  // the app being broken; a visible degraded strip reads as the data being degraded — which
+  // is the truth.
+  if (!quotes.length) {
+    return (
+      <div className="ticker-tape" aria-label="US and India market tape">
+        <div className="ticker-degraded">
+          <span className="pulse-amber ticker-degraded-dot" aria-hidden="true" />
+          MARKET TAPE DEGRADED — no eligible quotes from the configured source; retrying on next refresh
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-[#0d0d0d] border-b border-panel overflow-hidden h-7 flex items-center">
-      <div className="flex items-center gap-6 animate-ticker whitespace-nowrap px-4">
-        {[...items, ...items].map((item, i) => {
-          if (!item) return null;
-          const isGain = (item.changePct ?? 0) >= 0;
+    <div className="ticker-tape" aria-label="US and India market tape">
+      <div className="animate-ticker">
+        {[...quotes, ...quotes].map((quote, index) => {
+          const gain = (quote.changePct ?? 0) >= 0;
           return (
-            <span key={`${item.ticker}-${i}`} className="flex items-center gap-1.5 text-xs shrink-0">
-              <a href={`/analyze/${item.ticker}`} className="text-foreground hover:text-terminal font-semibold">
-                {item.ticker}
-              </a>
-              <span className="text-foreground">{fmt(item.price)}</span>
-              <span className={isGain ? "text-gain" : "text-loss"}>
-                {isGain ? "▲" : "▼"} {Math.abs(item.changePct ?? 0).toFixed(2)}%
+            <span key={`${quote.instrument.id}-${index}`} className="ticker-item">
+              <Link href={`/analyze/${encodeURIComponent(quote.instrument.id)}`}>
+                <span className="ticker-exchange">{quote.instrument.exchange === "XNSE" ? "NSE" : quote.instrument.exchange === "XBOM" ? "BSE" : "US"}</span>
+                {quote.instrument.symbol}
+              </Link>
+              <span>{formatMoney(quote.price, quote.currency)}</span>
+              <span className={gain ? "text-gain" : "text-loss"}>
+                {gain ? "+" : ""}{(quote.changePct ?? 0).toFixed(2)}%
               </span>
             </span>
           );
@@ -42,4 +54,12 @@ export async function TickerTape() {
       </div>
     </div>
   );
+}
+
+function formatMoney(value: number, currency: "USD" | "INR") {
+  return new Intl.NumberFormat(currency === "USD" ? "en-US" : "en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
 }

@@ -11,11 +11,12 @@ export interface OrderIntent {
 export interface FenceContext {
   config: AgentConfig;
   strategy: Strategy | null;
-  account: AccountState; // real account, derived from the synced Robinhood snapshot
+  account: AccountState; // legacy account snapshot retained for historical audit display
   inWatchlist: boolean;
   tradesToday: number; // filled + pending today
-  robinhoodLive: boolean; // is the agent's Robinhood MCP heartbeat fresh?
-  priceLive: boolean; // is the order priced off a live quote (not simulated/mock data)?
+  robinhoodLive: boolean; // legacy liveness input; never sufficient to authorize execution
+  priceLive: boolean; // whether the historical proposal used a non-fixture quote
+  executionAvailable: boolean; // reserved for a separately reviewed future adapter
 }
 
 export interface FenceResult {
@@ -25,9 +26,8 @@ export interface FenceResult {
 }
 
 /**
- * The Trade Fence. Pure, deterministic evaluation of an order against the
- * configured hard limits. The Guarded Order Tool runs this before any order
- * reaches the broker — soft guidance to the agent never substitutes for it.
+ * Legacy trade-fence evaluation retained for audit compatibility. No current
+ * mode is allowed to authorize live execution.
  */
 export function evaluateFence(intent: OrderIntent, ctx: FenceContext): FenceResult {
   const { config, strategy, account } = ctx;
@@ -42,32 +42,35 @@ export function evaluateFence(intent: OrderIntent, ctx: FenceContext): FenceResu
     checks[key] = { ok: true, detail };
   };
 
-  // 1. Mode must permit trading at all.
+  // Every historical live mode is retired. Paper orders use lib/paper instead.
   if (config.mode === "off") fail("mode", "Trading is off");
-  else pass("mode", `Mode is ${config.mode}`);
+  else fail("mode", `Live trading mode ${config.mode} is retired`);
 
   // 2. Halt overrides everything.
   if (config.halt) fail("halt", "Halt is engaged — all placement frozen");
   else pass("halt", "Not halted");
 
-  // 3. The agent executes every order through the Robinhood MCP, so a live
-  // heartbeat is always required.
+  if (!ctx.executionAvailable) {
+    fail("execution", "EXECUTION_ADAPTER_MISSING");
+  } else {
+    pass("execution", "Execution adapter is available");
+  }
+
+  // Retained only to explain why an old proposal would also have failed.
   if (!ctx.robinhoodLive) {
     fail("robinhood", "Robinhood MCP is not connected (no fresh heartbeat)");
   } else {
     pass("robinhood", "Robinhood MCP live");
   }
 
-  // 3c. The fence sizes against the synced Robinhood snapshot. No fresh snapshot
-  // means we don't know the real cash/positions — block (fail-safe).
+  // Legacy account freshness check retained for historical diagnostics.
   if (!account.fresh) {
     fail("account", "No fresh account snapshot — sync the portfolio via the MCP");
   } else {
     pass("account", `Account synced — equity $${account.equity.toFixed(2)}`);
   }
 
-  // 3d. Never trade real money on simulated/unavailable prices. If the quote is
-  // mock (e.g. all live data sources failed, or Mock Mode), block.
+  // A historical proposal based on fixture or unavailable data also fails.
   if (!ctx.priceLive) {
     fail("priceData", "Quote is simulated or unavailable — refusing to trade on non-live prices");
   } else {

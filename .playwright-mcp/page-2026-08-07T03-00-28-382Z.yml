@@ -1,0 +1,218 @@
+- generic [active] [ref=f18e1]:
+  - banner [ref=f18e2]:
+    - generic [ref=f18e3]:
+      - link "MARKETPULSE" [ref=f18e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=f18e9]:
+        - button "US" [pressed] [ref=f18e10] [cursor=pointer]
+        - button "NSE" [ref=f18e11] [cursor=pointer]
+        - button "BSE" [ref=f18e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=f18e13]: PAPER
+      - generic "Contacting the system status endpoint." [ref=f18e16]: LINKING
+      - search [ref=f18e19]:
+        - generic [ref=f18e23]: Search instrument
+        - textbox "Search instrument" [ref=f18e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=f18e25] [cursor=pointer]
+    - navigation "Workspace" [ref=f18e26]:
+      - link "RESEARCH" [ref=f18e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=f18e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=f18e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=f18e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=f18e32] [cursor=pointer]:
+        - /url: /settings
+    - navigation "RESEARCH sections" [ref=f18e33]:
+      - generic [ref=f18e34]: What is it finding out while I am away?
+      - link "Command" [ref=f18e35] [cursor=pointer]:
+        - /url: /command
+      - link "Markets" [ref=f18e36] [cursor=pointer]:
+        - /url: /dashboard
+      - link "Pre-market" [ref=f18e37] [cursor=pointer]:
+        - /url: /premarket
+      - link "Studio" [ref=f18e38] [cursor=pointer]:
+        - /url: /strategies
+      - link "Memory" [ref=f18e39] [cursor=pointer]:
+        - /url: /memory
+      - link "Paper" [ref=f18e40] [cursor=pointer]:
+        - /url: /paper
+  - generic [ref=f18e41]:
+    - link "LEARNING" [ref=f18e42] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=f18e45]: ·
+    - generic [ref=f18e46]: last cycle 1m ago
+    - generic [ref=f18e48]: ·
+    - generic [ref=f18e49]: 4 actions · 4 rehearsed · 1 would pass · 1 need attention · 0.8s
+    - generic [ref=f18e50]: 7 cycles today
+  - generic "US and India market tape" [ref=f18e51]:
+    - generic [ref=f18e52]:
+      - generic [ref=f18e53]:
+        - link "USAAPL" [ref=f18e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f18e55]: $312.56
+        - generic [ref=f18e56]: +0.50%
+      - generic [ref=f18e57]:
+        - link "USMSFT" [ref=f18e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f18e59]: $498.97
+        - generic [ref=f18e60]: +2.36%
+      - generic [ref=f18e61]:
+        - link "USNVDA" [ref=f18e62] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f18e63]: $219.42
+        - generic [ref=f18e64]: +0.09%
+      - generic [ref=f18e65]:
+        - link "USSPY" [ref=f18e66] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f18e67]: $769.00
+        - generic [ref=f18e68]: "-0.10%"
+      - generic [ref=f18e69]:
+        - link "NSERELIANCE" [ref=f18e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f18e71]: ₹1,325.00
+        - generic [ref=f18e72]: +3.52%
+      - generic [ref=f18e73]:
+        - link "NSETCS" [ref=f18e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f18e75]: ₹2,373.00
+        - generic [ref=f18e76]: "-1.66%"
+      - generic [ref=f18e77]:
+        - link "NSEHDFCBANK" [ref=f18e78] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f18e79]: ₹734.30
+        - generic [ref=f18e80]: "-0.10%"
+      - generic [ref=f18e81]:
+        - link "NSENIFTYBEES" [ref=f18e82] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f18e83]: ₹280.59
+        - generic [ref=f18e84]: +0.23%
+      - generic [ref=f18e85]:
+        - link "USAAPL" [ref=f18e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=f18e87]: $312.56
+        - generic [ref=f18e88]: +0.50%
+      - generic [ref=f18e89]:
+        - link "USMSFT" [ref=f18e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=f18e91]: $498.97
+        - generic [ref=f18e92]: +2.36%
+      - generic [ref=f18e93]:
+        - link "USNVDA" [ref=f18e94] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=f18e95]: $219.42
+        - generic [ref=f18e96]: +0.09%
+      - generic [ref=f18e97]:
+        - link "USSPY" [ref=f18e98] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=f18e99]: $769.00
+        - generic [ref=f18e100]: "-0.10%"
+      - generic [ref=f18e101]:
+        - link "NSERELIANCE" [ref=f18e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=f18e103]: ₹1,325.00
+        - generic [ref=f18e104]: +3.52%
+      - generic [ref=f18e105]:
+        - link "NSETCS" [ref=f18e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=f18e107]: ₹2,373.00
+        - generic [ref=f18e108]: "-1.66%"
+      - generic [ref=f18e109]:
+        - link "NSEHDFCBANK" [ref=f18e110] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=f18e111]: ₹734.30
+        - generic [ref=f18e112]: "-0.10%"
+      - generic [ref=f18e113]:
+        - link "NSENIFTYBEES" [ref=f18e114] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=f18e115]: ₹280.59
+        - generic [ref=f18e116]: +0.23%
+  - main [ref=f18e117]:
+    - generic [ref=f18e118]:
+      - generic [ref=f18e119]:
+        - generic [ref=f18e120]:
+          - paragraph [ref=f18e121]: SIM / EXECUTION
+          - heading "Paper Portfolio" [level=1] [ref=f18e122]
+          - paragraph [ref=f18e123]: Separate USD and INR capital. No broker capability.
+        - generic [ref=f18e124]: DETERMINISTIC FILLS
+      - generic [ref=f18e125]:
+        - generic [ref=f18e126]:
+          - generic [ref=f18e127]: LOSS LEDGER
+          - generic [ref=f18e130]:
+            - generic "The source answered successfully and returned nothing. This is a real, observed zero." [ref=f18e131]: EMPTY
+            - paragraph [ref=f18e132]: No position has been closed yet, so there is nothing realised to attribute. An open position that is down is not a loss until it is closed — unrealised movement is not recorded here.
+        - generic [ref=f18e133]:
+          - generic [ref=f18e134]: RISK POSTURE
+          - generic [ref=f18e136]:
+            - generic [ref=f18e137]:
+              - generic [ref=f18e138]:
+                - generic [ref=f18e139]: Max position
+                - generic [ref=f18e140]: 5%
+              - generic [ref=f18e142]:
+                - generic [ref=f18e143]: Daily stop
+                - generic [ref=f18e144]: 2%
+              - generic [ref=f18e146]:
+                - generic [ref=f18e147]: Realised drawdown
+                - generic [ref=f18e148]: 0.00%
+            - paragraph [ref=f18e149]: Operating at the owner's ceilings. Adaptation can only tighten these, never widen them — a system that can raise its own limits after a bad run can trade its way out of a drawdown.
+      - generic [ref=f18e150]:
+        - generic [ref=f18e151]:
+          - heading "Paper order ticket" [level=2] [ref=f18e155]
+          - paragraph [ref=f18e156]: Simulation only. This form cannot reach a broker.
+          - generic [ref=f18e157]:
+            - generic [ref=f18e158]: Instrument
+            - combobox "Instrument" [ref=f18e159]: US:XNAS:AAPL
+            - generic [ref=f18e160]:
+              - generic [ref=f18e161]:
+                - text: Side
+                - combobox "Side" [ref=f18e162] [cursor=pointer]:
+                  - option "BUY PAPER" [selected]
+                  - option "SELL PAPER"
+              - generic [ref=f18e163]:
+                - text: Quantity
+                - spinbutton "Quantity" [ref=f18e164]: "1"
+            - generic [ref=f18e165]:
+              - generic [ref=f18e166]:
+                - text: Order type
+                - combobox "Order type" [ref=f18e167] [cursor=pointer]:
+                  - option "MARKET" [selected]
+                  - option "LIMIT"
+              - generic [ref=f18e168]:
+                - text: Limit price
+                - spinbutton "Limit price" [disabled] [ref=f18e169]
+            - button "PLACE BUY PAPER ORDER" [ref=f18e170] [cursor=pointer]
+        - generic [ref=f18e175]:
+          - generic [ref=f18e176]:
+            - generic [ref=f18e177]:
+              - generic [ref=f18e178]: Paper positions
+              - generic [ref=f18e179]: 0 OPEN
+            - table [ref=f18e181]:
+              - rowgroup [ref=f18e182]:
+                - row [ref=f18e183]:
+                  - columnheader "Instrument" [ref=f18e184]
+                  - columnheader "Qty" [ref=f18e185]
+                  - columnheader "Avg cost" [ref=f18e186]
+                  - columnheader "Realized P/L" [ref=f18e187]
+              - rowgroup [ref=f18e188]:
+                - row [ref=f18e189]:
+                  - cell "No paper positions yet." [ref=f18e190]
+          - generic [ref=f18e191]:
+            - generic [ref=f18e192]:
+              - generic [ref=f18e193]: Paper order tape
+              - generic [ref=f18e194]: ESTIMATED FEES
+            - table [ref=f18e196]:
+              - rowgroup [ref=f18e197]:
+                - row [ref=f18e198]:
+                  - columnheader "Status" [ref=f18e199]
+                  - columnheader "Order" [ref=f18e200]
+                  - columnheader "Evidence" [ref=f18e201]
+                  - columnheader "Fill" [ref=f18e202]
+                  - columnheader "Fees" [ref=f18e203]
+              - rowgroup [ref=f18e204]:
+                - row [ref=f18e205]:
+                  - cell "No paper orders yet." [ref=f18e206]
+  - contentinfo [ref=f18e207]:
+    - generic [ref=f18e208]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=f18e209]: PAPER MODE

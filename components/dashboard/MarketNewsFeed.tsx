@@ -21,7 +21,7 @@ function timeAgo(date: Date) {
 
 export function MarketNewsFeed({ news }: Props) {
   return (
-    <div className="bg-panel border border-panel rounded p-4">
+    <div className="terminal-panel rise-4 p-4">
       <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Market News</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {news.map((item) => (
@@ -50,6 +50,11 @@ export function MarketNewsFeed({ news }: Props) {
             </div>
           </div>
         ))}
+        {!news.length && (
+          <p className="col-span-full py-8 text-center text-xs text-muted-foreground">
+            No verified market news is available from the configured providers.
+          </p>
+        )}
       </div>
     </div>
   );

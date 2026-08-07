@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAgentConfig } from "@/lib/trading/config";
-import { recordHeartbeat, clearHeartbeat, getRobinhoodStatus } from "@/lib/trading/robinhood";
+import { requireMutationAccess } from "@/lib/security/request";
+import { executionCapabilities } from "@/lib/trading/capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -8,23 +8,25 @@ export const dynamic = "force-dynamic";
 // ran getAccount()). This is what unlocks the real-money controls. Optional
 // { account } labels the connection in the UI.
 export async function POST(req: Request) {
-  let account: string | null | undefined;
-  try {
-    const body = await req.json();
-    if (typeof body?.account === "string") account = body.account;
-  } catch {
-    // no body — still a valid heartbeat
-  }
-  const cfg = recordHeartbeat(account);
-  return NextResponse.json({ ok: true, robinhood: getRobinhoodStatus(cfg) });
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  return disabled();
 }
 
 export async function GET() {
-  return NextResponse.json(getRobinhoodStatus(getAgentConfig()));
+  return NextResponse.json({ connected: false, ...executionCapabilities });
 }
 
 // Agent disconnecting, or user forcing the gate shut.
-export async function DELETE() {
-  const cfg = clearHeartbeat();
-  return NextResponse.json({ ok: true, robinhood: getRobinhoodStatus(cfg) });
+export async function DELETE(req: Request) {
+  const denied = requireMutationAccess(req);
+  if (denied) return denied;
+  return disabled();
+}
+
+function disabled() {
+  return NextResponse.json(
+    { error: executionCapabilities.reason, message: "Broker heartbeat is disabled." },
+    { status: 503 },
+  );
 }

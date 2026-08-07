@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/guard-writes.mjs" },
+          { "type": "command", "command": "node .claude/hooks/block-secrets.mjs" }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*)",
+      "Read(./marketpulse.db*)",
+      "Read(./.backups/**)",
+      "Read(./.tmp/**)",
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}

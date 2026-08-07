@@ -35,14 +35,28 @@ yarn-error.log*
 # ...but ship the template so fresh clones can copy it
 !.env.example
 
-# local Claude Code settings/state (machine-specific)
-.claude/
+# Shared Claude Code control-plane assets are versioned. Machine-local state is not.
+.claude/*
+!.claude/settings.json
+!.claude/agents/
+!.claude/agents/**
+!.claude/hooks/
+!.claude/hooks/**
+!.claude/skills/
+!.claude/skills/**
+.claude/settings.local.json
+.claude/worktrees/
 
 # local SQLite database — contains secrets (Telegram bot token, chat id) and
 # runtime state. NEVER commit this.
 marketpulse.db
 marketpulse.db-shm
 marketpulse.db-wal
+/.tmp/
+/.backups/
+/dist/
+/playwright-report/
+/test-results/
 
 # runtime-generated agent context files (rewritten when pages are viewed)
 /context/

@@ -49,15 +49,33 @@ function rsi(prices: number[], period = 14): number | null {
     avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
   }
 
-  if (avgLoss === 0) return 100;
+  // A series with no downside is genuinely overbought (100). A series with no movement
+  // at all is neither — returning 100 for a flat price would read as maximum strength.
+  if (avgLoss === 0) return avgGain === 0 ? 50 : 100;
   const rs = avgGain / avgLoss;
   return +(100 - 100 / (1 + rs)).toFixed(2);
 }
 
-export function computeTechnicals(candles: Candle[]): TechnicalIndicators {
+export interface TechnicalsOptions {
+  /**
+   * Whether the final candle is closed. During a live session it is not — its high and low
+   * are still moving, so any structural level derived from it shifts intrabar and a signal
+   * that fired a minute ago can silently un-fire. Pass false while the session is open.
+   */
+  lastBarConfirmed?: boolean;
+}
+
+export function computeTechnicals(
+  candles: Candle[],
+  options: TechnicalsOptions = {},
+): TechnicalIndicators {
+  const { lastBarConfirmed = true } = options;
   const closes = candles.map((c) => c.close);
-  const highs = candles.map((c) => c.high);
-  const lows = candles.map((c) => c.low);
+
+  // Support and resistance describe settled structure, so they read confirmed bars only.
+  const structural = lastBarConfirmed ? candles : candles.slice(0, -1);
+  const highs = structural.map((c) => c.high);
+  const lows = structural.map((c) => c.low);
 
   const s20 = sma(closes, 20);
   const s50 = sma(closes, 50);
@@ -78,9 +96,14 @@ export function computeTechnicals(candles: Candle[]): TechnicalIndicators {
 
     if (macdSeries.length >= 9) {
       const signalSeries = ema(macdSeries, 9);
-      macdLine = +macdSeries[macdSeries.length - 1].toFixed(3);
-      macdSignal = +signalSeries[signalSeries.length - 1].toFixed(3);
-      macdHist = +(macdLine - macdSignal).toFixed(3);
+      // Subtract at full precision, then round for display. Rounding the two lines first
+      // can flip the histogram's sign when they are within 0.0005 of each other — which is
+      // exactly the crossover moment the signal is supposed to detect.
+      const line = macdSeries[macdSeries.length - 1];
+      const signal = signalSeries[signalSeries.length - 1];
+      macdLine = +line.toFixed(3);
+      macdSignal = +signal.toFixed(3);
+      macdHist = +(line - signal).toFixed(3);
     }
   }
 
@@ -97,10 +120,10 @@ export function computeTechnicals(candles: Candle[]): TechnicalIndicators {
     bbLower = +(mean - 2 * std).toFixed(2);
   }
 
-  // Support & Resistance (simple: recent swing low/high over last 50 candles)
-  const window = Math.min(50, candles.length);
-  const recentHighs = highs.slice(-window);
-  const recentLows = lows.slice(-window);
+  // Support & Resistance (simple: recent swing low/high over last 50 confirmed candles)
+  const window = Math.min(50, structural.length);
+  const recentHighs = window > 0 ? highs.slice(-window) : [];
+  const recentLows = window > 0 ? lows.slice(-window) : [];
   const resistance = recentHighs.length ? +Math.max(...recentHighs).toFixed(2) : null;
   const support = recentLows.length ? +Math.min(...recentLows).toFixed(2) : null;
 
@@ -113,9 +136,9 @@ export function computeTechnicals(candles: Candle[]): TechnicalIndicators {
   }
 
   return {
-    sma20: s20 ? +s20.toFixed(2) : null,
-    sma50: s50 ? +s50.toFixed(2) : null,
-    sma200: s200 ? +s200.toFixed(2) : null,
+    sma20: s20 !== null ? +s20.toFixed(2) : null,
+    sma50: s50 !== null ? +s50.toFixed(2) : null,
+    sma200: s200 !== null ? +s200.toFixed(2) : null,
     rsi: rsiVal,
     macdLine,
     macdSignal,
@@ -150,12 +173,12 @@ export function computeSignals(
     if (tech.rsi > 70) bearSignals.push({ label: "RSI Overbought", type: "bear", reason: `RSI at ${tech.rsi} — elevated, watch for pullback` });
   }
 
-  if (tech.sma20 && tech.sma50) {
+  if (tech.sma20 !== null && tech.sma50 !== null) {
     if (tech.sma20 > tech.sma50) bullSignals.push({ label: "Golden Cross (20/50)", type: "bull", reason: "SMA20 above SMA50 — short-term bullish momentum" });
     else bearSignals.push({ label: "Death Cross (20/50)", type: "bear", reason: "SMA20 below SMA50 — short-term bearish momentum" });
   }
 
-  if (tech.sma200) {
+  if (tech.sma200 !== null) {
     if (price > tech.sma200) bullSignals.push({ label: "Above 200 SMA", type: "bull", reason: "Price trading above long-term trend line" });
     else bearSignals.push({ label: "Below 200 SMA", type: "bear", reason: "Price trading below long-term trend line" });
   }
@@ -165,15 +188,22 @@ export function computeSignals(
     else bearSignals.push({ label: "MACD Negative", type: "bear", reason: "MACD histogram negative — bearish momentum" });
   }
 
-  if (tech.bbLower && price < tech.bbLower) bullSignals.push({ label: "BB Lower Band Touch", type: "bull", reason: "Price near lower Bollinger Band — potential bounce" });
-  if (tech.bbUpper && price > tech.bbUpper) bearSignals.push({ label: "BB Upper Band Touch", type: "bear", reason: "Price near upper Bollinger Band — potential resistance" });
+  if (tech.bbLower !== null && price < tech.bbLower) bullSignals.push({ label: "BB Lower Band Touch", type: "bull", reason: "Price near lower Bollinger Band — potential bounce" });
+  if (tech.bbUpper !== null && price > tech.bbUpper) bearSignals.push({ label: "BB Upper Band Touch", type: "bear", reason: "Price near upper Bollinger Band — potential resistance" });
 
   if (tech.trend === "bullish") bullSignals.push({ label: "Uptrend", type: "bull", reason: "Price > SMA20 > SMA50 > SMA200 — strong uptrend alignment" });
   if (tech.trend === "bearish") bearSignals.push({ label: "Downtrend", type: "bear", reason: "Price < SMA20 < SMA50 < SMA200 — strong downtrend alignment" });
 
   if (fundamentals.pe !== null) {
-    if (fundamentals.pe < 20) bullSignals.push({ label: "Low P/E", type: "bull", reason: `P/E of ${fundamentals.pe.toFixed(1)}x is attractive relative to market` });
-    if (fundamentals.pe > 50) bearSignals.push({ label: "High P/E", type: "bear", reason: `P/E of ${fundamentals.pe.toFixed(1)}x prices in significant growth — execution risk` });
+    // A negative P/E means negative earnings, not a cheap stock. Reading it as "low" made
+    // every loss-making company look attractive, so the sign is now explicit.
+    if (fundamentals.pe < 0) {
+      bearSignals.push({ label: "Negative Earnings", type: "bear", reason: `P/E of ${fundamentals.pe.toFixed(1)}x reflects a loss, not a discount` });
+    } else if (fundamentals.pe < 20) {
+      bullSignals.push({ label: "Low P/E", type: "bull", reason: `P/E of ${fundamentals.pe.toFixed(1)}x is attractive relative to market` });
+    } else if (fundamentals.pe > 50) {
+      bearSignals.push({ label: "High P/E", type: "bear", reason: `P/E of ${fundamentals.pe.toFixed(1)}x prices in significant growth — execution risk` });
+    }
   }
 
   if (fundamentals.revenueGrowth !== null && fundamentals.revenueGrowth > 0.2)

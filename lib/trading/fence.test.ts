@@ -46,6 +46,7 @@ function makeCtx(over: Partial<FenceContext> = {}): FenceContext {
     tradesToday: 0,
     robinhoodLive: true,
     priceLive: true,
+    executionAvailable: true,
     ...over,
   };
 }
@@ -58,21 +59,27 @@ const buy = (over: Partial<OrderIntent> = {}): OrderIntent => ({
   ...over,
 });
 
-describe("evaluateFence — happy path", () => {
-  it("passes a clean buy with every lock open", () => {
+describe("evaluateFence — retired live modes", () => {
+  it("never authorizes the retired autopilot mode", () => {
     const r = evaluateFence(buy(), makeCtx());
-    expect(r.ok).toBe(true);
-    expect(r.reason).toBeUndefined();
-    expect(Object.values(r.checks).every((c) => c.ok)).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(r.checks.mode).toEqual({ ok: false, detail: "Live trading mode autopilot is retired" });
   });
 
-  it("passes in confirm mode too", () => {
+  it("never authorizes the retired confirm mode", () => {
     const r = evaluateFence(buy(), makeCtx({ config: makeConfig({ mode: "confirm" }) }));
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(r.checks.mode).toEqual({ ok: false, detail: "Live trading mode confirm is retired" });
   });
 });
 
 describe("evaluateFence — gating locks", () => {
+  it("blocks when no execution adapter is installed", () => {
+    const r = evaluateFence(buy(), makeCtx({ executionAvailable: false }));
+    expect(r.ok).toBe(false);
+    expect(r.checks.execution).toEqual({ ok: false, detail: "EXECUTION_ADAPTER_MISSING" });
+  });
+
   it("blocks when mode is off", () => {
     const r = evaluateFence(buy(), makeCtx({ config: makeConfig({ mode: "off" }) }));
     expect(r.ok).toBe(false);
@@ -111,12 +118,13 @@ describe("evaluateFence — watchlist", () => {
     expect(r.checks.watchlist.ok).toBe(false);
   });
 
-  it("allows a non-watchlist buy when watchlist-only is off", () => {
+  it("passes the watchlist check when watchlist-only is off but keeps live mode blocked", () => {
     const r = evaluateFence(
       buy(),
       makeCtx({ inWatchlist: false, config: makeConfig({ watchlistOnly: false }) })
     );
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(r.checks.mode.ok).toBe(false);
   });
 
   it("never blocks a sell on watchlist (exits always allowed)", () => {
@@ -125,7 +133,8 @@ describe("evaluateFence — watchlist", () => {
       makeCtx({ inWatchlist: false, account: makeAccount({ positions: [{ ticker: "AAPL", quantity: 5, marketValue: 500 }] }) })
     );
     expect(r.checks.watchlist.ok).toBe(true);
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(r.checks.mode.ok).toBe(false);
   });
 });
 
@@ -192,12 +201,13 @@ describe("evaluateFence — sells", () => {
     expect(r.checks.holdings.ok).toBe(false);
   });
 
-  it("allows selling within holdings", () => {
+  it("passes the holdings check for a covered sell but keeps live mode blocked", () => {
     const r = evaluateFence(
       { ticker: "AAPL", side: "sell", quantity: 5, price: 100 },
       makeCtx({ account: makeAccount({ positions: [{ ticker: "AAPL", quantity: 5, marketValue: 500 }] }) })
     );
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
+    expect(r.checks.mode.ok).toBe(false);
   });
 });
 

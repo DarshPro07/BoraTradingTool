@@ -3,8 +3,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/layout/TopNav";
 import { TickerTape } from "@/components/layout/TickerTape";
-import { SetupGate } from "@/components/layout/SetupGate";
-import { isConfigured } from "@/lib/providers";
+import { AutonomyStrip } from "@/components/layout/AutonomyStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -19,23 +18,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const configured = isConfigured();
   return (
     <html lang="en" className={`${geistMono.variable} h-full`}>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased">
-        {!configured ? (
-          <SetupGate />
-        ) : (
-          <>
-            <TopNav />
-            <TickerTape />
-            <main className="flex-1">{children}</main>
-            <footer className="border-t border-panel px-4 py-1 text-xs text-muted-foreground flex items-center justify-between">
-              <span>MarketPulse — Not financial advice; analysis is model-generated opinion. Trades execute with <strong>real money</strong> at your own risk.</span>
-              <span className="text-gain">LIVE DATA</span>
-            </footer>
-          </>
-        )}
+        <TopNav />
+        <AutonomyStrip />
+        {/* No separate ticker here on purpose. `SystemPulse` in the chrome already drives the
+            autonomous cycle, and it does it better: it waits for two minutes of operator idle,
+            enforces a five-minute floor between runs, and stops while the tab is hidden. A
+            second timer meant two independent drivers racing the same research queue. */}
+        <TickerTape />
+        <main className="flex-1">{children}</main>
+        <footer className="border-t border-panel px-4 py-2 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2">
+          <span>Decision support only. AI output is model-generated research opinion; broker execution is disabled.</span>
+          <span className="text-amber">PAPER MODE</span>
+        </footer>
       </body>
     </html>
   );
