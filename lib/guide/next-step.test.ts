@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { useTemporaryDatabase } from "@/lib/db/testing";
 import { nextStep } from "./next-step";
 
 /**
@@ -8,7 +9,13 @@ import { nextStep } from "./next-step";
  * Every other panel reports state. This is the only one that says what to do about it, so its
  * obligations are different: the language has to be plain, the step has to be single, and it
  * must never invent progress to seem encouraging.
+ *
+ * Run against an empty database on purpose. `nextStep` is at its most load-bearing for someone who
+ * has just installed this and has nothing — and reading the owner's real database, as this file
+ * used to, meant the first-run path was never the one under test.
  */
+
+useTemporaryDatabase();
 
 describe("the guidance is always answerable", () => {
   it("always returns exactly one step", () => {

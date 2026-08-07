@@ -5,6 +5,9 @@ import { proposalStats } from "@/lib/learning/evolution";
 import { queueStats } from "@/lib/research/queue";
 import { IDLE_THRESHOLDS, inspectMemory } from "@/lib/learning/introspection";
 import { LearningModeControl } from "@/components/learning/LearningModeControl";
+import { LiveTerminal } from "@/components/learning/LiveTerminal";
+import { StudyPanel } from "@/components/learning/StudyPanel";
+import { ResearchIntake } from "@/components/research/ResearchIntake";
 import { EmptyState, Panel, StatTile } from "@/components/system/Panel";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +40,10 @@ export default async function LearningPage() {
 
       <Panel title="MODE">
         <LearningModeControl current={mode} />
+
+        {/* Directly under the control, because the question "did that do anything?" arrives
+            within seconds of changing the mode — not on another screen. */}
+        <LiveTerminal />
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -117,7 +124,23 @@ export default async function LearningPage() {
         )}
       </Panel>
 
+      <Panel title="RESEARCH INTAKE">
+        <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">
+          What the deterministic worker drains on every <span className="text-amber">learning</span> cycle. Until
+          something is queued here the loop has nothing to ingest, and{" "}
+          <span className="text-amber">Processed 0 job(s)</span> is an accurate report of an empty queue rather than a
+          broken one.
+        </p>
+        <ResearchIntake />
+      </Panel>
+
       <Panel title="STUDY QUEUE">
+        {/* The panel used to be a list with no way to answer it, so mastery stayed at zero and the
+            same concepts showed as `never studied` forever. The card is the producer. */}
+        <div className="mb-3">
+          <StudyPanel />
+        </div>
+
         {curriculum.length === 0 ? (
           <EmptyState>Nothing to study. Concepts enter the curriculum when lessons introduce them.</EmptyState>
         ) : (

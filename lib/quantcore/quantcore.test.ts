@@ -345,11 +345,34 @@ describe("transport selection", () => {
     expect(result.ok && result.transport).toBe("filesystem");
   });
 
-  it("reports an unreachable core through quantCoreStatus", async () => {
+  it("names a switched-off core rather than calling it unreachable", async () => {
+    // `QUANT_CORE_URL=off` and "the service crashed" both leave `reachable: false`. Conflating
+    // them printed "Quant core unreachable" on every learning cycle of a machine where no quant
+    // core was ever installed, which reads as a recurring fault rather than a component that is
+    // simply not part of this deployment.
     const status = await quantCoreStatus({ root: makeRoot(), baseUrl: null, now: AUG_6 });
     expect(status.reachable).toBe(false);
     expect(status.transport).toBe("none");
-    expect(status.message).toContain("No board packet");
+    expect(status.disabled).toBe(true);
+    expect(status.message).toMatch(/switched off/i);
+  });
+
+  it("separates a core that is installed but silent from one that is absent", async () => {
+    // Different remedies: the first needs a run, the second needs a checkout. Port 1 refuses
+    // immediately on loopback, so this exercises the fall-through without waiting on a timeout.
+    const dead = "http://127.0.0.1:1";
+
+    const installed = await quantCoreStatus({ root: makeRoot(), baseUrl: dead, now: AUG_6, timeoutMs: 100 });
+    expect(installed.disabled).toBe(false);
+    expect(installed.message).toMatch(/has not run/i);
+
+    const absent = await quantCoreStatus({
+      root: path.join(os.tmpdir(), "marketpulse-quant-core-that-does-not-exist"),
+      baseUrl: dead,
+      now: AUG_6,
+      timeoutMs: 100,
+    });
+    expect(absent.message).toMatch(/no quant core at/i);
   });
 
   it("summarises a healthy core", async () => {

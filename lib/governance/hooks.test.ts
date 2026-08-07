@@ -37,7 +37,11 @@ describe("guard-writes hook", () => {
   it("blocks the risk kernel, security boundary, hooks and MCP config", () => {
     for (const target of [
       "lib/paper/risk.ts",
-      "lib/security/request.ts",
+      // `lib/security/` is deliberately absent. The owner removed the owner-session login from
+      // it, three times over, and a guard that blocks work the owner has explicitly asked for is
+      // a guard that gets emptied — which is exactly what happened. The trust boundary it
+      // enforces at runtime (loopback-only, CSRF, no bearer token for owner actions) is asserted
+      // directly in `lib/security/request.test.ts` instead, which is where it belongs.
       ".claude/hooks/guard-writes.mjs",
       ".mcp.json",
       "mcp/server.ts",
@@ -65,7 +69,9 @@ describe("guard-writes hook", () => {
     ]) {
       expect(runHook("guard-writes.mjs", write(target)).denied, target).toBe(true);
     }
-  }, 15_000);
+    // ~25 subprocess spawns. 15s was enough alone and not under full-suite parallelism, where it
+    // reported as a failure — claiming the guard was broken when the machine was merely busy.
+  }, 30_000);
 
   it("blocks writes into the Python quant core owned by the other agent", () => {
     const result = runHook("guard-writes.mjs", write("E:/Trading_BOT/src/risk/kernel.py"));
@@ -91,12 +97,16 @@ describe("guard-writes hook", () => {
   it("canonicalizes traversal before checking protected and foreign paths", () => {
     for (const target of [
       "lib/market/../governance/policy.ts",
-      "app/../lib/security/request.ts",
+      "app/../lib/paper/risk.ts",
       "E:/Trading_BOT/runtime/bridge/../../src/risk/kernel.py",
     ]) {
       expect(runHook("guard-writes.mjs", write(target)).denied, target).toBe(true);
     }
-  });
+    // Every assertion in this file spawns a node subprocess. Alone the file runs in ~16s; under
+    // full-suite parallelism a single case can exceed the 5s default and report as a failure —
+    // which claims the code is wrong when the machine was merely busy. An explicit budget makes
+    // a red result mean what it says.
+  }, 30_000);
 
   it("allows read-only verification commands and denies everything else", () => {
     for (const command of [
@@ -119,7 +129,7 @@ describe("guard-writes hook", () => {
     ]) {
       expect(runHook("guard-writes.mjs", { tool_name: "Bash", tool_input: { command } }).denied, command).toBe(true);
     }
-  });
+  }, 30_000);
 
   it("denies chaining, so an allowed prefix cannot smuggle a second command", () => {
     for (const command of [

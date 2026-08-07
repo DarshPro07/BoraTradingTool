@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { getDb, schema } from "@/lib/db";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+import { compileStrategy } from "@/lib/strategy/dsl";
 import { runValidationRehearsal } from "./rehearsal";
 import type { Candle } from "@/lib/providers/types";
 
@@ -6,6 +9,14 @@ import type { Candle } from "@/lib/providers/types";
  * The load-bearing assertion in this file is the one that looks like it does nothing:
  * `recordedNothing`. A rehearsal that quietly wrote a trial would raise the statistical bar for
  * every candidate it touched, on a timer, with no owner instruction and no way to undo it.
+ *
+ * ## The isolation below is not boilerplate
+ *
+ * `runValidationRehearsal` reads the strategy registry through `getDb()`, and this file had no
+ * database override — so every run read the owner's real `marketpulse.db` and rehearsed whatever
+ * strategies happened to be in it. That made the suite's results depend on production data: a
+ * strategy added by the owner could change what these tests evaluated, and the counts asserted
+ * here would drift for reasons nothing in this file explains.
  */
 
 function bars(count = 400, phase = 0): Candle[] {
@@ -23,6 +34,48 @@ function dataset(instruments = 4): Record<string, Candle[]> {
 }
 
 const loader = (data: Record<string, Candle[]> = dataset()) => async () => data;
+
+/**
+ * A draft candidate for the rehearsal to actually chew on.
+ *
+ * Isolating the database emptied it, and an empty registry makes `runValidationRehearsal` return
+ * before it evaluates anything — which turns every `for (const outcome of report.outcomes)` below
+ * into a loop over nothing. The file would have stayed green while asserting nothing at all, which
+ * is the worse failure: a suite that cannot fail is indistinguishable from one that passes.
+ *
+ * `rsi14` is chosen because the engine can derive it from price alone, so these tests exercise the
+ * evaluated path rather than the `FEATURE_NOT_AVAILABLE` short-circuit.
+ */
+const REHEARSAL_DSL = {
+  name: "rsi_rehearsal_fixture",
+  universe: { market: "US" as const, maxPositions: 10 },
+  entry: { feature: "rsi14", op: "lt" as const, value: 45 },
+  exit: { afterDays: 5, stopLossPct: 3 },
+  sizing: { maxPositionPct: 10 },
+  costs: { commissionBps: 3, slippageBps: 7 },
+};
+
+function seedDraftSpec(): void {
+  const compiled = compileStrategy(REHEARSAL_DSL);
+  if (!compiled.ok) throw new Error(`The rehearsal fixture no longer compiles: ${compiled.message}`);
+  getDb()
+    .insert(schema.strategySpecs)
+    .values({
+      id: "spec_rehearsal_fixture",
+      hypothesisId: null,
+      parentId: null,
+      name: REHEARSAL_DSL.name,
+      version: 1,
+      dsl: JSON.stringify(REHEARSAL_DSL),
+      dslHash: compiled.hash,
+      status: "draft",
+      createdBy: "rehearsal-test",
+      createdAt: new Date(),
+    })
+    .run();
+}
+
+useTemporaryDatabase(seedDraftSpec);
 
 describe("mode gating comes from the policy, not from a second ladder", () => {
   it("refuses at off", async () => {
@@ -52,6 +105,15 @@ describe("mode gating comes from the policy, not from a second ladder", () => {
 });
 
 describe("running at learning mode", () => {
+  it("has a candidate to evaluate at all", async () => {
+    // The canary for every `for (const outcome of report.outcomes)` below. If the fixture stops
+    // being picked up, those loops iterate zero times and pass without asserting anything — so
+    // this failing first is what tells you the rest went hollow rather than green.
+    const report = await runValidationRehearsal(loader(), "learning");
+    expect(report.outcomes.length).toBeGreaterThan(0);
+    expect(report.evaluated).toBeGreaterThan(0);
+  });
+
   it("records nothing, whatever it finds", async () => {
     const report = await runValidationRehearsal(loader(), "learning");
     expect(report.recordedNothing).toBe(true);

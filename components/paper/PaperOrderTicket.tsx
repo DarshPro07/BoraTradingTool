@@ -6,6 +6,7 @@ import { FlaskConical, RefreshCw, ShieldCheck } from "lucide-react";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
 import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
 import { BLAME_LABEL, explainRejection, type Explanation } from "@/lib/paper/explain";
+import type { Market } from "@/lib/market/types";
 
 interface Account {
   currency: "USD" | "INR";
@@ -66,6 +67,15 @@ export function PaperOrderTicket({ defaultInstrumentId = "US:XNAS:AAPL" }: { def
     void load();
   }, []);
 
+  // Instrument ids are `MARKET:EXCHANGE:SYMBOL`, so the market is already in hand — which is what
+  // lets a stale-quote refusal say "the exchange is shut until Monday 09:15" instead of sending
+  // the operator to debug a price feed that is working perfectly.
+  const market: Market | undefined = instrumentId.startsWith("IN:")
+    ? "IN"
+    : instrumentId.startsWith("US:")
+      ? "US"
+      : undefined;
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -86,7 +96,7 @@ export function PaperOrderTicket({ defaultInstrumentId = "US:XNAS:AAPL" }: { def
       });
       const data = await response.json();
       if (!response.ok) {
-        setRejection(explainRejection(data.order?.reason ?? data.error ?? null, data.order?.quoteQuality));
+        setRejection(explainRejection(data.order?.reason ?? data.error ?? null, data.order?.quoteQuality, market));
         setError(null);
         await load();
         return;
@@ -96,7 +106,7 @@ export function PaperOrderTicket({ defaultInstrumentId = "US:XNAS:AAPL" }: { def
       // a REJECTED status, and reporting that as success is how the button came to look dead:
       // it said "REJECTED" in the same tone it says "FILLED" and explained neither.
       if (data.order?.status === "REJECTED") {
-        setRejection(explainRejection(data.order.reason ?? null, data.order.quoteQuality));
+        setRejection(explainRejection(data.order.reason ?? null, data.order.quoteQuality, market));
         setMessage(null);
       } else {
         setRejection(null);

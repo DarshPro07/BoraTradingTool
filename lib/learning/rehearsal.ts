@@ -221,6 +221,7 @@ export async function runValidationRehearsal(
   }
 
   const wouldPass = outcomes.filter((outcome) => outcome.verdict === "would_pass").length;
+  const survivors = outcomes.filter((outcome) => outcome.verdict === "would_pass");
   const rediscovered = outcomes.filter((outcome) => outcome.verdict === "rediscovered").length;
   const buried = rediscovered > 0 ? ` ${rediscovered} were already in the graveyard and were not re-tested.` : "";
 
@@ -233,7 +234,13 @@ export async function runValidationRehearsal(
     summary:
       wouldPass === 0
         ? `Rehearsed ${outcomes.length} candidate(s); none would survive the simulation battery. No trial was spent finding that out.${buried}`
-        : `Rehearsed ${outcomes.length} candidate(s); ${wouldPass} would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.${buried}`,
+        // Named, with their numbers. "2 would survive" is a claim the reader has to take on
+        // faith, and a loop nobody can check is indistinguishable from a loop that does nothing —
+        // which is exactly the doubt this summary kept producing. A name and a trade count can be
+        // looked up in the registry; a count cannot.
+        : `Rehearsed ${outcomes.length} candidate(s). Would survive the battery: ${survivors
+            .map((outcome) => `${outcome.name} (${outcome.trades} trades / ${outcome.instrumentsEvaluated} instruments)`)
+            .join(", ")}. A rehearsal is not evidence — the gauntlet still has to be run deliberately.${buried}`,
   };
 }
 

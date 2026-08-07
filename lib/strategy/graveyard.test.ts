@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { useTemporaryDatabase } from "@/lib/db/testing";
 import { checkRediscovery, listGraveyard, strategyIdentity, type GraveEntry } from "./graveyard";
 import { StrategyDslSchema, type StrategyDsl } from "./dsl";
+
+useTemporaryDatabase();
 
 /**
  * Percent units throughout — `stopLossPct: 5` is five percent, not 0.05. The DSL stores percent

@@ -149,14 +149,32 @@ describe("owner mutation access", () => {
     expect(denied?.status).toBe(403);
   });
 
-  it("requires a valid, unexpired owner session", () => {
-    expect(requireOwnerMutationAccess(browserRequest(), env, now)?.status).toBe(401);
+  it("no longer requires an owner session from the browser", () => {
+    // Removed at the owner's explicit instruction: on a single-user, loopback-bound application
+    // the fifteen-minute session was pure friction. What it cost is recorded here rather than in
+    // a commit message nobody re-reads.
+    //
+    // Still enforced, and asserted here and above: the request must be loopback-bound, must carry
+    // the CSRF header, and must not present a bearer token. That last one is the load-bearing
+    // half — it is what stops the autonomous agent raising its own risk ceilings, which is a
+    // different question from whether a human has to log in.
+    expect(requireOwnerMutationAccess(browserRequest(), env, now)).toBeNull();
 
+    // A session cookie is still honoured when supplied, so the sign-in control and any caller
+    // that still sends one keep working rather than failing in some new way.
     const session = createOwnerSession(OWNER_TOKEN, env, now);
     expect(session).not.toBeNull();
     expect(requireOwnerMutationAccess(ownerRequest(session!), env, now)).toBeNull();
-    expect(requireOwnerMutationAccess(ownerRequest(session!), env, now + 16 * 60_000)?.status).toBe(401);
-    expect(requireOwnerMutationAccess(ownerRequest(`${session}tampered`), env, now)?.status).toBe(401);
+  });
+
+  it("still refuses a mutation that is not loopback-bound", () => {
+    // The boundary that actually matters now. Dropping the owner session must not have widened
+    // anything reachable from off this machine.
+    const remote = request("http://192.168.1.50:3000/api/learning", {
+      origin: "http://192.168.1.50:3000",
+      "x-marketpulse-csrf": "1",
+    });
+    expect(requireOwnerMutationAccess(remote, env, now)).not.toBeNull();
   });
 
   it("fails closed when owner and agent capabilities are identical", () => {

@@ -61,6 +61,11 @@ marketpulse.db-wal
 # runtime-generated agent context files (rewritten when pages are viewed)
 /context/
 
+# quant-core artifacts generated from the local database on every learning cycle. Derived state,
+# not source — committing them would freeze one machine's trial ledger into the repository.
+# A hand-supplied packet dropped here is deliberately ignored too: it is that machine's evidence.
+/data/quantcore/
+
 # local screenshot helper output
 mp-*.mjs
 

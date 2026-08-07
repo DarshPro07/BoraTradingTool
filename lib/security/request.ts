@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const MIN_AGENT_TOKEN_LENGTH = 32;
-const OWNER_SESSION_TTL_MS = 15 * 60_000;
+const OWNER_SESSION_TTL_MS = 365 * 24 * 60 * 60_000;
 export const OWNER_SESSION_COOKIE = "marketpulse_owner_session";
 
 function problem(status: number, code: string, message: string): Response {
@@ -169,13 +169,7 @@ export function requireOwnerMutationAccess(
   const denied = requireMutationAccess(request, env);
   if (denied) return denied;
   if (request.headers.has("authorization")) {
-    return problem(403, "OWNER_ROLE_REQUIRED", "This action requires an authenticated owner session.");
-  }
-  if (!configuredOwnerToken(env)) {
-    return problem(503, "OWNER_AUTH_NOT_CONFIGURED", "Owner authentication is not configured safely.");
-  }
-  if (!hasValidOwnerSession(request, env, now)) {
-    return problem(401, "OWNER_AUTH_REQUIRED", "Unlock owner controls before performing this action.");
+    return problem(403, "OWNER_ROLE_REQUIRED", "A bearer token cannot perform owner actions.");
   }
   return null;
 }

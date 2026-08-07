@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { useTemporaryDatabase } from "@/lib/db/testing";
 import { closedTrades, lossLedger, PATTERN_THRESHOLD, reconciles, riskPosture, type LossLedger } from "./loss-memory";
+
+useTemporaryDatabase();
 
 /**
  * The requirement in the owner's words: *"whenever it loses, it should adjust itself and add in

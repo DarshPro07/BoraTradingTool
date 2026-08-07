@@ -165,6 +165,11 @@ export const StrategyDslSchema = z
         market: z.enum(["US", "NSE", "BSE"]),
         minAdv20d: z.number().finite().nonnegative().optional(),
         maxPositions: z.number().int().min(1).max(50).default(10),
+        /**
+         * Bar size. Defaults to daily so every strategy written before intraday existed keeps
+         * its exact meaning — a silent switch would re-interpret stored specs.
+         */
+        resolution: z.enum(["D", "1m", "5m", "15m"]).default("D"),
       })
       .strict(),
     entry: ConditionSchema,
@@ -185,10 +190,40 @@ export const StrategyDslSchema = z
       .object({
         commissionBps: z.number().min(0).max(200),
         slippageBps: z.number().min(0).max(500),
+        /**
+         * The bid-ask spread the strategy assumes it will cross, in basis points.
+         *
+         * **Declared, never measured.** This deployment has no bid/ask or depth data — the
+         * schema has no quote table and the free feeds do not carry one. The engine decides on
+         * bar close and fills at the next open, modelling no spread, no queue position and no
+         * partial fill.
+         *
+         * On daily bars those omissions are small relative to the move. On 1-minute bars the
+         * spread is frequently larger than the edge, so a backtest that ignores it is not
+         * optimistic — it is measuring a different instrument. Requiring the number makes the
+         * assumption visible and arguable instead of absent, which is the honest option
+         * available without paying for microstructure data.
+         */
+        assumedSpreadBps: z.number().min(0).max(500).optional(),
       })
       .strict(),
   })
-  .strict();
+  .strict()
+  .superRefine((dsl, context) => {
+    // The cross-field rule: intraday without a declared spread is refused outright rather than
+    // defaulted. A default would be a number nobody chose, silently deciding whether the
+    // strategy passes — and the whole point is that this figure is a claim someone makes.
+    if (dsl.universe.resolution !== "D" && dsl.costs.assumedSpreadBps === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["costs", "assumedSpreadBps"],
+        message:
+          `A ${dsl.universe.resolution} strategy must declare assumedSpreadBps. This deployment cannot ` +
+          "measure the bid-ask spread, and at intraday resolution it is often larger than the edge — " +
+          "so it has to be stated as an assumption rather than left out.",
+      });
+    }
+  });
 
 export type StrategyDsl = z.infer<typeof StrategyDslSchema>;
 
@@ -345,6 +380,23 @@ export function compileStrategy(input: unknown): CompileResult {
   if (dsl.costs.commissionBps + dsl.costs.slippageBps === 0) {
     warnings.push("Zero modelled costs. Results will overstate a real edge.");
   }
+  if (dsl.universe.resolution !== "D") {
+    // `afterDays` counts *bars*, not calendar days. Harmless at daily resolution where the two
+    // coincide; at 1-minute it means an exit ten minutes later while reading as ten days. The
+    // field is not renamed because that would invalidate every stored spec — so it is named here.
+    if (dsl.exit.afterDays !== undefined) {
+      warnings.push(
+        `afterDays counts bars, not calendar days: at ${dsl.universe.resolution} this exits after ` +
+          `${dsl.exit.afterDays} bars, not ${dsl.exit.afterDays} days.`,
+      );
+    }
+    if ((dsl.costs.assumedSpreadBps ?? 0) === 0) {
+      warnings.push(
+        "assumedSpreadBps is zero at intraday resolution. A zero spread is a claim that you cross " +
+          "the book for free, which no venue offers.",
+      );
+    }
+  }
   if (dsl.sizing.maxPositionPct > 15) {
     warnings.push(`Position size of ${dsl.sizing.maxPositionPct}% is concentrated.`);
   }
@@ -362,7 +414,19 @@ export function compileStrategy(input: unknown): CompileResult {
   };
 }
 
-/** Round-trip cost in basis points, used by the cost-stress stage. */
+/**
+ * Round-trip cost in basis points, used by the engine and the cost-stress stage.
+ *
+ * The declared spread is charged **once per round trip**, not twice like commission and
+ * slippage. Crossing the book to enter and again to exit costs the full spread each way — which
+ * is two halves, so one whole spread per completed trade. Doubling it would overstate the cost
+ * by 2×, and an intraday strategy that fails only because its costs were doubled has been
+ * rejected for the wrong reason. Rejection has to be as honest as acceptance.
+ *
+ * A daily strategy that declares no spread charges none, so every existing spec keeps its exact
+ * prior meaning and stored results stay comparable.
+ */
 export function roundTripCostBps(dsl: StrategyDsl, multiple = 1): number {
-  return (dsl.costs.commissionBps + dsl.costs.slippageBps) * 2 * multiple;
+  const perSide = (dsl.costs.commissionBps + dsl.costs.slippageBps) * 2;
+  return (perSide + (dsl.costs.assumedSpreadBps ?? 0)) * multiple;
 }

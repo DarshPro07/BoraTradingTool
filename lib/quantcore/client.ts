@@ -114,6 +114,15 @@ export interface QuantCoreStatus {
   stale: boolean;
   source: string | null;
   message: string | null;
+  /**
+   * True when the owner set `QUANT_CORE_URL=off`.
+   *
+   * Without this, a quant core deliberately switched off and one that has crashed produce byte
+   * for byte the same report: `reachable: false`. So the learning cycle printed "Quant core
+   * unreachable" every pass on a machine where no quant core was ever meant to run, which reads
+   * as a fault to fix rather than a component that is not part of this install.
+   */
+  disabled: boolean;
 }
 
 /**
@@ -122,6 +131,9 @@ export interface QuantCoreStatus {
  * that signal as something to surface loudly, never as permission.
  */
 export async function quantCoreStatus(options: FetchOptions = {}): Promise<QuantCoreStatus> {
+  const baseUrl = options.baseUrl === undefined ? quantCoreBaseUrl() : options.baseUrl;
+  const disabled = baseUrl === null;
+
   const health = await fetchQuantResource("health", options);
   if (!health.ok) {
     return {
@@ -131,7 +143,12 @@ export async function quantCoreStatus(options: FetchOptions = {}): Promise<Quant
       liveExecution: false,
       stale: false,
       source: health.source ?? null,
-      message: health.message,
+      // Even switched off, the filesystem transport is still tried — artifacts on disk are valid
+      // without a running service. So `disabled` narrows the message rather than replacing it.
+      message: disabled
+        ? "The quant core is switched off (QUANT_CORE_URL=off) and no artifacts were found on disk."
+        : health.message,
+      disabled,
     };
   }
   return {
@@ -142,5 +159,6 @@ export async function quantCoreStatus(options: FetchOptions = {}): Promise<Quant
     stale: health.stale,
     source: health.source,
     message: null,
+    disabled,
   };
 }

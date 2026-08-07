@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireMutationAccess } from "@/lib/security/request";
 import { runSimulationBattery } from "@/lib/simulation/battery";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,19 @@ const RequestSchema = z
   .strict();
 
 export async function POST(request: Request) {
+  // Guarded despite persisting nothing.
+  //
+  // Every other mutating route in the app carries this and this one did not, which made it the
+  // single reachable endpoint that runs unbounded work for an unauthenticated caller: up to
+  // 20,000 bootstrap iterations over 10,000 returns, synchronously, per request. "It only
+  // computes" is not a reason to leave it open — CPU is the resource being spent, and any page
+  // in any browser on this machine could spend it in a loop.
+  //
+  // `requireMutationAccess` also brings the loopback-Host and Origin checks, which is what stops
+  // a DNS-rebound page from reaching it at all.
+  const denied = requireMutationAccess(request);
+  if (denied) return denied;
+
   let body: unknown;
   try {
     body = await request.json();

@@ -26,8 +26,22 @@ function failureAt(
   return { ...failure(resource, code, message, source), retrievedAt: new Date(now).toISOString() };
 }
 
+/**
+ * Where quant-core artifacts are read from.
+ *
+ * Defaults to this repository's own `data/quantcore/`, not `E:/Trading_BOT`. The Python quant
+ * core is not installed on this machine — the directory is absent, not empty — and the owner has
+ * directed that this system stop reaching outside itself for it. `lib/quantcore/generate.ts`
+ * produces the artifacts locally; a hand-supplied file dropped into the same layout is read
+ * identically, because the reader cannot tell and should not care.
+ *
+ * `QUANT_CORE_ROOT` still overrides, so pointing this at a real quant core remains one
+ * environment variable away.
+ */
 export function quantCoreRoot(): string {
-  return process.env.QUANT_CORE_ROOT?.trim() || "E:/Trading_BOT";
+  const configured = process.env.QUANT_CORE_ROOT?.trim();
+  if (configured) return configured;
+  return path.join(process.cwd(), "data", "quantcore");
 }
 
 function readJson(filePath: string): unknown | null {
@@ -153,10 +167,17 @@ function readBoardPacket(root: string):
 function healthResource(root: string, now: number): QuantResult<ResourceData["health"]> {
   const found = readBoardPacket(root);
   if (!found) {
+    // "The quant core is not installed on this machine" and "the quant core is installed but has
+    // not produced a packet yet" are different facts with different remedies — one is a checkout,
+    // the other is a run. Reporting both as "unreachable" sends someone debugging a service that
+    // was never there, which is exactly what happened.
+    const installed = fs.existsSync(root);
     return failureAt(
       "health",
       "QUANT_CORE_UNAVAILABLE",
-      "No board packet found under reports/board_history and the HTTP transport did not respond.",
+      installed
+        ? `The quant core at ${root} has produced no board packet under reports/board_history, and the HTTP transport did not respond. It is installed but has not run.`
+        : `There is no quant core at ${root}. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.`,
       now,
     );
   }

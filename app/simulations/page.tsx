@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
 import { Distribution } from "@/components/plot/Distribution";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Simulation Lab — investment mode made visible.
@@ -72,9 +73,12 @@ export default function SimulationsPage() {
     setRunning(fixture.id);
     setError(null);
     try {
-      const response = await fetch("/api/simulation", {
+      // `mutationFetch`, not `fetch`: the endpoint now requires the CSRF header, and this is the
+      // third call site to have hand-rolled the request and omitted it. The helper exists so the
+      // header cannot be forgotten — reaching past it is how the guard gets discovered in
+      // production instead of here.
+      const response = await mutationFetch("/api/simulation", {
         method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           returns: fixture.returns,
           label: fixture.label,

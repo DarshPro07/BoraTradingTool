@@ -1,0 +1,1082 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "MARKETPULSE" [ref=e4] [cursor=pointer]:
+        - /url: /command
+      - generic "Market" [ref=e9]:
+        - button "US" [pressed] [ref=e10] [cursor=pointer]
+        - button "NSE" [ref=e11] [cursor=pointer]
+        - button "BSE" [ref=e12] [cursor=pointer]
+      - generic "Paper Research Mode. Broker execution is disabled." [ref=e13]: PAPER
+      - generic "Autonomy is learning. Work starts after two minutes idle." [ref=e343]: LEARNING
+      - search [ref=e19]:
+        - generic [ref=e23]: Search instrument
+        - textbox "Search instrument" [ref=e24]:
+          - /placeholder: AAPL, RELIANCE.NS, or canonical ID
+        - button "OPEN" [ref=e25] [cursor=pointer]
+    - navigation "Workspace" [ref=e26]:
+      - link "RESEARCH" [ref=e27] [cursor=pointer]:
+        - /url: /command
+      - link "EXECUTE" [ref=e28] [cursor=pointer]:
+        - /url: /trades
+      - link "Autonomy" [ref=e30] [cursor=pointer]:
+        - /url: /learning
+      - link "Data" [ref=e31] [cursor=pointer]:
+        - /url: /data-quality
+      - link "Settings" [ref=e32] [cursor=pointer]:
+        - /url: /settings
+  - generic [ref=e33]:
+    - link "LEARNING" [ref=e34] [cursor=pointer]:
+      - /url: /learning
+    - generic [ref=e37]: ·
+    - generic [ref=e38]: last cycle just now · this tab
+    - generic [ref=e40]: ·
+    - generic [ref=e41]: 5 actions · 5 rehearsed · 2 would pass · 1 need attention · 1.5s
+    - generic [ref=e42]: 59 cycles today
+  - generic "US and India market tape" [ref=e43]:
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - link "USAAPL" [ref=e46] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=e47]: $312.34
+        - generic [ref=e48]: "-0.02%"
+      - generic [ref=e49]:
+        - link "USMSFT" [ref=e50] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=e51]: $500.36
+        - generic [ref=e52]: +0.10%
+      - generic [ref=e53]:
+        - link "USNVDA" [ref=e54] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=e55]: $222.03
+        - generic [ref=e56]: +1.39%
+      - generic [ref=e57]:
+        - link "USSPY" [ref=e58] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=e59]: $772.18
+        - generic [ref=e60]: +0.47%
+      - generic [ref=e61]:
+        - link "NSERELIANCE" [ref=e62] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=e63]: ₹1,334.80
+        - generic [ref=e64]: +0.74%
+      - generic [ref=e65]:
+        - link "NSETCS" [ref=e66] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=e67]: ₹2,452.70
+        - generic [ref=e68]: +3.36%
+      - generic [ref=e69]:
+        - link "NSEHDFCBANK" [ref=e70] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=e71]: ₹731.00
+        - generic [ref=e72]: "-0.45%"
+      - generic [ref=e73]:
+        - link "NSENIFTYBEES" [ref=e74] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=e75]: ₹279.83
+        - generic [ref=e76]: "-0.27%"
+      - generic [ref=e77]:
+        - link "USAAPL" [ref=e78] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AAAPL
+        - generic [ref=e79]: $312.34
+        - generic [ref=e80]: "-0.02%"
+      - generic [ref=e81]:
+        - link "USMSFT" [ref=e82] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3AMSFT
+        - generic [ref=e83]: $500.36
+        - generic [ref=e84]: +0.10%
+      - generic [ref=e85]:
+        - link "USNVDA" [ref=e86] [cursor=pointer]:
+          - /url: /analyze/US%3AXNAS%3ANVDA
+        - generic [ref=e87]: $222.03
+        - generic [ref=e88]: +1.39%
+      - generic [ref=e89]:
+        - link "USSPY" [ref=e90] [cursor=pointer]:
+          - /url: /analyze/US%3AXNYS%3ASPY
+        - generic [ref=e91]: $772.18
+        - generic [ref=e92]: +0.47%
+      - generic [ref=e93]:
+        - link "NSERELIANCE" [ref=e94] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ARELIANCE
+        - generic [ref=e95]: ₹1,334.80
+        - generic [ref=e96]: +0.74%
+      - generic [ref=e97]:
+        - link "NSETCS" [ref=e98] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ATCS
+        - generic [ref=e99]: ₹2,452.70
+        - generic [ref=e100]: +3.36%
+      - generic [ref=e101]:
+        - link "NSEHDFCBANK" [ref=e102] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3AHDFCBANK
+        - generic [ref=e103]: ₹731.00
+        - generic [ref=e104]: "-0.45%"
+      - generic [ref=e105]:
+        - link "NSENIFTYBEES" [ref=e106] [cursor=pointer]:
+          - /url: /analyze/IN%3AXNSE%3ANIFTYBEES
+        - generic [ref=e107]: ₹279.83
+        - generic [ref=e108]: "-0.27%"
+  - main [ref=e109]:
+    - generic [ref=e110]:
+      - generic [ref=e111]:
+        - heading "LEARNING MODE" [level=1] [ref=e112]
+        - generic [ref=e113]: CURRENT LEARNING
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]: Queued jobs
+          - generic [ref=e117]: "0"
+        - generic [ref=e118]:
+          - generic [ref=e119]: Dead jobs
+          - generic [ref=e120]: "0"
+        - generic [ref=e121]:
+          - generic [ref=e122]: Open proposals
+          - generic [ref=e123]: "0"
+        - generic [ref=e124]:
+          - generic [ref=e125]: Awaiting approval
+          - generic [ref=e126]: "0"
+      - generic [ref=e127]:
+        - generic [ref=e128]: MODE
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - generic [ref=e132]:
+              - button "OFF Nothing runs autonomously." [ref=e133] [cursor=pointer]:
+                - generic [ref=e134]: "OFF"
+                - generic [ref=e135]: Nothing runs autonomously.
+              - button "OBSERVING Reads state and surfaces what is due. Changes nothing." [ref=e136] [cursor=pointer]:
+                - generic [ref=e137]: OBSERVING
+                - generic [ref=e138]: Reads state and surfaces what is due. Changes nothing.
+              - button "LEARNING Also drains the research queue and extracts knowledge." [pressed] [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]: LEARNING
+                - generic [ref=e141]: Also drains the research queue and extracts knowledge.
+              - button "EVOLVING Also prepares code and strategy proposals for your review." [ref=e142] [cursor=pointer]:
+                - generic [ref=e143]: EVOLVING
+                - generic [ref=e144]: Also prepares code and strategy proposals for your review.
+            - paragraph [ref=e145]: These controls are open to anything running on this machine. Mutations are restricted to loopback with a CSRF header, and a bearer token is refused — so the autonomous worker cannot change its own mode — but there is no owner password.
+            - generic [ref=e146]:
+              - button "RUN ONE CYCLE" [ref=e147] [cursor=pointer]
+              - generic [ref=e148]: Proposals always require your approval, in every mode.
+            - paragraph [ref=e1038]: "Processed 0 job(s). Refreshed 5 quant-core artifact(s) from this system's own evidence. Collected system state, study queue and mastery. 2 finding(s), 1 needing attention, across 47 memory nodes. Processed 0 research job(s). Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately. Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum. Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review."
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - generic [ref=e151]: AUTONOMY — LIVE
+              - generic [ref=e152]:
+                - generic [ref=e344]: 58 today
+                - generic [ref=e153] [cursor=pointer]:
+                  - checkbox "follow" [checked] [ref=e154]
+                  - text: follow
+            - generic [ref=e155]:
+              - generic [ref=e345]:
+                - generic [ref=e346]:
+                  - text: 08:38:41 learning
+                  - generic [ref=e347]: (browser)
+                  - generic [ref=e348]: 0.8s
+                  - generic [ref=e349]: · 4 rehearsed
+                  - generic [ref=e350]: · 1 would pass
+                  - generic [ref=e351]: · 1 need attention
+                - generic [ref=e352]: + Collected system state, study queue and mastery.
+                - generic [ref=e353]: + 2 finding(s), 1 needing attention, across 30 memory nodes.
+                - generic [ref=e354]: + Processed 0 research job(s).
+                - generic [ref=e355]: + Rehearsed 4 candidate(s); 1 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e356]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e357]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e358]:
+                - generic [ref=e359]:
+                  - text: 08:41:05 learning
+                  - generic [ref=e360]: (browser)
+                  - generic [ref=e361]: 1.0s
+                  - generic [ref=e362]: · 4 rehearsed
+                  - generic [ref=e363]: · 1 would pass
+                  - generic [ref=e364]: · 1 need attention
+                - generic [ref=e365]: + Collected system state, study queue and mastery.
+                - generic [ref=e366]: + 2 finding(s), 1 needing attention, across 30 memory nodes.
+                - generic [ref=e367]: + Processed 0 research job(s).
+                - generic [ref=e368]: + Rehearsed 4 candidate(s); 1 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e369]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e370]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e371]:
+                - generic [ref=e372]:
+                  - text: 08:46:05 learning
+                  - generic [ref=e373]: (browser)
+                  - generic [ref=e374]: 0.9s
+                  - generic [ref=e375]: · 4 rehearsed
+                  - generic [ref=e376]: · 1 would pass
+                  - generic [ref=e377]: · 1 need attention
+                - generic [ref=e378]: + Collected system state, study queue and mastery.
+                - generic [ref=e379]: + 2 finding(s), 1 needing attention, across 30 memory nodes.
+                - generic [ref=e380]: + Processed 0 research job(s).
+                - generic [ref=e381]: + Rehearsed 4 candidate(s); 1 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e382]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e383]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e384]:
+                - generic [ref=e385]:
+                  - text: 08:51:11 learning
+                  - generic [ref=e386]: (browser)
+                  - generic [ref=e387]: 1.2s
+                  - generic [ref=e388]: · 5 rehearsed
+                  - generic [ref=e389]: · 2 would pass
+                  - generic [ref=e390]: · 1 need attention
+                - generic [ref=e391]: + Collected system state, study queue and mastery.
+                - generic [ref=e392]: + 2 finding(s), 1 needing attention, across 31 memory nodes.
+                - generic [ref=e393]: + Processed 0 research job(s).
+                - generic [ref=e394]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e395]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e396]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e397]:
+                - generic [ref=e398]:
+                  - text: 08:56:30 learning
+                  - generic [ref=e399]: (browser)
+                  - generic [ref=e400]: 1.9s
+                  - generic [ref=e401]: · 5 rehearsed
+                  - generic [ref=e402]: · 2 would pass
+                  - generic [ref=e403]: · 1 need attention
+                - generic [ref=e404]: + Collected system state, study queue and mastery.
+                - generic [ref=e405]: + 2 finding(s), 1 needing attention, across 31 memory nodes.
+                - generic [ref=e406]: + Processed 0 research job(s).
+                - generic [ref=e407]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e408]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e409]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e410]:
+                - generic [ref=e411]:
+                  - text: 09:01:31 learning
+                  - generic [ref=e412]: (browser)
+                  - generic [ref=e413]: 2.8s
+                  - generic [ref=e414]: · 5 rehearsed
+                  - generic [ref=e415]: · 2 would pass
+                  - generic [ref=e416]: · 1 need attention
+                - generic [ref=e417]: + Collected system state, study queue and mastery.
+                - generic [ref=e418]: + 2 finding(s), 1 needing attention, across 31 memory nodes.
+                - generic [ref=e419]: + Processed 0 research job(s).
+                - generic [ref=e420]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e421]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e422]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e423]:
+                - generic [ref=e424]:
+                  - text: 09:06:50 learning
+                  - generic [ref=e425]: (browser)
+                  - generic [ref=e426]: 1.8s
+                  - generic [ref=e427]: · 5 rehearsed
+                  - generic [ref=e428]: · 2 would pass
+                  - generic [ref=e429]: · 1 need attention
+                - generic [ref=e430]: + Collected system state, study queue and mastery.
+                - generic [ref=e431]: + 2 finding(s), 1 needing attention, across 31 memory nodes.
+                - generic [ref=e432]: + Processed 0 research job(s).
+                - generic [ref=e433]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e434]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e435]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e436]:
+                - generic [ref=e437]:
+                  - text: 09:11:50 learning
+                  - generic [ref=e438]: (browser)
+                  - generic [ref=e439]: 2.3s
+                  - generic [ref=e440]: · 5 rehearsed
+                  - generic [ref=e441]: · 2 would pass
+                  - generic [ref=e442]: · 1 need attention
+                - generic [ref=e443]: + Collected system state, study queue and mastery.
+                - generic [ref=e444]: + 2 finding(s), 1 needing attention, across 32 memory nodes.
+                - generic [ref=e445]: + Processed 0 research job(s).
+                - generic [ref=e446]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e447]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e448]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e449]:
+                - generic [ref=e450]:
+                  - text: 13:17:12 learning
+                  - generic [ref=e451]: (browser)
+                  - generic [ref=e452]: 1.6s
+                  - generic [ref=e453]: · 5 rehearsed
+                  - generic [ref=e454]: · 2 would pass
+                  - generic [ref=e455]: · 1 need attention
+                - generic [ref=e456]: + Collected system state, study queue and mastery.
+                - generic [ref=e457]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e458]: + Processed 0 research job(s).
+                - generic [ref=e459]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e460]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e461]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e462]:
+                - generic [ref=e463]:
+                  - text: 13:23:55 learning
+                  - generic [ref=e464]: (browser)
+                  - generic [ref=e465]: 0.8s
+                  - generic [ref=e466]: · 5 rehearsed
+                  - generic [ref=e467]: · 2 would pass
+                  - generic [ref=e468]: · 1 need attention
+                - generic [ref=e469]: + Collected system state, study queue and mastery.
+                - generic [ref=e470]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e471]: + Processed 0 research job(s).
+                - generic [ref=e472]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e473]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e474]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e475]:
+                - generic [ref=e476]:
+                  - text: 13:34:25 learning
+                  - generic [ref=e477]: (browser)
+                  - generic [ref=e478]: 1.1s
+                  - generic [ref=e479]: · 5 rehearsed
+                  - generic [ref=e480]: · 2 would pass
+                  - generic [ref=e481]: · 1 need attention
+                - generic [ref=e482]: + Collected system state, study queue and mastery.
+                - generic [ref=e483]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e484]: + Processed 0 research job(s).
+                - generic [ref=e485]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e486]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e487]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e488]:
+                - generic [ref=e489]:
+                  - text: 13:34:33 learning
+                  - generic [ref=e490]: (browser)
+                  - generic [ref=e491]: 0.8s
+                  - generic [ref=e492]: · 5 rehearsed
+                  - generic [ref=e493]: · 2 would pass
+                  - generic [ref=e494]: · 1 need attention
+                - generic [ref=e495]: + Collected system state, study queue and mastery.
+                - generic [ref=e496]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e497]: + Processed 0 research job(s).
+                - generic [ref=e498]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e499]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e500]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e501]:
+                - generic [ref=e502]:
+                  - text: 13:34:35 learning
+                  - generic [ref=e503]: (browser)
+                  - generic [ref=e504]: 0.7s
+                  - generic [ref=e505]: · 5 rehearsed
+                  - generic [ref=e506]: · 2 would pass
+                  - generic [ref=e507]: · 1 need attention
+                - generic [ref=e508]: + Collected system state, study queue and mastery.
+                - generic [ref=e509]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e510]: + Processed 0 research job(s).
+                - generic [ref=e511]: + Rehearsed 5 candidate(s); 2 would survive the battery and may be worth a real trial. A rehearsal is not evidence — the gauntlet still has to be run deliberately.
+                - generic [ref=e512]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e513]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e514]:
+                - generic [ref=e515]:
+                  - text: 13:41:03 learning
+                  - generic [ref=e516]: (scheduler)
+                  - generic [ref=e517]: 0.8s
+                  - generic [ref=e518]: · 5 rehearsed
+                  - generic [ref=e519]: · 2 would pass
+                  - generic [ref=e520]: · 1 need attention
+                - generic [ref=e521]: + Collected system state, study queue and mastery.
+                - generic [ref=e522]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e523]: + Processed 0 research job(s).
+                - generic [ref=e524]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e525]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e526]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e527]:
+                - generic [ref=e528]:
+                  - text: 13:52:15 learning
+                  - generic [ref=e529]: (browser)
+                  - generic [ref=e530]: 1.0s
+                  - generic [ref=e531]: · 5 rehearsed
+                  - generic [ref=e532]: · 2 would pass
+                  - generic [ref=e533]: · 1 need attention
+                - generic [ref=e534]: + Collected system state, study queue and mastery.
+                - generic [ref=e535]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e536]: + Processed 0 research job(s).
+                - generic [ref=e537]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e538]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e539]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e540]:
+                - generic [ref=e541]:
+                  - text: 13:56:03 learning
+                  - generic [ref=e542]: (scheduler)
+                  - generic [ref=e543]: 1.1s
+                  - generic [ref=e544]: · 5 rehearsed
+                  - generic [ref=e545]: · 2 would pass
+                  - generic [ref=e546]: · 1 need attention
+                - generic [ref=e547]: + Collected system state, study queue and mastery.
+                - generic [ref=e548]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e549]: + Processed 0 research job(s).
+                - generic [ref=e550]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e551]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e552]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e553]:
+                - generic [ref=e554]:
+                  - text: 13:56:18 learning
+                  - generic [ref=e555]: (browser)
+                  - generic [ref=e556]: 0.7s
+                  - generic [ref=e557]: · 5 rehearsed
+                  - generic [ref=e558]: · 2 would pass
+                  - generic [ref=e559]: · 1 need attention
+                - generic [ref=e560]: + Collected system state, study queue and mastery.
+                - generic [ref=e561]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e562]: + Processed 0 research job(s).
+                - generic [ref=e563]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e564]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e565]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e566]:
+                - generic [ref=e567]:
+                  - text: 13:57:20 learning
+                  - generic [ref=e568]: (browser)
+                  - generic [ref=e569]: 0.9s
+                  - generic [ref=e570]: · 5 rehearsed
+                  - generic [ref=e571]: · 2 would pass
+                  - generic [ref=e572]: · 1 need attention
+                - generic [ref=e573]: + Collected system state, study queue and mastery.
+                - generic [ref=e574]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e575]: + Processed 0 research job(s).
+                - generic [ref=e576]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e577]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e578]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e579]:
+                - generic [ref=e580]:
+                  - text: 13:58:31 learning
+                  - generic [ref=e581]: (browser)
+                  - generic [ref=e582]: 0.7s
+                  - generic [ref=e583]: · 5 rehearsed
+                  - generic [ref=e584]: · 2 would pass
+                  - generic [ref=e585]: · 1 need attention
+                - generic [ref=e586]: + Collected system state, study queue and mastery.
+                - generic [ref=e587]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e588]: + Processed 0 research job(s).
+                - generic [ref=e589]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e590]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e591]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e592]:
+                - generic [ref=e593]:
+                  - text: 14:07:29 learning
+                  - generic [ref=e594]: (browser)
+                  - generic [ref=e595]: 0.8s
+                  - generic [ref=e596]: · 5 rehearsed
+                  - generic [ref=e597]: · 2 would pass
+                  - generic [ref=e598]: · 1 need attention
+                - generic [ref=e599]: + Collected system state, study queue and mastery.
+                - generic [ref=e600]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e601]: + Processed 0 research job(s).
+                - generic [ref=e602]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e603]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e604]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e605]:
+                - generic [ref=e606]:
+                  - text: 14:11:03 learning
+                  - generic [ref=e607]: (scheduler)
+                  - generic [ref=e608]: 1.1s
+                  - generic [ref=e609]: · 5 rehearsed
+                  - generic [ref=e610]: · 2 would pass
+                  - generic [ref=e611]: · 1 need attention
+                - generic [ref=e612]: + Collected system state, study queue and mastery.
+                - generic [ref=e613]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e614]: + Processed 0 research job(s).
+                - generic [ref=e615]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e616]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e617]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e618]:
+                - generic [ref=e619]:
+                  - text: 14:18:16 learning
+                  - generic [ref=e620]: (browser)
+                  - generic [ref=e621]: 0.7s
+                  - generic [ref=e622]: · 5 rehearsed
+                  - generic [ref=e623]: · 2 would pass
+                  - generic [ref=e624]: · 1 need attention
+                - generic [ref=e625]: + Collected system state, study queue and mastery.
+                - generic [ref=e626]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e627]: + Processed 0 research job(s).
+                - generic [ref=e628]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e629]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e630]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e631]:
+                - generic [ref=e632]:
+                  - text: 14:49:14 learning
+                  - generic [ref=e633]: (browser)
+                  - generic [ref=e634]: 2.7s
+                  - generic [ref=e635]: · 5 rehearsed
+                  - generic [ref=e636]: · 2 would pass
+                  - generic [ref=e637]: · 1 need attention
+                - generic [ref=e638]: + Collected system state, study queue and mastery.
+                - generic [ref=e639]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e640]: + Processed 0 research job(s).
+                - generic [ref=e641]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e642]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e643]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e644]:
+                - generic [ref=e645]:
+                  - text: 14:57:19 learning
+                  - generic [ref=e646]: (browser)
+                  - generic [ref=e647]: 4.6s
+                  - generic [ref=e648]: · 5 rehearsed
+                  - generic [ref=e649]: · 1 need attention
+                - generic [ref=e650]: + Collected system state, study queue and mastery.
+                - generic [ref=e651]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e652]: + Processed 0 research job(s).
+                - generic [ref=e653]: + Rehearsed 5 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - generic [ref=e654]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e655]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e656]:
+                - generic [ref=e657]:
+                  - text: 15:05:37 learning
+                  - generic [ref=e658]: (browser)
+                  - generic [ref=e659]: 0.4s
+                  - generic [ref=e660]: · 5 rehearsed
+                  - generic [ref=e661]: · 1 need attention
+                - generic [ref=e662]: + Collected system state, study queue and mastery.
+                - generic [ref=e663]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e664]: + Processed 0 research job(s).
+                - generic [ref=e665]: + Rehearsed 5 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - generic [ref=e666]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e667]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e668]:
+                - generic [ref=e669]:
+                  - text: 16:29:14 learning
+                  - generic [ref=e670]: (browser)
+                  - generic [ref=e671]: 1.9s
+                  - generic [ref=e672]: · 5 rehearsed
+                  - generic [ref=e673]: · 2 would pass
+                  - generic [ref=e674]: · 1 need attention
+                - generic [ref=e675]: + Collected system state, study queue and mastery.
+                - generic [ref=e676]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e677]: + Processed 0 research job(s).
+                - generic [ref=e678]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e679]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e680]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e681]:
+                - generic [ref=e682]:
+                  - text: 16:34:20 learning
+                  - generic [ref=e683]: (scheduler)
+                  - generic [ref=e684]: 0.8s
+                  - generic [ref=e685]: · 5 rehearsed
+                  - generic [ref=e686]: · 2 would pass
+                  - generic [ref=e687]: · 1 need attention
+                - generic [ref=e688]: + Collected system state, study queue and mastery.
+                - generic [ref=e689]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e690]: + Processed 0 research job(s).
+                - generic [ref=e691]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e692]: ~ Quant core unreachable; candidate review was skipped rather than guessed.
+                - generic [ref=e693]: "~ Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that."
+              - generic [ref=e694]:
+                - generic [ref=e695]:
+                  - text: 16:41:02 learning
+                  - generic [ref=e696]: (scheduler)
+                  - generic [ref=e697]: 0.8s
+                  - generic [ref=e698]: · 5 rehearsed
+                  - generic [ref=e699]: · 2 would pass
+                  - generic [ref=e700]: · 1 need attention
+                - generic [ref=e701]: + Collected system state, study queue and mastery.
+                - generic [ref=e702]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e703]: + Processed 0 research job(s).
+                - generic [ref=e704]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e705]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e706]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e707]:
+                - generic [ref=e708]:
+                  - text: 16:56:03 learning
+                  - generic [ref=e709]: (scheduler)
+                  - generic [ref=e710]: 0.8s
+                  - generic [ref=e711]: · 5 rehearsed
+                  - generic [ref=e712]: · 2 would pass
+                  - generic [ref=e713]: · 1 need attention
+                - generic [ref=e714]: + Collected system state, study queue and mastery.
+                - generic [ref=e715]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e716]: + Processed 0 research job(s).
+                - generic [ref=e717]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e718]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e719]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e720]:
+                - generic [ref=e721]:
+                  - text: 17:11:02 learning
+                  - generic [ref=e722]: (scheduler)
+                  - generic [ref=e723]: 0.8s
+                  - generic [ref=e724]: · 5 rehearsed
+                  - generic [ref=e725]: · 2 would pass
+                  - generic [ref=e726]: · 1 need attention
+                - generic [ref=e727]: + Collected system state, study queue and mastery.
+                - generic [ref=e728]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e729]: + Processed 0 research job(s).
+                - generic [ref=e730]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e731]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e732]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e733]:
+                - generic [ref=e734]:
+                  - text: 17:26:02 learning
+                  - generic [ref=e735]: (scheduler)
+                  - generic [ref=e736]: 0.9s
+                  - generic [ref=e737]: · 5 rehearsed
+                  - generic [ref=e738]: · 2 would pass
+                  - generic [ref=e739]: · 1 need attention
+                - generic [ref=e740]: + Collected system state, study queue and mastery.
+                - generic [ref=e741]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e742]: + Processed 0 research job(s).
+                - generic [ref=e743]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e744]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e745]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e746]:
+                - generic [ref=e747]:
+                  - text: 17:41:08 learning
+                  - generic [ref=e748]: (scheduler)
+                  - generic [ref=e749]: 1.3s
+                  - generic [ref=e750]: · 5 rehearsed
+                  - generic [ref=e751]: · 2 would pass
+                  - generic [ref=e752]: · 1 need attention
+                - generic [ref=e753]: + Collected system state, study queue and mastery.
+                - generic [ref=e754]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e755]: + Processed 0 research job(s).
+                - generic [ref=e756]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e757]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e758]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e759]:
+                - generic [ref=e760]:
+                  - text: 17:49:34 learning
+                  - generic [ref=e761]: (browser)
+                  - generic [ref=e762]: 1.2s
+                  - generic [ref=e763]: · 5 rehearsed
+                  - generic [ref=e764]: · 2 would pass
+                  - generic [ref=e765]: · 1 need attention
+                - generic [ref=e766]: + Collected system state, study queue and mastery.
+                - generic [ref=e767]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e768]: + Processed 0 research job(s).
+                - generic [ref=e769]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e770]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e771]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e772]:
+                - generic [ref=e773]:
+                  - text: 17:56:04 learning
+                  - generic [ref=e774]: (scheduler)
+                  - generic [ref=e775]: 1.1s
+                  - generic [ref=e776]: · 5 rehearsed
+                  - generic [ref=e777]: · 2 would pass
+                  - generic [ref=e778]: · 1 need attention
+                - generic [ref=e779]: + Collected system state, study queue and mastery.
+                - generic [ref=e780]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e781]: + Processed 0 research job(s).
+                - generic [ref=e782]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e783]: ~ Quant core did not answer, so candidate review was skipped rather than guessed. There is no quant core at E:/Trading_BOT. Nothing is installed there, so neither transport can succeed. Set QUANT_CORE_ROOT, or set QUANT_CORE_URL=off to stop asking.
+                - generic [ref=e784]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e785]:
+                - generic [ref=e786]:
+                  - text: 18:11:03 learning
+                  - generic [ref=e787]: (scheduler)
+                  - generic [ref=e788]: 1.1s
+                  - generic [ref=e789]: · 5 rehearsed
+                  - generic [ref=e790]: · 2 would pass
+                  - generic [ref=e791]: · 1 need attention
+                - generic [ref=e792]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e793]: + Collected system state, study queue and mastery.
+                - generic [ref=e794]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e795]: + Processed 0 research job(s).
+                - generic [ref=e796]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e797]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e798]:
+                - generic [ref=e799]:
+                  - text: 18:15:36 learning
+                  - generic [ref=e800]: (browser)
+                  - generic [ref=e801]: 0.1s
+                  - generic [ref=e802]: · 5 rehearsed
+                  - generic [ref=e803]: · 1 need attention
+                - generic [ref=e804]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e805]: + Collected system state, study queue and mastery.
+                - generic [ref=e806]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e807]: + Processed 0 research job(s).
+                - generic [ref=e808]: + Rehearsed 5 candidate(s); none would survive the simulation battery. No trial was spent finding that out.
+                - generic [ref=e809]: ~ Quant core "regime" was not written — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e810]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e811]:
+                - generic [ref=e812]:
+                  - text: 18:26:04 learning
+                  - generic [ref=e813]: (scheduler)
+                  - generic [ref=e814]: 2.4s
+                  - generic [ref=e815]: · 5 rehearsed
+                  - generic [ref=e816]: · 2 would pass
+                  - generic [ref=e817]: · 1 need attention
+                - generic [ref=e818]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e819]: + Collected system state, study queue and mastery.
+                - generic [ref=e820]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e821]: + Processed 0 research job(s).
+                - generic [ref=e822]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e823]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e824]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e825]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e826]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e827]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e828]:
+                - generic [ref=e829]:
+                  - text: 18:41:03 learning
+                  - generic [ref=e830]: (scheduler)
+                  - generic [ref=e831]: 0.9s
+                  - generic [ref=e832]: · 5 rehearsed
+                  - generic [ref=e833]: · 2 would pass
+                  - generic [ref=e834]: · 1 need attention
+                - generic [ref=e835]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e836]: + Collected system state, study queue and mastery.
+                - generic [ref=e837]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e838]: + Processed 0 research job(s).
+                - generic [ref=e839]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e840]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e841]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e842]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e843]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e844]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e845]:
+                - generic [ref=e846]:
+                  - text: 18:56:08 learning
+                  - generic [ref=e847]: (scheduler)
+                  - generic [ref=e848]: 1.6s
+                  - generic [ref=e849]: · 5 rehearsed
+                  - generic [ref=e850]: · 2 would pass
+                  - generic [ref=e851]: · 1 need attention
+                - generic [ref=e852]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e853]: + Collected system state, study queue and mastery.
+                - generic [ref=e854]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e855]: + Processed 0 research job(s).
+                - generic [ref=e856]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (89 trades / 12 instruments), sma_cross_ui_probe (89 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e857]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e858]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e859]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e860]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e861]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e862]:
+                - generic [ref=e863]:
+                  - text: 19:11:03 learning
+                  - generic [ref=e864]: (scheduler)
+                  - generic [ref=e865]: 1.7s
+                  - generic [ref=e866]: · 5 rehearsed
+                  - generic [ref=e867]: · 2 would pass
+                  - generic [ref=e868]: · 1 need attention
+                - generic [ref=e869]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e870]: + Collected system state, study queue and mastery.
+                - generic [ref=e871]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e872]: + Processed 0 research job(s).
+                - generic [ref=e873]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e874]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e875]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e876]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e877]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e878]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e879]:
+                - generic [ref=e880]:
+                  - text: 19:26:04 learning
+                  - generic [ref=e881]: (scheduler)
+                  - generic [ref=e882]: 3.0s
+                  - generic [ref=e883]: · 5 rehearsed
+                  - generic [ref=e884]: · 2 would pass
+                  - generic [ref=e885]: · 1 need attention
+                - generic [ref=e886]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e887]: + Collected system state, study queue and mastery.
+                - generic [ref=e888]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e889]: + Processed 0 research job(s).
+                - generic [ref=e890]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e891]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e892]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e893]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e894]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e895]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e896]:
+                - generic [ref=e897]:
+                  - text: 19:28:59 learning
+                  - generic [ref=e898]: (browser)
+                  - generic [ref=e899]: 0.8s
+                  - generic [ref=e900]: · 5 rehearsed
+                  - generic [ref=e901]: · 2 would pass
+                  - generic [ref=e902]: · 1 need attention
+                - generic [ref=e903]: + Refreshed 4 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e904]: + Collected system state, study queue and mastery.
+                - generic [ref=e905]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e906]: + Processed 0 research job(s).
+                - generic [ref=e907]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e908]: "~ Quant core \"board.candidates\" — gap_largecap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e909]: "~ Quant core \"board.candidates\" — gap_smallcap_premarket: cannot derive market_cap from price data."
+                - generic [ref=e910]: "~ Quant core \"board.candidates\" — largecap_momentum: cannot derive market_cap from price data."
+                - generic [ref=e911]: ~ Quant core "regime" — Not enough history to rank this window against; no regime was written rather than defaulting to NORMAL.
+                - generic [ref=e912]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e913]:
+                - generic [ref=e914]:
+                  - text: 19:41:08 learning
+                  - generic [ref=e915]: (scheduler)
+                  - generic [ref=e916]: 3.9s
+                  - generic [ref=e917]: · 5 rehearsed
+                  - generic [ref=e918]: · 2 would pass
+                  - generic [ref=e919]: · 1 need attention
+                - generic [ref=e920]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e921]: + Seeded 10 graded quiz question(s) into the study bank.
+                - generic [ref=e922]: + Collected system state, study queue and mastery.
+                - generic [ref=e923]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e924]: + Processed 0 research job(s).
+                - generic [ref=e925]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e926]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e927]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e928]:
+                - generic [ref=e929]:
+                  - text: 19:56:07 learning
+                  - generic [ref=e930]: (scheduler)
+                  - generic [ref=e931]: 4.0s
+                  - generic [ref=e932]: · 5 rehearsed
+                  - generic [ref=e933]: · 2 would pass
+                  - generic [ref=e934]: · 1 need attention
+                - generic [ref=e935]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e936]: + Collected system state, study queue and mastery.
+                - generic [ref=e937]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e938]: + Processed 0 research job(s).
+                - generic [ref=e939]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e940]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e941]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e942]:
+                - generic [ref=e943]:
+                  - text: 20:11:05 learning
+                  - generic [ref=e944]: (scheduler)
+                  - generic [ref=e945]: 1.9s
+                  - generic [ref=e946]: · 5 rehearsed
+                  - generic [ref=e947]: · 2 would pass
+                  - generic [ref=e948]: · 1 need attention
+                - generic [ref=e949]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e950]: + Collected system state, study queue and mastery.
+                - generic [ref=e951]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e952]: + Processed 0 research job(s).
+                - generic [ref=e953]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e954]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e955]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e956]:
+                - generic [ref=e957]:
+                  - text: 20:26:04 learning
+                  - generic [ref=e958]: (scheduler)
+                  - generic [ref=e959]: 1.6s
+                  - generic [ref=e960]: · 5 rehearsed
+                  - generic [ref=e961]: · 2 would pass
+                  - generic [ref=e962]: · 1 need attention
+                - generic [ref=e963]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e964]: + Collected system state, study queue and mastery.
+                - generic [ref=e965]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e966]: + Processed 0 research job(s).
+                - generic [ref=e967]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e968]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e969]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e970]:
+                - generic [ref=e971]:
+                  - text: 20:41:04 learning
+                  - generic [ref=e972]: (scheduler)
+                  - generic [ref=e973]: 1.4s
+                  - generic [ref=e974]: · 5 rehearsed
+                  - generic [ref=e975]: · 2 would pass
+                  - generic [ref=e976]: · 1 need attention
+                - generic [ref=e977]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e978]: + Collected system state, study queue and mastery.
+                - generic [ref=e979]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e980]: + Processed 0 research job(s).
+                - generic [ref=e981]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e982]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e983]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e984]:
+                - generic [ref=e985]:
+                  - text: 20:56:05 learning
+                  - generic [ref=e986]: (scheduler)
+                  - generic [ref=e987]: 2.3s
+                  - generic [ref=e988]: · 5 rehearsed
+                  - generic [ref=e989]: · 2 would pass
+                  - generic [ref=e990]: · 1 need attention
+                - generic [ref=e991]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e992]: + Collected system state, study queue and mastery.
+                - generic [ref=e993]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e994]: + Processed 0 research job(s).
+                - generic [ref=e995]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e996]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e997]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e998]:
+                - generic [ref=e999]:
+                  - text: 22:24:31 learning
+                  - generic [ref=e1000]: (browser)
+                  - generic [ref=e1001]: 5.1s
+                  - generic [ref=e1002]: · 5 rehearsed
+                  - generic [ref=e1003]: · 2 would pass
+                  - generic [ref=e1004]: · 1 need attention
+                - generic [ref=e1005]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e1006]: + Collected system state, study queue and mastery.
+                - generic [ref=e1007]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e1008]: + Processed 0 research job(s).
+                - generic [ref=e1009]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e1010]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e1011]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+              - generic [ref=e1012]:
+                - generic [ref=e1013]:
+                  - text: 22:27:15 learning
+                  - generic [ref=e1014]: (scheduler)
+                  - generic [ref=e1015]: 2.1s
+                  - generic [ref=e1016]: · 5 rehearsed
+                  - generic [ref=e1017]: · 2 would pass
+                  - generic [ref=e1018]: · 1 need attention
+                - generic [ref=e1019]: + Refreshed 5 quant-core artifact(s) from this system's own evidence.
+                - generic [ref=e1020]: + Collected system state, study queue and mastery.
+                - generic [ref=e1021]: + 2 finding(s), 1 needing attention, across 47 memory nodes.
+                - generic [ref=e1022]: + Processed 0 research job(s).
+                - generic [ref=e1023]: "+ Rehearsed 5 candidate(s). Would survive the battery: sma_cross_20_50 (90 trades / 12 instruments), sma_cross_ui_probe (90 trades / 12 instruments). A rehearsal is not evidence — the gauntlet still has to be run deliberately."
+                - generic [ref=e1024]: "~ Quant core \"board.candidates\" — 3 strategies need market_cap, which price data cannot supply: gap_largecap_premarket, gap_smallcap_premarket, largecap_momentum."
+                - generic [ref=e1025]: ~ Proposals are off at this mode by design, not because anything failed. Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.
+            - paragraph [ref=e1026]: 135 cycle row(s) written by a test process are hidden. The audit log is append-only by database trigger, so they cannot be deleted — only excluded here.
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - generic [ref=e159]: WHAT IS ENABLED NOW
+          - list [ref=e162]:
+            - listitem [ref=e163]:
+              - generic [ref=e164]: Discover papers, videos and repositories
+              - generic [ref=e165]: "ON"
+            - listitem [ref=e166]:
+              - generic [ref=e167]: Extract claims and code links from a source
+              - generic [ref=e168]: "ON"
+            - listitem [ref=e169]:
+              - generic [ref=e170]: Propose a bounded Strategy DSL specification
+              - generic [ref=e171]: "ON"
+            - listitem [ref=e172]:
+              - generic [ref=e173]: Generate a feature implementation
+              - generic [ref=e174]: "ON"
+            - listitem [ref=e175]:
+              - generic [ref=e176]: Write tests for generated code
+              - generic [ref=e177]: "ON"
+            - listitem [ref=e178]:
+              - generic [ref=e179]: Run historical replay over stored data
+              - generic [ref=e180]: "ON"
+            - listitem [ref=e181]:
+              - generic [ref=e182]: Run Monte Carlo simulation
+              - generic [ref=e183]: "ON"
+            - listitem [ref=e184]:
+              - generic [ref=e185]: Diagnose why a strategy failed
+              - generic [ref=e186]: "ON"
+            - listitem [ref=e187]:
+              - generic [ref=e188]: Generate a safer or simpler child strategy
+              - generic [ref=e189]: needs evolving
+            - listitem [ref=e190]:
+              - generic [ref=e191]: Create an isolated git worktree and branch
+              - generic [ref=e192]: needs evolving
+            - listitem [ref=e193]:
+              - generic [ref=e194]: Submit a code change for human review
+              - generic [ref=e195]: needs evolving
+            - listitem [ref=e196]:
+              - generic [ref=e197]: Improve a dashboard page
+              - generic [ref=e198]: needs evolving
+            - listitem [ref=e199]:
+              - generic [ref=e200]: Write a verified finding to durable memory
+              - generic [ref=e201]: "ON"
+            - listitem [ref=e202]:
+              - generic [ref=e203]: Retire a strategy whose edge has decayed
+              - generic [ref=e204]: needs evolving
+        - generic [ref=e205]:
+          - generic [ref=e206]: NEVER PERMITTED
+          - generic [ref=e208]:
+            - paragraph [ref=e209]: These stay off in every mode. They are enforced by the policy module, by database triggers, and by tests that fail the build if any of them becomes reachable.
+            - list [ref=e210]:
+              - listitem [ref=e211]:
+                - generic [ref=e212]: modify risk kernel
+                - generic [ref=e213]: BLOCKED
+              - listitem [ref=e214]:
+                - generic [ref=e215]: change loss ceiling
+                - generic [ref=e216]: BLOCKED
+              - listitem [ref=e217]:
+                - generic [ref=e218]: change position ceiling
+                - generic [ref=e219]: BLOCKED
+              - listitem [ref=e220]:
+                - generic [ref=e221]: delete trial record
+                - generic [ref=e222]: BLOCKED
+              - listitem [ref=e223]:
+                - generic [ref=e224]: requery locked holdout
+                - generic [ref=e225]: BLOCKED
+              - listitem [ref=e226]:
+                - generic [ref=e227]: deploy unreviewed code
+                - generic [ref=e228]: BLOCKED
+              - listitem [ref=e229]:
+                - generic [ref=e230]: change mcp permissions
+                - generic [ref=e231]: BLOCKED
+              - listitem [ref=e232]:
+                - generic [ref=e233]: add broker mutation tool
+                - generic [ref=e234]: BLOCKED
+              - listitem [ref=e235]:
+                - generic [ref=e236]: place order
+                - generic [ref=e237]: BLOCKED
+              - listitem [ref=e238]:
+                - generic [ref=e239]: rewrite verification rules
+                - generic [ref=e240]: BLOCKED
+              - listitem [ref=e241]:
+                - generic [ref=e242]: mark failed strategy profitable
+                - generic [ref=e243]: BLOCKED
+      - generic [ref=e244]:
+        - generic [ref=e245]: SELF-INSPECTION
+        - generic [ref=e247]:
+          - paragraph [ref=e248]:
+            - text: What the system finds when it examines its own memory — after
+            - generic [ref=e249]: 15 min
+            - text: of silence for light passes,
+            - generic [ref=e250]: 60 min
+            - text: "for the expensive ones. It cannot read papers unattended: there is no model inside this application, so each finding becomes work for the next agent connection rather than a conclusion drawn here."
+          - generic [ref=e251]: 2 finding(s), 1 needing attention, across 47 memory nodes.
+          - list [ref=e253]:
+            - listitem [ref=e254]:
+              - generic [ref=e255]:
+                - generic [ref=e256]: orphan knowledge
+                - generic [ref=e257]: 5 strategy(ies) implement no hypothesis and have never been tested.
+                - generic [ref=e258]: "5"
+              - paragraph [ref=e259]: → Attach the hypothesis each one came from, or retire it with a reason. A strategy with no stated reason to exist cannot be falsified.
+            - listitem [ref=e260]:
+              - generic [ref=e261]:
+                - generic [ref=e262]: stalled strategy
+                - generic [ref=e263]: 5 strategy(ies) still sitting in draft or validating.
+                - generic [ref=e264]: "5"
+              - paragraph [ref=e265]: → Run the gauntlet on each or reject it explicitly. A strategy in limbo consumes attention without producing evidence.
+      - generic [ref=e266]:
+        - generic [ref=e267]: RESEARCH INTAKE
+        - generic [ref=e269]:
+          - paragraph [ref=e270]: What the deterministic worker drains on every learning cycle. Until something is queued here the loop has nothing to ingest, and Processed 0 job(s) is an accurate report of an empty queue rather than a broken one.
+          - generic [ref=e271]:
+            - generic [ref=e272]:
+              - combobox [ref=e273] [cursor=pointer]:
+                - option "paper"
+                - option "video / transcript"
+                - option "repository"
+                - option "web page" [selected]
+              - textbox "Title" [ref=e274]
+              - textbox "Source URL (optional)" [ref=e275]
+            - textbox "Paste the abstract, transcript or README. Archived verbatim with a content hash — claims are extracted later by Claude, never guessed here." [ref=e276]
+            - button "Queue for ingestion" [disabled] [ref=e278] [cursor=pointer]
+      - generic [ref=e279]:
+        - generic [ref=e280]: STUDY QUEUE
+        - generic [ref=e282]:
+          - generic [ref=e1027]:
+            - generic [ref=e1028]:
+              - generic [ref=e1029]: market microstructure
+              - generic [ref=e1030]: never studied · 11 more queued
+            - paragraph [ref=e1031]: What is Screen versus strategy?
+            - button "Reveal" [ref=e1032] [cursor=pointer]
+          - list [ref=e285]:
+            - listitem [ref=e286]:
+              - generic [ref=e287]: Screen versus strategy
+              - generic [ref=e288]: never studied
+            - listitem [ref=e289]:
+              - generic [ref=e290]: Collector/judge separation
+              - generic [ref=e291]: never studied
+            - listitem [ref=e292]:
+              - generic [ref=e293]: Deflated Sharpe ratio
+              - generic [ref=e294]: never studied
+            - listitem [ref=e295]:
+              - generic [ref=e296]: Selection cost
+              - generic [ref=e297]: never studied
+            - listitem [ref=e298]:
+              - generic [ref=e299]: Out-of-sample holdout
+              - generic [ref=e300]: never studied
+            - listitem [ref=e301]:
+              - generic [ref=e302]: Survivorship bias
+              - generic [ref=e303]: never studied
+            - listitem [ref=e304]:
+              - generic [ref=e305]: Transaction cost sensitivity
+              - generic [ref=e306]: never studied
+            - listitem [ref=e307]:
+              - generic [ref=e308]: Pairwise correlation limit
+              - generic [ref=e309]: never studied
+            - listitem [ref=e310]:
+              - generic [ref=e311]: Forward outcome
+              - generic [ref=e312]: never studied
+            - listitem [ref=e313]:
+              - generic [ref=e314]: Probability of backtest overfitting
+              - generic [ref=e315]: never studied
+          - generic [ref=e316]:
+            - generic [ref=e317]: "computational finance: 2/2 studied"
+            - generic [ref=e318]: "data quality: 0/1 studied"
+            - generic [ref=e319]: "evidence: 0/1 studied"
+            - generic [ref=e320]: "execution: 0/1 studied"
+            - generic [ref=e321]: "market microstructure: 0/1 studied"
+            - generic [ref=e322]: "market structure: 0/1 studied"
+            - generic [ref=e323]: "research method: 1/2 studied"
+            - generic [ref=e324]: "risk: 0/1 studied"
+            - generic [ref=e325]: "statistics: 0/3 studied"
+            - generic [ref=e326]: "system: 0/2 studied"
+  - contentinfo [ref=e327]:
+    - generic [ref=e328]: Decision support only. AI output is model-generated research opinion; broker execution is disabled.
+    - generic [ref=e329]: PAPER MODE
+  - button "Open Next.js Dev Tools" [ref=e1039] [cursor=pointer]:
+    - generic [ref=e1042]:
+      - text: Rendering
+      - generic [ref=e1043]:
+        - generic [ref=e1044]: .
+        - generic [ref=e1045]: .
+        - generic [ref=e1046]: .
+  - alert [ref=e1037]

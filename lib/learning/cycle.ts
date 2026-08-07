@@ -2,13 +2,18 @@ import { desc } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getLearningMode } from "@/lib/governance/runtime";
 import { quantCoreStatus } from "@/lib/quantcore/client";
+import { generateQuantCoreArtifacts } from "@/lib/quantcore/generate";
+import { runFactoryGeneration } from "@/lib/factory/generation";
+import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import type { Candle } from "@/lib/providers/types";
 import { queueStats } from "@/lib/research/queue";
 import { runWorker } from "@/lib/research/worker";
 import { nextCurriculum, masteryByPlane } from "./curriculum";
+import { seedQuizBank } from "./quiz-bank";
 import { proposalStats } from "./evolution";
 import { inspectMemory, type IntrospectionReport } from "./introspection";
 import { runValidationRehearsal, type CandleLoader, type RehearsalReport } from "./rehearsal";
-import { marketCandleLoader } from "./dataset";
+import { fetchInstrumentBars, fetchMarketSample, marketCandleLoader } from "./dataset";
 import { recordCycleRun } from "./run-log";
 import { withCycleLease, type LeaseHolder } from "./lease";
 
@@ -56,6 +61,12 @@ export async function runLearningCycle(
   // Defaults to the real provider. A null-returning default would have made every rehearsal
   // report "no data" in production while passing every test that injected a loader.
   loadCandles: CandleLoader = marketCandleLoader(),
+  /**
+   * Bars for the quant-core generation pass. Injectable for the same reason `loadCandles` is:
+   * without it a cycle test reaches the network, which made the suite depend on a provider being
+   * up and turned a queue-draining assertion into a five-second timeout under parallel load.
+   */
+  loadEvidence: EvidenceLoader = marketEvidence,
 ): Promise<CycleReport> {
   // The lease is taken here rather than in each driver. The browser path runs through
   // `app/api/learning/cycle/`, which is owner-reviewed and cannot be edited by an agent — so a
@@ -66,7 +77,7 @@ export async function runLearningCycle(
     // and, eventually, one of them forgotten — which is precisely how a loop ends up running with
     // no trace that it ran.
     const startedAt = Date.now();
-    const report = await runCycleBody(workerId, loadCandles);
+    const report = await runCycleBody(workerId, loadCandles, loadEvidence);
     try {
       recordCycleRun(report, Date.now() - startedAt, workerId);
     } catch {
@@ -91,6 +102,42 @@ export async function runLearningCycle(
         : "Another driver holds the cycle lease. This call did nothing.",
     ],
   };
+}
+
+/**
+ * One market fetch, serving both the signal scan and the regime read.
+ *
+ * Deliberately not two calls. The scan needs the universe's bars and the regime needs a broad
+ * proxy's bars, and the proxy is *in* the universe — fetching separately would pull QQQ twice per
+ * cycle, and worse, would give the two artifacts different as-of dates whenever a fetch landed
+ * either side of a bar close.
+ *
+ * Empty on any failure, and every downstream consumer refuses on empty rather than defaulting:
+ * `classifyRegime` returns null, `scanForSignals` evaluates nothing.
+ */
+export interface MarketEvidence {
+  dataset: Readonly<Record<string, readonly Candle[]>>;
+  reference: readonly Candle[];
+}
+
+export type EvidenceLoader = () => Promise<MarketEvidence>;
+
+async function marketEvidence(): Promise<MarketEvidence> {
+  try {
+    const dataset = await fetchMarketSample("US", "D");
+    // QQQ rather than a single company: a regime read off one name's volatility is that name's
+    // regime, not the market's.
+    const proxy = INSTRUMENT_CATALOG.find((instrument) => instrument.symbol === "QQQ");
+    if (!proxy) return { dataset, reference: [] };
+
+    // Reused when the sample happens to contain it, fetched otherwise. The sample is the first
+    // twelve catalog entries and QQQ is the thirteenth, so in practice this is a second call —
+    // but written as a lookup first so it costs nothing if the catalog is ever reordered.
+    const reference = dataset[proxy.id] ?? (await fetchInstrumentBars(proxy, "D"));
+    return { dataset, reference };
+  } catch {
+    return { dataset: {}, reference: [] };
+  }
 }
 
 /**
@@ -121,10 +168,49 @@ function emptyReport(mode: string): CycleReport {
   };
 }
 
-async function runCycleBody(workerId: string, loadCandles: CandleLoader): Promise<CycleReport> {
+async function runCycleBody(
+  workerId: string,
+  loadCandles: CandleLoader,
+  loadEvidence: EvidenceLoader,
+): Promise<CycleReport> {
   const mode = getLearningMode();
   const actions: string[] = [];
   const skipped: string[] = [];
+
+  // Refreshed before the status is read, so a cycle reports the artifacts it just produced rather
+  // than the previous pass's. Gated at `learning` because generation writes files, and `observing`
+  // is defined as read-only — a mode that quietly wrote to disk would make the ladder a fiction.
+  // Hoisted: the quant-core pass and the factory both need bars, and fetching twice in one cycle
+  // would double the provider load and let the two artifacts disagree about what "today" is.
+  let evidence: MarketEvidence = { dataset: {}, reference: [] };
+
+  if (mode === "learning" || mode === "evolving") {
+    try {
+      evidence = await loadEvidence();
+      const generated = generateQuantCoreArtifacts({
+        referenceCandles: evidence.reference,
+        dataset: evidence.dataset,
+      });
+      actions.push(
+        `Refreshed ${generated.written.length} quant-core artifact(s) from this system's own evidence.`,
+      );
+      // Capped: a scan over twelve instruments × several strategies can produce a warm-up refusal
+      // for every pair, and a hundred near-identical lines would bury the rest of the report.
+      const omissions = generated.skipped;
+      for (const omission of omissions.slice(0, 5)) {
+        skipped.push(`Quant core "${omission.resource}" — ${omission.reason}`);
+      }
+      if (omissions.length > 5) {
+        skipped.push(`Quant core: ${omissions.length - 5} further refusal(s) not listed here.`);
+      }
+    } catch (caught) {
+      // Generation failing must not fail the cycle. The reader then finds last pass's artifacts,
+      // which are stale and will be badged as such — strictly better than no cycle at all.
+      skipped.push(
+        `Quant-core artifacts could not be regenerated: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+      );
+    }
+  }
 
   const quantCore = await quantCoreStatus();
   const failures = getDb()
@@ -154,6 +240,24 @@ async function runCycleBody(workerId: string, loadCandles: CandleLoader): Promis
     return report;
   }
 
+  // Seeded before the study queue is read, so a first run has something to offer rather than an
+  // empty curriculum. Idempotent, and it never rewrites an existing question — an owner who edits
+  // one by hand does not have it reverted fifteen minutes later.
+  //
+  // At `learning` and above only, for the same reason generation is: it writes.
+  if (mode === "learning" || mode === "evolving") {
+    try {
+      const bank = seedQuizBank();
+      if (bank.quizzesWritten > 0) {
+        actions.push(`Seeded ${bank.quizzesWritten} graded quiz question(s) into the study bank.`);
+      }
+    } catch (caught) {
+      skipped.push(
+        `The quiz bank could not be seeded: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+      );
+    }
+  }
+
   // observing and above: surface what needs attention.
   report.studyQueue = nextCurriculum(undefined, 5).map((item) => ({
     conceptId: item.conceptId,
@@ -174,8 +278,17 @@ async function runCycleBody(workerId: string, loadCandles: CandleLoader): Promis
   report.introspection = inspectMemory();
   actions.push(report.introspection.summary);
 
-  if (!quantCore.reachable) {
-    skipped.push("Quant core unreachable; candidate review was skipped rather than guessed.");
+  // Named precisely, because these three states have three different remedies and the loop used
+  // to print "unreachable" for all of them. On a machine with no quant core installed that reads
+  // as a fault repeating every cycle forever, when in fact nothing is wrong: the quant core is a
+  // separate Python service, owned by a different agent, and this system is fully functional
+  // without it. It contributes candidate review — one optional input, not the loop itself.
+  if (quantCore.disabled) {
+    skipped.push("Quant core is switched off (QUANT_CORE_URL=off). Candidate review is not part of this install.");
+  } else if (!quantCore.reachable) {
+    skipped.push(
+      `Quant core did not answer, so candidate review was skipped rather than guessed. ${quantCore.message ?? ""}`.trim(),
+    );
   } else if (quantCore.stale) {
     skipped.push("Quant core data is stale; treat candidates as historical.");
   }
@@ -202,8 +315,37 @@ async function runCycleBody(workerId: string, loadCandles: CandleLoader): Promis
   skipped.push(...report.rehearsal.skipped);
 
   if (mode === "learning") {
-    skipped.push("Learning mode: no code or strategy proposals were raised. Switch to evolving to enable that.");
+    // Not a defect and not a missing feature — this is the mode ladder doing its job. Worth
+    // saying so explicitly: a line that reads like a failure on every single pass trains the
+    // owner to ignore the skip list, which is where the real refusals appear.
+    skipped.push(
+      "Proposals are off at this mode by design, not because anything failed. " +
+        "Set the mode to evolving on /learning to let the system draft code and strategy proposals for your review.",
+    );
     return report;
+  }
+
+  // evolving: the factory breeds. Not at `learning`, because a generation writes strategy specs
+  // and spends trial budget for the family it breeds into — that is a proposal in everything but
+  // name, and proposals are what `evolving` exists to authorise.
+  try {
+    const factory = runFactoryGeneration({ dataset: evidence.dataset });
+    if (factory.skipped) {
+      skipped.push(`Strategy factory generation ${factory.generation} did not run — ${factory.skipped}`);
+    } else {
+      actions.push(
+        `Factory generation ${factory.generation}: bred ${factory.bred}, screened ${factory.screened}, ` +
+          `${factory.survivors.length} survivor(s) recorded as draft. Selection cost ${factory.selectionCost} — ` +
+          `that is the multiple-testing denominator any gauntlet on these must carry.`,
+      );
+      if (factory.rediscovered > 0) {
+        actions.push(`${factory.rediscovered} bred candidate(s) matched buried strategies and were discarded.`);
+      }
+    }
+  } catch (caught) {
+    skipped.push(
+      `The strategy factory did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+    );
   }
 
   // evolving: proposals are prepared, never applied.

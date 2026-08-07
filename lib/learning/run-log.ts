@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, notInArray } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import type { CycleReport } from "./cycle";
 
@@ -15,6 +15,20 @@ import type { CycleReport } from "./cycle";
  */
 
 export const CYCLE_ACTION = "learning_cycle";
+
+/**
+ * Actors whose cycles are not real cycles, excluded from every read in this module.
+ *
+ * `audit_events` is append-only by database trigger, so contamination cannot be deleted — only
+ * excluded here. Before `lib/db/index.ts` learned to refuse the production database from a test
+ * process, `run-log.test.ts` wrote dozens of fixture cycles under `test-writer`, all stamped with
+ * one frozen timestamp. They are still in the owner's database and always will be.
+ *
+ * Excluded rather than rendered greyed-out because the run log is the *evidence* that autonomy
+ * works. A feed mixing real runs with fabricated ones is not a noisy feed, it is an unusable one.
+ * The count is returned alongside so nothing is hidden silently — see `excludedFixtureCount`.
+ */
+export const NON_DRIVER_ACTORS = Object.freeze(["test-writer"]);
 
 export interface CycleRunRecord {
   id: number;
@@ -111,11 +125,30 @@ function parseDetail(raw: string | null): StoredDetail {
   }
 }
 
+/** Cycle rows written by a non-driver actor. Permanent, so worth stating rather than hiding. */
+export function excludedFixtureCount(): number {
+  return getDb()
+    .select({ id: schema.auditEvents.id })
+    .from(schema.auditEvents)
+    .where(
+      and(
+        eq(schema.auditEvents.action, CYCLE_ACTION),
+        inArray(schema.auditEvents.actor, [...NON_DRIVER_ACTORS]),
+      ),
+    )
+    .all().length;
+}
+
 export function recentCycleRuns(limit = 25): CycleRunRecord[] {
   return getDb()
     .select()
     .from(schema.auditEvents)
-    .where(eq(schema.auditEvents.action, CYCLE_ACTION))
+    .where(
+      and(
+        eq(schema.auditEvents.action, CYCLE_ACTION),
+        notInArray(schema.auditEvents.actor, [...NON_DRIVER_ACTORS]),
+      ),
+    )
     .orderBy(desc(schema.auditEvents.id))
     .limit(Math.max(0, Math.trunc(limit)))
     .all()
@@ -166,7 +199,13 @@ export function autonomyPulse(now = new Date()): AutonomyPulse {
   const runsToday = getDb()
     .select({ id: schema.auditEvents.id })
     .from(schema.auditEvents)
-    .where(and(eq(schema.auditEvents.action, CYCLE_ACTION), gte(schema.auditEvents.createdAt, midnight)))
+    .where(
+      and(
+        eq(schema.auditEvents.action, CYCLE_ACTION),
+        gte(schema.auditEvents.createdAt, midnight),
+        notInArray(schema.auditEvents.actor, [...NON_DRIVER_ACTORS]),
+      ),
+    )
     .all().length;
 
   if (!last) {

@@ -10,6 +10,41 @@ import { BLAME_LABEL, explainRejection } from "./explain";
  * feed is unreachable goes and fixes the feed.
  */
 
+describe("a closed market is named as a clock, not as a broken feed", () => {
+  // Sunday 03:00 UTC — both exchanges shut. This is the state the trading surface spends most of
+  // its life in, and it previously reported as a data-provider problem.
+  const shut = new Date("2026-08-09T03:00:00Z");
+  // Thursday 14:30 UTC — US regular session.
+  const open = new Date("2026-08-06T14:30:00Z");
+
+  it("blames the session, not the provider, when the exchange is closed", () => {
+    const explanation = explainRejection("INELIGIBLE_QUOTE", "STALE", "US", shut);
+    expect(explanation.headline).toMatch(/market is closed/i);
+    expect(explanation.remedy).toMatch(/reopens/i);
+    // The old remedy sent the operator to debug a healthy provider. Sending someone to a
+    // diagnostics page that shows nothing wrong teaches them the page is useless.
+    expect(explanation.href).not.toBe("/data-quality");
+  });
+
+  it("tells the operator when it reopens rather than only that it is shut", () => {
+    const explanation = explainRejection("INELIGIBLE_QUOTE", "STALE", "IN", shut);
+    expect(explanation.remedy).toMatch(/\d{4}-\d{2}-\d{2}/);
+    expect(explanation.remedy).toMatch(/\d{2}:\d{2}/);
+  });
+
+  it("keeps the provider explanation when the market is actually open", () => {
+    // A stale quote during the session is a real feed problem, and must not be excused as
+    // "the market is closed" — that would hide an outage behind a clock.
+    const explanation = explainRejection("INELIGIBLE_QUOTE", "STALE", "US", open);
+    expect(explanation.headline).not.toMatch(/market is closed/i);
+    expect(explanation.href).toBe("/data-quality");
+  });
+
+  it("still works for callers that pass no market", () => {
+    expect(explainRejection("INELIGIBLE_QUOTE").blame).toBe("market_data");
+  });
+});
+
 describe("every explanation is actionable", () => {
   const codes = ["INELIGIBLE_QUOTE", "NO_QUOTE", "INSUFFICIENT_CASH", "INSUFFICIENT_POSITION", "POSITION_CAP", "DAILY_ORDER_CAP", "EXPIRED"];
 

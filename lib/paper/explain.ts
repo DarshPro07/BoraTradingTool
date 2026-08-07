@@ -1,3 +1,6 @@
+import { getMarketPhase } from "@/lib/market/phases";
+import type { Market } from "@/lib/market/types";
+
 /**
  * Plain-language explanations for paper-order outcomes.
  *
@@ -85,8 +88,46 @@ const EXPLANATIONS: Readonly<Record<string, Explanation>> = Object.freeze({
  * @param reason The order's stored reason code. A fill carries a fee-schedule id here rather
  *   than a refusal, which is why the status is checked first by the caller.
  */
-export function explainRejection(reason: string | null, quality?: string | null): Explanation {
+export function explainRejection(
+  reason: string | null,
+  quality?: string | null,
+  // Optional so every existing caller keeps working. Supplied, it turns the commonest rejection
+  // from a provider bug report into a clock reading.
+  market?: Market,
+  at: Date = new Date(),
+): Explanation {
   const known = reason ? EXPLANATIONS[reason] : undefined;
+
+  // The rejection that made the trading surface look broken for nineteen hours a day.
+  //
+  // `INELIGIBLE_QUOTE · STALE` is correct — filling against a price that is hours old invents a
+  // profit that never happened, and the paper ledger feeds loss memory, which feeds risk posture,
+  // so one invented fill contaminates every ceiling derived from it afterwards. The rule stays.
+  //
+  // What was wrong is the *remedy*. It sent the operator to /data-quality to debug a provider
+  // that was working perfectly, when the real answer was that the exchange was shut. A refusal
+  // that misnames its own cause is worse than a terse one: it spends the reader's time.
+  if (market && (known?.blame === "market_data" || quality === "STALE" || quality === "DELAYED")) {
+    const phase = getMarketPhase(market, at);
+    if (phase.sessionState === "CLOSED") {
+      const open = phase.nextSessionOpen;
+      return {
+        headline: "Not filled — the market is closed, so the price is hours old.",
+        detail:
+          `${market === "IN" ? "NSE" : "US"} equities are shut (${phase.localTime} ${phase.timezone}). ` +
+          "A paper fill has to use a price that was actually available at the moment of the order, and " +
+          "the last one is stale by definition outside the session. The order is fine; the clock is not.",
+        blame: "market_data",
+        remedy: open
+          ? `Place it after the market reopens — ${open.weekday} ${open.date} at ${open.localTime} ${phase.timezone}.`
+          : "Place it once the market reopens.",
+        // Deliberately not /data-quality. Nothing there is broken, and sending someone to a
+        // healthy diagnostics page teaches them the page is useless.
+        href: "/premarket",
+      };
+    }
+  }
+
   if (known) return known;
 
   // A stale quote can arrive with a reason this table does not know. The quality field still

@@ -12,8 +12,20 @@ export function databasePath(): string {
   const configured = process.env.MARKETPULSE_DB_PATH?.trim();
   const resolved = path.resolve(/* turbopackIgnore: true */ process.cwd(), configured || "marketpulse.db");
   const defaultPath = path.resolve(process.cwd(), "marketpulse.db");
-  if (process.env.MARKETPULSE_TEST_MODE === "1" && resolved === defaultPath) {
-    throw new Error("MARKETPULSE_TEST_MODE requires an explicit isolated database path.");
+  // `VITEST` is set by the runner itself, so this cannot be forgotten. `MARKETPULSE_TEST_MODE`
+  // alone could be, and was: nothing set it, so the guard never fired and `run-log.test.ts` wrote
+  // fixture cycles named "older" and "newer" straight into the owner's database, where they
+  // surfaced in the live terminal beside real runs.
+  //
+  // That damage is permanent. `audit_events` carries a BEFORE DELETE trigger — the log is
+  // append-only, so a test write into it can never be taken back, only hidden at read time. A
+  // guard that fails loudly at the first `getDb()` is the only place this is actually fixable.
+  const isTestProcess = process.env.MARKETPULSE_TEST_MODE === "1" || process.env.VITEST !== undefined;
+  if (isTestProcess && resolved === defaultPath) {
+    throw new Error(
+      "A test process tried to open the production database. Point MARKETPULSE_DB_PATH at an isolated database " +
+        "file — call useTemporaryDatabase() from lib/db/testing.ts at the top of the test file.",
+    );
   }
   return resolved;
 }

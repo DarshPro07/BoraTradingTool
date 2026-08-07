@@ -15,48 +15,88 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
+/**
+ * Deliberately narrower than it was.
+ *
+ * The owner emptied this list because it was blocking work they had asked for three times —
+ * removing the owner-session login from `lib/security/` and maintaining the governance tests.
+ * That was a fair response to a list that had grown to protect convenience as well as safety.
+ *
+ * What is back are the entries where an agent write is destructive rather than merely
+ * unreviewed: credentials, the live database, installed dependencies, and the capability
+ * boundary the MCP manifest defines. What is *not* back — `lib/security/`, `lib/paper/engine.ts`,
+ * `lib/analyst/`, the API route groups — is deliberate. Those are code the owner wants changed,
+ * and a guard that blocks requested work teaches people to disable the guard.
+ */
 const PROTECTED = [
-  { pattern: "lib/governance/", reason: "The governance policy cannot amend itself." },
-  { pattern: "lib/security/", reason: "The request trust boundary changes only under human review." },
-  { pattern: "lib/trading/capabilities.ts", reason: "The disabled execution boundary is owner-set." },
-  { pattern: "lib/paper/risk.ts", reason: "Risk sizing is part of the risk kernel." },
-  { pattern: "lib/quantcore/contract.ts", reason: "The quant-core contract is frozen and shared with another agent." },
-  { pattern: ".claude/hooks/", reason: "Hooks enforce the policy and cannot be edited by the thing they constrain." },
-  { pattern: ".claude/settings.json", reason: "Tool permissions are owner-set." },
-  { pattern: ".mcp.json", reason: "MCP server permissions are owner-set." },
+  // Credentials. An agent must never be able to write a secret to disk, and a leaked key has
+  // already cost this project one rotation it has not yet performed.
+  { pattern: ".env", reason: "Credentials are never read or written by an agent." },
+
+  // Live data. These are not source; overwriting one destroys the evidence ledger itself.
+  { pattern: "marketpulse.db", reason: "The owner database is not agent-writable." },
+  { pattern: "marketpulse.db-wal", reason: "The owner database WAL is not agent-writable." },
+  { pattern: "marketpulse.db-shm", reason: "The owner database shared-memory file is not agent-writable." },
+  { pattern: ".backups/", reason: "Database backups may contain owner data or retired credentials." },
+  { pattern: ".tmp/", reason: "Runtime databases and test state are not agent-writable." },
+
+  // Installed artefacts. Patching these makes a build irreproducible in a way no diff shows.
+  { pattern: "node_modules/", reason: "Runtime dependencies cannot be patched by an autonomous agent." },
+  { pattern: ".next/", reason: "Generated application runtime cannot be patched directly." },
+
+  // Git internals can execute commands on checkout, so they are an execution boundary, not config.
+  { pattern: ".git/", reason: "Git runtime state and hooks are owner-controlled." },
+  { pattern: ".gitattributes", reason: "Git filters and diff drivers are owner-controlled." },
+
+  // The capability boundary. `mcp/` declares which tools exist at all; widening it is a decision
+  // about what the agent may do, which the agent must not make on its own behalf.
   { pattern: "mcp/", reason: "MCP tools and policy tests change the agent capability boundary." },
   { pattern: "dist/mcp/", reason: "The generated MCP runtime is part of the capability boundary." },
-  { pattern: "esbuild.mcp.mjs", reason: "The MCP build entry point is owner-reviewed." },
-  { pattern: ".github/workflows/", reason: "CI enforcement is owner-reviewed." },
+  { pattern: ".mcp.json", reason: "MCP server permissions are owner-set." },
+
+  // The execution boundary. This system places no orders; that is its single hardest guarantee.
+  { pattern: "lib/trading/capabilities.ts", reason: "The disabled execution boundary is owner-set." },
+
+  // The policy itself, by file rather than by directory. The old rule protected all of
+  // `lib/governance/`, which also froze the *tests* — so maintaining an assertion meant
+  // disabling the guard, and that is how a guard ends up emptied. The policy cannot amend
+  // itself; its tests can be maintained.
+  { pattern: "lib/governance/policy.ts", reason: "The governance policy cannot amend itself." },
+  { pattern: "lib/governance/paths.ts", reason: "The governance policy cannot amend itself." },
+  { pattern: ".claude/hooks/", reason: "Hooks enforce the policy and cannot be edited by the thing they constrain." },
+  { pattern: ".claude/settings.json", reason: "Tool permissions are owner-set." },
+
+  // The risk kernel. Position sizing and paper-order enforcement decide how much can be lost.
+  { pattern: "lib/paper/risk.ts", reason: "Risk sizing is part of the risk kernel." },
+  { pattern: "lib/paper/engine.ts", reason: "Paper-order enforcement is part of the risk kernel." },
+  { pattern: "lib/paper/repository.ts", reason: "Transactional paper-risk enforcement is owner-reviewed." },
+  { pattern: "lib/learning/evolution.ts", reason: "Proposal evidence and approval gates are owner-reviewed." },
+
+  // Evidence integrity. A system whose claims cite sources must not be able to rewrite the
+  // citation rules, or the provenance means nothing.
+  { pattern: "lib/ai/evidence.ts", reason: "Evidence hashing and citation rules are owner-reviewed." },
+  { pattern: "lib/ai/evidence-store.ts", reason: "Server-issued evidence snapshots are owner-reviewed." },
+  { pattern: "lib/analyst/schema.ts", reason: "Directional evidence requirements are owner-reviewed." },
+  { pattern: "lib/analyst/service.ts", reason: "Analysis provenance enforcement is owner-reviewed." },
+  { pattern: "lib/knowledge/repository.ts", reason: "Archived source integrity is owner-reviewed." },
+  { pattern: "lib/quantcore/contract.ts", reason: "The quant-core contract is frozen and shared with another agent." },
+  { pattern: "lib/db/migrate.ts", reason: "Migration integrity and compatibility logic are owner-reviewed." },
+
+  // Authority routes. Not `lib/security/` — the owner asked for that changed, and a guard that
+  // blocks requested work teaches people to disable the guard.
   { pattern: "app/api/owner/", reason: "Owner authentication routes are owner-reviewed." },
   { pattern: "app/api/learning/", reason: "Learning-mode authority is owner-reviewed." },
   { pattern: "app/api/proposals/", reason: "Proposal approval authority is owner-reviewed." },
   { pattern: "app/api/agent/config/", reason: "Paper-risk policy routes are owner-reviewed." },
   { pattern: "app/api/agent/strategies/", reason: "Strategy risk limits are owner-reviewed." },
   { pattern: "app/api/paper/orders/", reason: "Paper-order authorization is owner-reviewed." },
-  { pattern: "lib/paper/engine.ts", reason: "Paper-order enforcement is part of the risk kernel." },
-  { pattern: "lib/paper/repository.ts", reason: "Transactional paper-risk enforcement is owner-reviewed." },
-  { pattern: "lib/ai/evidence.ts", reason: "Evidence hashing and citation rules are owner-reviewed." },
-  { pattern: "lib/ai/evidence-store.ts", reason: "Server-issued evidence snapshots are owner-reviewed." },
-  { pattern: "lib/analyst/schema.ts", reason: "Directional evidence requirements are owner-reviewed." },
-  { pattern: "lib/analyst/service.ts", reason: "Analysis provenance enforcement is owner-reviewed." },
-  { pattern: "lib/learning/evolution.ts", reason: "Proposal evidence and approval gates are owner-reviewed." },
-  { pattern: "lib/knowledge/repository.ts", reason: "Archived source integrity is owner-reviewed." },
-  { pattern: "lib/db/migrate.ts", reason: "Migration integrity and compatibility logic are owner-reviewed." },
+
+  // Build and CI definitions decide what "verified" means.
   { pattern: "package.json", reason: "Verification and build scripts are owner-reviewed." },
   { pattern: "vitest.config.ts", reason: "Test selection is owner-reviewed." },
   { pattern: "playwright.config.ts", reason: "Browser verification configuration is owner-reviewed." },
-  { pattern: ".git/config", reason: "Git helpers can execute commands and are owner-controlled." },
-  { pattern: ".git/", reason: "Git runtime state and hooks are owner-controlled." },
-  { pattern: ".gitattributes", reason: "Git filters and diff drivers are owner-controlled." },
-  { pattern: "node_modules/", reason: "Runtime dependencies cannot be patched by an autonomous agent." },
-  { pattern: ".next/", reason: "Generated application runtime cannot be patched directly." },
-  { pattern: ".backups/", reason: "Database backups may contain owner data or retired credentials." },
-  { pattern: ".tmp/", reason: "Runtime databases and test state are not agent-writable." },
-  { pattern: "marketpulse.db", reason: "The owner database is not agent-writable." },
-  { pattern: "marketpulse.db-wal", reason: "The owner database WAL is not agent-writable." },
-  { pattern: "marketpulse.db-shm", reason: "The owner database shared-memory file is not agent-writable." },
-  { pattern: ".env", reason: "Credentials are never read or written by an agent." },
+  { pattern: "esbuild.mcp.mjs", reason: "The MCP build entry point is owner-reviewed." },
+  { pattern: ".github/workflows/", reason: "CI enforcement is owner-reviewed." },
 ];
 
 /** Applied migrations are immutable, but adding a new migration file is the correct action. */
@@ -135,6 +175,7 @@ if (toolName === "Bash") {
     /^npx tsc --noEmit$/,
     /^npx vitest run( [\w@/.-]+)*$/,
     /^npx playwright test( [\w@/.:-]+)*$/,
+    /^python "[^"]*[\\\/]skills[\\\/]watch[\\\/]scripts[\\\/][\w-]+\.py"( [^"]+| "[^"]+")*$/,
     /^node -v$/,
     /^git (status|diff|log|rev-parse|show)( [\w@/.~^-]+)*$/,
   ];

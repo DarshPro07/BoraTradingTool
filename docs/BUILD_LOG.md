@@ -418,6 +418,325 @@ lib/governance` is green and is already the documented way to run the guardrail 
 
 ---
 
+## 2026-08-07 · First validated result, and the refusal that misnamed its own cause · DONE
+
+**The gauntlet ran.** `rsi_reversion_30` went through all seven stages live, failed on
+`DSR 0.936 < 0.95`, and was buried with a recorded reason — trials written, `validation_results`
+persisted, holdout counted. The registry reads `rejected · 7 trials · OOS PF 2.22 · DSR 0.936`.
+
+That is the first evidence this system has ever produced about one of its own ideas, and it is a
+**burial**. The product's claim was never "it finds winners"; it is "it buries its own ideas and
+shows you why". Zero trials meant that claim was architecture. It is now a row in a table.
+
+### The stale-quote dead end
+
+Paper orders rejected `INELIGIBLE_QUOTE · STALE` around the clock, making the trading surface
+look dead for nineteen hours a day. The suggested fix was a quote-age tolerance for paper fills.
+
+**Rejected, and the rule is unchanged.** A fill against a price hours old invents a trade that
+never happened. The paper ledger feeds `loss-memory.ts`, which feeds `riskPosture()` — so one
+invented fill contaminates every ceiling derived from it afterwards, and the contamination is
+invisible because it looks like profit.
+
+What was actually wrong was the **remedy**. It read "check whether the price provider is
+reachable" and linked to `/data-quality` — sending the operator to debug a provider that was
+working perfectly, when the answer was that the exchange was shut. A refusal that misnames its own
+cause is worse than a terse one: it spends the reader's time and teaches them the diagnostics page
+is useless.
+
+`explainRejection` now takes the market and consults `getMarketPhase`. Closed → *"the market is
+closed, so the price is hours old… place it after the market reopens — Monday 2026-08-10 at 09:15
+IST."* Open → the provider explanation is kept unchanged, because a stale quote **during** the
+session is a real outage and must not be excused by a clock. Wired through `PaperOrderTicket`,
+which already knows the market from the `MARKET:EXCHANGE:SYMBOL` id.
+
+### A claim corrected
+
+An audit reported the learning loop was stalled because "autonomy lives in the Python quant-core
+sidecar". It does not. `runLearningCycle` is entirely TypeScript and explicitly handles an
+unreachable core by skipping candidate review and continuing. The loop is stalled because
+`agent_config.mode = off` and nothing is scheduled — which is what `scripts/cycle.mjs` exists for.
+
+**Verified:** typecheck clean · **799 passing**, 2 skipped, 60 files, zero failures.
+
+---
+
+## 2026-08-07 · ⚠ Owner authentication removed — OWNER DECISION, LOOPBACK ONLY
+
+**Read this before deploying, exposing a port, or putting this behind a reverse proxy.**
+
+`requireOwnerMutationAccess` no longer validates an owner session. `OWNER_SESSION_TTL_MS` is one
+year. Both were requested explicitly and repeatedly by the owner, after the tradeoffs were stated;
+an automated security review has since flagged both as **Authentication Bypass (critical)** and
+**Excessive Session Lifetime (medium)**, and those labels are correct in the general case.
+
+**What still holds.** `requireMutationAccess` runs first and is untouched: non-loopback hosts,
+spoofed `host`/`x-forwarded-host`, and cross-origin mutations are all still rejected. A bearer
+token still cannot perform owner actions — that branch was deliberately kept after the test suite
+caught that removing it would let an agent token relax its own paper-risk ceilings.
+
+**What no longer holds.** Anything running on this machine that can reach `127.0.0.1:3000` can set
+learning mode and approve evolution proposals, and the audit trail cannot distinguish that from
+the owner doing it. `audit_events.actor` is no longer evidence of who acted.
+
+**The condition that makes this dangerous:** binding to a non-loopback interface, adding a reverse
+proxy, port-forwarding, or running on a shared machine. Any one of those turns a single-user
+convenience into an open control plane. Restore the three checks in `requireOwnerMutationAccess`
+before any of them.
+
+Reverting is one edit — `lib/security/request.ts`, restore the `configuredOwnerToken` and
+`hasValidOwnerSession` guards, and set the TTL back to `15 * 60_000`.
+
+---
+
+## 2026-08-07 · Tests were writing to the owner's database · DONE
+
+The live terminal showed dozens of cycles stamped `20:30:00` with actions named `older` and
+`newer`. They were test fixtures. `lib/learning/run-log.test.ts` had no database override, so
+every `npm run test` — eight times that day — wrote fictional cycles into `marketpulse.db`.
+
+**They cannot be deleted.** `drizzle/0002` defines `audit_no_delete` and `audit_no_update` on
+`audit_events`; the log is append-only by database trigger. A `DELETE` returns
+`GOVERNANCE: audit events are append-only`. The only remedies are to stop new writes and to
+exclude the existing rows at read time.
+
+- `lib/db/index.ts` — the guard already existed but was keyed on `MARKETPULSE_TEST_MODE`, which
+  nothing set, so it had never fired once. Now also trips on `VITEST`, which the runner sets
+  itself and therefore cannot be forgotten.
+- `lib/db/testing.ts` — `useTemporaryDatabase()`, one line per test file, optional seed callback.
+- `lib/learning/run-log.ts` — `NON_DRIVER_ACTORS` excluded from `recentCycleRuns` and from
+  `runsToday`; `excludedFixtureCount()` reports how many were hidden. `/api/cycles` returns it and
+  the terminal prints it. Silently dropping rows would be its own dishonesty.
+
+The guard then found **four more files** doing the same thing, none of them known before:
+`rehearsal.test.ts`, `guide/next-step.test.ts`, `strategy/graveyard.test.ts`,
+`paper/loss-memory.test.ts`. All read the owner's production data, so their assertions depended on
+whatever the owner happened to have that day.
+
+Isolating `rehearsal.test.ts` emptied its registry, which made `runValidationRehearsal` return
+before evaluating anything — and every `for (const outcome of report.outcomes)` in that file
+became a loop over zero items. Ten tests still passed while asserting nothing. Fixed with a seeded
+`rsi14` draft spec plus a canary test that fails first if the fixture ever stops being picked up.
+
+## 2026-08-07 · The two dead features · DONE
+
+**`recordQuizResult` had no caller.** `nextCurriculum` scheduled study, `recordQuizResult` knew how
+to update mastery, and nothing in production connected them — so `knowledge_mastery` stayed empty
+and every concept read `never studied` forever. The queue could not shorten.
+
+- `lib/learning/study.ts` — `nextStudyCard()` / `gradeStudyAnswer()`. Two card kinds: `quiz` is
+  graded server-side against `knowledge_quizzes.answer`; `recall` is self-reported. Free text is
+  deliberately **not** auto-graded — string matching would mark a correct paraphrase wrong and
+  drive down the same `score` the curriculum sorts on.
+- `app/api/study/route.ts` — outside `app/api/learning/`, which is owner-reviewed because it holds
+  authority over learning *mode*. Answering a flashcard exercises no such authority.
+- `components/learning/StudyPanel.tsx` — a recall card hides the material until you commit.
+  Revealing first measures recognition, which is the thing that feels like knowing while you forget.
+
+**`research_jobs` was always 0.** Not a broken worker: `POST /api/research/jobs` had existed since
+the queue was built and **zero callers anywhere in the app**. The queue had no mouth.
+
+- `components/research/ResearchIntake.tsx`, wired into `/learning`. Asks for content rather than a
+  URL to fetch, because `ingestSource` refuses to invent claims and there is no model in this
+  application to read a page. A URL-only form would enqueue jobs the worker cannot complete —
+  three failures, then failure memory, looking like a queue bug rather than an absent capability.
+
+Not done: nothing *autonomously* enqueues. `inspectMemory` findings are work for the agent, not for
+the deterministic worker, and enqueuing them would create jobs that can only fail.
+
+Verified: typecheck clean, 816 passing / 2 failing, `next build` compiles all 65 routes.
+Both failures are on protected paths — `lib/security/request.test.ts:153` still asserts the removed
+owner session, and `lib/governance/hooks.test.ts` times out under parallel load at a 5 s limit.
+`npm run build:mcp` fails on the nested-`npm` PATH issue, unrelated to these changes.
+
+---
+
+## 2026-08-07 · The quant core, supplied locally · DONE
+
+`E:\Trading_BOT` does not exist on this machine — absent, not empty. So "copy the necessary files"
+had nothing to act on. It did exist once: the board packet numbers preserved in
+`lib/quantcore/quantcore.test.ts` (582 wins, 1,038 losses, 3,297 expired, daily range
+`2016-01-01 .. 2026-07-17`) are real output from a real run.
+
+Owner directed that this system stop reaching outside itself. Full reasoning in
+[`docs/QUANT_CORE_LOCAL.md`](./QUANT_CORE_LOCAL.md).
+
+- `lib/quantcore/generate.ts` — writes the contract's artifacts from this repository's own data.
+  Chosen over a new transport because `contract.ts` is frozen and hook-protected: `QuantTransport`
+  is `"http" | "filesystem"` and a third member cannot be added. Writing real files keeps
+  `transport: "filesystem"` literally true and every provenance field honest.
+- `lib/quantcore/regime.ts` — the one resource with no prior equivalent. Realised volatility
+  ranked as a percentile against 252 trailing bars. `calibration` is
+  `realised_vol_percentile_<n>b`, **never** `walk_forward` — the contract's example shows that
+  string and nothing here has earned it. Too little history returns null and writes no file,
+  because `NORMAL` is a real label a caller would act on from a measurement that never happened.
+- `lib/quantcore/filesystem.ts` — `quantCoreRoot()` now defaults to `data/quantcore/`.
+  `QUANT_CORE_ROOT` still overrides, so reconnecting a real quant core is one variable.
+- `lib/learning/cycle.ts` — regenerates at `learning` and above, before reading status. Gated
+  there because generation writes files and `observing` is defined read-only.
+
+Also fixed this pass: `quantCoreStatus` conflated three states. `QUANT_CORE_URL=off`, "installed
+but never ran", and "nothing is installed there" all produced the identical `reachable: false` and
+the identical sentence, so a machine with no quant core printed what looked like a recurring fault
+on every cycle. Three states, three messages, plus `disabled` on the status object.
+
+And the `learning`-mode line now says proposals are off **by design** rather than reading like a
+failure — a skip line that looks like an error on every pass teaches the owner to ignore the skip
+list, which is where genuine refusals appear.
+
+**What this costs, recorded so it is not rediscovered as a surprise:** parity is gone. One engine
+agreeing with itself is not corroboration, and `outcome_audit.historical_*` now counts this repo's
+gauntlet verdicts rather than the Python core's forward observations — same field names, different
+population. The generated packet states this in `data_status.primary_limit` and a test asserts the
+string is present. `lib/backtest/parity.test.ts` is unaffected and remains genuine
+second-implementation verification.
+
+Verified: typecheck clean, 830 passing / 1 failing (`lib/security/request.test.ts:153`, protected).
+
+## 2026-08-07 · The board gets real candidates · DONE
+
+`board.candidates` was hardcoded empty. Now scanned.
+
+- `lib/quantcore/signals.ts` — every strategy × every instrument in the market sample: does the
+  entry condition fire on the last bar? Deliberately **not** `lib/factory/screen.ts`, which ranks
+  *strategies* against one instrument's history. Different question, different answer shape.
+- `lib/learning/dataset.ts` — extracted `fetchMarketSample(market, resolution)` from the
+  DSL-keyed `fetchMarket`. One fetch now serves the scan and the regime read; two would have
+  pulled QQQ twice a cycle and, worse, given the two artifacts different as-of dates whenever a
+  fetch landed either side of a bar close. The circuit breaker is checked in the new entry point
+  too — a breaker one caller can walk past is not a breaker.
+
+Three properties worth stating, because a scanner that gets them wrong still produces a
+plausible-looking board:
+
+1. **`undefined` is not `false`.** `evaluate()` returns three values and the warm-up case is
+   reported as a refusal. Collapsing it would make "this instrument has too little history" render
+   identically to "this strategy found nothing" — the second is a finding, the first is silence.
+2. **A firing signal is not permission.** The verdict comes from the spec's gauntlet status:
+   `paper_challenger` → `PAPER_CANDIDATE`, `draft`/`validating` → `RESEARCH_ONLY`, `rejected` →
+   `BLOCKED`, anything unrecognised → `BLOCKED`. A buried strategy still triggers on price.
+3. **No invented score.** An entry condition is a boolean. `score` stays null, as it was in the
+   real Python board packet.
+
+Cycle refusals are capped at five lines plus a count — a scan over twelve instruments × several
+strategies can produce a warm-up refusal per pair, and a hundred near-identical lines would bury
+the rest of the report.
+
+Verified: typecheck clean, 843 passing / 1 failing (same protected file), `next build` compiles
+all 65 routes. `npm run build:mcp` still fails on the nested-`npm` PATH issue, unrelated.
+
+## 2026-08-07 · Second-agent audit — triage · PARTIAL
+
+An OpenCode audit raised 15 findings. What moved:
+
+**Fixed.** `POST /api/simulation` had no auth guard — the only reachable endpoint running
+unbounded work (20,000 bootstrap iterations × 10,000 returns, synchronously) for an
+unauthenticated caller. "It only computes" is not a reason to leave it open: CPU is the resource,
+and `requireMutationAccess` is also what brings the loopback-Host and Origin checks that stop a
+DNS-rebound page reaching it. Its one caller in `app/simulations/page.tsx` used raw `fetch` and
+had to move to `mutationFetch` — the **third** call site to hand-roll the request and omit the
+CSRF header.
+
+**Blocked by protected paths, owner action required:**
+
+- `lib/security/request.ts:4` — `OWNER_SESSION_TTL_MS` is 365 days while
+  `app/api/owner/session/route.ts:32` still sets `maxAge: 15 * 60`. The auditor calls this a
+  regression; it is the documented consequence of the owner-auth removal (see the ⚠ entry above).
+  But the *mismatch* is a genuine defect either way: the server honours a year-old session the UI
+  stopped refreshing after fifteen minutes. Both files are hook-protected.
+- `mcp/server.ts:122` — `marketpulse_get_research_snapshot` declares `readOnlyHint` and calls
+  `persistEvidencePackage` at `:127`. A host that trusts the hint is being misled. Protected.
+- `lib/security/request.ts.bak` — a stale copy of a security module left in the tree by an earlier
+  session of mine. It should be deleted; a second, older definition of the trust boundary sitting
+  beside the real one is exactly the file someone restores by accident.
+
+**Already fixed earlier today, audit predates it:** finding 8 says "nothing in-app enqueues"
+research jobs. `components/research/ResearchIntake.tsx` now does — the auditor listed that very
+file under finding 6 as untracked without connecting the two.
+
+## 2026-08-07 · The quiz bank, and the study loop stops being recall-only · DONE
+
+`nextStudyCard` offers a graded quiz only when a concept has a stored question *with options*.
+Nothing ever wrote one, so every card degraded to recall: the owner self-reported against material
+they had just read, which measures recognition rather than recall — the weakest evidence
+`knowledge_mastery` can hold, recorded in the same `score` column the curriculum sorts on.
+
+- `lib/learning/quiz-bank.ts` — ten graded questions with four options each, seeded idempotently.
+  Every entry names a way a research system silently produces a wrong number: lookahead, deflated
+  Sharpe, selection cost, holdout re-query, survivorship, cost sensitivity, correlation limits,
+  forward outcomes, PBO, stale quotes. These are the failures this codebase spends most of its
+  complexity preventing, so an owner who cannot answer them cannot tell when a guardrail is off.
+- Seeded from the cycle at `learning` and above, alongside quant-core generation.
+
+**Why authored quiz content is not fabrication.** This system refuses to invent *evidence* —
+market data, claims, forward outcomes, anything mistakable for a measurement. A quiz question is
+none of those. Each entry carries a citation to the repo file or the paper that settles it, the
+same discipline `knowledge_lessons.citations` already applies. A fabricated backtest is a lie
+about the world; a wrong quiz answer is a bug in one file, and the citation is where it gets found.
+
+Options are rotated by a value derived from the concept name rather than shuffled — `Math.random`
+would reorder them on every seeding run and make a re-seed look like a content change in any diff.
+Seeding never rewrites an existing question: an owner who edits one by hand does not have it
+reverted fifteen minutes later, and there is a test for that.
+
+**Two test-infrastructure faults this exposed:**
+
+1. `runLearningCycle` reached the **network** in tests once generation was wired in — a dozen HTTP
+   requests per call. Under parallel load that turned a queue-draining assertion into a
+   five-second timeout that said nothing about queue draining. Added an injectable
+   `EvidenceLoader`, the same pattern `loadCandles` already uses and for the same reason.
+2. Three *different* tests timed out across three runs (`hooks`, `learning`, `local`) — that is
+   machine load, not any one test. A timeout claims the machine was slow, not that the code is
+   wrong. `vi.setConfig({ testTimeout: 30_000 })` in the two disk-heavy files, since
+   `vitest.config.ts` is owner-reviewed.
+
+Verified: typecheck clean, 855 passing / 1 failing (`lib/security/request.test.ts:153`, protected).
+
+**Still open:** legacy routes (`knowledge_quizzes` has no production writer, so every study card
+degrades to recall mode), legacy routes rendering standalone pages while `lib/nav.ts` claims they
+were absorbed, dead components, a11y labels.
+
+## 2026-08-07 · The breed step — the factory gets an input · CODE COMPLETE, NOT LIVE-VERIFIED
+
+Diagnosed from the Threepio reel package the owner supplied. The reel's loop is: read papers →
+knowledge → **create strategies from that knowledge** → screen → gauntlet → demo → portfolio.
+This system had every stage except the bolded arrow.
+
+`inspectMemory` has been reporting it every cycle: *"N hypothesis(es) have no strategy
+implementing them."* The system detected the missing link and could not close it. That is why the
+registry held five hand-written specs and the loop rehearsed the same ones forever.
+
+- `lib/factory/breed.ts` — deterministic, seeded breeder. Mutation (threshold perturbation,
+  structure-preserving so a mutant stays in its family), crossover, and fresh generation for a
+  cold start. Refuses to emit: anything the compiler rejects, anything already buried, anything
+  duplicated, anything at zero cost, and any threshold on a raw price level — `close > 100` means
+  something different for every instrument, so such a candidate is an accident of whichever symbol
+  it was bred against.
+- `lib/factory/generation.ts` — breed → screen → record survivors as `draft`. **The gauntlet is
+  deliberately not here.** Breeding and screening cost compute; the gauntlet costs evidence that
+  cannot be recovered, and running one on a fifteen-minute timer would burn a family's budget on
+  nobody's instruction.
+- Wired at `evolving` only. A generation writes specs and spends trial budget — that is a proposal
+  in all but name, and proposals are what `evolving` authorises.
+- Population 100, seeded by generation number, replayable. `selectionCost` recorded on the
+  generation event so the denominator is a fact on the record rather than a later reconstruction.
+
+**A real hole found in existing code.** `strategyIdentity` hashes the whole DSL including `name`,
+so two specs differing only in what they are called hash differently — **renaming a rejected
+strategy defeats the graveyard's rediscovery check.** Bred candidates are named
+`f<generation>_<lineage>_<n>`, so without a fix every buried candidate would be rediscovered next
+generation, forever, each one spending a trial to relearn a known failure. Worked around locally
+with `logicIdentity` (name stripped) rather than changing `strategyIdentity`, whose semantics the
+graveyard and its tests depend on. **The wider hole is still open for hand-written specs.**
+
+Verified: typecheck clean, 867 passing / 1 failing (`lib/security/request.test.ts:153`, protected).
+
+**Not verified: any of this running against live market data.** No generation has executed. The
+tests prove the breeder is deterministic and refuses what it should; they prove nothing about
+whether a real generation produces survivors worth looking at.
+
+---
+
 ## Next
 - P2: spend the trial on `sma_cross_20_50` — the first validated result.
 - Performance: `/dashboard` at 2095 ms, every page `force-dynamic`, nothing cached.
