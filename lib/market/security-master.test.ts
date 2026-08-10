@@ -378,3 +378,47 @@ describe("bounded current search", () => {
     expect(findNseInstrument(duplicateName)).toBeNull();
   });
 });
+
+describe("a duplicate ISIN is an instrument-level conflict, never a market-wide outage", () => {
+  it("keeps the master usable when one security appears twice with conflicting identity", () => {
+    // The defect this pins (found 2026-08-11): NSE publishes SEPARATE current files for Equity,
+    // SME, ETF, REIT and InvIT, and a security legitimately moves between series (BE <-> EQ)
+    // while keeping its ISIN. The sync deduplicated on ISIN alone and THREW on any repeat, so a
+    // single duplicated ISIN failed the whole sync and drove search to
+    // NSE_SECURITY_MASTER_UNAVAILABLE for the entire market. One ambiguous security must not
+    // delete every unambiguous one.
+    const result = syncAt("2026-08-10T00:00:00Z", [
+      RELIANCE,
+      SECOND_SECURITY,
+      // Same ISIN as RELIANCE, different symbol and series: a genuine identity conflict.
+      { ...RELIANCE, symbol: "RELIANCEBE", series: "BE" },
+    ]);
+
+    expect(result.ok, `sync failed: ${result.ok ? "" : result.message}`).toBe(true);
+    if (!result.ok) return;
+
+    // The unambiguous security is still resolvable...
+    const second = findNseInstrument(SECOND_SECURITY.isin);
+    expect(second?.symbol).toBe("SECOND");
+
+    // ...and the ambiguous one is withheld rather than resolved to an arbitrary row.
+    expect(findNseInstrument(RELIANCE.isin)).toBeNull();
+  });
+
+  it("accepts the same security listed in two official source files without conflict", () => {
+    // Identical identity in MAIN and SME is one security in two files, not a contradiction.
+    const result = applyNseSecurityMasterSync({
+      observedAt: new Date("2026-08-10T00:00:00Z"),
+      actor: "test",
+      minimumRows: 1,
+      maxDropFraction: 0.6,
+      sources: [
+        { kind: "MAIN", url: "https://example.test/main.csv", content: csv([RELIANCE, SECOND_SECURITY]) },
+        { kind: "SME", url: "https://example.test/sme.csv", content: csv([RELIANCE]) },
+      ],
+    });
+
+    expect(result.ok, `sync failed: ${result.ok ? "" : result.message}`).toBe(true);
+    expect(findNseInstrument(RELIANCE.isin)?.symbol).toBe("RELIANCE");
+  });
+});

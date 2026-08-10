@@ -48,6 +48,25 @@ describe("systemReadiness NSE universe", () => {
             "NIFTYBEES,Nifty50,NIPINDETFNIFTYBEES,08-Jan-02,1,INF204KB14I2,1",
           ].join("\n"),
         },
+        // REIT and InvIT are REQUIRED source classes. A master without them is genuinely
+        // incomplete, so "ready" must be demonstrated on a COMPLETE master — the next test is the
+        // one that proves an incomplete master reports PARTIAL.
+        {
+          kind: "REIT",
+          url: "https://nsearchives.nseindia.com/content/equities/REITS_L.csv",
+          content: [
+            "SYMBOL,NAME OF COMPANY,SERIES,DATE OF LISTING,PAID UP VALUE,MARKET LOT,ISIN NUMBER,FACE VALUE",
+            "EMBASSY,Embassy Office Parks REIT,RR,01-APR-2019,300,400,INE041025011,300",
+          ].join("\n"),
+        },
+        {
+          kind: "INVIT",
+          url: "https://nsearchives.nseindia.com/content/equities/INVITS_L.csv",
+          content: [
+            "SYMBOL,NAME OF COMPANY,SERIES,DATE OF LISTING,PAID UP VALUE,MARKET LOT,ISIN NUMBER,FACE VALUE",
+            "IRBINVIT,IRB InvIT Fund,IV,18-MAY-2017,102,1000,INE183W01011,102",
+          ].join("\n"),
+        },
       ],
     });
     expect(result.ok).toBe(true);
@@ -57,7 +76,7 @@ describe("systemReadiness NSE universe", () => {
     expect(item).toEqual({
       area: "NSE universe",
       status: "READY",
-      detail: "4 currently-listed NSE securities from the official security master.",
+      detail: "6 currently-listed NSE securities from the official security master.",
     });
   });
 
@@ -83,7 +102,8 @@ describe("systemReadiness NSE universe", () => {
 
     expect(item).toMatchObject({
       status: "PARTIAL",
-      detail: "1 currently-listed NSE security; required official sources are missing: SME, ETF.",
+      detail:
+        "1 currently-listed NSE security; required official sources are missing: SME, ETF, REIT, INVIT.",
     });
   });
 

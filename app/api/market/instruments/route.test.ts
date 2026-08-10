@@ -28,17 +28,40 @@ function officialFixture(start: number, count: number, includeSbin = false): str
   return [NSE_FIXTURE.split("\n")[0], ...rows].join("\n");
 }
 
+const REIT_FIXTURE = [
+  "SYMBOL,NAME OF COMPANY,SERIES,DATE OF LISTING,PAID UP VALUE,MARKET LOT,ISIN NUMBER,FACE VALUE",
+  "EMBASSY,Embassy Office Parks REIT,RR,01-APR-2019,300,400,INE041025011,300",
+].join("\n");
+const INVIT_FIXTURE = [
+  "SYMBOL,NAME OF COMPANY,SERIES,DATE OF LISTING,PAID UP VALUE,MARKET LOT,ISIN NUMBER,FACE VALUE",
+  "IRBINVIT,IRB InvIT Fund,IV,18-MAY-2017,102,1000,INE183W01011,102",
+].join("\n");
+
+/**
+ * Serve each official source EXPLICITLY, and throw on anything unrecognised.
+ *
+ * The previous stub fell through to the main equity list for any URL it did not match. When REIT
+ * and InvIT sources were added to the bootstrap, this silently served the equity fixture three
+ * times over — so SBIN's ISIN arrived repeatedly, the sync failed DUPLICATE_SECURITY, and every
+ * test here reported NSE_SECURITY_MASTER_UNAVAILABLE. A test double that guesses turns "we added
+ * a source" into a mystery outage; one that throws names the change immediately.
+ */
 function stubOfficialSources() {
   const fetchMock = vi.fn<typeof fetch>(async (input) => {
     const url = String(input);
-    return new Response(
-      url.includes("SME_EQUITY_L.csv")
-        ? officialFixture(2_200, 300)
-        : url.includes("eq_etfseclist.csv")
-          ? ETF_FIXTURE
-        : officialFixture(0, 2_200, true),
-      { status: 200 },
-    );
+    const body = url.includes("SME_EQUITY_L.csv")
+      ? officialFixture(2_200, 300)
+      : url.includes("eq_etfseclist.csv")
+        ? ETF_FIXTURE
+        : url.includes("REITS_L.csv")
+          ? REIT_FIXTURE
+          : url.includes("INVITS_L.csv")
+            ? INVIT_FIXTURE
+            : url.includes("EQUITY_L.csv")
+              ? officialFixture(0, 2_200, true)
+              : null;
+    if (body === null) throw new Error(`Unstubbed NSE source URL: ${url}`);
+    return new Response(body, { status: 200 });
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -46,7 +69,10 @@ function stubOfficialSources() {
 
 function seedMaster() {
   const result = applyNseSecurityMasterSync({
-    observedAt: new Date("2026-08-09T00:00:00Z"),
+    // Observed now, so the route treats this master as current and does not reach for the
+    // network. A stale seed made this test bootstrap against the LIVE NSE — it passed or failed
+    // on what the exchange happened to publish that day, which is not a test.
+    observedAt: new Date(),
     actor: "route-test-fixture",
     minimumRows: 1,
     sources: [
@@ -67,6 +93,19 @@ function seedMaster() {
         kind: "ETF",
         url: "https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv",
         content: ETF_FIXTURE,
+      },
+      // REIT and InvIT are REQUIRED source kinds: a master missing them is incomplete, and the
+      // route correctly refuses to call it current. Omitting them here made this test's seed look
+      // stale and sent it to the live exchange for a "complete" one.
+      {
+        kind: "REIT",
+        url: "https://nsearchives.nseindia.com/content/equities/REITS_L.csv",
+        content: REIT_FIXTURE,
+      },
+      {
+        kind: "INVIT",
+        url: "https://nsearchives.nseindia.com/content/equities/INVITS_L.csv",
+        content: INVIT_FIXTURE,
       },
     ],
   });
@@ -93,9 +132,9 @@ describe("GET /api/market/instruments", () => {
           series: "EQ",
         }),
       ],
-      securityMaster: expect.objectContaining({ state: "CURRENT", totalRows: 2_501 }),
+      securityMaster: expect.objectContaining({ state: "CURRENT", totalRows: 2_503 }),
     });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("bootstraps NSE for an unscoped symbol search from the global navigation", async () => {
@@ -108,12 +147,17 @@ describe("GET /api/market/instruments", () => {
     expect(response.status, JSON.stringify(body)).toBe(200);
     expect(body).toMatchObject({
       instruments: [expect.objectContaining({ id: "IN:XNSE:SBIN", isin: "INE062A01020" })],
-      securityMaster: expect.objectContaining({ state: "CURRENT", totalRows: 2_501 }),
+      securityMaster: expect.objectContaining({ state: "CURRENT", totalRows: 2_503 }),
     });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("returns bounded ISIN-backed results and master provenance", async () => {
+    // Any network reach is a defect in this test's isolation, so make it loud rather than let a
+    // live fetch quietly decide the assertion.
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (input) => {
+      throw new Error(`This test must not touch the network; it requested ${String(input)}`);
+    }));
     seedMaster();
     const response = await GET(
       new Request("http://localhost/api/market/instruments?exchange=XNSE&q=Reliance&limit=1&offset=0"),
@@ -129,7 +173,7 @@ describe("GET /api/market/instruments", () => {
         }),
       ],
       pagination: { total: 1, limit: 1, offset: 0 },
-      securityMaster: expect.objectContaining({ currentSyncId: expect.any(String), totalRows: 4 }),
+      securityMaster: expect.objectContaining({ currentSyncId: expect.any(String), totalRows: 6 }),
     });
   });
 });

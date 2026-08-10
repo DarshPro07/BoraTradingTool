@@ -298,7 +298,10 @@ describe("audit trail", () => {
       detail: "Orders are placed manually by the owner.",
     });
 
-    const events = listAudit();
+    // Assert on THIS test's events, not the whole table. A fresh install is no longer audit-silent
+    // — migration 0014 records the startup learning-mode default — and a test that counts every
+    // row in a shared ledger breaks whenever the system legitimately records something else.
+    const events = listAudit().filter((event) => event.actor === "autonomous_worker");
     expect(events).toHaveLength(2);
     expect(events[0].action).toBe("place_order");
     expect(events[0].decision).toBe("denied");

@@ -56,6 +56,52 @@ export type SecurityMasterErrorCode =
   | "MASTER_UNAVAILABLE"
   | "NOT_YET_OBSERVED";
 
+/**
+ * Do two rows carrying the same ISIN describe the same security?
+ *
+ * Identity is exchange + symbol + instrument type + series/trading state — the ISIN alone is an
+ * important identifier, not the whole identity. Two rows that agree on all of it are one security
+ * listed in two official source files; two that disagree are a contradiction this system must not
+ * resolve by picking one. Source kind is deliberately NOT compared: appearing in both the equity
+ * and SME files is exactly the benign case.
+ */
+function sameSecurityIdentity(left: NseSourceRow, right: NseSourceRow): boolean {
+  return (
+    left.symbol === right.symbol &&
+    left.series === right.series &&
+    left.assetType === right.assetType &&
+    left.name === right.name
+  );
+}
+
+/**
+ * Split parsed source rows into what the master will hold and what it must refuse to identify.
+ *
+ * Shared by the write path and the idempotent replay of an already-succeeded sync, so the counts
+ * a caller is told can never disagree with the rows actually stored.
+ */
+export function resolveNseIdentities(rows: readonly NseSourceRow[]): {
+  accepted: NseSourceRow[];
+  conflicted: Map<string, NseSourceRow[]>;
+} {
+  const unique = new Map<string, NseSourceRow>();
+  const conflicted = new Map<string, NseSourceRow[]>();
+
+  for (const row of rows) {
+    const seen = unique.get(row.isin);
+    if (!seen) {
+      unique.set(row.isin, row);
+      continue;
+    }
+    // The same security listed in two official source files is one security, not a contradiction.
+    if (sameSecurityIdentity(seen, row)) continue;
+    conflicted.set(row.isin, [...(conflicted.get(row.isin) ?? [seen]), row]);
+  }
+  for (const isin of conflicted.keys()) unique.delete(isin);
+
+  return { accepted: [...unique.values()], conflicted };
+}
+
 export class SecurityMasterError extends Error {
   constructor(
     readonly code: SecurityMasterErrorCode,
@@ -322,16 +368,20 @@ export function applyNseSecurityMasterSync(input: SecurityMasterSyncInput): Secu
     .where(eq(schema.securityMasterSyncs.id, syncId))
     .get();
   if (existingAttempt?.status === "SUCCEEDED") {
-    const rows = input.sources.flatMap((source) => parseNseSecurityCsv(source.content, source.kind));
+    // Replaying an identical sync must report what the master HOLDS, which is the accepted set —
+    // reporting raw parsed counts here would contradict the rows this very sync stored.
+    const { accepted } = resolveNseIdentities(
+      input.sources.flatMap((source) => parseNseSecurityCsv(source.content, source.kind)),
+    );
     return {
       ok: true,
       syncId,
-      totalRows: rows.length,
-      mainRows: rows.filter((row) => row.source === "MAIN").length,
-      smeRows: rows.filter((row) => row.source === "SME").length,
-      etfRows: rows.filter((row) => row.source === "ETF").length,
-      reitRows: rows.filter((row) => row.source === "REIT").length,
-      invitRows: rows.filter((row) => row.source === "INVIT").length,
+      totalRows: accepted.length,
+      mainRows: accepted.filter((row) => row.source === "MAIN").length,
+      smeRows: accepted.filter((row) => row.source === "SME").length,
+      etfRows: accepted.filter((row) => row.source === "ETF").length,
+      reitRows: accepted.filter((row) => row.source === "REIT").length,
+      invitRows: accepted.filter((row) => row.source === "INVIT").length,
     };
   }
   if (existingAttempt?.status === "FAILED") {
@@ -365,13 +415,21 @@ export function applyNseSecurityMasterSync(input: SecurityMasterSyncInput): Secu
       );
     }
 
-    const unique = new Map<string, NseSourceRow>();
-    for (const row of rows) {
-      if (unique.has(row.isin)) {
-        throw new SecurityMasterError("DUPLICATE_SECURITY", `NSE security master repeats ISIN ${row.isin}.`);
-      }
-      unique.set(row.isin, row);
-    }
+    // A repeated ISIN is an INSTRUMENT-level fact, not a market-wide outage.
+    //
+    // NSE publishes separate current files for Equity, SME, ETF, REIT and InvIT, and a security
+    // legitimately keeps its ISIN while moving between series (BE <-> EQ, rolling settlement vs
+    // trade-for-trade). Throwing on any repeat meant one ambiguous security failed the entire
+    // sync and drove search to MASTER_UNAVAILABLE for every other security on the exchange —
+    // 3,313 resolvable instruments deleted by one contradiction.
+    //
+    // So: the same security appearing in two source files is accepted once; rows that genuinely
+    // disagree about what the ISIN identifies are WITHHELD from the master (resolving to an
+    // arbitrary one would be a guess) and recorded as IDENTITY_CONFLICT. The rest of the market
+    // syncs normally.
+    // Only what survives identity resolution reaches the master, so every count, every listing
+    // version and every name-ambiguity decision below is computed from the same accepted set.
+    const { accepted, conflicted } = resolveNseIdentities(rows);
 
     const latestSuccess = db
       .select()
@@ -390,22 +448,22 @@ export function applyNseSecurityMasterSync(input: SecurityMasterSyncInput): Secu
     if (
       latestSuccess &&
       latestSuccess.totalRows > 0 &&
-      rows.length < latestSuccess.totalRows * (1 - maxDropFraction)
+      accepted.length < latestSuccess.totalRows * (1 - maxDropFraction)
     ) {
       throw new SecurityMasterError(
         "IMPLAUSIBLE_ROW_DROP",
-        `NSE security master fell from ${latestSuccess.totalRows} to ${rows.length} rows.`,
+        `NSE security master fell from ${latestSuccess.totalRows} to ${accepted.length} rows.`,
       );
     }
 
-    const mainRows = rows.filter((row) => row.source === "MAIN").length;
-    const smeRows = rows.filter((row) => row.source === "SME").length;
-    const etfRows = rows.filter((row) => row.source === "ETF").length;
-    const reitRows = rows.filter((row) => row.source === "REIT").length;
-    const invitRows = rows.filter((row) => row.source === "INVIT").length;
+    const mainRows = accepted.filter((row) => row.source === "MAIN").length;
+    const smeRows = accepted.filter((row) => row.source === "SME").length;
+    const etfRows = accepted.filter((row) => row.source === "ETF").length;
+    const reitRows = accepted.filter((row) => row.source === "REIT").length;
+    const invitRows = accepted.filter((row) => row.source === "INVIT").length;
     const nameOwners = new Map<string, string>();
     const ambiguousNames = new Set<string>();
-    for (const row of rows) {
+    for (const row of accepted) {
       const name = row.name.toUpperCase();
       const owner = nameOwners.get(name);
       if (owner && owner !== row.isin) ambiguousNames.add(name);
@@ -420,7 +478,7 @@ export function applyNseSecurityMasterSync(input: SecurityMasterSyncInput): Secu
         .all();
       const currentByIsin = new Map(current.map((row) => [row.isin, row]));
 
-      for (const row of rows) {
+      for (const row of accepted) {
         tx.insert(schema.nseSecurities)
           .values({
             isin: row.isin,
@@ -503,13 +561,35 @@ export function applyNseSecurityMasterSync(input: SecurityMasterSyncInput): Secu
           .run();
       }
 
+      // Withheld securities are recorded as evidence, in the same transaction as the sync that
+      // withheld them. A conflict that is silently dropped becomes a security that "just isn't
+      // there" — indistinguishable from one NSE never published.
+      for (const [isin, variants] of conflicted) {
+        tx.insert(schema.auditEvents)
+          .values({
+            actor: input.actor,
+            action: "nse_identity_conflict",
+            decision: "denied",
+            denialCode: "IDENTITY_CONFLICT",
+            subject: isin,
+            detail:
+              `ISIN ${isin} was published with ${variants.length} conflicting identities in one observation: ` +
+              variants.map((row) => `${row.symbol}/${row.series}/${row.assetType} (${row.source})`).join(" vs ") +
+              ". The security is withheld from the master rather than resolved to an arbitrary row; " +
+              "every other security in this sync was accepted normally.",
+            learningMode: null,
+            createdAt: new Date(),
+          })
+          .run();
+      }
+
       tx.update(schema.securityMasterSyncs)
         .set({
           status: "SUCCEEDED",
           completedAt: new Date(),
           mainRowCount: mainRows,
           smeRowCount: smeRows,
-          totalRows: rows.length,
+          totalRows: accepted.length,
           errorCode: null,
           errorMessage: null,
         })
