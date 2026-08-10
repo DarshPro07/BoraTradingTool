@@ -1,7 +1,10 @@
 export type Market = "US" | "IN";
 export type Exchange = "XNAS" | "XNYS" | "XNSE" | "XBOM";
 export type Currency = "USD" | "INR";
-export type AssetType = "EQUITY" | "ETF";
+export type AssetType = "EQUITY" | "ETF" | "REIT" | "INVIT";
+export type NseAssetType = AssetType;
+export type ListingStatus = "LISTED" | "SUSPENDED" | "DELISTED" | "INACTIVE";
+export type DataAvailability = "AVAILABLE" | "UNAVAILABLE" | "UNKNOWN";
 export type DataQuality =
   | "LIVE"
   | "DELAYED"
@@ -20,6 +23,14 @@ export interface Instrument {
   currency: Currency;
   timezone: "America/New_York" | "Asia/Kolkata";
   assetType: AssetType;
+  /** Durable exchange-issued security identity. Present for security-master records. */
+  securityId?: string;
+  isin?: string;
+  series?: string;
+  listingStatus?: ListingStatus;
+  dataAvailability?: DataAvailability;
+  effectiveFrom?: string;
+  effectiveTo?: string | null;
 }
 
 export interface Provenance {

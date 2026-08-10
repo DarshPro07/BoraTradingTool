@@ -27,8 +27,8 @@ afterEach(() => {
 });
 
 describe("learning mode", () => {
-  it("defaults to off", () => {
-    expect(getLearningMode()).toBe("off");
+  it("defaults a fresh installation to safe autonomous learning", () => {
+    expect(getLearningMode()).toBe("learning");
   });
 
   it("round-trips a mode change and audits it", () => {
@@ -46,12 +46,13 @@ describe("learning mode", () => {
 
   it("rejects non-owner mode changes without changing state", () => {
     expect(() => setLearningMode("evolving", "autonomous_worker")).toThrow(GovernanceDenied);
-    expect(getLearningMode()).toBe("off");
+    expect(getLearningMode()).toBe("learning");
   });
 });
 
 describe("authorize", () => {
   it("denies everything while learning mode is off", () => {
+    setLearningMode("off", "owner");
     const decision = authorize("discover_source", "autonomous_worker");
     expect(decision.allowed).toBe(false);
   });

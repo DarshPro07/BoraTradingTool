@@ -5,6 +5,7 @@ import { proposalStats } from "@/lib/learning/evolution";
 import { queueStats } from "@/lib/research/queue";
 import { IDLE_THRESHOLDS, inspectMemory } from "@/lib/learning/introspection";
 import { LearningModeControl } from "@/components/learning/LearningModeControl";
+import { LearningProgressPanel } from "@/components/learning/LearningProgressPanel";
 import { LiveTerminal } from "@/components/learning/LiveTerminal";
 import { StudyPanel } from "@/components/learning/StudyPanel";
 import { ResearchIntake } from "@/components/research/ResearchIntake";
@@ -37,6 +38,11 @@ export default async function LearningPage() {
         <StatTile label="Open proposals" value={proposals.draft + proposals.tests_pending + proposals.tests_passed + proposals.reviewed} />
         <StatTile label="Awaiting approval" value={proposals.reviewed} tone={proposals.reviewed > 0 ? "warn" : "neutral"} />
       </div>
+
+      {/* Progress vs activity, and the broker assumptions every intraday number rests on.
+          First, because "is this getting better?" is the question this page exists to answer,
+          and the tiles above it are activity — necessary, insufficient. */}
+      <LearningProgressPanel />
 
       <Panel title="MODE">
         <LearningModeControl current={mode} />

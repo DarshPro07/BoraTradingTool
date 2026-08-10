@@ -7,6 +7,7 @@ import { recordStrategySpec } from "@/lib/knowledge/repository";
 import type { Candle } from "@/lib/providers/types";
 import type { StrategyDsl } from "@/lib/strategy/dsl";
 import { runGauntlet } from "@/lib/strategy/gauntlet";
+import { placeInTestFamily, registerTestSnapshot } from "@/lib/strategy/identity-fixture";
 import { runBacktest } from "./engine";
 
 const temporaryDirectories: string[] = [];
@@ -157,7 +158,16 @@ describe("evidence handed to the gauntlet", () => {
     if (!result.ok) return;
 
     const specId = recordStrategySpec({ name: "ramp_follow", version: 1, dsl: dsl(), createdBy: "test" });
-    const report = runGauntlet(specId, dsl(), result.evidence);
+    // A strategy must belong to a declared family before any statistical claim is made about it.
+    // Without this `runGauntlet` throws `ResearchIdentityMissing`, because the deflated Sharpe
+    // ratio would otherwise be corrected against a denominator of one.
+    placeInTestFamily(specId, dsl());
+    registerTestSnapshot();
+    const report = runGauntlet(specId, dsl(), {
+      ...result.evidence,
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
+    });
 
     expect(report.specId).toBe(specId);
     expect(report.stages.length).toBeGreaterThan(0);

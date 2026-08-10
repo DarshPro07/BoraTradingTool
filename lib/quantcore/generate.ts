@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import { findCurrentInstrument, listCurrentInstruments } from "@/lib/market/catalog";
 import type { Candle } from "@/lib/providers/types";
 import { StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { classifyRegime } from "./regime";
@@ -75,7 +75,9 @@ function isoDate(at: Date): string {
  * would be the exact failure mode the evidence rules forbid.
  */
 function universeArtifact(market: "US" | "IN") {
-  const instruments = INSTRUMENT_CATALOG.filter((instrument) => instrument.market === market);
+  const instruments = listCurrentInstruments({ market }).filter(
+    (instrument) => market !== "IN" || instrument.exchange === "XNSE",
+  );
   return {
     market: market === "IN" ? "NSE" : "US",
     count: instruments.length,
@@ -237,7 +239,7 @@ export interface GenerateOptions {
 
 /** Instrument ids are internal (`US:XNAS:AAPL`); the board speaks provider symbols (`AAPL`). */
 function providerSymbol(instrumentId: string): string {
-  return INSTRUMENT_CATALOG.find((instrument) => instrument.id === instrumentId)?.providerSymbol ?? instrumentId;
+  return findCurrentInstrument(instrumentId)?.providerSymbol ?? instrumentId;
 }
 
 /** A spec stored under an older compiler is a fact to report, not a crash. */

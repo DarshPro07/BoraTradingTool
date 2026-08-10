@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { compileStrategy } from "@/lib/strategy/dsl";
-import { runValidationRehearsal } from "./rehearsal";
+import { registerTestSnapshot } from "@/lib/strategy/identity-fixture";
+import { runValidationRehearsal, type ResearchDatasetSource } from "./rehearsal";
+import type { SnapshotResult } from "@/lib/research-data/snapshot";
 import type { Candle } from "@/lib/providers/types";
 
 /**
@@ -33,7 +35,29 @@ function dataset(instruments = 4): Record<string, Candle[]> {
   );
 }
 
-const loader = (data: Record<string, Candle[]> = dataset()) => async () => data;
+function snap(data: Record<string, Candle[]>): SnapshotResult {
+  const all = Object.values(data).flat();
+  return {
+    ok: true,
+    snapshotId: "dss_fixture",
+    fingerprint: "fp_fixture",
+    barCount: all.length,
+    instruments: Object.keys(data).sort(),
+    firstTime: all[0]?.time ?? 0,
+    lastTime: all[all.length - 1]?.time ?? 0,
+    dataset: data,
+  };
+}
+
+/** A source answering with a recorded snapshot — the only shape rehearsal accepts now. */
+const source = (data: Record<string, Candle[]> = dataset()): ResearchDatasetSource => () => snap(data);
+
+/** The fail-closed answer: the store has nothing, and the remedy is ingestion. */
+const refusal = (): ResearchDatasetSource => () => ({
+  ok: false,
+  code: "NO_STORED_DATA",
+  message: "The canonical store holds no bars for this universe (test refusal) — ingestion required.",
+});
 
 /**
  * A draft candidate for the rehearsal to actually chew on.
@@ -73,33 +97,36 @@ function seedDraftSpec(): void {
       createdAt: new Date(),
     })
     .run();
+  // The rehearsal records experiments against the fixture snapshot; the FK must resolve.
+  registerTestSnapshot("dss_fixture", "fp_fixture");
 }
 
 useTemporaryDatabase(seedDraftSpec);
 
 describe("mode gating comes from the policy, not from a second ladder", () => {
   it("refuses at off", async () => {
-    const report = await runValidationRehearsal(loader(), "off");
+    const report = await runValidationRehearsal(source(), "off");
     expect(report.evaluated).toBe(0);
     expect(report.skipped[0]).toMatch(/requires learning mode/);
   });
 
   it("refuses at observing, naming the mode it needs", async () => {
-    const report = await runValidationRehearsal(loader(), "observing");
+    const report = await runValidationRehearsal(source(), "observing");
     expect(report.evaluated).toBe(0);
     expect(report.skipped[0]).toMatch(/"learning"/);
   });
 
   it("still records nothing when it refuses", async () => {
-    expect((await runValidationRehearsal(loader(), "off")).recordedNothing).toBe(true);
+    expect((await runValidationRehearsal(source(), "off")).recordedNothing).toBe(true);
   });
 
-  it("does not even ask the provider for candles when the mode forbids it", async () => {
+  it("does not even build a snapshot when the mode forbids it", async () => {
     let called = 0;
-    await runValidationRehearsal(async () => {
+    const counting: ResearchDatasetSource = () => {
       called += 1;
-      return dataset();
-    }, "observing");
+      return snap(dataset());
+    };
+    await runValidationRehearsal(counting, "observing");
     expect(called).toBe(0);
   });
 });
@@ -109,19 +136,19 @@ describe("running at learning mode", () => {
     // The canary for every `for (const outcome of report.outcomes)` below. If the fixture stops
     // being picked up, those loops iterate zero times and pass without asserting anything — so
     // this failing first is what tells you the rest went hollow rather than green.
-    const report = await runValidationRehearsal(loader(), "learning");
+    const report = await runValidationRehearsal(source(), "learning");
     expect(report.outcomes.length).toBeGreaterThan(0);
     expect(report.evaluated).toBeGreaterThan(0);
   });
 
   it("records nothing, whatever it finds", async () => {
-    const report = await runValidationRehearsal(loader(), "learning");
+    const report = await runValidationRehearsal(source(), "learning");
     expect(report.recordedNothing).toBe(true);
   });
 
-  it("survives a provider that throws, without calling the outage 'no data'", async () => {
-    const report = await runValidationRehearsal(async () => {
-      throw new Error("provider down");
+  it("survives a source that throws, costing the candidate rather than the pass", async () => {
+    const report = await runValidationRehearsal(() => {
+      throw new Error("store unreadable");
     }, "learning");
     expect(report.recordedNothing).toBe(true);
     for (const outcome of report.outcomes) {
@@ -130,28 +157,29 @@ describe("running at learning mode", () => {
   });
 
   it("reports missing candles rather than substituting a default series", async () => {
-    const report = await runValidationRehearsal(async () => ({}), "learning");
+    const report = await runValidationRehearsal(refusal(), "learning");
     for (const outcome of report.outcomes) {
       expect(outcome.verdict).toBe("not_evaluable");
       // Either honest refusal is acceptable — the feature gap or the data gap — but it must be
       // one of them, naming a specific cause. What is never acceptable is a fabricated series
       // producing trades out of nothing.
-      expect(outcome.reason).toMatch(/FEATURE_NOT_AVAILABLE|Missing data is reported|INSUFFICIENT_BARS/);
+      expect(outcome.reason).toMatch(/FEATURE_NOT_AVAILABLE|ingestion required|INSUFFICIENT_BARS/);
       expect(outcome.trades).toBe(0);
       expect(outcome.battery).toBeNull();
     }
   });
 
-  it("does not touch the provider for a strategy whose features it cannot derive", async () => {
+  it("does not touch the dataset source for a strategy whose features it cannot derive", async () => {
     // The bug this pins: the fetch used to run first, so twelve instruments × three years were
     // pulled on every cycle before discovering the strategy needed `market_cap` — which no
     // amount of price history supplies. On a slow link that was twelve connect timeouts, every
     // fifteen minutes, indefinitely.
     let calls = 0;
-    const report = await runValidationRehearsal(async () => {
+    const counting: ResearchDatasetSource = () => {
       calls += 1;
-      return {};
-    }, "learning");
+      return snap({});
+    };
+    const report = await runValidationRehearsal(counting, "learning");
 
     const featureBlocked = report.outcomes.filter((outcome) =>
       outcome.reason.includes("FEATURE_NOT_AVAILABLE"),
@@ -159,19 +187,19 @@ describe("running at learning mode", () => {
     if (report.outcomes.length > 0 && featureBlocked === report.outcomes.length) {
       expect(calls).toBe(0);
     }
-    // Whatever the mix, the loader is never called more often than there are candidates.
+    // Whatever the mix, the source is never asked more often than there are candidates.
     expect(calls).toBeLessThanOrEqual(report.outcomes.length);
   });
 
   it("reports an empty candle array the same way as a missing instrument", async () => {
-    const report = await runValidationRehearsal(async () => ({ "US:XNAS:T0": [] }), "learning");
+    const report = await runValidationRehearsal(source({ "US:XNAS:T0": [] }), "learning");
     for (const outcome of report.outcomes) {
       expect(outcome.verdict).toBe("not_evaluable");
     }
   });
 
   it("walks every instrument in the dataset, not just the first", async () => {
-    const report = await runValidationRehearsal(loader(dataset(4)), "learning");
+    const report = await runValidationRehearsal(source(dataset(4)), "learning");
     for (const outcome of report.outcomes) {
       // A market-wide DSL judged on one instrument has unlimited position slots, so
       // maxPositions never binds and its real capacity is invisible.
@@ -183,14 +211,14 @@ describe("running at learning mode", () => {
     // Barely enough bars to backtest, nowhere near the 30 trades the battery needs. The
     // candidate is unproven, not refuted, and retiring it here would be for the wrong reason.
     const thin = { "US:XNAS:T0": bars(60) };
-    const report = await runValidationRehearsal(loader(thin), "learning");
+    const report = await runValidationRehearsal(source(thin), "learning");
     for (const outcome of report.outcomes) {
       if (outcome.battery?.verdict === "inconclusive") expect(outcome.verdict).toBe("not_evaluable");
     }
   });
 
   it("never claims a candidate is proven, only that it would survive", async () => {
-    const report = await runValidationRehearsal(loader(), "learning");
+    const report = await runValidationRehearsal(source(), "learning");
     for (const outcome of report.outcomes) {
       expect(["would_pass", "would_fail", "not_evaluable"]).toContain(outcome.verdict);
     }
@@ -207,13 +235,13 @@ describe("running at learning mode", () => {
   });
 
   it("is deterministic across runs, so a candidate cannot be re-rolled into passing", async () => {
-    const once = await runValidationRehearsal(loader(), "learning", new Date(0));
-    const twice = await runValidationRehearsal(loader(), "learning", new Date(0));
+    const once = await runValidationRehearsal(source(), "learning", new Date(0));
+    const twice = await runValidationRehearsal(source(), "learning", new Date(0));
     expect(once).toEqual(twice);
   });
 
   it("stamps when it ran", async () => {
     const at = new Date("2026-08-06T12:00:00.000Z");
-    expect((await runValidationRehearsal(loader(), "learning", at)).ranAt).toBe(at.toISOString());
+    expect((await runValidationRehearsal(source(), "learning", at)).ranAt).toBe(at.toISOString());
   });
 });

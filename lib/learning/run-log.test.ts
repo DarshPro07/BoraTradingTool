@@ -66,9 +66,9 @@ describe("a cycle leaves a trace", () => {
           skipped: [],
           summary: "x",
           outcomes: [
-            { specId: "a", name: "a", status: "draft", verdict: "would_pass", reason: "", trades: 40, instrumentsEvaluated: 12, signalsRejectedForCapacity: 0, battery: null },
-            { specId: "b", name: "b", status: "draft", verdict: "rediscovered", reason: "", trades: 0, instrumentsEvaluated: 0, signalsRejectedForCapacity: 0, battery: null },
-            { specId: "c", name: "c", status: "draft", verdict: "would_fail", reason: "", trades: 31, instrumentsEvaluated: 12, signalsRejectedForCapacity: 2, battery: null },
+            { specId: "a", name: "a", status: "draft", verdict: "would_pass", reason: "", trades: 40, instrumentsEvaluated: 12, signalsRejectedForCapacity: 0, battery: null, datasetSnapshotId: "dss_x", datasetFingerprint: "fp_x" },
+            { specId: "b", name: "b", status: "draft", verdict: "rediscovered", reason: "", trades: 0, instrumentsEvaluated: 0, signalsRejectedForCapacity: 0, battery: null, datasetSnapshotId: null, datasetFingerprint: null },
+            { specId: "c", name: "c", status: "draft", verdict: "would_fail", reason: "", trades: 31, instrumentsEvaluated: 12, signalsRejectedForCapacity: 2, battery: null, datasetSnapshotId: "dss_x", datasetFingerprint: "fp_x" },
           ],
         },
       } as Partial<CycleReport>),

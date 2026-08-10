@@ -63,7 +63,21 @@ test("market selector and instrument search preserve canonical navigation", asyn
   await expect(page.locator("body")).toContainText("RELIANCE");
 });
 
+/**
+ * These two tests need the fixtures that `MARKETPULSE_TEST_MODE=1` installs, which the managed
+ * `webServer` sets and an externally-started dev server does not. Run against a normal server they
+ * fail for the wrong reason — a red suite that says nothing about the application.
+ *
+ * Skipped with a stated reason rather than loosened: an assertion relaxed until it passes in both
+ * environments would stop testing the fixture path in either.
+ */
+const usesExternalServer = Boolean(process.env.MARKETPULSE_E2E_BASE_URL?.trim());
+const fixtureOnly = usesExternalServer
+  ? "requires MARKETPULSE_TEST_MODE fixtures; the external server under test does not run in test mode"
+  : false;
+
 test("AI desk returns cited fixture analysis", async ({ page }) => {
+  test.skip(Boolean(fixtureOnly), String(fixtureOnly));
   await page.goto("/ai");
   await expect(page.getByRole("heading", { name: "AI Research Desk" })).toBeVisible();
   await page.getByRole("button", { name: "RUN EVIDENCE REVIEW" }).click();
@@ -73,6 +87,7 @@ test("AI desk returns cited fixture analysis", async ({ page }) => {
 });
 
 test("paper order stays in the simulated ledger", async ({ page }) => {
+  test.skip(Boolean(fixtureOnly), String(fixtureOnly));
   await page.goto("/paper");
   await expect(page.getByRole("heading", { name: "Paper Portfolio" })).toBeVisible();
   const watchlist = await page.evaluate(async () => {

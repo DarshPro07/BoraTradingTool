@@ -113,7 +113,10 @@ export interface GradeResult {
   mastery: MasteryUpdate;
 }
 
-export type GradeFailure = { ok: false; error: "UNKNOWN_CONCEPT" | "NO_GRADE_SUPPLIED" | "NOT_GRADEABLE" };
+export type GradeFailure = {
+  ok: false;
+  error: "UNKNOWN_CONCEPT" | "NO_GRADE_SUPPLIED" | "NOT_GRADEABLE" | "SELF_REPORT_NOT_PERMITTED";
+};
 export type GradeSuccess = { ok: true; result: GradeResult };
 
 export function gradeStudyAnswer(input: GradeInput, now = new Date()): GradeSuccess | GradeFailure {
@@ -153,6 +156,17 @@ export function gradeStudyAnswer(input: GradeInput, now = new Date()): GradeSucc
   }
 
   if (typeof input.recalled === "boolean") {
+    // The exclusivity the module header describes, actually enforced.
+    //
+    // Without this, a caller could send `recalled: true` for a concept that *does* have a graded
+    // question and have it recorded as mastery — the stored answer never consulted. That is not a
+    // loophole in a quiz game: `knowledge_mastery.score` is the column `nextCurriculum` sorts on,
+    // so a self-reported pass on a gradeable card removes the concept from the study queue and
+    // the system stops asking about something it never established was known. The card was
+    // offered as a `quiz`; it has to be answered as one.
+    if (quiz && options) {
+      return { ok: false, error: "SELF_REPORT_NOT_PERMITTED" };
+    }
     return {
       ok: true,
       result: {

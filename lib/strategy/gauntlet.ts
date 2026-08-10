@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { specsInFamily, validationStanding } from "./research-identity";
+import { recordSelectionTrial, requestHoldoutAccess, selectionTrialCount } from "./selection-ledger";
 import { recordFailure, recordTrial, setSpecStatus } from "@/lib/knowledge/repository";
 import type { TrialKind, TrialVerdict } from "@/lib/knowledge/types";
-import { roundTripCostBps, type StrategyDsl } from "./dsl";
+import { COMPILER_VERSION, roundTripCostBps, type StrategyDsl } from "./dsl";
+import { BATTERY_SEED, buildManifest } from "@/lib/research-data/manifest";
+import { recordExperiment } from "@/lib/research-data/snapshot";
 import {
   deflatedSharpeRatio,
   mean,
@@ -27,6 +31,14 @@ export interface GauntletEvidence {
   /** Benchmark of doing nothing. Defaults to a flat zero series. */
   noTradeReturns?: number[];
   datasetFingerprint?: string;
+  /**
+   * 13b: the recorded dataset snapshot the evidence was replayed on. `runGauntlet` REFUSES to run
+   * without it — evidence whose dataset cannot be named cannot be reproduced, and a provider
+   * window has no snapshot id to offer, which is exactly the point.
+   */
+  datasetSnapshotId?: string;
+  /** The broker execution profile the replay simulated under; part of the manifest. */
+  executionProfileId?: string | null;
   /**
    * Set when the out-of-sample returns were drawn from a locked holdout. Supplying it makes
    * the query consume the strategy's one-time budget; the gauntlet refuses to run if that
@@ -53,6 +65,22 @@ export class HoldoutBudgetExhausted extends Error {
   }
 }
 
+/**
+ * Thrown when gauntlet evidence arrives without a recorded dataset snapshot (13b).
+ *
+ * An error rather than a failed stage, for the same reason as `ResearchIdentityMissing`: a trial
+ * judged on unidentifiable data is silently irreproducible — the number looks right today and
+ * cannot be re-derived tomorrow. Provider windows have no snapshot id; only the canonical store
+ * does. Fail closed, name the remedy.
+ */
+export class DatasetIdentityMissing extends Error {
+  readonly code = "DATASET_IDENTITY_MISSING";
+  constructor(message: string) {
+    super(message);
+    this.name = "DatasetIdentityMissing";
+  }
+}
+
 export interface StageResult {
   kind: TrialKind;
   verdict: TrialVerdict;
@@ -66,6 +94,23 @@ export interface GauntletReport {
   stages: StageResult[];
   trialsCounted: number;
   summary: string;
+  /** 13b: the snapshot the verdict was computed on — provenance for every consumer. */
+  datasetSnapshotId: string;
+}
+
+/**
+ * Thrown when a strategy without a confirmed research identity reaches a statistical claim.
+ *
+ * An error rather than a refused stage, deliberately. A `passed: false` report can be logged and
+ * moved past; an exception cannot. The condition it guards — a multiple-testing correction computed
+ * against a denominator of 1 — is silent, plausible and unfalsifiable downstream, which is exactly
+ * the class of defect that must fail loudly.
+ */
+export class ResearchIdentityMissing extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResearchIdentityMissing";
+  }
 }
 
 export const GATES = Object.freeze({
@@ -107,34 +152,47 @@ function stage(kind: TrialKind, verdict: TrialVerdict, reason: string, metrics: 
  */
 function countSelectionTrials(specId: string, screenedCandidates = 0): number {
   const db = getDb();
-  const spec = db
-    .select()
-    .from(schema.strategySpecs)
-    .where(eq(schema.strategySpecs.id, specId))
-    .get();
 
-  const familyIds = new Set<string>([specId]);
-  if (spec?.hypothesisId) {
-    for (const sibling of db
-      .select()
-      .from(schema.strategySpecs)
-      .where(eq(schema.strategySpecs.hypothesisId, spec.hypothesisId))
-      .all()) {
-      familyIds.add(sibling.id);
-    }
+  // The declared family, from `strategy_identity`. This replaced a walk over `hypothesisId`
+  // siblings, which was correct in shape and inert in practice: every spec in the registry had
+  // `hypothesis_id = NULL`, so the family was always {specId} and this function always returned 1.
+  //
+  // `selectionTrialCount` refuses rather than returning a number when identity is missing, and
+  // `runGauntlet` has already thrown by the time we get here — so reaching this line with no
+  // identity is a wiring bug, and it throws rather than falling back to 1. A default here is the
+  // entire defect: it is invisible, it flatters every result, and it cannot be detected downstream.
+  const ledgerCount = selectionTrialCount(specId);
+  if (!ledgerCount.known) {
+    throw new ResearchIdentityMissing(
+      `Cannot count selection trials for ${specId}: ${ledgerCount.reason}`,
+    );
   }
 
-  const completed = db
-    .select()
-    .from(schema.validationResults)
-    .all()
-    .filter((row) => familyIds.has(row.strategySpecId)).length;
+  const familyIds = new Set<string>(specsInFamily(ledgerCount.campaignId, ledgerCount.familyId));
+  familyIds.add(specId);
 
-  // +1 for the evaluation currently in progress: this attempt is itself a trial. The screened
-  // population is added because those candidates were evaluated and discarded — the fact that
-  // they left no row behind is precisely why they have to be declared.
+  // Two sources, and the larger wins.
+  //
+  // The ledger already includes the run in progress — `runGauntlet` records it before counting,
+  // because a configuration being tested *is* a trial whether or not the run completes. Abandoning
+  // a disappointing run must not refund its contribution to the bar.
+  //
+  // Historical validation rows are counted too, plus one for the current run, because the
+  // selection-trial ledger only began on 2026-08-09. A family whose earlier evaluations predate it
+  // would otherwise face a lower bar than one whose did not.
+  const historical =
+    db
+      .select()
+      .from(schema.validationResults)
+      .all()
+      .filter((row) => familyIds.has(row.strategySpecId)).length + 1;
+
+  const completed = Math.max(ledgerCount.trials, historical);
+
+  // The screened population is added because those candidates were evaluated and discarded — the
+  // fact that they left no row behind is precisely why they have to be declared.
   const screened = Number.isFinite(screenedCandidates) ? Math.max(0, Math.trunc(screenedCandidates)) : 0;
-  return Math.max(1, completed + 1 + Math.max(0, screened - 1));
+  return Math.max(1, completed + Math.max(0, screened - 1));
 }
 
 /**
@@ -151,6 +209,46 @@ export function runGauntlet(
   evidence: GauntletEvidence,
   actor = "autonomous_worker",
 ): GauntletReport {
+  // Identity before anything else. A gauntlet run on a strategy with no declared family produces a
+  // deflated Sharpe ratio corrected against a denominator of one — a number that looks like
+  // evidence, is computed correctly, and answers a question nobody asked. Thrown rather than
+  // returned as a failed stage, because a caller can ignore a field and cannot ignore this.
+  const standing = validationStanding(specId);
+  if (!standing.eligible) {
+    throw new ResearchIdentityMissing(standing.reason);
+  }
+
+  // Dataset identity next, before the trial is recorded (13b). Evidence must name the immutable
+  // snapshot it was replayed on; without one the result cannot be reproduced, and an
+  // irreproducible statistic is not evidence. This is also the door that keeps provider windows
+  // out of validation: they have no snapshot id and cannot be given one mid-run.
+  const datasetSnapshotId = evidence.datasetSnapshotId;
+  const datasetFingerprint = evidence.datasetFingerprint;
+  if (!datasetSnapshotId || !datasetFingerprint) {
+    throw new DatasetIdentityMissing(
+      "Gauntlet evidence carries no dataset snapshot identity. Build the dataset with " +
+        "snapshotFromStore (canonical store) so the trial pins the exact bars it judged; " +
+        "provider windows are not admissible in validation. Missing stored history is an " +
+        "ingestion task, not a reason to lower the bar.",
+    );
+  }
+
+  // Record the attempt before computing anything from it.
+  //
+  // This configuration is being tested, and that is true whether or not the run finishes. Recording
+  // afterwards would let an abandoned or crashed run cost nothing, which is the cheapest possible
+  // way to search: run it, dislike the number, discard it, and the family's bar never moves.
+  //
+  // Idempotent on the configuration fingerprint, so re-running an identical configuration does not
+  // inflate the denominator — a repeat is not a second search.
+  recordSelectionTrial({
+    specId,
+    dsl,
+    reason: `gauntlet run by ${actor}`,
+    evidenceHash: datasetFingerprint,
+    datasetSnapshotId,
+  });
+
   const stages: StageResult[] = [];
   const startedAt = new Date();
   const { inSampleReturns, outOfSampleReturns } = evidence;
@@ -159,9 +257,25 @@ export function runGauntlet(
   // Consume the holdout budget before computing anything. Refusing here means a second query
   // is denied outright, rather than producing a number that must then be discarded — by which
   // point somebody has already read it and cannot unsee it.
+  //
+  // Gated at family and campaign level, not per spec id. The old key was `(holdoutId, specId)`,
+  // which meant a rename, a copy or a new version bought another look at the one sample the
+  // strategy had never been fitted to. `requestHoldoutAccess` requires *both* gates to permit:
+  // the family gate stops v1→v2→v3, the campaign gate stops "invent a new family after seeing
+  // the result".
   if (evidence.holdoutId) {
-    const grant = requestHoldout(evidence.holdoutId, specId, actor);
-    if (!grant.granted) throw new HoldoutBudgetExhausted(grant.message);
+    const grant = requestHoldoutAccess({
+      holdoutGenerationId: evidence.holdoutId,
+      specId,
+      requestFingerprint: `${specId}:${actor}`,
+      datasetSnapshotId,
+    });
+    if (!grant.granted) throw new HoldoutBudgetExhausted(grant.reason);
+
+    // The legacy per-spec ledger is still written, for continuity of the audit trail and because
+    // `holdoutStanding()` reads it to decide the promotion rung. It is now a *record*, not the
+    // enforcement — `holdout_access` and its UNIQUE indexes are.
+    requestHoldout(evidence.holdoutId, specId, actor);
   }
 
   // 1. Sample adequacy — refuse to draw conclusions from too few trades.
@@ -313,7 +427,7 @@ export function runGauntlet(
         verdict: result.verdict,
         reason: result.reason,
         metrics: result.metrics,
-        datasetFingerprint: evidence.datasetFingerprint,
+        datasetFingerprint,
         actor,
         startedAt,
       });
@@ -357,7 +471,27 @@ export function runGauntlet(
       ? `Rejected: ${failures.map((result) => result.kind).join(", ")} failed.`
       : `Inconclusive: ${inconclusive.map((result) => result.kind).join(", ")} lacked evidence.`;
 
-  return { specId, passed, stages, trialsCounted: priorTrials, summary };
+  // 13b: the run's reproducibility manifest, in the experiment ledger. Idempotent on
+  // (spec, snapshot, kind, engine) — re-running the identical configuration reuses the row.
+  recordExperiment({
+    specId,
+    snapshotId: datasetSnapshotId,
+    kind: "gauntlet",
+    engineVersion: COMPILER_VERSION,
+    executionProfileId: evidence.executionProfileId ?? null,
+    summary,
+    trades: [],
+    actor,
+    manifest: buildManifest({
+      strategyVersionId: specId,
+      datasetSnapshotId,
+      datasetFingerprint,
+      brokerExecutionProfileId: evidence.executionProfileId ?? null,
+      randomSeed: BATTERY_SEED,
+    }),
+  });
+
+  return { specId, passed, stages, trialsCounted: priorTrials, summary, datasetSnapshotId };
 }
 
 export type HoldoutDenialCode = "HOLDOUT_BUDGET_EXHAUSTED";

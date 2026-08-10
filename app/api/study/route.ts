@@ -52,7 +52,9 @@ export async function POST(request: Request) {
         ? "No such concept. Mastery was not recorded."
         : outcome.error === "NOT_GRADEABLE"
           ? "That concept has no multiple-choice question, so an answer cannot be graded. Send `recalled` instead."
-          : "Send either `answer` (multiple choice) or `recalled` (self-report).";
+          : outcome.error === "SELF_REPORT_NOT_PERMITTED"
+            ? "That concept has a graded question, so it cannot be marked by self-report. Send `answer` with one of the offered options."
+            : "Send either `answer` (multiple choice) or `recalled` (self-report).";
     return NextResponse.json({ error: outcome.error, message }, { status });
   }
 

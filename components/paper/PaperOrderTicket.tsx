@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FlaskConical, RefreshCw, ShieldCheck } from "lucide-react";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
-import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import { InstrumentCombobox } from "@/components/market/InstrumentCombobox";
 import { BLAME_LABEL, explainRejection, type Explanation } from "@/lib/paper/explain";
 import type { Market } from "@/lib/market/types";
 
@@ -132,20 +132,15 @@ export function PaperOrderTicket({ defaultInstrumentId = "US:XNAS:AAPL" }: { def
         </p>
 
         <form onSubmit={submit} className="space-y-4">
-          <label className="field-label" htmlFor="paper-instrument">Instrument</label>
-          <input
+          <InstrumentCombobox
             id="paper-instrument"
-            list="paper-instruments"
+            label="Instrument"
             value={instrumentId}
-            onChange={(event) => setInstrumentId(event.target.value.toUpperCase())}
-            className="terminal-input"
+            onValueChange={setInstrumentId}
             required
+            labelClassName="field-label"
+            storageKey="marketpulse.paper.instrument.v1"
           />
-          <datalist id="paper-instruments">
-            {INSTRUMENT_CATALOG.map((instrument) => (
-              <option key={instrument.id} value={instrument.id}>{instrument.name}</option>
-            ))}
-          </datalist>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="field-label">
@@ -248,8 +243,7 @@ export function PaperOrderTicket({ defaultInstrumentId = "US:XNAS:AAPL" }: { def
               <thead><tr><th>Instrument</th><th>Qty</th><th>Avg cost</th><th>Realized P/L</th></tr></thead>
               <tbody>
                 {(portfolio?.positions ?? []).filter((position) => position.quantity > 0).map((position) => {
-                  const instrument = INSTRUMENT_CATALOG.find((item) => item.id === position.instrumentId);
-                  const currency = instrument?.currency ?? "USD";
+                  const currency = position.instrumentId.startsWith("IN:") ? "INR" : "USD";
                   return (
                     <tr key={position.instrumentId}>
                       <td><Link className="text-terminal" href={`/analyze/${encodeURIComponent(position.instrumentId)}`}>{position.instrumentId}</Link></td>

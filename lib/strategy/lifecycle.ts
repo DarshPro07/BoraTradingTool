@@ -58,6 +58,17 @@ export interface StageEvidence {
   holdoutCleared?: boolean;
   /** Set when the holdout budget for this strategy is spent. */
   holdoutExhausted?: boolean;
+  /**
+   * True when the spec's declared round-trip cost is below what the owner's capital actually
+   * pays. See `lib/strategy/cost-gate.ts`.
+   *
+   * Deliberately optional, and `undefined` is *not* treated as `true`: a caller that never
+   * computed the cost standing must not have its strategies blocked as though they had failed a
+   * check nobody ran. Missing is not zero here either.
+   */
+  costUnderstated?: boolean;
+  /** Why, when `costUnderstated` is true. Carried so the refusal names both figures. */
+  costReason?: string;
 }
 
 export interface Advance {
@@ -93,6 +104,20 @@ export function advanceStrategy(current: Stage, evidence: StageEvidence, specId?
   const target = next(current);
   if (target === null) {
     return stay("At owner review. Nothing beyond this is the system's to decide; a human either acts or does not.");
+  }
+
+  // Checked before any rung's own rules, and at every rung rather than only the first.
+  //
+  // The evidence behind a cost-understating strategy is not weak, it is void: the backtest is net
+  // of a market that does not exist, so its profit factor, its deflated Sharpe and its holdout
+  // result all answer a question nobody asked. A strategy already sitting at `validated` when the
+  // real cost was discovered must stop climbing too — its evidence was computed the same way.
+  if (evidence.costUnderstated === true) {
+    return stay(
+      evidence.costReason ??
+        "This strategy's declared round-trip cost is below what the owner's capital actually pays, " +
+          "so its backtest is net of a market that does not exist.",
+    );
   }
 
   switch (current) {

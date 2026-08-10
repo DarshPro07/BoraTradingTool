@@ -53,6 +53,18 @@ export const TRIAL_KINDS = [
   "no_trade_comparison",
   "causality",
   "parameter_stability",
+  /**
+   * The sealed-holdout query, recorded as a trial so its *verdict* has somewhere to live.
+   *
+   * `holdout_ledger` records that a holdout was queried — the budget accounting — but carries no
+   * pass/fail. Without this kind there was no source anywhere in the schema for
+   * `StageEvidence.holdoutCleared`, so `advanceStrategy` could never leave `validated` and no
+   * strategy could reach `owner_review`. The ladder had a rung with nothing under it.
+   *
+   * Distinct from the seven gauntlet stages on purpose: those are run repeatedly during
+   * validation, this one may happen once, ever.
+   */
+  "sealed_holdout",
 ] as const;
 export type TrialKind = (typeof TRIAL_KINDS)[number];
 

@@ -12,6 +12,12 @@ const CONFIG = {
   IN: { timezone: "Asia/Kolkata", preOpen: 9 * 60, open: 9 * 60 + 15, close: 15 * 60 + 30, extendedClose: 15 * 60 + 30 },
 } as const;
 
+/**
+ * Identity of the session/holiday model an experiment ran under (13b manifest field).
+ * Bump when session times, holidays or timezone semantics change.
+ */
+export const MARKET_CALENDAR_VERSION = "calendar-2026-08-09";
+
 /** Exported so the phase model can reuse one timezone conversion rather than write a second. */
 export function localParts(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -31,6 +37,52 @@ export function localParts(date: Date, timeZone: string) {
     minutes: Number(value("hour")) * 60 + Number(value("minute")),
     localTime: `${value("year")}-${value("month")}-${value("day")} ${value("hour")}:${value("minute")}`,
   };
+}
+
+/** A bar's position in its local trading day. */
+export interface SessionStamp {
+  /** Minutes since local midnight — 09:15 IST is 555. */
+  readonly minute: number;
+  /** Local calendar date, `YYYY-MM-DD`. Two bars with different dates are different sessions. */
+  readonly date: string;
+}
+
+/**
+ * Local session position for a whole series, in one pass.
+ *
+ * Batched deliberately. `localParts` constructs an `Intl.DateTimeFormat` per call, and a backtest
+ * asks for a bar's session minute inside its inner loop — per bar, per instrument, per candidate.
+ * Building the formatter once and walking the array turns that from the dominant cost into noise.
+ *
+ * Arithmetic on a fixed offset would be faster still and is what IST alone would permit, since it
+ * has no daylight saving. It is not used, because US bars go through the same path and a
+ * hand-rolled offset would be wrong twice a year in exactly the way nobody notices.
+ */
+export function sessionStamps(times: readonly number[], market: Market): SessionStamp[] {
+  const timeZone = CONFIG[market].timezone;
+  const format = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  return times.map((time) => {
+    const parts = format.formatToParts(new Date(time * 1000));
+    const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+    return {
+      minute: Number(value("hour")) * 60 + Number(value("minute")),
+      date: `${value("year")}-${value("month")}-${value("day")}`,
+    };
+  });
+}
+
+/** The local minute a market's regular session opens. 09:15 IST is 555. */
+export function sessionOpenMinute(market: Market): number {
+  return CONFIG[market].open;
 }
 
 export function getMarketSession(market: Market, at = new Date()): {

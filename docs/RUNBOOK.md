@@ -13,6 +13,14 @@ No credentials are required. Providers that need keys report `AUTH_REQUIRED`; no
 The database migrates itself on first open and takes a one-time backup into `.backups/` before
 applying v2 migrations to an existing `marketpulse.db`.
 
+The first XNSE search initializes the security master from the fixed official main-board, SME, and
+ETF files. The sync is atomic and retains the last-good master on failure. To initialize or refresh
+it explicitly against the configured `MARKETPULSE_DB_PATH`:
+
+```bash
+npm run sync:nse
+```
+
 ## Connecting Claude Code
 
 `.mcp.json` is already configured. In a Claude Code session in this directory, `/mcp` should
@@ -46,6 +54,11 @@ Credentials live in `.env.local`, which is gitignored and which agents cannot re
 Fixture mode additionally requires an explicit disposable `MARKETPULSE_DB_PATH`; startup fails rather
 than mixing fixture fills into `marketpulse.db`. Paper-order rows retain quote provider, source,
 quality, and a fixture flag.
+
+**NSE master unavailable or incomplete** — retry an NSE-scoped search or run `npm run sync:nse`.
+Check `/api/readiness` afterward. `READY` requires the official main-board, SME, and ETF source
+classes; BSE catalog entries never count toward NSE readiness. A failed refresh with a last-good
+master is `PARTIAL`, not empty.
 
 ## Daily operation
 

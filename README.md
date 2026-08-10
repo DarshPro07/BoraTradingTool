@@ -57,6 +57,7 @@ The project `.mcp.json` registers `dist/mcp/server.mjs`. Claude Code can read bo
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Start the loopback development server |
+| `npm run sync:nse` | Initialize or refresh the official NSE equity, SME, and ETF security master |
 | `npm run typecheck` | Compile TypeScript without emitting files |
 | `npm test` | Run unit and integration tests |
 | `npm run test:mcp` | Build and test the spawned MCP server |

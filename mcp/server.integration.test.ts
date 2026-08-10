@@ -90,8 +90,13 @@ describe("MarketPulse MCP stdio server", () => {
     });
     const content = response.structuredContent as { ok?: boolean; code?: string; data?: unknown };
     // Either the quant core provides it, or we get an explicit code. Never silent emptiness.
+    // RESPONSE_TRUNCATED is the transport's own refusal: the resource exists but exceeds the
+    // server's 20k output bound (the universe artifact does), and the envelope must say so
+    // rather than arriving with neither ok nor data.
     if (content.ok === false) {
-      expect(["RESOURCE_NOT_PROVIDED", "QUANT_CORE_UNAVAILABLE", "RESOURCE_MALFORMED"]).toContain(content.code);
+      expect(["RESOURCE_NOT_PROVIDED", "QUANT_CORE_UNAVAILABLE", "RESOURCE_MALFORMED", "RESPONSE_TRUNCATED"]).toContain(
+        content.code,
+      );
     } else {
       expect(content.data).toBeDefined();
     }

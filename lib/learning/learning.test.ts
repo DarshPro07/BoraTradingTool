@@ -230,8 +230,21 @@ describe("curriculum and mastery", () => {
  * timeouts turned a queue-draining assertion into a five-second failure that said nothing about
  * queue draining. Injected empty, so every consumer takes its documented no-data path.
  */
-const offline = async () => ({ dataset: {}, reference: [] });
-const cycle = (workerId?: string) => runLearningCycle(workerId, undefined, offline);
+const offline = async () => ({ dataset: {}, reference: [], references: {} });
+/**
+ * Intake is stubbed for the same reason `offline` exists: the real producer fetches from arXiv,
+ * and a cycle test that silently pulls five live papers is measuring the network rather than the
+ * cycle. It reported six processed jobs against the one the test enqueued.
+ */
+const noIntake = async () => ({
+  enqueued: 0,
+  deduped: 0,
+  rejected: 0,
+  failed: false,
+  reason: "Research intake stubbed for this test.",
+});
+
+const cycle = (workerId?: string) => runLearningCycle(workerId, undefined, offline, noIntake);
 
 // A cycle opens a database, runs migrations, seeds the quiz bank and writes five artifacts. Under
 // the full suite's parallelism that has exceeded the 5s default on this machine, and a timeout
@@ -240,6 +253,7 @@ vi.setConfig({ testTimeout: 30_000 });
 
 describe("learning cycle", () => {
   it("does nothing while learning mode is off", async () => {
+    setLearningMode("off", "owner");
     const report = await cycle();
     expect(report.mode).toBe("off");
     expect(report.worker).toBeNull();

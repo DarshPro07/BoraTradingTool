@@ -1,5 +1,12 @@
 import type { Candle } from "@/lib/providers/types";
-import { POINT_IN_TIME_FEATURES, type PointInTimeFeature } from "@/lib/strategy/dsl";
+import { sessionOpenMinute, sessionStamps } from "@/lib/market/calendar";
+import type { Market } from "@/lib/market/types";
+import {
+  OPENING_RANGE_MINUTES,
+  POINT_IN_TIME_FEATURES,
+  isIntradayResolution,
+  type PointInTimeFeature,
+} from "@/lib/strategy/dsl";
 
 /**
  * Point-in-time feature panel.
@@ -22,6 +29,10 @@ export const DERIVABLE_FEATURES = [
   "momentum_20d", "momentum_60d",
   "distance_from_52w_high", "distance_from_52w_low",
   "adv_20d",
+  // Derivable, but only when the panel is told which market's clock the bars run on and that the
+  // resolution is intraday. `compileStrategy` refuses these at daily resolution, so a panel that
+  // reaches them without session context is a wiring bug rather than a user error.
+  "minutes_since_open", "opening_range_high", "opening_range_low",
 ] as const satisfies readonly PointInTimeFeature[];
 
 export type DerivableFeature = (typeof DERIVABLE_FEATURES)[number];
@@ -143,7 +154,16 @@ function rollingExtreme(
  * function trusts the ordering it is given and says so rather than silently re-sorting,
  * because a silent re-sort hides an upstream provider bug.
  */
-export function buildFeaturePanel(bars: readonly Candle[]): FeaturePanel {
+/**
+ * Session context for the intraday features. Absent for a daily panel, where they mean nothing.
+ */
+export interface PanelOptions {
+  market?: Market;
+  /** The DSL resolution. Anything other than `"D"` turns the session features on. */
+  resolution?: string;
+}
+
+export function buildFeaturePanel(bars: readonly Candle[], options: PanelOptions = {}): FeaturePanel {
   const closes = bars.map((bar) => bar.close);
   const volumes = bars.map((bar) => bar.volume);
   // Hoisted out of `at()`. Rebuilding these per call made a single lookup O(bars) rather than
@@ -157,6 +177,36 @@ export function buildFeaturePanel(bars: readonly Candle[]): FeaturePanel {
   const ema26 = emaSeries(closes, 26);
   const rsi14 = rsiSeries(closes, 14);
   const atr14 = atrSeries(bars, 14);
+
+  // Session position, and the opening range of each session, computed once for the whole series.
+  //
+  // The opening range is the extreme of the first `OPENING_RANGE_MINUTES` of *that bar's own*
+  // session. It is deliberately keyed by local session date rather than by a bar count: a session
+  // that opens late, or whose first bars are missing from the feed, must not borrow the previous
+  // day's range and call it today's.
+  //
+  // Point-in-time by construction. The range is only served to bars at or after the end of the
+  // range window, so every bar it was built from is already history when it is read.
+  const intraday = isIntradayResolution(options.resolution);
+  const market = options.market;
+  const stamps = intraday && market ? sessionStamps(bars.map((bar) => bar.time), market) : null;
+  const openMinute = market ? sessionOpenMinute(market) : 0;
+  const rangeEndsAt = openMinute + OPENING_RANGE_MINUTES;
+
+  const openingRange = new Map<string, { high: number; low: number }>();
+  if (stamps) {
+    for (let i = 0; i < bars.length; i += 1) {
+      const stamp = stamps[i];
+      if (stamp.minute >= rangeEndsAt) continue;
+      const held = openingRange.get(stamp.date);
+      if (held === undefined) {
+        openingRange.set(stamp.date, { high: bars[i].high, low: bars[i].low });
+        continue;
+      }
+      if (bars[i].high > held.high) held.high = bars[i].high;
+      if (bars[i].low < held.low) held.low = bars[i].low;
+    }
+  }
 
   const at = (index: number): FeatureVector => {
     const bar = bars[index];
@@ -209,6 +259,21 @@ export function buildFeaturePanel(bars: readonly Candle[]): FeaturePanel {
 
     if (index >= 20) {
       assign("adv_20d", rollingMean(dollarVolumes, index, 20));
+    }
+
+    if (stamps) {
+      const stamp = stamps[index];
+      assign("minutes_since_open", stamp.minute - openMinute);
+      // Withheld until the range window has closed. Serving a partial range would let a breakout
+      // fire against a level that was still moving — the level and the signal computed from the
+      // same bar.
+      if (stamp.minute >= rangeEndsAt) {
+        const range = openingRange.get(stamp.date);
+        if (range !== undefined) {
+          assign("opening_range_high", range.high);
+          assign("opening_range_low", range.low);
+        }
+      }
     }
 
     return vector;

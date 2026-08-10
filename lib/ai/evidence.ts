@@ -36,7 +36,7 @@ export const EvidencePackageSchema = z.object({
     name: z.string().trim().min(1).max(200),
     currency: z.enum(["USD", "INR"]),
     timezone: z.enum(["America/New_York", "Asia/Kolkata"]),
-    assetType: z.enum(["EQUITY", "ETF"]),
+    assetType: z.enum(["EQUITY", "ETF", "REIT", "INVIT"]),
   }).strict(),
   generatedAt: z.string().datetime(),
   snapshotHash: z.string().regex(/^[a-f0-9]{64}$/),

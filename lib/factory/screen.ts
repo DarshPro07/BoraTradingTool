@@ -22,6 +22,16 @@ import { profitFactor, sharpeRatio } from "@/lib/strategy/statistics";
 export interface Candidate {
   id: string;
   dsl: StrategyDsl;
+  /**
+   * The spec this was mutated or crossed from, when it descends from one.
+   *
+   * Carried so `runFactoryGeneration` can place the survivor in its parent's research family. A
+   * bred candidate with no family cannot be validated — `runGauntlet` refuses it — so a factory
+   * that discarded parentage would breed strategies that could never be tested.
+   */
+  parentSpecId?: string;
+  /** `mut` | `cross` | `gen`. `gen` descends from nothing and is a genuinely new idea. */
+  lineage?: string;
 }
 
 export interface ScreenScore {

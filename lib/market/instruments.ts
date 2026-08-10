@@ -1,4 +1,5 @@
 import { INSTRUMENT_CATALOG } from "./catalog";
+import { findNseInstrument } from "./security-master";
 import type { Exchange, Instrument, Market } from "./types";
 
 const CANONICAL_PATTERN = /^(US|IN):(XNAS|XNYS|XNSE|XBOM):([A-Z0-9][A-Z0-9.-]{0,19})$/;
@@ -57,9 +58,11 @@ export function parseInstrument(raw: string): Instrument {
     return buildExplicit("IN", provider[2] === "NS" ? "XNSE" : "XBOM", provider[1]);
   }
 
-  const catalog = INSTRUMENT_CATALOG.filter(
-    (item) => item.symbol === value || item.providerSymbol === value,
-  );
+  const nse = findNseInstrument(value);
+  const catalog = [
+    ...(nse ? [nse] : []),
+    ...INSTRUMENT_CATALOG.filter((item) => item.symbol === value || item.providerSymbol === value),
+  ];
   if (catalog.length === 1) return catalog[0];
   if (catalog.length > 1) {
     throw new InstrumentError("Symbol is ambiguous; use a canonical instrument ID.");
@@ -69,6 +72,11 @@ export function parseInstrument(raw: string): Instrument {
 
 export function formatInstrumentId(instrument: Pick<Instrument, "market" | "exchange" | "symbol">): string {
   return `${instrument.market}:${instrument.exchange}:${instrument.symbol}`;
+}
+
+export function resolveInstrument(raw: string): Instrument {
+  const parsed = parseInstrument(raw);
+  return parsed.exchange === "XNSE" ? findNseInstrument(parsed.id) ?? parsed : parsed;
 }
 
 export function tryParseInstrument(raw: string): Instrument | null {

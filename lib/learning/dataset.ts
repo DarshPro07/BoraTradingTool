@@ -1,10 +1,21 @@
-import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import { listCurrentInstruments } from "@/lib/market/catalog";
 import { getNormalizedCandles } from "@/lib/market/service";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import type { StrategyDsl } from "@/lib/strategy/dsl";
 import type { Instrument, Market } from "@/lib/market/types";
 import type { Candle, CandleResolution } from "@/lib/providers/types";
-import type { CandleLoader } from "./rehearsal";
+/**
+ * Bars keyed by instrument, produced by a LIVE loader.
+ *
+ * 13b moved research evaluation off this type entirely: rehearsal/gauntlet/validation take a
+ * `ResearchDatasetSource` (recorded snapshots with identity) and cannot accept bare bars. This
+ * type remains for what providers are still FOR — live views, ingestion, and the quant-core
+ * generation pass that scans current prices.
+ */
+export type CandleLoader = (
+  specId: string,
+  dsl: StrategyDsl,
+) => Promise<Readonly<Record<string, readonly Candle[]>>>;
 
 /**
  * The production candle source for the rehearsal pass.
@@ -29,9 +40,7 @@ export const REHEARSAL_SAMPLE_SIZE = 12;
 function instrumentsForMarket(name: string) {
   const market: Market = name === "US" ? "US" : "IN";
   const exchange = name === "NSE" ? "XNSE" : name === "BSE" ? "XBOM" : null;
-  return INSTRUMENT_CATALOG.filter(
-    (instrument) => instrument.market === market && (exchange === null || instrument.exchange === exchange),
-  ).slice(0, REHEARSAL_SAMPLE_SIZE);
+  return listCurrentInstruments({ market, exchange: exchange ?? undefined }).slice(0, REHEARSAL_SAMPLE_SIZE);
 }
 
 /**
@@ -73,31 +82,60 @@ export function marketIsCoolingDown(market: string, now = Date.now()): boolean {
   return until !== undefined && now < until;
 }
 
-export function marketCandleLoader(resolution: CandleResolution = "D"): CandleLoader {
+/**
+ * Maps the DSL's declared resolution onto the provider's.
+ *
+ * They are the same strings by coincidence, not by contract, so this is written out rather than
+ * cast — a future DSL value the provider does not serve should fail here, loudly, instead of
+ * reaching the feed and returning something plausible at the wrong timeframe.
+ */
+const DSL_RESOLUTION: Readonly<Record<string, CandleResolution>> = Object.freeze({
+  D: "D",
+  "1m": "1",
+  "5m": "5",
+  "15m": "15",
+});
+
+export function marketCandleLoader(): CandleLoader {
   // Memoised per loader instance, which is one cycle. Candidates share markets — two NSE
   // strategies would otherwise pull the same twelve series twice, and ten would pull them ten
-  // times. Keyed by market because that is what determines the sample.
-  const byMarket = new Map<string, Promise<Readonly<Record<string, readonly Candle[]>>>>();
+  // times.
+  //
+  // Keyed by market **and resolution**, not market alone. Keying on market meant the first
+  // strategy to ask for a market fixed the timeframe every later strategy received: a daily
+  // candidate rehearsed first would hand its daily bars to every intraday candidate behind it.
+  const byKey = new Map<string, Promise<Readonly<Record<string, readonly Candle[]>>>>();
 
   return async (_specId: string, dsl: StrategyDsl) => {
-    const cached = byMarket.get(dsl.universe.market);
+    // The strategy's own declared resolution, which this ignored entirely.
+    //
+    // `fetchMarket` was called with the loader's closure value — always "D" from the cycle — so a
+    // 5m strategy was rehearsed on daily bars while the compiler had already warned it about
+    // spreads and bar-counting. Nothing downstream could tell: the bars were real, the market was
+    // right, and only the timeframe was wrong.
+    const declared = dsl.universe.resolution ?? "D";
+    const resolution = DSL_RESOLUTION[declared];
+    if (!resolution) {
+      // A resolution the provider cannot serve is refused rather than silently downgraded to
+      // daily, which would reintroduce the exact defect this replaced.
+      return {};
+    }
+
+    const key = `${dsl.universe.market}|${resolution}`;
+    const cached = byKey.get(key);
     if (cached) return cached;
+
     // Returning empty rather than throwing: the rehearsal already reports "no stored candles"
     // as not_evaluable, which is the honest outcome of a provider outage.
     if (marketIsCoolingDown(dsl.universe.market)) return {};
-    const pending = fetchMarket(dsl, resolution);
+
+    const pending = fetchMarketSample(dsl.universe.market, resolution);
     // Stored before awaiting, so concurrent candidates on one market share the same flight.
-    byMarket.set(dsl.universe.market, pending);
+    byKey.set(key, pending);
     return pending;
   };
 }
 
-async function fetchMarket(
-  dsl: StrategyDsl,
-  resolution: CandleResolution,
-): Promise<Readonly<Record<string, readonly Candle[]>>> {
-  return fetchMarketSample(dsl.universe.market, resolution);
-}
 
 /**
  * The same sample, addressable without a strategy.

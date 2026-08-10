@@ -1,5 +1,7 @@
 import { PaperOrderTicket } from "@/components/paper/PaperOrderTicket";
 import { LossLedgerPanel } from "@/components/paper/LossLedgerPanel";
+import { CostViabilityPanel } from "@/components/paper/CostViabilityPanel";
+import { ForwardEvidencePanel } from "@/components/forward/ForwardEvidencePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,11 @@ export default async function PaperPage({
         </div>
         <span className="mode-badge">DETERMINISTIC FILLS</span>
       </div>
+      {/* First, because it decides whether anything below it can work. A strategy with a genuine
+          edge and a position too small to carry it loses money with perfect discipline. */}
+      <CostViabilityPanel />
+      {/* Workstream 1: prospective signals and their scorecards — shadow stage, pre-paper. */}
+      <ForwardEvidencePanel />
       <LossLedgerPanel />
       <PaperOrderTicket defaultInstrumentId={instrument ?? "US:XNAS:AAPL"} />
     </div>

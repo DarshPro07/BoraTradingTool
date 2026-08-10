@@ -149,22 +149,18 @@ describe("owner mutation access", () => {
     expect(denied?.status).toBe(403);
   });
 
-  it("no longer requires an owner session from the browser", () => {
-    // Removed at the owner's explicit instruction: on a single-user, loopback-bound application
-    // the fifteen-minute session was pure friction. What it cost is recorded here rather than in
-    // a commit message nobody re-reads.
-    //
-    // Still enforced, and asserted here and above: the request must be loopback-bound, must carry
-    // the CSRF header, and must not present a bearer token. That last one is the load-bearing
-    // half — it is what stops the autonomous agent raising its own risk ceilings, which is a
-    // different question from whether a human has to log in.
-    expect(requireOwnerMutationAccess(browserRequest(), env, now)).toBeNull();
+  it("requires a valid owner session from the browser", () => {
+    expect(requireOwnerMutationAccess(browserRequest(), env, now)?.status).toBe(401);
 
-    // A session cookie is still honoured when supplied, so the sign-in control and any caller
-    // that still sends one keep working rather than failing in some new way.
     const session = createOwnerSession(OWNER_TOKEN, env, now);
     expect(session).not.toBeNull();
     expect(requireOwnerMutationAccess(ownerRequest(session!), env, now)).toBeNull();
+  });
+
+  it("expires owner authority after fifteen minutes", () => {
+    const session = createOwnerSession(OWNER_TOKEN, env, now)!;
+    expect(requireOwnerMutationAccess(ownerRequest(session), env, now + 15 * 60_000 - 1)).toBeNull();
+    expect(requireOwnerMutationAccess(ownerRequest(session), env, now + 15 * 60_000)?.status).toBe(401);
   });
 
   it("still refuses a mutation that is not loopback-bound", () => {

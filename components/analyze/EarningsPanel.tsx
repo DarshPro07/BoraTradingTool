@@ -1,10 +1,13 @@
 import type { EarningsRecord } from "@/lib/providers/types";
+import { formatMoney } from "@/lib/market/money";
+import type { Currency } from "@/lib/market/types";
 
 interface Props {
   earnings: EarningsRecord[];
+  currency: Currency;
 }
 
-export function EarningsPanel({ earnings }: Props) {
+export function EarningsPanel({ earnings, currency }: Props) {
   return (
     <div className="bg-panel border border-panel rounded p-4">
       <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Earnings History</h2>
@@ -26,10 +29,10 @@ export function EarningsPanel({ earnings }: Props) {
                 <tr key={i} className="border-b border-panel/50 last:border-0">
                   <td className="py-1.5 font-mono text-muted-foreground">{e.period}</td>
                   <td className="py-1.5 text-right font-mono font-semibold">
-                    {e.actual !== null ? `$${e.actual.toFixed(2)}` : "—"}
+                    {e.actual !== null ? formatMoney(e.actual, currency) : "—"}
                   </td>
                   <td className="py-1.5 text-right font-mono text-muted-foreground">
-                    {e.estimate !== null ? `$${e.estimate.toFixed(2)}` : "—"}
+                    {e.estimate !== null ? formatMoney(e.estimate, currency) : "—"}
                   </td>
                   <td className={`py-1.5 text-right font-mono font-semibold ${beat ? "text-gain" : "text-loss"}`}>
                     {e.surprisePct !== null ? `${beat ? "+" : ""}${e.surprisePct.toFixed(1)}%` : "—"}

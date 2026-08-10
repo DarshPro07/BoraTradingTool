@@ -10,6 +10,36 @@ quant core.
 
 ---
 
+## MANDATORY: Software Factory Autonomous Workflow
+
+**Every task. Not only the ones that look substantial.** (Owner instruction, 2026-08-09.)
+
+Load the `software-factory-autonomous` skill FIRST — before reading code, before answering — and
+write its gate documents to `docs/plans/<feature-slug>/` for **each** task, one directory per
+piece of work. Nothing important may exist only in the conversation.
+
+The reason is this repository's failure history: every serious defect found here has been code
+that was individually correct while the model of reality behind it was wrong — two timestamp
+conventions in one table, a declared resolution ignored in three separate layers, a
+multiple-testing denominator of 1 because no strategy had a family. Gate 0 (Reality) and Gate 5
+(Independent Verification) are the two gates that catch that class, and they are exactly the two
+that get skipped when work begins from a plausible-sounding request.
+
+The real-test rule is not optional here: for any regression test guarding a real defect, prove it
+**fails** against the unfixed code before trusting it.
+
+For ANY substantial task (new feature, architectural change, bug cluster, product workflow,
+multi-file implementation), execute its gates in order (Reality → Product → Architecture → Program Design → Vertical Slices →
+Independent Verification), writing plan docs to `docs/plans/<feature-slug>/` (`00-status.md` …
+`07-final.md`). Proceed through every gate automatically — no routine approval pauses, no
+"should I continue?" questions. Ask the user only for genuinely human-only boundaries
+(live/real-money trading, production-destructive operations, unavailable credentials,
+legal/regulatory authority, irreversible migrations). Trivial changes are exempt (renames, copy,
+formatting, one-line config). Do not declare completion without the independent verification
+gate and a `07-final.md` verdict (VERIFIED / PARTIALLY_VERIFIED / NOT_VERIFIED).
+
+---
+
 ## The one rule that matters
 
 **This system has no broker adapter and places no orders.** `/api/trade/place` returns

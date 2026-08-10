@@ -30,6 +30,9 @@ interface Outcome {
   trialsCounted: number;
   trades: number;
   instrumentsEvaluated: number;
+  /** 13b: the exact dataset the verdict was computed on. */
+  datasetSnapshotId: string | null;
+  datasetFingerprint: string | null;
 }
 
 export function RunGauntletButton({ specId, name }: { specId: string; name: string }) {
@@ -63,6 +66,8 @@ export function RunGauntletButton({ specId, name }: { specId: string; name: stri
         trialsCounted: Number(body?.trialsCounted ?? 0),
         trades: Number(body?.trades ?? 0),
         instrumentsEvaluated: Number(body?.instrumentsEvaluated ?? 0),
+        datasetSnapshotId: typeof body?.datasetSnapshotId === "string" ? body.datasetSnapshotId : null,
+        datasetFingerprint: typeof body?.datasetFingerprint === "string" ? body.datasetFingerprint : null,
       });
       // The registry, funnel and graveyard are server-rendered from the trial ledger. Refresh is
       // what makes the result real on screen; local state would be a second, disagreeing copy.
@@ -88,6 +93,13 @@ export function RunGauntletButton({ specId, name }: { specId: string; name: stri
           {outcome.trialsCounted === 1 ? "" : "s"} counted
         </span>
         {outcome.summary ? <div className="text-muted-foreground mt-0.5">{outcome.summary}</div> : null}
+        {outcome.datasetSnapshotId ? (
+          <div className="text-muted-foreground mt-0.5" data-testid="gauntlet-provenance">
+            dataset {outcome.datasetSnapshotId}
+            {outcome.datasetFingerprint ? ` · fp ${outcome.datasetFingerprint.slice(0, 12)}` : ""} — the verdict is
+            pinned to these exact bars
+          </div>
+        ) : null}
       </div>
     );
   }

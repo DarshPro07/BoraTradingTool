@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrainCircuit, FlaskConical } from "lucide-react";
 import { buildResearchSnapshot } from "@/lib/market/service";
-import { parseInstrument } from "@/lib/market/instruments";
+import { InstrumentError, resolveInstrument } from "@/lib/market/instruments";
 import { writeStockContext } from "@/lib/data/context-writer";
 import type { Quote } from "@/lib/providers/types";
 import { QuoteHeader } from "@/components/analyze/QuoteHeader";
@@ -13,6 +13,7 @@ import { EarningsPanel } from "@/components/analyze/EarningsPanel";
 import { InsiderPanel } from "@/components/analyze/InsiderPanel";
 import { NewsPanel } from "@/components/analyze/NewsPanel";
 import { ResearchReport } from "@/components/analyze/ResearchReport";
+import { ResearchThisStock } from "@/components/research/ResearchThisStock";
 import { ClaudePromptBlock } from "@/components/analyze/ClaudePromptBlock";
 import { TickerNotFound } from "@/components/analyze/TickerNotFound";
 import { AutoRefresh } from "@/components/auto-refresh";
@@ -23,7 +24,7 @@ export const revalidate = 0;
 export default async function AnalyzePage({ params }: { params: Promise<{ ticker: string }> }) {
   const { ticker: rawTicker } = await params;
   try {
-    const instrument = parseInstrument(decodeURIComponent(rawTicker));
+    const instrument = resolveInstrument(decodeURIComponent(rawTicker));
     const snapshot = await buildResearchSnapshot(instrument);
     const quote: Quote = {
       ticker: instrument.symbol,
@@ -89,17 +90,17 @@ export default async function AnalyzePage({ params }: { params: Promise<{ ticker
               sma200={snapshot.technicals.sma200}
               candleProvider={snapshot.candles.provenance.provider}
             />
-            <TechnicalsPanel tech={snapshot.technicals} price={quote.price} />
+            <TechnicalsPanel tech={snapshot.technicals} price={quote.price} currency={instrument.currency} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <FundamentalsPanel fundamentals={snapshot.fundamentals} quote={quote} />
-            <AnalystPanel ratings={snapshot.analystRatings} priceTarget={snapshot.priceTarget} currentPrice={quote.price} />
-            <EarningsPanel earnings={snapshot.earnings} />
+            <FundamentalsPanel fundamentals={snapshot.fundamentals} quote={quote} currency={instrument.currency} />
+            <AnalystPanel ratings={snapshot.analystRatings} priceTarget={snapshot.priceTarget} currentPrice={quote.price} currency={instrument.currency} />
+            <EarningsPanel earnings={snapshot.earnings} currency={instrument.currency} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <InsiderPanel transactions={snapshot.insider} />
+            <InsiderPanel transactions={snapshot.insider} currency={instrument.currency} />
             <NewsPanel news={snapshot.news} />
           </div>
 
@@ -112,7 +113,11 @@ export default async function AnalyzePage({ params }: { params: Promise<{ ticker
             bearSignals={snapshot.signals.bear}
             overallSignal={snapshot.signals.overall}
             priceTarget={snapshot.priceTarget}
+            currency={instrument.currency}
           />
+
+          {/* U3/U4: fixture-driven until the P4A bridge lands; the banner is provenance-driven. */}
+          <ResearchThisStock instrumentId={instrument.id} />
 
           <ClaudePromptBlock instrumentId={instrument.id} symbol={instrument.symbol} price={quote.price} currency={instrument.currency} signal={snapshot.signals.overall} />
           <p className="text-xs text-muted-foreground text-center pb-4">
@@ -122,7 +127,7 @@ export default async function AnalyzePage({ params }: { params: Promise<{ ticker
       </div>
     );
   } catch (error) {
-    console.error("analyze page error", error);
+    if (!(error instanceof InstrumentError)) console.error("analyze page error", error);
     return <TickerNotFound ticker={rawTicker?.toUpperCase() ?? "?"} />;
   }
 }

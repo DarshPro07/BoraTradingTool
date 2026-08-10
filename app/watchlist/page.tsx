@@ -1,6 +1,6 @@
 import { getProvider } from "@/lib/providers";
 import { getDb, schema } from "@/lib/db";
-import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import { listCurrentInstruments } from "@/lib/market/catalog";
 import { WatchlistManager, type WatchlistEntry } from "@/components/watchlist/WatchlistManager";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ export default async function WatchlistPage() {
   // The watchlist stores bare symbols; /analyze needs a canonical id with its exchange. Resolved
   // here rather than guessed in the link, and left undefined when the catalog has no match so a
   // missing instrument is visible instead of producing a URL that 500s on arrival.
-  const idBySymbol = new Map(INSTRUMENT_CATALOG.map((instrument) => [instrument.symbol, instrument.id]));
+  const idBySymbol = new Map(listCurrentInstruments().map((instrument) => [instrument.symbol, instrument.id]));
 
   const entries: WatchlistEntry[] = tickers.map((ticker, i) => ({
     ticker,

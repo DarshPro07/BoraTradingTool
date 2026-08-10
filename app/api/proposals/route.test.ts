@@ -90,6 +90,26 @@ describe("POST /api/proposals", () => {
     expect(getProposal(id)?.status).toBe("approved");
   });
 
+  it("does not let an unauthenticated local request approve", async () => {
+    const id = proposal();
+    advanceProposal(id, "tests_pending", "autonomous_worker");
+    attachEvidence(id, { kind: "test", detail: "vitest run", passed: true }, "owner");
+    advanceProposal(id, "tests_passed", "autonomous_worker");
+    advanceProposal(id, "reviewed", "owner", { reviewer: "code_reviewer" });
+
+    const response = await POST(
+      request(
+        { id, status: "approved" },
+        {
+          origin: "http://127.0.0.1:3000",
+          "x-marketpulse-csrf": "1",
+        },
+      ),
+    );
+    expect(response.status).toBe(401);
+    expect(getProposal(id)?.status).toBe("reviewed");
+  });
+
   it("rejects malformed evidence at the request boundary", async () => {
     const session = createOwnerSession(OWNER_TOKEN, process.env)!;
     const response = await POST(

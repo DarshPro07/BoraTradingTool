@@ -1,0 +1,2542 @@
+{
+  "E:\\BoraTradingTool\\.agents\\skills\\diagnose\\scripts\\hitl-loop.template.sh": {
+    "mtime": 1785948408.756215,
+    "ast_hash": "27d758d3557409fbb17bc3cced9367cf",
+    "semantic_hash": "27d758d3557409fbb17bc3cced9367cf"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\git-guardrails-claude-code\\scripts\\block-dangerous-git.sh": {
+    "mtime": 1785948408.764463,
+    "ast_hash": "8cdf6c38e301f8c7c60f75e5c45fa023",
+    "semantic_hash": "8cdf6c38e301f8c7c60f75e5c45fa023"
+  },
+  "E:\\BoraTradingTool\\.claude\\hooks\\block-secrets.mjs": {
+    "mtime": 1785972487.7878983,
+    "ast_hash": "9b16ff84e6a804d344ecef40237deb1a",
+    "semantic_hash": "9b16ff84e6a804d344ecef40237deb1a"
+  },
+  "E:\\BoraTradingTool\\.claude\\hooks\\guard-writes.mjs": {
+    "mtime": 1786208452.7975783,
+    "ast_hash": "6266fb797af0b42eb411ec82e959461b",
+    "semantic_hash": "6266fb797af0b42eb411ec82e959461b"
+  },
+  "E:\\BoraTradingTool\\.claude\\settings.json": {
+    "mtime": 1786169302.7452223,
+    "ast_hash": "1136f57bb4aba52c1ef012e793ee9dd2",
+    "semantic_hash": "1136f57bb4aba52c1ef012e793ee9dd2"
+  },
+  "E:\\BoraTradingTool\\.mcp.json": {
+    "mtime": 1785962365.1624768,
+    "ast_hash": "b16861d79a5f29e736fa0e52235d9956",
+    "semantic_hash": "b16861d79a5f29e736fa0e52235d9956"
+  },
+  "E:\\BoraTradingTool\\app\\ai\\page.tsx": {
+    "mtime": 1785960012.800057,
+    "ast_hash": "2cf27506fefb9afb050cc58e98cc1f95",
+    "semantic_hash": "2cf27506fefb9afb050cc58e98cc1f95"
+  },
+  "E:\\BoraTradingTool\\app\\analyst\\page.tsx": {
+    "mtime": 1785975989.92316,
+    "ast_hash": "662d9fd3fa8275be04ce91863013433d",
+    "semantic_hash": "662d9fd3fa8275be04ce91863013433d"
+  },
+  "E:\\BoraTradingTool\\app\\analyze\\[ticker]\\page.tsx": {
+    "mtime": 1786023149.9526114,
+    "ast_hash": "f74bed79a83327082c4709feaeee4a8b",
+    "semantic_hash": "f74bed79a83327082c4709feaeee4a8b"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\config\\route.test.ts": {
+    "mtime": 1785972557.9438457,
+    "ast_hash": "3dfa58ed6efe83e9c94870bbd510d207",
+    "semantic_hash": "3dfa58ed6efe83e9c94870bbd510d207"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\config\\route.ts": {
+    "mtime": 1785975664.1444118,
+    "ast_hash": "4d961f63d3994457044126c3e561f413",
+    "semantic_hash": "4d961f63d3994457044126c3e561f413"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\robinhood\\heartbeat\\route.ts": {
+    "mtime": 1785955699.721657,
+    "ast_hash": "624c0ab9277111f16d07828ee6f12bf6",
+    "semantic_hash": "624c0ab9277111f16d07828ee6f12bf6"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\robinhood\\portfolio\\route.ts": {
+    "mtime": 1785955699.8023398,
+    "ast_hash": "189a67665860c549f122044d25cad2ab",
+    "semantic_hash": "189a67665860c549f122044d25cad2ab"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\strategies\\[id]\\route.ts": {
+    "mtime": 1785972639.721037,
+    "ast_hash": "e56a8050e45b8af8125eefd3bb291586",
+    "semantic_hash": "e56a8050e45b8af8125eefd3bb291586"
+  },
+  "E:\\BoraTradingTool\\app\\api\\agent\\strategies\\route.ts": {
+    "mtime": 1785972639.711802,
+    "ast_hash": "d6d6f70cbe43685e2b12796ee211fdd8",
+    "semantic_hash": "d6d6f70cbe43685e2b12796ee211fdd8"
+  },
+  "E:\\BoraTradingTool\\app\\api\\ai\\analyze\\route.ts": {
+    "mtime": 1785957094.5583613,
+    "ast_hash": "b8063e0991c8de4fb1ef48323b36b30e",
+    "semantic_hash": "b8063e0991c8de4fb1ef48323b36b30e"
+  },
+  "E:\\BoraTradingTool\\app\\api\\ai\\status\\route.ts": {
+    "mtime": 1785957094.5553617,
+    "ast_hash": "685eb677f9ad38e3d33dcd353ea6ad3f",
+    "semantic_hash": "685eb677f9ad38e3d33dcd353ea6ad3f"
+  },
+  "E:\\BoraTradingTool\\app\\api\\analyst\\route.ts": {
+    "mtime": 1785962438.1367817,
+    "ast_hash": "15cdec20606e9f8d5587e1b4d09e4502",
+    "semantic_hash": "15cdec20606e9f8d5587e1b4d09e4502"
+  },
+  "E:\\BoraTradingTool\\app\\api\\candles\\route.ts": {
+    "mtime": 1786023187.5965707,
+    "ast_hash": "790bfa43ed34cddad7c9db41f5a33fbc",
+    "semantic_hash": "790bfa43ed34cddad7c9db41f5a33fbc"
+  },
+  "E:\\BoraTradingTool\\app\\api\\cycles\\route.ts": {
+    "mtime": 1786094944.4430404,
+    "ast_hash": "99b68a7c68174c8efd050f8e27a8b34c",
+    "semantic_hash": "99b68a7c68174c8efd050f8e27a8b34c"
+  },
+  "E:\\BoraTradingTool\\app\\api\\introspection\\route.ts": {
+    "mtime": 1786014010.853605,
+    "ast_hash": "4707e5b4a86f1f0b4d372b2bb93a406d",
+    "semantic_hash": "4707e5b4a86f1f0b4d372b2bb93a406d"
+  },
+  "E:\\BoraTradingTool\\app\\api\\learning\\cycle\\route.ts": {
+    "mtime": 1785963370.7417183,
+    "ast_hash": "ccbf80a9d76751d14061f47ab568de5a",
+    "semantic_hash": "ccbf80a9d76751d14061f47ab568de5a"
+  },
+  "E:\\BoraTradingTool\\app\\api\\learning\\route.test.ts": {
+    "mtime": 1785969354.5526588,
+    "ast_hash": "4b9a58e167dfb70c5de1da3314bb6e25",
+    "semantic_hash": "4b9a58e167dfb70c5de1da3314bb6e25"
+  },
+  "E:\\BoraTradingTool\\app\\api\\learning\\route.ts": {
+    "mtime": 1785969441.8853145,
+    "ast_hash": "fa90ffa85ec667de974ee8247f6d2dfe",
+    "semantic_hash": "fa90ffa85ec667de974ee8247f6d2dfe"
+  },
+  "E:\\BoraTradingTool\\app\\api\\market\\instruments\\route.ts": {
+    "mtime": 1785959332.1390884,
+    "ast_hash": "15c5008116ca000bea70bf4b10ede7af",
+    "semantic_hash": "15c5008116ca000bea70bf4b10ede7af"
+  },
+  "E:\\BoraTradingTool\\app\\api\\market\\quote\\route.ts": {
+    "mtime": 1785959332.143092,
+    "ast_hash": "d092475b785c049fcc9014a6e4a793f8",
+    "semantic_hash": "d092475b785c049fcc9014a6e4a793f8"
+  },
+  "E:\\BoraTradingTool\\app\\api\\memory\\trace\\route.ts": {
+    "mtime": 1785962449.485576,
+    "ast_hash": "944573ae21f28ea54f15027c33a07dfe",
+    "semantic_hash": "944573ae21f28ea54f15027c33a07dfe"
+  },
+  "E:\\BoraTradingTool\\app\\api\\owner\\session\\route.ts": {
+    "mtime": 1785969441.8873308,
+    "ast_hash": "74b4faa722912618ad7da3c3ad9c32d8",
+    "semantic_hash": "74b4faa722912618ad7da3c3ad9c32d8"
+  },
+  "E:\\BoraTradingTool\\app\\api\\paper\\orders\\route.ts": {
+    "mtime": 1785956907.295302,
+    "ast_hash": "1f56972178e61da4976853dea48e1d65",
+    "semantic_hash": "1f56972178e61da4976853dea48e1d65"
+  },
+  "E:\\BoraTradingTool\\app\\api\\paper\\portfolio\\route.ts": {
+    "mtime": 1785956871.97673,
+    "ast_hash": "2686e952ce510732ac2ece5ebfa16d3c",
+    "semantic_hash": "2686e952ce510732ac2ece5ebfa16d3c"
+  },
+  "E:\\BoraTradingTool\\app\\api\\premarket\\route.ts": {
+    "mtime": 1786014423.8202498,
+    "ast_hash": "d1af893555307124330b691e7ecfbe43",
+    "semantic_hash": "d1af893555307124330b691e7ecfbe43"
+  },
+  "E:\\BoraTradingTool\\app\\api\\proposals\\route.test.ts": {
+    "mtime": 1785972725.1483903,
+    "ast_hash": "d5aa6287b8bc9c9e4e9c11de6dd1f0e6",
+    "semantic_hash": "d5aa6287b8bc9c9e4e9c11de6dd1f0e6"
+  },
+  "E:\\BoraTradingTool\\app\\api\\proposals\\route.ts": {
+    "mtime": 1785972781.1318257,
+    "ast_hash": "0d273e0a3aae816a822d46d2a096a5be",
+    "semantic_hash": "0d273e0a3aae816a822d46d2a096a5be"
+  },
+  "E:\\BoraTradingTool\\app\\api\\quantcore\\[resource]\\route.ts": {
+    "mtime": 1785961994.4407763,
+    "ast_hash": "1aaffae176d84ec0ca7382cf30878613",
+    "semantic_hash": "1aaffae176d84ec0ca7382cf30878613"
+  },
+  "E:\\BoraTradingTool\\app\\api\\quantcore\\status\\route.ts": {
+    "mtime": 1785962003.7210016,
+    "ast_hash": "7964c9a16f83a5a114111bb6354a5c1b",
+    "semantic_hash": "7964c9a16f83a5a114111bb6354a5c1b"
+  },
+  "E:\\BoraTradingTool\\app\\api\\quote\\[ticker]\\route.ts": {
+    "mtime": 1785948408.9139252,
+    "ast_hash": "b6f03db10773443d8849692ce9cf8e90",
+    "semantic_hash": "b6f03db10773443d8849692ce9cf8e90"
+  },
+  "E:\\BoraTradingTool\\app\\api\\research\\jobs\\route.ts": {
+    "mtime": 1785962699.9675488,
+    "ast_hash": "423f39dc541a637070a403ba33a66c3b",
+    "semantic_hash": "423f39dc541a637070a403ba33a66c3b"
+  },
+  "E:\\BoraTradingTool\\app\\api\\research\\refresh\\route.ts": {
+    "mtime": 1785955699.6480532,
+    "ast_hash": "b236ac2c31ee5107a723002e288d7206",
+    "semantic_hash": "b236ac2c31ee5107a723002e288d7206"
+  },
+  "E:\\BoraTradingTool\\app\\api\\research\\worker\\route.ts": {
+    "mtime": 1785962709.1395237,
+    "ast_hash": "b0e97026a3e3f1f3ef5b8993cb2f954a",
+    "semantic_hash": "b0e97026a3e3f1f3ef5b8993cb2f954a"
+  },
+  "E:\\BoraTradingTool\\app\\api\\settings\\api-key\\route.ts": {
+    "mtime": 1785966206.2282827,
+    "ast_hash": "c3c4e74cc77ba84f36f15982be029140",
+    "semantic_hash": "c3c4e74cc77ba84f36f15982be029140"
+  },
+  "E:\\BoraTradingTool\\app\\api\\simulation\\route.ts": {
+    "mtime": 1786111437.944534,
+    "ast_hash": "c4516a440d1c80fa89aec87b391bcb24",
+    "semantic_hash": "c4516a440d1c80fa89aec87b391bcb24"
+  },
+  "E:\\BoraTradingTool\\app\\api\\strategy\\author\\route.ts": {
+    "mtime": 1786254560.5308511,
+    "ast_hash": "69f636e0b6a5ef261edbce002814db35",
+    "semantic_hash": "69f636e0b6a5ef261edbce002814db35"
+  },
+  "E:\\BoraTradingTool\\app\\api\\strategy\\gauntlet\\route.ts": {
+    "mtime": 1786075156.8924208,
+    "ast_hash": "f432cecafcea28c047d24e1541156f21",
+    "semantic_hash": "f432cecafcea28c047d24e1541156f21"
+  },
+  "E:\\BoraTradingTool\\app\\api\\study\\route.ts": {
+    "mtime": 1786166456.6702397,
+    "ast_hash": "beea6f94a6bdbb443eb7c6cd42e76fbc",
+    "semantic_hash": "beea6f94a6bdbb443eb7c6cd42e76fbc"
+  },
+  "E:\\BoraTradingTool\\app\\api\\telegram\\poll\\route.ts": {
+    "mtime": 1785966111.6487322,
+    "ast_hash": "d4f3c6e7c6654ced883cb1ac3b213d96",
+    "semantic_hash": "d4f3c6e7c6654ced883cb1ac3b213d96"
+  },
+  "E:\\BoraTradingTool\\app\\api\\top-picks\\route.ts": {
+    "mtime": 1785995479.147526,
+    "ast_hash": "d3027ba123f5a2c2d9f38a8ff2bc27b2",
+    "semantic_hash": "d3027ba123f5a2c2d9f38a8ff2bc27b2"
+  },
+  "E:\\BoraTradingTool\\app\\api\\trade\\[id]\\approve\\route.ts": {
+    "mtime": 1785966111.645726,
+    "ast_hash": "cc88f35b179ba0b68bac24d74b7759fc",
+    "semantic_hash": "cc88f35b179ba0b68bac24d74b7759fc"
+  },
+  "E:\\BoraTradingTool\\app\\api\\trade\\[id]\\fill\\route.ts": {
+    "mtime": 1785966111.6467333,
+    "ast_hash": "fa80b1f6c454768cc6eb6f00a5852fc8",
+    "semantic_hash": "fa80b1f6c454768cc6eb6f00a5852fc8"
+  },
+  "E:\\BoraTradingTool\\app\\api\\trade\\[id]\\reject\\route.ts": {
+    "mtime": 1785966111.62704,
+    "ast_hash": "65ea1fca73fb64563ec2e64420d4cd32",
+    "semantic_hash": "65ea1fca73fb64563ec2e64420d4cd32"
+  },
+  "E:\\BoraTradingTool\\app\\api\\trade\\place\\route.ts": {
+    "mtime": 1785966111.642727,
+    "ast_hash": "1bd21fbfa508f23931af18f5f015094b",
+    "semantic_hash": "1bd21fbfa508f23931af18f5f015094b"
+  },
+  "E:\\BoraTradingTool\\app\\api\\trade\\route.ts": {
+    "mtime": 1785948408.9388592,
+    "ast_hash": "93d732c01ed14eb2665f9b6138e82540",
+    "semantic_hash": "93d732c01ed14eb2665f9b6138e82540"
+  },
+  "E:\\BoraTradingTool\\app\\api\\watchlist\\route.ts": {
+    "mtime": 1785955699.5674734,
+    "ast_hash": "9cdfb63258eaa881406923772a784297",
+    "semantic_hash": "9cdfb63258eaa881406923772a784297"
+  },
+  "E:\\BoraTradingTool\\app\\audit\\page.tsx": {
+    "mtime": 1785963815.7400901,
+    "ast_hash": "90089537a3cad208319bbcec5280c6aa",
+    "semantic_hash": "90089537a3cad208319bbcec5280c6aa"
+  },
+  "E:\\BoraTradingTool\\app\\command\\page.tsx": {
+    "mtime": 1786071204.7571983,
+    "ast_hash": "544a4b72ed8e2e55abd9fd39e18f3073",
+    "semantic_hash": "544a4b72ed8e2e55abd9fd39e18f3073"
+  },
+  "E:\\BoraTradingTool\\app\\dashboard\\page.tsx": {
+    "mtime": 1786085009.0090659,
+    "ast_hash": "5480e038dfd1dfecdafab96d003e1bc2",
+    "semantic_hash": "5480e038dfd1dfecdafab96d003e1bc2"
+  },
+  "E:\\BoraTradingTool\\app\\data-quality\\page.tsx": {
+    "mtime": 1786248227.5157337,
+    "ast_hash": "fb4feff231c7a485e5be2c0022c44954",
+    "semantic_hash": "fb4feff231c7a485e5be2c0022c44954"
+  },
+  "E:\\BoraTradingTool\\app\\edge-factory\\page.tsx": {
+    "mtime": 1785963580.7981071,
+    "ast_hash": "1b3414a5df454800067b218ccf5b546a",
+    "semantic_hash": "1b3414a5df454800067b218ccf5b546a"
+  },
+  "E:\\BoraTradingTool\\app\\error.tsx": {
+    "mtime": 1786166501.0382764,
+    "ast_hash": "9641466c7673b6ffc3e9b4fa1749b78d",
+    "semantic_hash": "9641466c7673b6ffc3e9b4fa1749b78d"
+  },
+  "E:\\BoraTradingTool\\app\\experiments\\page.tsx": {
+    "mtime": 1785963620.8953242,
+    "ast_hash": "b847cc74f42233570d889118e2509f6e",
+    "semantic_hash": "b847cc74f42233570d889118e2509f6e"
+  },
+  "E:\\BoraTradingTool\\app\\global-error.tsx": {
+    "mtime": 1786166525.296278,
+    "ast_hash": "a39a00f420c2b71477b147b5b409fe24",
+    "semantic_hash": "a39a00f420c2b71477b147b5b409fe24"
+  },
+  "E:\\BoraTradingTool\\app\\jobs\\page.tsx": {
+    "mtime": 1785963681.2324045,
+    "ast_hash": "85c633108dc71e96d3c584b3ee7343e6",
+    "semantic_hash": "85c633108dc71e96d3c584b3ee7343e6"
+  },
+  "E:\\BoraTradingTool\\app\\layout.tsx": {
+    "mtime": 1786069426.4211516,
+    "ast_hash": "eac48b519572892af4d922d1d1864ae6",
+    "semantic_hash": "eac48b519572892af4d922d1d1864ae6"
+  },
+  "E:\\BoraTradingTool\\app\\learning\\page.tsx": {
+    "mtime": 1786094908.4423232,
+    "ast_hash": "eecfd1ee8209ba676d1d040ef86b6f51",
+    "semantic_hash": "eecfd1ee8209ba676d1d040ef86b6f51"
+  },
+  "E:\\BoraTradingTool\\app\\library\\page.tsx": {
+    "mtime": 1786079749.7301939,
+    "ast_hash": "4375e5db7cc2ee1d07197f703546b2ff",
+    "semantic_hash": "4375e5db7cc2ee1d07197f703546b2ff"
+  },
+  "E:\\BoraTradingTool\\app\\memory\\page.tsx": {
+    "mtime": 1786020690.4337833,
+    "ast_hash": "812bb4e8211c0a2856d6f947e23acb0a",
+    "semantic_hash": "812bb4e8211c0a2856d6f947e23acb0a"
+  },
+  "E:\\BoraTradingTool\\app\\news\\page.tsx": {
+    "mtime": 1785948408.9555144,
+    "ast_hash": "432198c241f4f37686bc43fa58fd653d",
+    "semantic_hash": "432198c241f4f37686bc43fa58fd653d"
+  },
+  "E:\\BoraTradingTool\\app\\page.tsx": {
+    "mtime": 1785948408.9555144,
+    "ast_hash": "902588d49df77aa60363f39f8da2319f",
+    "semantic_hash": "902588d49df77aa60363f39f8da2319f"
+  },
+  "E:\\BoraTradingTool\\app\\paper\\page.tsx": {
+    "mtime": 1786221376.6686602,
+    "ast_hash": "bde11cada67b2e28fe94b38b63569f8d",
+    "semantic_hash": "bde11cada67b2e28fe94b38b63569f8d"
+  },
+  "E:\\BoraTradingTool\\app\\portfolio\\page.tsx": {
+    "mtime": 1785963978.2649262,
+    "ast_hash": "9a7c336140bcc127b6bd67e5389412b0",
+    "semantic_hash": "9a7c336140bcc127b6bd67e5389412b0"
+  },
+  "E:\\BoraTradingTool\\app\\premarket\\page.tsx": {
+    "mtime": 1786019575.5900393,
+    "ast_hash": "280b515230c5ba6b9e44abd15c33ec29",
+    "semantic_hash": "280b515230c5ba6b9e44abd15c33ec29"
+  },
+  "E:\\BoraTradingTool\\app\\research\\page.tsx": {
+    "mtime": 1785985992.9927762,
+    "ast_hash": "a87c86c7c344433f5dcf3361de755a5b",
+    "semantic_hash": "a87c86c7c344433f5dcf3361de755a5b"
+  },
+  "E:\\BoraTradingTool\\app\\scanner\\page.tsx": {
+    "mtime": 1785963531.852225,
+    "ast_hash": "100a4e1707f5f0fd347f43558fa628f9",
+    "semantic_hash": "100a4e1707f5f0fd347f43558fa628f9"
+  },
+  "E:\\BoraTradingTool\\app\\settings\\page.tsx": {
+    "mtime": 1785973805.2992895,
+    "ast_hash": "d17d8fd7f8022bb52626e11f5c8007c5",
+    "semantic_hash": "d17d8fd7f8022bb52626e11f5c8007c5"
+  },
+  "E:\\BoraTradingTool\\app\\simulations\\page.tsx": {
+    "mtime": 1786111469.9292576,
+    "ast_hash": "9f6be1cda491640959bd8629e665e3f1",
+    "semantic_hash": "9f6be1cda491640959bd8629e665e3f1"
+  },
+  "E:\\BoraTradingTool\\app\\strategies\\page.tsx": {
+    "mtime": 1786124420.6566277,
+    "ast_hash": "6d3d508505a3254fdd548cbd40476669",
+    "semantic_hash": "6d3d508505a3254fdd548cbd40476669"
+  },
+  "E:\\BoraTradingTool\\app\\system\\page.tsx": {
+    "mtime": 1785986021.689408,
+    "ast_hash": "c7691d2cb30610730f097a3dc98a3a80",
+    "semantic_hash": "c7691d2cb30610730f097a3dc98a3a80"
+  },
+  "E:\\BoraTradingTool\\app\\trades\\page.tsx": {
+    "mtime": 1786166168.4449205,
+    "ast_hash": "d59cedd4bd8083ee6c57d6476d512027",
+    "semantic_hash": "d59cedd4bd8083ee6c57d6476d512027"
+  },
+  "E:\\BoraTradingTool\\app\\watchlist\\page.tsx": {
+    "mtime": 1786069317.544774,
+    "ast_hash": "8f6fc59710d93596b1491671e655378d",
+    "semantic_hash": "8f6fc59710d93596b1491671e655378d"
+  },
+  "E:\\BoraTradingTool\\components.json": {
+    "mtime": 1785948408.9722743,
+    "ast_hash": "02016e740b7b0e6a3b00a3441ac0bda7",
+    "semantic_hash": "02016e740b7b0e6a3b00a3441ac0bda7"
+  },
+  "E:\\BoraTradingTool\\components\\ai\\AiResearchDesk.tsx": {
+    "mtime": 1785959507.725868,
+    "ast_hash": "af283438b7cb074d864ee0593fa60d34",
+    "semantic_hash": "af283438b7cb074d864ee0593fa60d34"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\AnalystPanel.tsx": {
+    "mtime": 1785948408.9798548,
+    "ast_hash": "1b59ffe9395fdb7b4d07eee3d997a8d6",
+    "semantic_hash": "1b59ffe9395fdb7b4d07eee3d997a8d6"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\ClaudePromptBlock.tsx": {
+    "mtime": 1785973805.2982843,
+    "ast_hash": "20b54c6d6699c21aee09e2f2522275e9",
+    "semantic_hash": "20b54c6d6699c21aee09e2f2522275e9"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\EarningsPanel.tsx": {
+    "mtime": 1785948408.9798548,
+    "ast_hash": "3b84db85ef314d57841e405a1ba91073",
+    "semantic_hash": "3b84db85ef314d57841e405a1ba91073"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\FundamentalsPanel.tsx": {
+    "mtime": 1785948408.9798548,
+    "ast_hash": "f874f063032d833f23778a58e3965ec8",
+    "semantic_hash": "f874f063032d833f23778a58e3965ec8"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\InsiderPanel.tsx": {
+    "mtime": 1785948408.9798548,
+    "ast_hash": "ed96ee6a420ba4398196972a3bc8ae8d",
+    "semantic_hash": "ed96ee6a420ba4398196972a3bc8ae8d"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\NewsPanel.tsx": {
+    "mtime": 1785948408.9891472,
+    "ast_hash": "719b364f54b67ef9c518325ab1c6f377",
+    "semantic_hash": "719b364f54b67ef9c518325ab1c6f377"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\QuoteHeader.tsx": {
+    "mtime": 1785959604.8475406,
+    "ast_hash": "d1335c67c4782cdbcb907cb504c70574",
+    "semantic_hash": "d1335c67c4782cdbcb907cb504c70574"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\ResearchReport.tsx": {
+    "mtime": 1785948408.9891472,
+    "ast_hash": "34ecd10210c6619f6835eaae3779b073",
+    "semantic_hash": "34ecd10210c6619f6835eaae3779b073"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\TechnicalsPanel.tsx": {
+    "mtime": 1785948408.9891472,
+    "ast_hash": "1d5b257624fe46f280a36d19c780cbfc",
+    "semantic_hash": "1d5b257624fe46f280a36d19c780cbfc"
+  },
+  "E:\\BoraTradingTool\\components\\analyze\\TickerNotFound.tsx": {
+    "mtime": 1785948408.997563,
+    "ast_hash": "aed19bdbd6f7f9da1ad7e5c2ab807c0e",
+    "semantic_hash": "aed19bdbd6f7f9da1ad7e5c2ab807c0e"
+  },
+  "E:\\BoraTradingTool\\components\\auto-refresh.tsx": {
+    "mtime": 1785948408.997563,
+    "ast_hash": "79e089eccaf0ae4a3e62d8d9f5f1928d",
+    "semantic_hash": "79e089eccaf0ae4a3e62d8d9f5f1928d"
+  },
+  "E:\\BoraTradingTool\\components\\chart\\CandlestickChart.tsx": {
+    "mtime": 1786023120.3634353,
+    "ast_hash": "24925d8869161721610bfbd8fd9aa86e",
+    "semantic_hash": "24925d8869161721610bfbd8fd9aa86e"
+  },
+  "E:\\BoraTradingTool\\components\\dashboard\\IndexCard.tsx": {
+    "mtime": 1786003707.8917782,
+    "ast_hash": "09a41c973a66e7f2b73ef2f2fd973948",
+    "semantic_hash": "09a41c973a66e7f2b73ef2f2fd973948"
+  },
+  "E:\\BoraTradingTool\\components\\dashboard\\MarketNewsFeed.tsx": {
+    "mtime": 1786003793.673324,
+    "ast_hash": "c55463e885ba4622c637f02e4c73a321",
+    "semantic_hash": "c55463e885ba4622c637f02e4c73a321"
+  },
+  "E:\\BoraTradingTool\\components\\dashboard\\SectorHeatmap.tsx": {
+    "mtime": 1786003721.1067007,
+    "ast_hash": "8222178f2f17e3ba44193eb02b713d59",
+    "semantic_hash": "8222178f2f17e3ba44193eb02b713d59"
+  },
+  "E:\\BoraTradingTool\\components\\dashboard\\TopMoversPanel.tsx": {
+    "mtime": 1786003771.205344,
+    "ast_hash": "23736b6b1c7a5a76079c8ace2bbd7a3d",
+    "semantic_hash": "23736b6b1c7a5a76079c8ace2bbd7a3d"
+  },
+  "E:\\BoraTradingTool\\components\\dashboard\\TopPicksPanel.tsx": {
+    "mtime": 1785948409.0058937,
+    "ast_hash": "77d68fc1590d7cd799417238857d9354",
+    "semantic_hash": "77d68fc1590d7cd799417238857d9354"
+  },
+  "E:\\BoraTradingTool\\components\\guide\\NextStep.tsx": {
+    "mtime": 1786071160.3485134,
+    "ast_hash": "6e035c7b806efae90df91fcb5b3d597f",
+    "semantic_hash": "6e035c7b806efae90df91fcb5b3d597f"
+  },
+  "E:\\BoraTradingTool\\components\\layout\\AutonomyStrip.tsx": {
+    "mtime": 1786079359.245233,
+    "ast_hash": "f151763cc06920a66f7476a00e49ae9f",
+    "semantic_hash": "f151763cc06920a66f7476a00e49ae9f"
+  },
+  "E:\\BoraTradingTool\\components\\layout\\MarketSelector.tsx": {
+    "mtime": 1786256651.2868264,
+    "ast_hash": "df1be954edcbdac3b2bae26d5119a9d9",
+    "semantic_hash": "df1be954edcbdac3b2bae26d5119a9d9"
+  },
+  "E:\\BoraTradingTool\\components\\layout\\ModeBadge.tsx": {
+    "mtime": 1785959249.6237495,
+    "ast_hash": "a5ff3837f8c730eb5171841f62c64f3f",
+    "semantic_hash": "a5ff3837f8c730eb5171841f62c64f3f"
+  },
+  "E:\\BoraTradingTool\\components\\layout\\TickerTape.tsx": {
+    "mtime": 1786003685.1407335,
+    "ast_hash": "b0c7d63d2790a97b610c8f8c663e6a1a",
+    "semantic_hash": "b0c7d63d2790a97b610c8f8c663e6a1a"
+  },
+  "E:\\BoraTradingTool\\components\\layout\\TopNav.tsx": {
+    "mtime": 1786253850.4660175,
+    "ast_hash": "4d7e20557824f135b059818b5c13d8a0",
+    "semantic_hash": "4d7e20557824f135b059818b5c13d8a0"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\ActivityFeed.tsx": {
+    "mtime": 1786029965.8300023,
+    "ast_hash": "e9476db6f2cc2e45d1fc47c99481850d",
+    "semantic_hash": "e9476db6f2cc2e45d1fc47c99481850d"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\AutonomyTicker.tsx": {
+    "mtime": 1786030183.713042,
+    "ast_hash": "3b87f5f46fce1fc1280b0bb5ffacc048",
+    "semantic_hash": "3b87f5f46fce1fc1280b0bb5ffacc048"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\LearningModeControl.tsx": {
+    "mtime": 1786122149.7027512,
+    "ast_hash": "c7d27c8e580bd422c8b73ca5051b88ce",
+    "semantic_hash": "c7d27c8e580bd422c8b73ca5051b88ce"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\LiveTerminal.tsx": {
+    "mtime": 1786094998.058118,
+    "ast_hash": "0b6ff10822dd04c26f91326891ef6949",
+    "semantic_hash": "0b6ff10822dd04c26f91326891ef6949"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\RunCycleButton.tsx": {
+    "mtime": 1786029992.1570592,
+    "ast_hash": "e9f9a02fee6c79b7b53c57f7242d63db",
+    "semantic_hash": "e9f9a02fee6c79b7b53c57f7242d63db"
+  },
+  "E:\\BoraTradingTool\\components\\learning\\StudyPanel.tsx": {
+    "mtime": 1786094802.118116,
+    "ast_hash": "d6fa9df8e57187137f714d3c2a78026a",
+    "semantic_hash": "d6fa9df8e57187137f714d3c2a78026a"
+  },
+  "E:\\BoraTradingTool\\components\\market\\DatasetPanel.tsx": {
+    "mtime": 1786122437.6650643,
+    "ast_hash": "972608df79b5927424c79e8831a4c1c1",
+    "semantic_hash": "972608df79b5927424c79e8831a4c1c1"
+  },
+  "E:\\BoraTradingTool\\components\\memory\\MemoryMap.tsx": {
+    "mtime": 1786020763.0617125,
+    "ast_hash": "5ccd1c6d976aafa6b33c63072be836a3",
+    "semantic_hash": "5ccd1c6d976aafa6b33c63072be836a3"
+  },
+  "E:\\BoraTradingTool\\components\\news\\NewsFeed.tsx": {
+    "mtime": 1785948409.0216665,
+    "ast_hash": "4f2a02ccbeb3b0b3a0734949e0151be9",
+    "semantic_hash": "4f2a02ccbeb3b0b3a0734949e0151be9"
+  },
+  "E:\\BoraTradingTool\\components\\paper\\LossLedgerPanel.tsx": {
+    "mtime": 1786033808.8115437,
+    "ast_hash": "269ca42d6feb133285ff2775a0c5cfd5",
+    "semantic_hash": "269ca42d6feb133285ff2775a0c5cfd5"
+  },
+  "E:\\BoraTradingTool\\components\\paper\\PaperOrderTicket.tsx": {
+    "mtime": 1786089064.0841835,
+    "ast_hash": "a9dc7eef9d29ebbffb18e5aaa385dcb0",
+    "semantic_hash": "a9dc7eef9d29ebbffb18e5aaa385dcb0"
+  },
+  "E:\\BoraTradingTool\\components\\plot\\Distribution.tsx": {
+    "mtime": 1786034607.4412744,
+    "ast_hash": "99bb8377dcb17af38738bfb692a6833e",
+    "semantic_hash": "99bb8377dcb17af38738bfb692a6833e"
+  },
+  "E:\\BoraTradingTool\\components\\plot\\EquityCurve.tsx": {
+    "mtime": 1786033768.58748,
+    "ast_hash": "fc0c49dfe1e752bc34026907b8350e25",
+    "semantic_hash": "fc0c49dfe1e752bc34026907b8350e25"
+  },
+  "E:\\BoraTradingTool\\components\\research\\ResearchIntake.tsx": {
+    "mtime": 1786094862.8230357,
+    "ast_hash": "1e3c492d8f0e2346637b1b7953bb19e3",
+    "semantic_hash": "1e3c492d8f0e2346637b1b7953bb19e3"
+  },
+  "E:\\BoraTradingTool\\components\\research\\SourceCoverage.tsx": {
+    "mtime": 1786079733.0948217,
+    "ast_hash": "2931b8e2b9205d9c94a5bbcbb95cbfee",
+    "semantic_hash": "2931b8e2b9205d9c94a5bbcbb95cbfee"
+  },
+  "E:\\BoraTradingTool\\components\\settings\\AutonomousTradingSettings.tsx": {
+    "mtime": 1785972639.7220354,
+    "ast_hash": "b525d34bc151807935ff2309164d99d6",
+    "semantic_hash": "b525d34bc151807935ff2309164d99d6"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\FeatureSupportPanel.tsx": {
+    "mtime": 1786032372.650444,
+    "ast_hash": "17bb4cbebb0a7849774150c75d548d0a",
+    "semantic_hash": "17bb4cbebb0a7849774150c75d548d0a"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\GraveyardPanel.tsx": {
+    "mtime": 1786032433.1426268,
+    "ast_hash": "5492c2eec430eb2465845f136470efbb",
+    "semantic_hash": "5492c2eec430eb2465845f136470efbb"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\RunGauntletButton.tsx": {
+    "mtime": 1786085547.7632303,
+    "ast_hash": "21bd866e952fec1b5b79c9ddb147c030",
+    "semantic_hash": "21bd866e952fec1b5b79c9ddb147c030"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\StarMap.tsx": {
+    "mtime": 1786070298.5637105,
+    "ast_hash": "6602b771406a2bc79a994b867ed06d20",
+    "semantic_hash": "6602b771406a2bc79a994b867ed06d20"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\StrategyAuthor.tsx": {
+    "mtime": 1786070048.8269987,
+    "ast_hash": "e67d7b92173c97546de129351e1003b0",
+    "semantic_hash": "e67d7b92173c97546de129351e1003b0"
+  },
+  "E:\\BoraTradingTool\\components\\strategy\\ValidationFunnel.tsx": {
+    "mtime": 1786070708.3747838,
+    "ast_hash": "088e4d5e11e942697861ee7240b35bc3",
+    "semantic_hash": "088e4d5e11e942697861ee7240b35bc3"
+  },
+  "E:\\BoraTradingTool\\components\\system\\Panel.tsx": {
+    "mtime": 1786005687.7993202,
+    "ast_hash": "c8ee48d48ecb2dcdba7dc709e17e0dd2",
+    "semantic_hash": "c8ee48d48ecb2dcdba7dc709e17e0dd2"
+  },
+  "E:\\BoraTradingTool\\components\\system\\PanelState.tsx": {
+    "mtime": 1786026637.198844,
+    "ast_hash": "43589bfbfd7909c0e3b847ccccd4a663",
+    "semantic_hash": "43589bfbfd7909c0e3b847ccccd4a663"
+  },
+  "E:\\BoraTradingTool\\components\\system\\SystemPulse.tsx": {
+    "mtime": 1786079545.2660959,
+    "ast_hash": "248741539ce2bde3a8368eb137700b8a",
+    "semantic_hash": "248741539ce2bde3a8368eb137700b8a"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\badge.tsx": {
+    "mtime": 1785948409.0239308,
+    "ast_hash": "1ff3e04a7fd408f9bd7520187dce5d19",
+    "semantic_hash": "1ff3e04a7fd408f9bd7520187dce5d19"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\button.tsx": {
+    "mtime": 1785948409.0239308,
+    "ast_hash": "7ca74150b020a5ef671cf1b43954edf6",
+    "semantic_hash": "7ca74150b020a5ef671cf1b43954edf6"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\card.tsx": {
+    "mtime": 1785948409.029981,
+    "ast_hash": "09a9b419cdd81f4b23cda1c4230a55b7",
+    "semantic_hash": "09a9b419cdd81f4b23cda1c4230a55b7"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\select.tsx": {
+    "mtime": 1785948409.029981,
+    "ast_hash": "fc7d964889fe17cca9fc412266dba5d1",
+    "semantic_hash": "fc7d964889fe17cca9fc412266dba5d1"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\separator.tsx": {
+    "mtime": 1785948409.029981,
+    "ast_hash": "bb51ace4279e49d0a4628fafa6ea10b9",
+    "semantic_hash": "bb51ace4279e49d0a4628fafa6ea10b9"
+  },
+  "E:\\BoraTradingTool\\components\\ui\\tabs.tsx": {
+    "mtime": 1785948409.029981,
+    "ast_hash": "aa67dc7b086fe22106b124f2c5a7fd3b",
+    "semantic_hash": "aa67dc7b086fe22106b124f2c5a7fd3b"
+  },
+  "E:\\BoraTradingTool\\components\\watchlist\\WatchlistManager.tsx": {
+    "mtime": 1786069384.3375752,
+    "ast_hash": "c4655db11033fff9499334e8763a3c97",
+    "semantic_hash": "c4655db11033fff9499334e8763a3c97"
+  },
+  "E:\\BoraTradingTool\\docs\\governance\\guard-writes.build-mode.mjs": {
+    "mtime": 1786208452.7975783,
+    "ast_hash": "6266fb797af0b42eb411ec82e959461b",
+    "semantic_hash": "6266fb797af0b42eb411ec82e959461b"
+  },
+  "E:\\BoraTradingTool\\docs\\governance\\settings.build-mode.json": {
+    "mtime": 1786169302.7452223,
+    "ast_hash": "1136f57bb4aba52c1ef012e793ee9dd2",
+    "semantic_hash": "1136f57bb4aba52c1ef012e793ee9dd2"
+  },
+  "E:\\BoraTradingTool\\drizzle.config.ts": {
+    "mtime": 1785948409.0473137,
+    "ast_hash": "f5a7affcfa31adfced67f3bebe710b42",
+    "semantic_hash": "f5a7affcfa31adfced67f3bebe710b42"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0000_existing_baseline.sql": {
+    "mtime": 1785956335.708938,
+    "ast_hash": "f6dca5e279563617ee026565d200b1dc",
+    "semantic_hash": "f6dca5e279563617ee026565d200b1dc"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0001_multi_market_paper_ai.sql": {
+    "mtime": 1785956335.7234728,
+    "ast_hash": "da10647ab1c461129dadc61d34705835",
+    "semantic_hash": "da10647ab1c461129dadc61d34705835"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0002_knowledge_memory.sql": {
+    "mtime": 1785961395.9524467,
+    "ast_hash": "2c009cb63a99c381127d047f5032bf8d",
+    "semantic_hash": "2c009cb63a99c381127d047f5032bf8d"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0003_research_jobs.sql": {
+    "mtime": 1785962519.1837857,
+    "ast_hash": "3c65222024fee0644f259804b70ae48d",
+    "semantic_hash": "3c65222024fee0644f259804b70ae48d"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0004_evidence_and_paper_lifecycle.sql": {
+    "mtime": 1785969881.2733402,
+    "ast_hash": "083d414e8b8d0aecd7cd94ae7dc9a66d",
+    "semantic_hash": "083d414e8b8d0aecd7cd94ae7dc9a66d"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0005_evidence_snapshots.sql": {
+    "mtime": 1785972960.4146886,
+    "ast_hash": "03b47b907feeed4fc0200e336f48b2fc",
+    "semantic_hash": "03b47b907feeed4fc0200e336f48b2fc"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0006_security_integrity.sql": {
+    "mtime": 1785975372.0516913,
+    "ast_hash": "82544a860cd220c149d82198378b6ef1",
+    "semantic_hash": "82544a860cd220c149d82198378b6ef1"
+  },
+  "E:\\BoraTradingTool\\e2e\\app.spec.ts": {
+    "mtime": 1786250756.3203871,
+    "ast_hash": "8634daea06d8e51a80c62b6254436745",
+    "semantic_hash": "8634daea06d8e51a80c62b6254436745"
+  },
+  "E:\\BoraTradingTool\\esbuild.mcp.mjs": {
+    "mtime": 1785959058.4786763,
+    "ast_hash": "a166ac9b198a8dfa787ce73962fb5a50",
+    "semantic_hash": "a166ac9b198a8dfa787ce73962fb5a50"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\ai.test.ts": {
+    "mtime": 1785972868.5447986,
+    "ast_hash": "b1741a6534c4468225673d812b1d8faa",
+    "semantic_hash": "b1741a6534c4468225673d812b1d8faa"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\evidence-store.ts": {
+    "mtime": 1785973007.4413865,
+    "ast_hash": "dac6b650ac5b4d03b2563cdc805c523a",
+    "semantic_hash": "dac6b650ac5b4d03b2563cdc805c523a"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\evidence.ts": {
+    "mtime": 1785973909.9855707,
+    "ast_hash": "ae7c4550189ba72760d8447ff13cb55e",
+    "semantic_hash": "ae7c4550189ba72760d8447ff13cb55e"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\provider.ts": {
+    "mtime": 1785957094.542348,
+    "ast_hash": "882ed5cc4a3317fbe0933404c61ea11f",
+    "semantic_hash": "882ed5cc4a3317fbe0933404c61ea11f"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\providers\\anthropic.ts": {
+    "mtime": 1785958844.1346772,
+    "ast_hash": "83010e0c507cd2140576050dc1ffd01a",
+    "semantic_hash": "83010e0c507cd2140576050dc1ffd01a"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\providers\\fake.ts": {
+    "mtime": 1785957094.544348,
+    "ast_hash": "36ea3368617024047611a0f12a0037fe",
+    "semantic_hash": "36ea3368617024047611a0f12a0037fe"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\providers\\openai.ts": {
+    "mtime": 1785957094.548349,
+    "ast_hash": "ff20d9d457da3e272e45614cdf79f4a6",
+    "semantic_hash": "ff20d9d457da3e272e45614cdf79f4a6"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\schema.ts": {
+    "mtime": 1785969881.2845776,
+    "ast_hash": "d18af492d6bd72378ebd21324d7d9db3",
+    "semantic_hash": "d18af492d6bd72378ebd21324d7d9db3"
+  },
+  "E:\\BoraTradingTool\\lib\\ai\\service.ts": {
+    "mtime": 1785973665.693766,
+    "ast_hash": "b273c22e78d0de77aeed7dd4f497f3de",
+    "semantic_hash": "b273c22e78d0de77aeed7dd4f497f3de"
+  },
+  "E:\\BoraTradingTool\\lib\\analyst\\analyst.test.ts": {
+    "mtime": 1785975895.5301263,
+    "ast_hash": "9f02051faaf8c2ffe3cd695e79ed83a1",
+    "semantic_hash": "9f02051faaf8c2ffe3cd695e79ed83a1"
+  },
+  "E:\\BoraTradingTool\\lib\\analyst\\schema.ts": {
+    "mtime": 1785975826.2387953,
+    "ast_hash": "7a4d93f9ec33ba9a68d93455a7167d4d",
+    "semantic_hash": "7a4d93f9ec33ba9a68d93455a7167d4d"
+  },
+  "E:\\BoraTradingTool\\lib\\analyst\\service.ts": {
+    "mtime": 1785975951.1966543,
+    "ast_hash": "a3eda60d466fc737f5ea409372febdab",
+    "semantic_hash": "a3eda60d466fc737f5ea409372febdab"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\crossover.test.ts": {
+    "mtime": 1786010863.9258785,
+    "ast_hash": "a14bd05eb2df2394edcf8d3b3c55583e",
+    "semantic_hash": "a14bd05eb2df2394edcf8d3b3c55583e"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\engine.test.ts": {
+    "mtime": 1785996459.7120037,
+    "ast_hash": "af799855876ec0b45dc293eb36f69168",
+    "semantic_hash": "af799855876ec0b45dc293eb36f69168"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\engine.ts": {
+    "mtime": 1786263250.2385328,
+    "ast_hash": "1c8e55d392870e10f5f40d2918701645",
+    "semantic_hash": "1c8e55d392870e10f5f40d2918701645"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\features.ts": {
+    "mtime": 1786263310.2367456,
+    "ast_hash": "f80e5adf5cee101ac7540d2f4f15f599",
+    "semantic_hash": "f80e5adf5cee101ac7540d2f4f15f599"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\parity.test.ts": {
+    "mtime": 1785997111.758478,
+    "ast_hash": "c7f1e59d7674a7a4601a1e7df3be38dd",
+    "semantic_hash": "c7f1e59d7674a7a4601a1e7df3be38dd"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\portfolio.test.ts": {
+    "mtime": 1786012866.41463,
+    "ast_hash": "988ec23aa87f5cca45d8730f2dcb53f2",
+    "semantic_hash": "988ec23aa87f5cca45d8730f2dcb53f2"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\portfolio.ts": {
+    "mtime": 1786263286.6784647,
+    "ast_hash": "80238ecb67a111ca616633cebf77a7e3",
+    "semantic_hash": "80238ecb67a111ca616633cebf77a7e3"
+  },
+  "E:\\BoraTradingTool\\lib\\client\\mutation-fetch.test.ts": {
+    "mtime": 1786089492.726818,
+    "ast_hash": "6b2bcf28908f68023a0ce584ebdd4021",
+    "semantic_hash": "6b2bcf28908f68023a0ce584ebdd4021"
+  },
+  "E:\\BoraTradingTool\\lib\\client\\mutation-fetch.ts": {
+    "mtime": 1786089440.2590797,
+    "ast_hash": "e300580bcbb2c74e704aeca9c195b8ad",
+    "semantic_hash": "e300580bcbb2c74e704aeca9c195b8ad"
+  },
+  "E:\\BoraTradingTool\\lib\\dashboard\\queries.ts": {
+    "mtime": 1785963470.9999602,
+    "ast_hash": "e40d24be5adc3ca7a1a1f91a772c1fa5",
+    "semantic_hash": "e40d24be5adc3ca7a1a1f91a772c1fa5"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\cache.test.ts": {
+    "mtime": 1785995357.7607858,
+    "ast_hash": "98c5337e81fb3e1896de0d47e864f5eb",
+    "semantic_hash": "98c5337e81fb3e1896de0d47e864f5eb"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\cache.ts": {
+    "mtime": 1785995318.7838783,
+    "ast_hash": "13704854db47beaae340247af381012a",
+    "semantic_hash": "13704854db47beaae340247af381012a"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\context-writer.test.ts": {
+    "mtime": 1785956706.4089165,
+    "ast_hash": "2f01d43392c0b055b1d7d1c38d6bc83f",
+    "semantic_hash": "2f01d43392c0b055b1d7d1c38d6bc83f"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\context-writer.ts": {
+    "mtime": 1785995277.1364703,
+    "ast_hash": "570e96998f3db63a116228186e65e29e",
+    "semantic_hash": "570e96998f3db63a116228186e65e29e"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\market-status.ts": {
+    "mtime": 1785948409.0473137,
+    "ast_hash": "6cdacaa6e59ab3295b73e0cc42aae9c2",
+    "semantic_hash": "6cdacaa6e59ab3295b73e0cc42aae9c2"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\research.ts": {
+    "mtime": 1785995215.8588476,
+    "ast_hash": "b3368b011c790fa3f97005daaa58e1c7",
+    "semantic_hash": "b3368b011c790fa3f97005daaa58e1c7"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\sentiment.ts": {
+    "mtime": 1785948409.0557716,
+    "ast_hash": "8166211bdc37344b8e80b61070b54ae6",
+    "semantic_hash": "8166211bdc37344b8e80b61070b54ae6"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\technicals.test.ts": {
+    "mtime": 1785995138.4368057,
+    "ast_hash": "bca8aff9556249f514f1d2648b87297b",
+    "semantic_hash": "bca8aff9556249f514f1d2648b87297b"
+  },
+  "E:\\BoraTradingTool\\lib\\data\\technicals.ts": {
+    "mtime": 1785995075.1634748,
+    "ast_hash": "84708337af64f1f295de12fe43dbb43e",
+    "semantic_hash": "84708337af64f1f295de12fe43dbb43e"
+  },
+  "E:\\BoraTradingTool\\lib\\db\\index.ts": {
+    "mtime": 1786096145.6757722,
+    "ast_hash": "0a0396a0076bf6443e3c97c405973449",
+    "semantic_hash": "0a0396a0076bf6443e3c97c405973449"
+  },
+  "E:\\BoraTradingTool\\lib\\db\\migrate.test.ts": {
+    "mtime": 1785975412.858719,
+    "ast_hash": "61d6740728f538c3806d099db7b7b8a9",
+    "semantic_hash": "61d6740728f538c3806d099db7b7b8a9"
+  },
+  "E:\\BoraTradingTool\\lib\\db\\migrate.ts": {
+    "mtime": 1786220596.1965468,
+    "ast_hash": "ce279e8979bfcd409c8724f378bce733",
+    "semantic_hash": "ce279e8979bfcd409c8724f378bce733"
+  },
+  "E:\\BoraTradingTool\\lib\\db\\schema.ts": {
+    "mtime": 1786220616.2591848,
+    "ast_hash": "2ec57fee60ba0d0a2a97c888d3e4a283",
+    "semantic_hash": "2ec57fee60ba0d0a2a97c888d3e4a283"
+  },
+  "E:\\BoraTradingTool\\lib\\db\\testing.ts": {
+    "mtime": 1786095921.3549774,
+    "ast_hash": "759fe32e80e4899b1593ed05a39d3fe5",
+    "semantic_hash": "759fe32e80e4899b1593ed05a39d3fe5"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\board.test.ts": {
+    "mtime": 1786217668.0166428,
+    "ast_hash": "e55840330ba8dd115afeb16b3a27a5b1",
+    "semantic_hash": "e55840330ba8dd115afeb16b3a27a5b1"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\board.ts": {
+    "mtime": 1786166225.044962,
+    "ast_hash": "7f8986d9d18d70f02a4b21d3a7210ba8",
+    "semantic_hash": "7f8986d9d18d70f02a4b21d3a7210ba8"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\context.ts": {
+    "mtime": 1786165571.1488695,
+    "ast_hash": "a1f309e1f85c8172c08ededa08696e63",
+    "semantic_hash": "a1f309e1f85c8172c08ededa08696e63"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\orders.test.ts": {
+    "mtime": 1785997770.720675,
+    "ast_hash": "aff793d5148bd1ae5826a170c020134f",
+    "semantic_hash": "aff793d5148bd1ae5826a170c020134f"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\orders.ts": {
+    "mtime": 1785997762.8594153,
+    "ast_hash": "15fd90886c2e057371062f92395ac0f6",
+    "semantic_hash": "15fd90886c2e057371062f92395ac0f6"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\proposal.test.ts": {
+    "mtime": 1786030586.6268165,
+    "ast_hash": "bc22088f5e96c073abedec0538084747",
+    "semantic_hash": "bc22088f5e96c073abedec0538084747"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\proposal.ts": {
+    "mtime": 1786165457.7585487,
+    "ast_hash": "e98cb720c2383eb2a5fa2ec1d5a52822",
+    "semantic_hash": "e98cb720c2383eb2a5fa2ec1d5a52822"
+  },
+  "E:\\BoraTradingTool\\lib\\factory\\breed.test.ts": {
+    "mtime": 1786113679.488927,
+    "ast_hash": "4a90a9d656e3680b39e053e181d816d0",
+    "semantic_hash": "4a90a9d656e3680b39e053e181d816d0"
+  },
+  "E:\\BoraTradingTool\\lib\\factory\\breed.ts": {
+    "mtime": 1786242042.8497038,
+    "ast_hash": "77e34ca82410da909cf5ffe1373fac26",
+    "semantic_hash": "77e34ca82410da909cf5ffe1373fac26"
+  },
+  "E:\\BoraTradingTool\\lib\\factory\\generation.ts": {
+    "mtime": 1786113735.2444682,
+    "ast_hash": "e79ce020867374cd75884423acbe64ae",
+    "semantic_hash": "e79ce020867374cd75884423acbe64ae"
+  },
+  "E:\\BoraTradingTool\\lib\\factory\\screen.test.ts": {
+    "mtime": 1786000844.0905373,
+    "ast_hash": "062ef9552f289094f0aec93effe25b7e",
+    "semantic_hash": "062ef9552f289094f0aec93effe25b7e"
+  },
+  "E:\\BoraTradingTool\\lib\\factory\\screen.ts": {
+    "mtime": 1786000678.2416754,
+    "ast_hash": "5b0b2215cea4a1b789d6c8a0ca75527d",
+    "semantic_hash": "5b0b2215cea4a1b789d6c8a0ca75527d"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\forecast.test.ts": {
+    "mtime": 1786073501.098737,
+    "ast_hash": "c923b3d3040ab1de8fe541388c7afcb7",
+    "semantic_hash": "c923b3d3040ab1de8fe541388c7afcb7"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\kronos.ts": {
+    "mtime": 1786022099.178927,
+    "ast_hash": "16d994cef1abc95a225061861d700671",
+    "semantic_hash": "16d994cef1abc95a225061861d700671"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\manifest.test.ts": {
+    "mtime": 1786125154.733577,
+    "ast_hash": "e05bf9031dc28761ca2c1032706a544e",
+    "semantic_hash": "e05bf9031dc28761ca2c1032706a544e"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\manifest.ts": {
+    "mtime": 1786125129.2980204,
+    "ast_hash": "786d344747a99937da64fc2af1394c83",
+    "semantic_hash": "786d344747a99937da64fc2af1394c83"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\score.ts": {
+    "mtime": 1786021967.785752,
+    "ast_hash": "7d27e102c82464ce5441138db2eee3b9",
+    "semantic_hash": "7d27e102c82464ce5441138db2eee3b9"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\hooks.test.ts": {
+    "mtime": 1786175515.2699769,
+    "ast_hash": "f7c287da889d0a867df89c7f05dd0a61",
+    "semantic_hash": "f7c287da889d0a867df89c7f05dd0a61"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\mcp-manifest.ts": {
+    "mtime": 1785970180.8014307,
+    "ast_hash": "4776c2392173e852984e7742c3088256",
+    "semantic_hash": "4776c2392173e852984e7742c3088256"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\paths.ts": {
+    "mtime": 1785976028.7906008,
+    "ast_hash": "d83fabe2479a6480946d71b03c26182e",
+    "semantic_hash": "d83fabe2479a6480946d71b03c26182e"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\policy.test.ts": {
+    "mtime": 1785976028.7886052,
+    "ast_hash": "eb5d57b84dc1eb65b4dd3f4b3b6d768d",
+    "semantic_hash": "eb5d57b84dc1eb65b4dd3f4b3b6d768d"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\policy.ts": {
+    "mtime": 1785969717.6200366,
+    "ast_hash": "e7e08d2c5a0466da3ed30dee02b51907",
+    "semantic_hash": "e7e08d2c5a0466da3ed30dee02b51907"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\runtime.test.ts": {
+    "mtime": 1785969354.5526588,
+    "ast_hash": "ca35ca55d0834054baf85c6dd35e42b8",
+    "semantic_hash": "ca35ca55d0834054baf85c6dd35e42b8"
+  },
+  "E:\\BoraTradingTool\\lib\\governance\\runtime.ts": {
+    "mtime": 1785969441.8750925,
+    "ast_hash": "3d6f75b3c5015472b2762aef9f2e4d93",
+    "semantic_hash": "3d6f75b3c5015472b2762aef9f2e4d93"
+  },
+  "E:\\BoraTradingTool\\lib\\guide\\next-step.test.ts": {
+    "mtime": 1786095960.9269266,
+    "ast_hash": "306325c24ee1735d425f8f13446b2a91",
+    "semantic_hash": "306325c24ee1735d425f8f13446b2a91"
+  },
+  "E:\\BoraTradingTool\\lib\\guide\\next-step.ts": {
+    "mtime": 1786071136.4324105,
+    "ast_hash": "4386c8c9816694fecabab278c1438b08",
+    "semantic_hash": "4386c8c9816694fecabab278c1438b08"
+  },
+  "E:\\BoraTradingTool\\lib\\http\\input.test.ts": {
+    "mtime": 1785955481.1852243,
+    "ast_hash": "8955f59617d46695ad0f45b55c5a9ff9",
+    "semantic_hash": "8955f59617d46695ad0f45b55c5a9ff9"
+  },
+  "E:\\BoraTradingTool\\lib\\http\\input.ts": {
+    "mtime": 1785955481.158619,
+    "ast_hash": "c6d2cdfff9f6d00ab4e3b3f6678b32d3",
+    "semantic_hash": "c6d2cdfff9f6d00ab4e3b3f6678b32d3"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\graph-layout.test.ts": {
+    "mtime": 1786020399.228806,
+    "ast_hash": "7d9aee60a1510a0dee3b002b8af4888f",
+    "semantic_hash": "7d9aee60a1510a0dee3b002b8af4888f"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\graph-layout.ts": {
+    "mtime": 1786020318.0660598,
+    "ast_hash": "9e04ae5f140321f1818bb263d04513b3",
+    "semantic_hash": "9e04ae5f140321f1818bb263d04513b3"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\knowledge.test.ts": {
+    "mtime": 1785973251.0640771,
+    "ast_hash": "1fe571cc0bc11fb7fcd8b798dc738bdd",
+    "semantic_hash": "1fe571cc0bc11fb7fcd8b798dc738bdd"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\memory-graph.ts": {
+    "mtime": 1786013821.7084007,
+    "ast_hash": "53e53c02a86cf060a6fc85ba63b90e63",
+    "semantic_hash": "53e53c02a86cf060a6fc85ba63b90e63"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\repository.ts": {
+    "mtime": 1785973302.6534815,
+    "ast_hash": "b47ac5e9f0a255fcdc9ed52746a78a5b",
+    "semantic_hash": "b47ac5e9f0a255fcdc9ed52746a78a5b"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\reproductions.test.ts": {
+    "mtime": 1785986705.6738605,
+    "ast_hash": "82c575654af9ac8679018d0f62f2d8c8",
+    "semantic_hash": "82c575654af9ac8679018d0f62f2d8c8"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\reproductions.ts": {
+    "mtime": 1785986680.326439,
+    "ast_hash": "79585b31d755cabec9053de5d10d9cf8",
+    "semantic_hash": "79585b31d755cabec9053de5d10d9cf8"
+  },
+  "E:\\BoraTradingTool\\lib\\knowledge\\types.ts": {
+    "mtime": 1786165763.9157083,
+    "ast_hash": "f8a9abf0f8dba3bf1f735148cefbcee8",
+    "semantic_hash": "f8a9abf0f8dba3bf1f735148cefbcee8"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\curriculum.ts": {
+    "mtime": 1785963211.0923069,
+    "ast_hash": "57da0412db6374934239d6cab75f1ec7",
+    "semantic_hash": "57da0412db6374934239d6cab75f1ec7"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\cycle.ts": {
+    "mtime": 1786264224.0528228,
+    "ast_hash": "cc63f0d644e62b993aebd8f33761f8d6",
+    "semantic_hash": "cc63f0d644e62b993aebd8f33761f8d6"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\dataset.ts": {
+    "mtime": 1786260841.38247,
+    "ast_hash": "2d84ab4b64aa55329db730ccc146e216",
+    "semantic_hash": "2d84ab4b64aa55329db730ccc146e216"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\evolution.ts": {
+    "mtime": 1785972781.130823,
+    "ast_hash": "48d573c9c6f3486dbeebbebf0db441ac",
+    "semantic_hash": "48d573c9c6f3486dbeebbebf0db441ac"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\introspection.test.ts": {
+    "mtime": 1786021458.0113673,
+    "ast_hash": "0bb24a2acedcd7757812034fa79f42ba",
+    "semantic_hash": "0bb24a2acedcd7757812034fa79f42ba"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\introspection.ts": {
+    "mtime": 1786021434.241206,
+    "ast_hash": "05715a18ff8c851b3570fbb7a1ff5bad",
+    "semantic_hash": "05715a18ff8c851b3570fbb7a1ff5bad"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\learning.test.ts": {
+    "mtime": 1786241893.2909143,
+    "ast_hash": "262d7a13bd2a8aab830d83b22e7ab866",
+    "semantic_hash": "262d7a13bd2a8aab830d83b22e7ab866"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\lease.test.ts": {
+    "mtime": 1786079078.8775003,
+    "ast_hash": "a6e3173890db319ca91c3c4134d10dca",
+    "semantic_hash": "a6e3173890db319ca91c3c4134d10dca"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\lease.ts": {
+    "mtime": 1786079042.84564,
+    "ast_hash": "673c507c325887ae2ff6c510eabdba3b",
+    "semantic_hash": "673c507c325887ae2ff6c510eabdba3b"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\quiz-bank.test.ts": {
+    "mtime": 1786111896.9955,
+    "ast_hash": "febb2ef0fa1cea1e5cdffdbb9e38f095",
+    "semantic_hash": "febb2ef0fa1cea1e5cdffdbb9e38f095"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\quiz-bank.ts": {
+    "mtime": 1786111796.73411,
+    "ast_hash": "6d52f38729ec8f34cee44918e3faf098",
+    "semantic_hash": "6d52f38729ec8f34cee44918e3faf098"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\rehearsal.test.ts": {
+    "mtime": 1786096117.2982283,
+    "ast_hash": "c10bb6e95a758ca45a0c464f91fed1d4",
+    "semantic_hash": "c10bb6e95a758ca45a0c464f91fed1d4"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\rehearsal.ts": {
+    "mtime": 1786220996.9787812,
+    "ast_hash": "88b83bf1882fffad48a3287bc0cda5f1",
+    "semantic_hash": "88b83bf1882fffad48a3287bc0cda5f1"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\run-log.test.ts": {
+    "mtime": 1786096070.7460568,
+    "ast_hash": "79d2255199c02b0e0198eef670d62bf2",
+    "semantic_hash": "79d2255199c02b0e0198eef670d62bf2"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\run-log.ts": {
+    "mtime": 1786094634.5267372,
+    "ast_hash": "a8db2c1274a3f9a832c960622ecaf98b",
+    "semantic_hash": "a8db2c1274a3f9a832c960622ecaf98b"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\study.test.ts": {
+    "mtime": 1786166468.2787535,
+    "ast_hash": "12d289f8bd6ed0a232d780400aa4b770",
+    "semantic_hash": "12d289f8bd6ed0a232d780400aa4b770"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\study.ts": {
+    "mtime": 1786166445.1219928,
+    "ast_hash": "ea5daa6f83de165d6c337b0b03df8076",
+    "semantic_hash": "ea5daa6f83de165d6c337b0b03df8076"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\calendar.test.ts": {
+    "mtime": 1785956529.134514,
+    "ast_hash": "55a5cd5e4d38954ad19e073d4da47111",
+    "semantic_hash": "55a5cd5e4d38954ad19e073d4da47111"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\calendar.ts": {
+    "mtime": 1786262634.5852816,
+    "ast_hash": "49fb866ede5f3d8ee6ddf4691ef4b68e",
+    "semantic_hash": "49fb866ede5f3d8ee6ddf4691ef4b68e"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\candle-store.test.ts": {
+    "mtime": 1786120725.532064,
+    "ast_hash": "1f1fe8847a8d156c0ee7256ff57033e7",
+    "semantic_hash": "1f1fe8847a8d156c0ee7256ff57033e7"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\candle-store.ts": {
+    "mtime": 1786248977.5112495,
+    "ast_hash": "d769e649ff833461386af2b467a7f546",
+    "semantic_hash": "d769e649ff833461386af2b467a7f546"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\catalog.ts": {
+    "mtime": 1786085695.1562233,
+    "ast_hash": "b4b6e6dbfb2da54fbd710cbeb04d211f",
+    "semantic_hash": "b4b6e6dbfb2da54fbd710cbeb04d211f"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\contract-master.test.ts": {
+    "mtime": 1786208590.3734071,
+    "ast_hash": "879ce516c64cf9896ceba74dc82658c2",
+    "semantic_hash": "879ce516c64cf9896ceba74dc82658c2"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\contract-master.ts": {
+    "mtime": 1786208652.438215,
+    "ast_hash": "3cc4862d33d79961ec15519bd1299a41",
+    "semantic_hash": "3cc4862d33d79961ec15519bd1299a41"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\csv-candles.test.ts": {
+    "mtime": 1786121303.1871212,
+    "ast_hash": "48453320223ea32035a72afd45634520",
+    "semantic_hash": "48453320223ea32035a72afd45634520"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\csv-candles.ts": {
+    "mtime": 1786121238.558406,
+    "ast_hash": "32a100b46dcc0799880cae5321461b78",
+    "semantic_hash": "32a100b46dcc0799880cae5321461b78"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\dataset-import.test.ts": {
+    "mtime": 1786120245.214939,
+    "ast_hash": "12358f62e816c953b2da779b4517235e",
+    "semantic_hash": "12358f62e816c953b2da779b4517235e"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\dataset-import.ts": {
+    "mtime": 1786120194.5476663,
+    "ast_hash": "071efe108c378cf73319f7c327a40a68",
+    "semantic_hash": "071efe108c378cf73319f7c327a40a68"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\instruments.test.ts": {
+    "mtime": 1785956529.1295123,
+    "ast_hash": "261d2c60a1f43ec5bddbdbfc183037a8",
+    "semantic_hash": "261d2c60a1f43ec5bddbdbfc183037a8"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\instruments.ts": {
+    "mtime": 1785956529.1255226,
+    "ast_hash": "e8d7adf2d0ac119ea7df696d486e9d6f",
+    "semantic_hash": "e8d7adf2d0ac119ea7df696d486e9d6f"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\loader.test.ts": {
+    "mtime": 1786209668.5615208,
+    "ast_hash": "ddf1f04a2a38803ca911b5710290eec8",
+    "semantic_hash": "ddf1f04a2a38803ca911b5710290eec8"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\loader.ts": {
+    "mtime": 1786209703.343784,
+    "ast_hash": "f4ec511db95744d6b4c7492426978c26",
+    "semantic_hash": "f4ec511db95744d6b4c7492426978c26"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\phases.test.ts": {
+    "mtime": 1786019640.6970508,
+    "ast_hash": "678d3c3bbc2bb100a16b6ebcd75335bd",
+    "semantic_hash": "678d3c3bbc2bb100a16b6ebcd75335bd"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\phases.ts": {
+    "mtime": 1786019556.0185306,
+    "ast_hash": "511d71f72c642f8fe5cb2103edbda705",
+    "semantic_hash": "511d71f72c642f8fe5cb2103edbda705"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\price-domain.test.ts": {
+    "mtime": 1786207849.9993145,
+    "ast_hash": "6cfddaac51fcfbf386fc522ba9b8ff53",
+    "semantic_hash": "6cfddaac51fcfbf386fc522ba9b8ff53"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\price-domain.ts": {
+    "mtime": 1786207817.7599506,
+    "ast_hash": "fd865cfd1dc8caf12cbb4bcb6bf87a88",
+    "semantic_hash": "fd865cfd1dc8caf12cbb4bcb6bf87a88"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\service.ts": {
+    "mtime": 1785959523.7867937,
+    "ast_hash": "5a8adb501199fe1e4de3335c6be8a747",
+    "semantic_hash": "5a8adb501199fe1e4de3335c6be8a747"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\types.ts": {
+    "mtime": 1785956529.1185248,
+    "ast_hash": "0dd8ad5413f6e42450f3039a8f6ed287",
+    "semantic_hash": "0dd8ad5413f6e42450f3039a8f6ed287"
+  },
+  "E:\\BoraTradingTool\\lib\\nav.test.ts": {
+    "mtime": 1786030360.2962496,
+    "ast_hash": "49c512e7398f4b8f574d28ae44614cfc",
+    "semantic_hash": "49c512e7398f4b8f574d28ae44614cfc"
+  },
+  "E:\\BoraTradingTool\\lib\\nav.ts": {
+    "mtime": 1786030315.5696166,
+    "ast_hash": "7a65824d562c72267fdd495156caabf2",
+    "semantic_hash": "7a65824d562c72267fdd495156caabf2"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\engine.test.ts": {
+    "mtime": 1785973521.04686,
+    "ast_hash": "2f51b2047aac78847dcb29ed10c43ff9",
+    "semantic_hash": "2f51b2047aac78847dcb29ed10c43ff9"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\engine.ts": {
+    "mtime": 1785973593.77233,
+    "ast_hash": "ad35c1fef6d546488770b686269cc7dd",
+    "semantic_hash": "ad35c1fef6d546488770b686269cc7dd"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\explain.test.ts": {
+    "mtime": 1786088976.2416196,
+    "ast_hash": "9dc67c5068d9635a0312a33472bdc09b",
+    "semantic_hash": "9dc67c5068d9635a0312a33472bdc09b"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\explain.ts": {
+    "mtime": 1786088917.0655813,
+    "ast_hash": "4df5d3dad0b823780d707e648e559d73",
+    "semantic_hash": "4df5d3dad0b823780d707e648e559d73"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\fees.test.ts": {
+    "mtime": 1786002639.4415288,
+    "ast_hash": "b588803d20fc0b3be75bfa9eab6bf53a",
+    "semantic_hash": "b588803d20fc0b3be75bfa9eab6bf53a"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\fees.ts": {
+    "mtime": 1786002569.101274,
+    "ast_hash": "2cc7eec3ece1468d6dd415346a1d8e35",
+    "semantic_hash": "2cc7eec3ece1468d6dd415346a1d8e35"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\loss-memory.test.ts": {
+    "mtime": 1786096000.8058963,
+    "ast_hash": "98d90f427bd86146cae1e28fe57911f3",
+    "semantic_hash": "98d90f427bd86146cae1e28fe57911f3"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\loss-memory.ts": {
+    "mtime": 1786031995.701451,
+    "ast_hash": "0d1eef80dab760b9e9715a95ae7b21b2",
+    "semantic_hash": "0d1eef80dab760b9e9715a95ae7b21b2"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\repository.test.ts": {
+    "mtime": 1785976053.416416,
+    "ast_hash": "edaa420901f80d038184b6de3606be0c",
+    "semantic_hash": "edaa420901f80d038184b6de3606be0c"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\repository.ts": {
+    "mtime": 1785975372.0631907,
+    "ast_hash": "46d7c28c7ad060b4f6aa68af9b1dda5a",
+    "semantic_hash": "46d7c28c7ad060b4f6aa68af9b1dda5a"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\risk.ts": {
+    "mtime": 1785959058.4816887,
+    "ast_hash": "0776ff8695937cb62f62c064b39853ac",
+    "semantic_hash": "0776ff8695937cb62f62c064b39853ac"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\service.ts": {
+    "mtime": 1785975207.553718,
+    "ast_hash": "96eb80edca371d00292a13a8caaacc2a",
+    "semantic_hash": "96eb80edca371d00292a13a8caaacc2a"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\types.ts": {
+    "mtime": 1785975207.5392694,
+    "ast_hash": "11f2851770d060b514d8b2172859828d",
+    "semantic_hash": "11f2851770d060b514d8b2172859828d"
+  },
+  "E:\\BoraTradingTool\\lib\\portfolio\\correlation.test.ts": {
+    "mtime": 1786003063.3271954,
+    "ast_hash": "b1eaa997a2c672aaf5d8657797a0af49",
+    "semantic_hash": "b1eaa997a2c672aaf5d8657797a0af49"
+  },
+  "E:\\BoraTradingTool\\lib\\portfolio\\correlation.ts": {
+    "mtime": 1786003048.5685766,
+    "ast_hash": "9fb7a0e03a663c68e249fb0023c248dc",
+    "semantic_hash": "9fb7a0e03a663c68e249fb0023c248dc"
+  },
+  "E:\\BoraTradingTool\\lib\\premarket\\report.test.ts": {
+    "mtime": 1786020087.517759,
+    "ast_hash": "b26d475d374966dacecbc4d29dd7c899",
+    "semantic_hash": "b26d475d374966dacecbc4d29dd7c899"
+  },
+  "E:\\BoraTradingTool\\lib\\premarket\\report.ts": {
+    "mtime": 1786020030.952555,
+    "ast_hash": "99c7392b84714c230d2f8f591dda8975",
+    "semantic_hash": "99c7392b84714c230d2f8f591dda8975"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\empty.ts": {
+    "mtime": 1785948409.0639672,
+    "ast_hash": "bc0b1f01aacb49efc55c1545a2e1d41c",
+    "semantic_hash": "bc0b1f01aacb49efc55c1545a2e1d41c"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\finnhub.test.ts": {
+    "mtime": 1785972364.5880013,
+    "ast_hash": "d845450164e0550c3effab586a988f1a",
+    "semantic_hash": "d845450164e0550c3effab586a988f1a"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\finnhub.ts": {
+    "mtime": 1786079414.4267988,
+    "ast_hash": "ddf1e017c130bc6f44066fe381420d6f",
+    "semantic_hash": "ddf1e017c130bc6f44066fe381420d6f"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\index.ts": {
+    "mtime": 1785956011.0415206,
+    "ast_hash": "f46363a2685deb62e0cbf0aa3e801cb5",
+    "semantic_hash": "f46363a2685deb62e0cbf0aa3e801cb5"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\market-contract.test.ts": {
+    "mtime": 1785956651.7980368,
+    "ast_hash": "d8ba05543ec90cbf2b1f0a4a04ef57e8",
+    "semantic_hash": "d8ba05543ec90cbf2b1f0a4a04ef57e8"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\types.ts": {
+    "mtime": 1785956651.7890475,
+    "ast_hash": "6660b4aeb01a63f222634ded523a7f48",
+    "semantic_hash": "6660b4aeb01a63f222634ded523a7f48"
+  },
+  "E:\\BoraTradingTool\\lib\\providers\\yahoo.ts": {
+    "mtime": 1786072805.2247741,
+    "ast_hash": "3bffe16c0cfa5de81eee178a37023f88",
+    "semantic_hash": "3bffe16c0cfa5de81eee178a37023f88"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\client.ts": {
+    "mtime": 1786100794.2807703,
+    "ast_hash": "8179e93e48048cdaa39b40a4233eb91a",
+    "semantic_hash": "8179e93e48048cdaa39b40a4233eb91a"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\contract.ts": {
+    "mtime": 1785975207.5627172,
+    "ast_hash": "a012d48d262129abc16a58c46e1feede",
+    "semantic_hash": "a012d48d262129abc16a58c46e1feede"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\filesystem.ts": {
+    "mtime": 1786105867.3171062,
+    "ast_hash": "1144bf7a241b70ed4a2c14b6332adc9d",
+    "semantic_hash": "1144bf7a241b70ed4a2c14b6332adc9d"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\generate.ts": {
+    "mtime": 1786111223.0438817,
+    "ast_hash": "6a8a1d6df7d4584b7a330973d1f1f003",
+    "semantic_hash": "6a8a1d6df7d4584b7a330973d1f1f003"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\local.test.ts": {
+    "mtime": 1786112296.609285,
+    "ast_hash": "bd1d7c70398b2e713ed3ae713e93d896",
+    "semantic_hash": "bd1d7c70398b2e713ed3ae713e93d896"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\quantcore.test.ts": {
+    "mtime": 1786100872.2606692,
+    "ast_hash": "1af442aebd9457d90d1fc4355b3ee579",
+    "semantic_hash": "1af442aebd9457d90d1fc4355b3ee579"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\regime.ts": {
+    "mtime": 1786105796.226768,
+    "ast_hash": "cb4cbdfc61cb226aa86c3e5351c2a731",
+    "semantic_hash": "cb4cbdfc61cb226aa86c3e5351c2a731"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\signals.test.ts": {
+    "mtime": 1786111299.0514157,
+    "ast_hash": "fd1b50a4b812665a320ac95579697d33",
+    "semantic_hash": "fd1b50a4b812665a320ac95579697d33"
+  },
+  "E:\\BoraTradingTool\\lib\\quantcore\\signals.ts": {
+    "mtime": 1786263115.5846753,
+    "ast_hash": "ca4009ee6984a9eed655c554712dd1bf",
+    "semantic_hash": "ca4009ee6984a9eed655c554712dd1bf"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\ablation.test.ts": {
+    "mtime": 1786174966.117602,
+    "ast_hash": "22579f48990f949e683024f7c68f65af",
+    "semantic_hash": "22579f48990f949e683024f7c68f65af"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\ablation.ts": {
+    "mtime": 1786174919.541484,
+    "ast_hash": "16cff4142d2b8c1018d07c4b993ff96b",
+    "semantic_hash": "16cff4142d2b8c1018d07c4b993ff96b"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\ingest.ts": {
+    "mtime": 1785962617.2215488,
+    "ast_hash": "c291a1863de5c5bed10624b36a7963cb",
+    "semantic_hash": "c291a1863de5c5bed10624b36a7963cb"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\queue.ts": {
+    "mtime": 1785962576.7200408,
+    "ast_hash": "ff0794e90b9cd2108e71a134982fe0d6",
+    "semantic_hash": "ff0794e90b9cd2108e71a134982fe0d6"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\research.test.ts": {
+    "mtime": 1785962667.4170127,
+    "ast_hash": "dd85aeeeef42870777afec732c995eef",
+    "semantic_hash": "dd85aeeeef42870777afec732c995eef"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\sources.ts": {
+    "mtime": 1786126232.1366823,
+    "ast_hash": "c02a3724f2c2ba03938dedfc7ff659a6",
+    "semantic_hash": "c02a3724f2c2ba03938dedfc7ff659a6"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\worker.ts": {
+    "mtime": 1785962632.6064987,
+    "ast_hash": "96a92ab9fb03cbffa7ac263ef033a5b0",
+    "semantic_hash": "96a92ab9fb03cbffa7ac263ef033a5b0"
+  },
+  "E:\\BoraTradingTool\\lib\\risk\\gate.test.ts": {
+    "mtime": 1785999428.4650676,
+    "ast_hash": "592b4a9bc814c6b5eb5e4e672f895de6",
+    "semantic_hash": "592b4a9bc814c6b5eb5e4e672f895de6"
+  },
+  "E:\\BoraTradingTool\\lib\\risk\\gate.ts": {
+    "mtime": 1785999370.4701746,
+    "ast_hash": "f934d92b3da99e57dd9cc818acd2718c",
+    "semantic_hash": "f934d92b3da99e57dd9cc818acd2718c"
+  },
+  "E:\\BoraTradingTool\\lib\\scalping\\core.test.ts": {
+    "mtime": 1786009489.500306,
+    "ast_hash": "ea27ff955e6d51045ba655bf06df1a60",
+    "semantic_hash": "ea27ff955e6d51045ba655bf06df1a60"
+  },
+  "E:\\BoraTradingTool\\lib\\scalping\\core.ts": {
+    "mtime": 1786009397.7943826,
+    "ast_hash": "336bf515b340a51bf36a474aa9ec177c",
+    "semantic_hash": "336bf515b340a51bf36a474aa9ec177c"
+  },
+  "E:\\BoraTradingTool\\lib\\security\\request.test.ts": {
+    "mtime": 1786116655.9973638,
+    "ast_hash": "eea7db0700b24296a4247197d7b22c7e",
+    "semantic_hash": "eea7db0700b24296a4247197d7b22c7e"
+  },
+  "E:\\BoraTradingTool\\lib\\security\\request.ts": {
+    "mtime": 1786091699.7045486,
+    "ast_hash": "18a9f2286f8fba9e57eb9746c01bbb25",
+    "semantic_hash": "18a9f2286f8fba9e57eb9746c01bbb25"
+  },
+  "E:\\BoraTradingTool\\lib\\simulation\\battery.test.ts": {
+    "mtime": 1786026898.5714495,
+    "ast_hash": "d965c884c03e68a12b94d0e5be3d07b7",
+    "semantic_hash": "d965c884c03e68a12b94d0e5be3d07b7"
+  },
+  "E:\\BoraTradingTool\\lib\\simulation\\battery.ts": {
+    "mtime": 1786026933.8978193,
+    "ast_hash": "1223030c1404783c35572c44e15d2a3d",
+    "semantic_hash": "1223030c1404783c35572c44e15d2a3d"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\dsl.ts": {
+    "mtime": 1786263200.8250117,
+    "ast_hash": "10b946496db6dc27c33432ac96995924",
+    "semantic_hash": "10b946496db6dc27c33432ac96995924"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\feature-support.test.ts": {
+    "mtime": 1786088097.8922904,
+    "ast_hash": "60192dec54124f846d32e18d4f144970",
+    "semantic_hash": "60192dec54124f846d32e18d4f144970"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\forward.test.ts": {
+    "mtime": 1786123019.0590167,
+    "ast_hash": "5715b3788398dc9da65ddcdbf63b9e21",
+    "semantic_hash": "5715b3788398dc9da65ddcdbf63b9e21"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\forward.ts": {
+    "mtime": 1786123058.4646604,
+    "ast_hash": "03497a71a03ca7c5f830785192b92206",
+    "semantic_hash": "03497a71a03ca7c5f830785192b92206"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\gauntlet-ledger.test.ts": {
+    "mtime": 1785995928.0471811,
+    "ast_hash": "1bedcce748b2b93d74552c7d7c704aff",
+    "semantic_hash": "1bedcce748b2b93d74552c7d7c704aff"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\gauntlet.ts": {
+    "mtime": 1786010668.3462114,
+    "ast_hash": "18bfcf460d0271d30a82df493b2d7a93",
+    "semantic_hash": "18bfcf460d0271d30a82df493b2d7a93"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\graveyard.test.ts": {
+    "mtime": 1786095984.0242772,
+    "ast_hash": "91cee95166af44b7f588da2f969ff61e",
+    "semantic_hash": "91cee95166af44b7f588da2f969ff61e"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\graveyard.ts": {
+    "mtime": 1786026547.1035829,
+    "ast_hash": "c354fee31e422a22473e74cfdf77a7b9",
+    "semantic_hash": "c354fee31e422a22473e74cfdf77a7b9"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\holdout.ts": {
+    "mtime": 1786165799.6442535,
+    "ast_hash": "29cc05a608f80ffde128c3a6f93f926d",
+    "semantic_hash": "29cc05a608f80ffde128c3a6f93f926d"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\intraday.test.ts": {
+    "mtime": 1786121705.4265325,
+    "ast_hash": "a1b4492bb13ed58415cc6732c298c5d7",
+    "semantic_hash": "a1b4492bb13ed58415cc6732c298c5d7"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\lifecycle.test.ts": {
+    "mtime": 1786123549.650672,
+    "ast_hash": "24a87694b4b785d250adc5c2d375ac1d",
+    "semantic_hash": "24a87694b4b785d250adc5c2d375ac1d"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\lifecycle.ts": {
+    "mtime": 1786217133.316508,
+    "ast_hash": "042fe341f6246eab7c4de7125127f8fa",
+    "semantic_hash": "042fe341f6246eab7c4de7125127f8fa"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\promotion.ts": {
+    "mtime": 1786220661.6162903,
+    "ast_hash": "b37fc8119e3683c7702f075193ca4fc3",
+    "semantic_hash": "b37fc8119e3683c7702f075193ca4fc3"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\significance.test.ts": {
+    "mtime": 1786010830.5339708,
+    "ast_hash": "bb73c0f9fa44874ca3abadecda504f66",
+    "semantic_hash": "bb73c0f9fa44874ca3abadecda504f66"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\star-map.test.ts": {
+    "mtime": 1786070245.4999554,
+    "ast_hash": "0edff9d372c2ee19612fddb9c6843642",
+    "semantic_hash": "0edff9d372c2ee19612fddb9c6843642"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\star-map.ts": {
+    "mtime": 1786070214.920418,
+    "ast_hash": "5b30236a563e5e4dbeed6eb245f8a5c9",
+    "semantic_hash": "5b30236a563e5e4dbeed6eb245f8a5c9"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\statistics.ts": {
+    "mtime": 1786010635.6546612,
+    "ast_hash": "4cf7878cc9f593c9e46f70a1c1f93e0d",
+    "semantic_hash": "4cf7878cc9f593c9e46f70a1c1f93e0d"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\strategy.test.ts": {
+    "mtime": 1786010819.7832751,
+    "ast_hash": "269c062b2153070dc926248acef55d3d",
+    "semantic_hash": "269c062b2153070dc926248acef55d3d"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\capabilities.test.ts": {
+    "mtime": 1785966046.532465,
+    "ast_hash": "35c9723fa4c1b56129c2b784f608038c",
+    "semantic_hash": "35c9723fa4c1b56129c2b784f608038c"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\capabilities.ts": {
+    "mtime": 1785955699.5014448,
+    "ast_hash": "fbb720c743cd7093bed9042c353d3b88",
+    "semantic_hash": "fbb720c743cd7093bed9042c353d3b88"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\config.ts": {
+    "mtime": 1785975610.4927433,
+    "ast_hash": "ad52a02ad29b7b75dd4a33b0d04609c0",
+    "semantic_hash": "ad52a02ad29b7b75dd4a33b0d04609c0"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\engine.ts": {
+    "mtime": 1785966046.500326,
+    "ast_hash": "54aa0417701befeddfd567028e49a48c",
+    "semantic_hash": "54aa0417701befeddfd567028e49a48c"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\fence.test.ts": {
+    "mtime": 1785966164.252101,
+    "ast_hash": "777b3776b14f51a89ea5dd8f8f53b006",
+    "semantic_hash": "777b3776b14f51a89ea5dd8f8f53b006"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\fence.ts": {
+    "mtime": 1785966111.649726,
+    "ast_hash": "44211f6126f893ad8921b992174fb3c4",
+    "semantic_hash": "44211f6126f893ad8921b992174fb3c4"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\prices.ts": {
+    "mtime": 1785948409.0798762,
+    "ast_hash": "4cdab0ae0e369c518a2b75adbd52a75e",
+    "semantic_hash": "4cdab0ae0e369c518a2b75adbd52a75e"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\robinhood-portfolio.ts": {
+    "mtime": 1785948409.0889428,
+    "ast_hash": "358fc304cfb71f1c65f59b071134b34e",
+    "semantic_hash": "358fc304cfb71f1c65f59b071134b34e"
+  },
+  "E:\\BoraTradingTool\\lib\\trading\\robinhood.ts": {
+    "mtime": 1785948409.0889428,
+    "ast_hash": "783af4f72bf9f088016f007f4411e740",
+    "semantic_hash": "783af4f72bf9f088016f007f4411e740"
+  },
+  "E:\\BoraTradingTool\\lib\\ui\\panel-state.test.ts": {
+    "mtime": 1786026618.9715455,
+    "ast_hash": "3d527eb2b47f5aedf60550deac7ad89f",
+    "semantic_hash": "3d527eb2b47f5aedf60550deac7ad89f"
+  },
+  "E:\\BoraTradingTool\\lib\\ui\\panel-state.ts": {
+    "mtime": 1786026592.886033,
+    "ast_hash": "6128ad5939c5bc22ebcf9490c190560a",
+    "semantic_hash": "6128ad5939c5bc22ebcf9490c190560a"
+  },
+  "E:\\BoraTradingTool\\lib\\ui\\plot.test.ts": {
+    "mtime": 1786033709.921265,
+    "ast_hash": "32750ff761f5433e5dc719894db1844e",
+    "semantic_hash": "32750ff761f5433e5dc719894db1844e"
+  },
+  "E:\\BoraTradingTool\\lib\\ui\\plot.ts": {
+    "mtime": 1786033679.6762512,
+    "ast_hash": "2a100d4cd36dd8bc16fff0a395f57fa5",
+    "semantic_hash": "2a100d4cd36dd8bc16fff0a395f57fa5"
+  },
+  "E:\\BoraTradingTool\\lib\\util\\stable-json.ts": {
+    "mtime": 1785963077.9717672,
+    "ast_hash": "3a3d171860ba5bf0f866e7dfafc8559a",
+    "semantic_hash": "3a3d171860ba5bf0f866e7dfafc8559a"
+  },
+  "E:\\BoraTradingTool\\lib\\utils.ts": {
+    "mtime": 1785948409.0889428,
+    "ast_hash": "1d8011eb18769078bf77502b220daa5e",
+    "semantic_hash": "1d8011eb18769078bf77502b220daa5e"
+  },
+  "E:\\BoraTradingTool\\mcp\\server.integration.test.ts": {
+    "mtime": 1785973805.3002818,
+    "ast_hash": "83a15b45bd614b2638bd4f3ca4e6137b",
+    "semantic_hash": "83a15b45bd614b2638bd4f3ca4e6137b"
+  },
+  "E:\\BoraTradingTool\\mcp\\server.ts": {
+    "mtime": 1785975826.2408,
+    "ast_hash": "400a55af5ffa951ab6d517233ba992c6",
+    "semantic_hash": "400a55af5ffa951ab6d517233ba992c6"
+  },
+  "E:\\BoraTradingTool\\next.config.ts": {
+    "mtime": 1785948409.09651,
+    "ast_hash": "025f4fcb6024b3524d19492cf7ce54a2",
+    "semantic_hash": "025f4fcb6024b3524d19492cf7ce54a2"
+  },
+  "E:\\BoraTradingTool\\package.json": {
+    "mtime": 1786076061.1229365,
+    "ast_hash": "7e2820d57c8e16ee6cc8f5954207d8f1",
+    "semantic_hash": "7e2820d57c8e16ee6cc8f5954207d8f1"
+  },
+  "E:\\BoraTradingTool\\playwright.config.ts": {
+    "mtime": 1786249829.4872837,
+    "ast_hash": "f44a8f95defe8e05cb2c9d92a134c15d",
+    "semantic_hash": "f44a8f95defe8e05cb2c9d92a134c15d"
+  },
+  "E:\\BoraTradingTool\\postcss.config.mjs": {
+    "mtime": 1785948409.1056037,
+    "ast_hash": "481fac0fdecd70e1821cc30b86030c1a",
+    "semantic_hash": "481fac0fdecd70e1821cc30b86030c1a"
+  },
+  "E:\\BoraTradingTool\\screenshot.mjs": {
+    "mtime": 1785948409.1138928,
+    "ast_hash": "ed80806292c201dca9ba0896ca3432b1",
+    "semantic_hash": "ed80806292c201dca9ba0896ca3432b1"
+  },
+  "E:\\BoraTradingTool\\scripts\\cycle-entry.ts": {
+    "mtime": 1786079275.4672163,
+    "ast_hash": "e333460b95afc0b2a54aa15795865399",
+    "semantic_hash": "e333460b95afc0b2a54aa15795865399"
+  },
+  "E:\\BoraTradingTool\\scripts\\cycle.mjs": {
+    "mtime": 1786079283.184464,
+    "ast_hash": "fb6f95a666fef5a6c50501992ae7037c",
+    "semantic_hash": "fb6f95a666fef5a6c50501992ae7037c"
+  },
+  "E:\\BoraTradingTool\\scripts\\daemon.mjs": {
+    "mtime": 1786079305.5070221,
+    "ast_hash": "36c7af99aa3b065091023e9c5d443c0c",
+    "semantic_hash": "36c7af99aa3b065091023e9c5d443c0c"
+  },
+  "E:\\BoraTradingTool\\scripts\\intake\\humbled-trader-ai-pipeline.ts": {
+    "mtime": 1785989496.6045644,
+    "ast_hash": "db8f48eb2fae117ee01723c70c7a8b47",
+    "semantic_hash": "db8f48eb2fae117ee01723c70c7a8b47"
+  },
+  "E:\\BoraTradingTool\\scripts\\intake\\trade-ideas-scanner.ts": {
+    "mtime": 1785988806.8002787,
+    "ast_hash": "8c0247acd08db722453d4fee5ccc57e3",
+    "semantic_hash": "8c0247acd08db722453d4fee5ccc57e3"
+  },
+  "E:\\BoraTradingTool\\skills-lock.json": {
+    "mtime": 1785948409.1138928,
+    "ast_hash": "2b6a92a80ddf90a70f1fff04fc3f1d94",
+    "semantic_hash": "2b6a92a80ddf90a70f1fff04fc3f1d94"
+  },
+  "E:\\BoraTradingTool\\tsconfig.json": {
+    "mtime": 1785948409.1222932,
+    "ast_hash": "ab575e944f15d39a5486cf9fca385c5e",
+    "semantic_hash": "ab575e944f15d39a5486cf9fca385c5e"
+  },
+  "E:\\BoraTradingTool\\vitest.config.ts": {
+    "mtime": 1785973990.7748144,
+    "ast_hash": "90abdc7e8ad7cba1f7d93eef15fec84d",
+    "semantic_hash": "90abdc7e8ad7cba1f7d93eef15fec84d"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\caveman\\SKILL.md": {
+    "mtime": 1785948408.7480989,
+    "ast_hash": "886dde78199ebaad325ee85f5887d3bf",
+    "semantic_hash": "886dde78199ebaad325ee85f5887d3bf"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\design-an-interface\\SKILL.md": {
+    "mtime": 1785948408.7480989,
+    "ast_hash": "cf16e738a9f79a1726af63c964a1822c",
+    "semantic_hash": "cf16e738a9f79a1726af63c964a1822c"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\diagnose\\SKILL.md": {
+    "mtime": 1785948408.7480989,
+    "ast_hash": "4bcd9cce196b0aa15fd65efe621f9466",
+    "semantic_hash": "4bcd9cce196b0aa15fd65efe621f9466"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\edit-article\\SKILL.md": {
+    "mtime": 1785948408.7568889,
+    "ast_hash": "30cf6f87acee674ae3e49ea842d39ae6",
+    "semantic_hash": "30cf6f87acee674ae3e49ea842d39ae6"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\git-guardrails-claude-code\\SKILL.md": {
+    "mtime": 1785948408.7568889,
+    "ast_hash": "5abe0d431d5fb89e54f42503c35ac0ac",
+    "semantic_hash": "5abe0d431d5fb89e54f42503c35ac0ac"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\grill-me\\SKILL.md": {
+    "mtime": 1785948408.765283,
+    "ast_hash": "0dc3fcbdb6a27228f328ea86f4505c11",
+    "semantic_hash": "0dc3fcbdb6a27228f328ea86f4505c11"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\grill-with-docs\\ADR-FORMAT.md": {
+    "mtime": 1785948408.765283,
+    "ast_hash": "3c49999a3715a7b65fe8521d4bf9e188",
+    "semantic_hash": "3c49999a3715a7b65fe8521d4bf9e188"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\grill-with-docs\\CONTEXT-FORMAT.md": {
+    "mtime": 1785948408.7729146,
+    "ast_hash": "469f1fb6e9e7e94ecb41dc64b6d09032",
+    "semantic_hash": "469f1fb6e9e7e94ecb41dc64b6d09032"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\grill-with-docs\\SKILL.md": {
+    "mtime": 1785948408.7736206,
+    "ast_hash": "db95d43b9f652680bc60a27029e58cd9",
+    "semantic_hash": "db95d43b9f652680bc60a27029e58cd9"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\handoff\\SKILL.md": {
+    "mtime": 1785948408.7736206,
+    "ast_hash": "f446a9106d5064c95dc042dc195cd443",
+    "semantic_hash": "f446a9106d5064c95dc042dc195cd443"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\improve-codebase-architecture\\DEEPENING.md": {
+    "mtime": 1785948408.781174,
+    "ast_hash": "83611866654c9324426ee35d6fb4295e",
+    "semantic_hash": "83611866654c9324426ee35d6fb4295e"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\improve-codebase-architecture\\HTML-REPORT.md": {
+    "mtime": 1785948408.7819757,
+    "ast_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1",
+    "semantic_hash": "6be2b9d4c2c63e5c1671ab0b059ee9a1"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\improve-codebase-architecture\\INTERFACE-DESIGN.md": {
+    "mtime": 1785948408.7819757,
+    "ast_hash": "495dddf4d7f1fed0240811bc71c1d9ea",
+    "semantic_hash": "495dddf4d7f1fed0240811bc71c1d9ea"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\improve-codebase-architecture\\LANGUAGE.md": {
+    "mtime": 1785948408.7819757,
+    "ast_hash": "ba0099d6b60d658b2aff0bba0b41dd3c",
+    "semantic_hash": "ba0099d6b60d658b2aff0bba0b41dd3c"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\improve-codebase-architecture\\SKILL.md": {
+    "mtime": 1785948408.7819757,
+    "ast_hash": "b75525c48539b4aa9dd4ee0cbd287d28",
+    "semantic_hash": "b75525c48539b4aa9dd4ee0cbd287d28"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\migrate-to-shoehorn\\SKILL.md": {
+    "mtime": 1785948408.789638,
+    "ast_hash": "bb6710e9d703efb440278d55c8e26465",
+    "semantic_hash": "bb6710e9d703efb440278d55c8e26465"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\obsidian-vault\\SKILL.md": {
+    "mtime": 1785948408.789638,
+    "ast_hash": "91bf9cdeb97f3b9d98b6815193a0f890",
+    "semantic_hash": "91bf9cdeb97f3b9d98b6815193a0f890"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\prototype\\LOGIC.md": {
+    "mtime": 1785948408.789638,
+    "ast_hash": "a552096fc035656f69b24662c6e2393c",
+    "semantic_hash": "a552096fc035656f69b24662c6e2393c"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\prototype\\SKILL.md": {
+    "mtime": 1785948408.789638,
+    "ast_hash": "95cf5fd1901341044feef57b4eff578e",
+    "semantic_hash": "95cf5fd1901341044feef57b4eff578e"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\prototype\\UI.md": {
+    "mtime": 1785948408.7985544,
+    "ast_hash": "8bce52ff0585f29ed7f613c7e1081031",
+    "semantic_hash": "8bce52ff0585f29ed7f613c7e1081031"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\qa\\SKILL.md": {
+    "mtime": 1785948408.7985544,
+    "ast_hash": "d9b215ed1149ab82ab408a54e8167c24",
+    "semantic_hash": "d9b215ed1149ab82ab408a54e8167c24"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\request-refactor-plan\\SKILL.md": {
+    "mtime": 1785948408.7985544,
+    "ast_hash": "a1c09824559ee760282abcffafce50bf",
+    "semantic_hash": "a1c09824559ee760282abcffafce50bf"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\review\\SKILL.md": {
+    "mtime": 1785948408.80678,
+    "ast_hash": "1a6fdf6c2150c2f4a7c10a4b0e0998b4",
+    "semantic_hash": "1a6fdf6c2150c2f4a7c10a4b0e0998b4"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\scaffold-exercises\\SKILL.md": {
+    "mtime": 1785948408.80678,
+    "ast_hash": "5063ddc13f1ee462abf1584c9adb5071",
+    "semantic_hash": "5063ddc13f1ee462abf1584c9adb5071"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\SKILL.md": {
+    "mtime": 1785948408.80678,
+    "ast_hash": "9bcdaee1739974ac0ef2679b72f90f09",
+    "semantic_hash": "9bcdaee1739974ac0ef2679b72f90f09"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\domain.md": {
+    "mtime": 1785948408.8153083,
+    "ast_hash": "39ab51eb45bcf3fc62713953acbaf5f4",
+    "semantic_hash": "39ab51eb45bcf3fc62713953acbaf5f4"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-github.md": {
+    "mtime": 1785948408.8153083,
+    "ast_hash": "17c36a36e7bcda4dc814bda9bfa13438",
+    "semantic_hash": "17c36a36e7bcda4dc814bda9bfa13438"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-gitlab.md": {
+    "mtime": 1785948408.8153083,
+    "ast_hash": "3b6a15cfbd5c0a2f4b5379125a638be3",
+    "semantic_hash": "3b6a15cfbd5c0a2f4b5379125a638be3"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\issue-tracker-local.md": {
+    "mtime": 1785948408.8153083,
+    "ast_hash": "1bd6a2003a877f2cece3fd0c45271d8e",
+    "semantic_hash": "1bd6a2003a877f2cece3fd0c45271d8e"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-matt-pocock-skills\\triage-labels.md": {
+    "mtime": 1785948408.8235712,
+    "ast_hash": "85409347dbf487c8a25c9dac59708b83",
+    "semantic_hash": "85409347dbf487c8a25c9dac59708b83"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\setup-pre-commit\\SKILL.md": {
+    "mtime": 1785948408.8235712,
+    "ast_hash": "9dc09e107a2cc5eb0063648442034fed",
+    "semantic_hash": "9dc09e107a2cc5eb0063648442034fed"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\SKILL.md": {
+    "mtime": 1785948408.8235712,
+    "ast_hash": "06c57edca8db6db8f64c203c60a22de8",
+    "semantic_hash": "06c57edca8db6db8f64c203c60a22de8"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\deep-modules.md": {
+    "mtime": 1785948408.8306258,
+    "ast_hash": "b5ab090a761366ce3c2c02117b776445",
+    "semantic_hash": "b5ab090a761366ce3c2c02117b776445"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\interface-design.md": {
+    "mtime": 1785948408.8326457,
+    "ast_hash": "bcd6f09692098ec7a748a7d98e99d3ea",
+    "semantic_hash": "bcd6f09692098ec7a748a7d98e99d3ea"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\mocking.md": {
+    "mtime": 1785948408.8326457,
+    "ast_hash": "d5bba1ea1f387c4809b7dc7c4e75c862",
+    "semantic_hash": "d5bba1ea1f387c4809b7dc7c4e75c862"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\refactoring.md": {
+    "mtime": 1785948408.8326457,
+    "ast_hash": "e8a3e0973fa19f267a836fa6edc195ad",
+    "semantic_hash": "e8a3e0973fa19f267a836fa6edc195ad"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\tdd\\tests.md": {
+    "mtime": 1785948408.8390598,
+    "ast_hash": "2927904135046181aae6793038e5f6c7",
+    "semantic_hash": "2927904135046181aae6793038e5f6c7"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\teach\\GLOSSARY-FORMAT.md": {
+    "mtime": 1785948408.8397737,
+    "ast_hash": "a15734f0ad2f1e102857ddca8094f5de",
+    "semantic_hash": "a15734f0ad2f1e102857ddca8094f5de"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\teach\\LEARNING-RECORD-FORMAT.md": {
+    "mtime": 1785948408.8397737,
+    "ast_hash": "8ac3327c5a8d651720c122af846b56ce",
+    "semantic_hash": "8ac3327c5a8d651720c122af846b56ce"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\teach\\MISSION-FORMAT.md": {
+    "mtime": 1785948408.8397737,
+    "ast_hash": "74558aa55a361a085a4296d82a6f5c15",
+    "semantic_hash": "74558aa55a361a085a4296d82a6f5c15"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\teach\\RESOURCES-FORMAT.md": {
+    "mtime": 1785948408.848009,
+    "ast_hash": "7b0bb9b26642cca495d09c18bb05c56f",
+    "semantic_hash": "7b0bb9b26642cca495d09c18bb05c56f"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\teach\\SKILL.md": {
+    "mtime": 1785948408.848009,
+    "ast_hash": "446d3ed7ddde6942ff9c590a3e29500c",
+    "semantic_hash": "446d3ed7ddde6942ff9c590a3e29500c"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\to-issues\\SKILL.md": {
+    "mtime": 1785948408.848009,
+    "ast_hash": "cd3376e187889fea2a1cc2b3fdc11eb3",
+    "semantic_hash": "cd3376e187889fea2a1cc2b3fdc11eb3"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\to-prd\\SKILL.md": {
+    "mtime": 1785948408.848009,
+    "ast_hash": "29475ed5ecf0e1ee27ee0b11d4474134",
+    "semantic_hash": "29475ed5ecf0e1ee27ee0b11d4474134"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\triage\\AGENT-BRIEF.md": {
+    "mtime": 1785948408.8564808,
+    "ast_hash": "743cbec88c3c67a94ef095d3d59b6ddb",
+    "semantic_hash": "743cbec88c3c67a94ef095d3d59b6ddb"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\triage\\OUT-OF-SCOPE.md": {
+    "mtime": 1785948408.8564808,
+    "ast_hash": "da53d011d956415baf313fb2f6d70fbd",
+    "semantic_hash": "da53d011d956415baf313fb2f6d70fbd"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\triage\\SKILL.md": {
+    "mtime": 1785948408.8564808,
+    "ast_hash": "809533f5d59e313345d4f9a1c99e9b95",
+    "semantic_hash": "809533f5d59e313345d4f9a1c99e9b95"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\ubiquitous-language\\SKILL.md": {
+    "mtime": 1785948408.8564808,
+    "ast_hash": "5763b037f622c987c87e0a0b5626a1b8",
+    "semantic_hash": "5763b037f622c987c87e0a0b5626a1b8"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\write-a-skill\\SKILL.md": {
+    "mtime": 1785948408.8646572,
+    "ast_hash": "beabe48024b635f44b1775265c777490",
+    "semantic_hash": "beabe48024b635f44b1775265c777490"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\writing-beats\\SKILL.md": {
+    "mtime": 1785948408.8646572,
+    "ast_hash": "f715553c4cd70241043d10f12444201c",
+    "semantic_hash": "f715553c4cd70241043d10f12444201c"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\writing-fragments\\SKILL.md": {
+    "mtime": 1785948408.8646572,
+    "ast_hash": "34c96f4b03c62158c2a94bb4f7aba551",
+    "semantic_hash": "34c96f4b03c62158c2a94bb4f7aba551"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\writing-shape\\SKILL.md": {
+    "mtime": 1785948408.8731723,
+    "ast_hash": "92a97b81ff95df4d509f67b63c70ab0f",
+    "semantic_hash": "92a97b81ff95df4d509f67b63c70ab0f"
+  },
+  "E:\\BoraTradingTool\\.agents\\skills\\zoom-out\\SKILL.md": {
+    "mtime": 1785948408.8731723,
+    "ast_hash": "d7610fc22629360bdc078e0e5c255d0f",
+    "semantic_hash": "d7610fc22629360bdc078e0e5c255d0f"
+  },
+  "E:\\BoraTradingTool\\.claude\\agents\\quant-validator.md": {
+    "mtime": 1785964360.402644,
+    "ast_hash": "02986d88d8691366e568171e85fb861a",
+    "semantic_hash": "02986d88d8691366e568171e85fb861a"
+  },
+  "E:\\BoraTradingTool\\.claude\\agents\\repo-auditor.md": {
+    "mtime": 1785964406.511174,
+    "ast_hash": "f458e93e6cb257533ab39df6cf13dfc0",
+    "semantic_hash": "f458e93e6cb257533ab39df6cf13dfc0"
+  },
+  "E:\\BoraTradingTool\\.claude\\skills\\analyse-instrument\\SKILL.md": {
+    "mtime": 1785964262.887305,
+    "ast_hash": "49af84980c0a7e4e7484b8165ff55a72",
+    "semantic_hash": "49af84980c0a7e4e7484b8165ff55a72"
+  },
+  "E:\\BoraTradingTool\\.claude\\skills\\ingest-research\\SKILL.md": {
+    "mtime": 1785964288.4657605,
+    "ast_hash": "ff252528bfdc23fbad0952586e69cef6",
+    "semantic_hash": "ff252528bfdc23fbad0952586e69cef6"
+  },
+  "E:\\BoraTradingTool\\.claude\\skills\\validate-strategy\\SKILL.md": {
+    "mtime": 1785964313.695404,
+    "ast_hash": "8282ddfbef41fb555f4ff41757929b0e",
+    "semantic_hash": "8282ddfbef41fb555f4ff41757929b0e"
+  },
+  "E:\\BoraTradingTool\\.github\\workflows\\ci.yml": {
+    "mtime": 1785985308.2155554,
+    "ast_hash": "5c14e8148f9ec53220b0bb150e6ff94c",
+    "semantic_hash": "5c14e8148f9ec53220b0bb150e6ff94c"
+  },
+  "E:\\BoraTradingTool\\AGENTS.md": {
+    "mtime": 1785987120.8195841,
+    "ast_hash": "3ad29ed1c7e1970f724e872fcffc4909",
+    "semantic_hash": "3ad29ed1c7e1970f724e872fcffc4909"
+  },
+  "E:\\BoraTradingTool\\CLAUDE.md": {
+    "mtime": 1785973805.297282,
+    "ast_hash": "222789307e1413da37789b2a244baca8",
+    "semantic_hash": "222789307e1413da37789b2a244baca8"
+  },
+  "E:\\BoraTradingTool\\CONTEXT.md": {
+    "mtime": 1785976089.4920397,
+    "ast_hash": "c9ea5ff0d1c4a450f3f56e5970a3c336",
+    "semantic_hash": "c9ea5ff0d1c4a450f3f56e5970a3c336"
+  },
+  "E:\\BoraTradingTool\\README.md": {
+    "mtime": 1785970967.2346227,
+    "ast_hash": "aa0adcd245d8078a4f17e892f5e37908",
+    "semantic_hash": "aa0adcd245d8078a4f17e892f5e37908"
+  },
+  "E:\\BoraTradingTool\\SETUP.md": {
+    "mtime": 1785976089.4910412,
+    "ast_hash": "dc84034b74c470b4f73d810a9922bbf5",
+    "semantic_hash": "dc84034b74c470b4f73d810a9922bbf5"
+  },
+  "E:\\BoraTradingTool\\docs\\ARCHITECTURE.md": {
+    "mtime": 1786029300.7432032,
+    "ast_hash": "66866c9db9a5ab584e9114d759d1241d",
+    "semantic_hash": "66866c9db9a5ab584e9114d759d1241d"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-06_GAP.md": {
+    "mtime": 1786071728.2177286,
+    "ast_hash": "6bc0ed01c04a36c80451887705f0c579",
+    "semantic_hash": "6bc0ed01c04a36c80451887705f0c579"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_COMPREHENSIVE.md": {
+    "mtime": 1786075952.674427,
+    "ast_hash": "cb82735131cb207e46375ca6c7c05456",
+    "semantic_hash": "cb82735131cb207e46375ca6c7c05456"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_DEEP_QUANT_DB_PASS.md": {
+    "mtime": 1786084113.1337566,
+    "ast_hash": "d3eb294593bab3948257e2180135819f",
+    "semantic_hash": "d3eb294593bab3948257e2180135819f"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_FULL_RESEARCH_AUDIT.md": {
+    "mtime": 1786107055.7316077,
+    "ast_hash": "6e80557b8c1497238c966868a6ae76c7",
+    "semantic_hash": "6e80557b8c1497238c966868a6ae76c7"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_FULL_RESEARCH_AUDIT_V2.md": {
+    "mtime": 1786112961.1397502,
+    "ast_hash": "a0549159f5854ac3f7e72f53c5f6d114",
+    "semantic_hash": "a0549159f5854ac3f7e72f53c5f6d114"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_LEARNING_FEATURE.md": {
+    "mtime": 1786106978.7716105,
+    "ast_hash": "6a84c1f8a63358a9119d4ed96b310fcf",
+    "semantic_hash": "6a84c1f8a63358a9119d4ed96b310fcf"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_2026-08-07_RESEARCH_ANNEX.md": {
+    "mtime": 1786077064.0161688,
+    "ast_hash": "b7f1476c9a797fc249c814fe3035f6f1",
+    "semantic_hash": "b7f1476c9a797fc249c814fe3035f6f1"
+  },
+  "E:\\BoraTradingTool\\docs\\AUDIT_TRIAGE_2026-08-06_DELTA.md": {
+    "mtime": 1786010876.241702,
+    "ast_hash": "b4366eafbfaf1f35cf016101314807ca",
+    "semantic_hash": "b4366eafbfaf1f35cf016101314807ca"
+  },
+  "E:\\BoraTradingTool\\docs\\BUILD_LOG.md": {
+    "mtime": 1786113869.936157,
+    "ast_hash": "0fe38552eb9db5baea13915634fed4b8",
+    "semantic_hash": "0fe38552eb9db5baea13915634fed4b8"
+  },
+  "E:\\BoraTradingTool\\docs\\CONTRACT_QUANTCORE_V1.md": {
+    "mtime": 1785961141.8031943,
+    "ast_hash": "0a552f03f545791ebe0e568cd21547d0",
+    "semantic_hash": "0a552f03f545791ebe0e568cd21547d0"
+  },
+  "E:\\BoraTradingTool\\docs\\DATA_QUALITY_ANALYSIS.md": {
+    "mtime": 1786115127.8650243,
+    "ast_hash": "da24f8bbe57197e1bf710f4cce01b63a",
+    "semantic_hash": "da24f8bbe57197e1bf710f4cce01b63a"
+  },
+  "E:\\BoraTradingTool\\docs\\GOAL.md": {
+    "mtime": 1786072443.9116795,
+    "ast_hash": "3e335c805b8d03a0a7bbd406fdad6382",
+    "semantic_hash": "3e335c805b8d03a0a7bbd406fdad6382"
+  },
+  "E:\\BoraTradingTool\\docs\\KRONOS_RUNNER.md": {
+    "mtime": 1786023660.767043,
+    "ast_hash": "8526f2987b856f8dcc0f50382b7c8d1c",
+    "semantic_hash": "8526f2987b856f8dcc0f50382b7c8d1c"
+  },
+  "E:\\BoraTradingTool\\docs\\MASTER_ARCHITECTURE.md": {
+    "mtime": 1786002691.4958518,
+    "ast_hash": "1e8a8125e8e9a2955c9669ae3e436781",
+    "semantic_hash": "1e8a8125e8e9a2955c9669ae3e436781"
+  },
+  "E:\\BoraTradingTool\\docs\\MASTER_PLAN.md": {
+    "mtime": 1785965037.5358515,
+    "ast_hash": "813aaff91b00a9824f7afa6782022267",
+    "semantic_hash": "813aaff91b00a9824f7afa6782022267"
+  },
+  "E:\\BoraTradingTool\\docs\\PHASES_REMAINING.md": {
+    "mtime": 1786026980.7714608,
+    "ast_hash": "2aea6427ac9c41df3df710895b128378",
+    "semantic_hash": "2aea6427ac9c41df3df710895b128378"
+  },
+  "E:\\BoraTradingTool\\docs\\PLAN_PREMARKET_AND_BACKTEST_HARDENING.md": {
+    "mtime": 1786020936.4877017,
+    "ast_hash": "a1b24bf361f4b996ef44a74d83712f26",
+    "semantic_hash": "a1b24bf361f4b996ef44a74d83712f26"
+  },
+  "E:\\BoraTradingTool\\docs\\QUANT_CORE_LOCAL.md": {
+    "mtime": 1786107326.1016955,
+    "ast_hash": "b781d24e9ba4e370feff9f1e5e00ed0d",
+    "semantic_hash": "b781d24e9ba4e370feff9f1e5e00ed0d"
+  },
+  "E:\\BoraTradingTool\\docs\\REQUIREMENTS.md": {
+    "mtime": 1786072460.3565383,
+    "ast_hash": "3a4c1446e4ec2326faf262f94f9619f5",
+    "semantic_hash": "3a4c1446e4ec2326faf262f94f9619f5"
+  },
+  "E:\\BoraTradingTool\\docs\\RESEARCH_MARKET_DATA_SOURCES.md": {
+    "mtime": 1786115204.8506756,
+    "ast_hash": "3ad2bc9836532073cebc3841b036cfa7",
+    "semantic_hash": "3ad2bc9836532073cebc3841b036cfa7"
+  },
+  "E:\\BoraTradingTool\\docs\\RESEARCH_PROMPTS_V2.md": {
+    "mtime": 1786168354.2165942,
+    "ast_hash": "66d7f95da7bdb344b527e17f37e0a640",
+    "semantic_hash": "66d7f95da7bdb344b527e17f37e0a640"
+  },
+  "E:\\BoraTradingTool\\docs\\RESEARCH_PROMPT_MASTER_V3.md": {
+    "mtime": 1786176160.0898256,
+    "ast_hash": "325ec16aad2b42b6e2c5040502b1b56b",
+    "semantic_hash": "325ec16aad2b42b6e2c5040502b1b56b"
+  },
+  "E:\\BoraTradingTool\\docs\\RUNBOOK.md": {
+    "mtime": 1785976089.4920397,
+    "ast_hash": "2cfef20a9faca6a532f3d80a2fe75515",
+    "semantic_hash": "2cfef20a9faca6a532f3d80a2fe75515"
+  },
+  "E:\\BoraTradingTool\\docs\\SESSION_2026-08-07_MASTER_SUMMARY.md": {
+    "mtime": 1786166864.2912693,
+    "ast_hash": "2887f92fd3952e059ebc3112066035cb",
+    "semantic_hash": "2887f92fd3952e059ebc3112066035cb"
+  },
+  "E:\\BoraTradingTool\\docs\\STRUCTURE.md": {
+    "mtime": 1786029408.5062864,
+    "ast_hash": "e36afe5c98d5f68127c7389c0bc4ad89",
+    "semantic_hash": "e36afe5c98d5f68127c7389c0bc4ad89"
+  },
+  "E:\\BoraTradingTool\\docs\\VALIDATION_RUNBOOK.md": {
+    "mtime": 1786027678.912461,
+    "ast_hash": "ade459d19718e1e294e9700890c8f00c",
+    "semantic_hash": "ade459d19718e1e294e9700890c8f00c"
+  },
+  "E:\\BoraTradingTool\\docs\\WIREFRAMES.md": {
+    "mtime": 1786029372.831912,
+    "ast_hash": "c8641522c10b3709c4ce9a71a4a64f3c",
+    "semantic_hash": "c8641522c10b3709c4ce9a71a4a64f3c"
+  },
+  "E:\\BoraTradingTool\\docs\\adr\\0001-autonomous-trading.md": {
+    "mtime": 1785966164.260338,
+    "ast_hash": "756ca2a8f83616a365252b99acdf8401",
+    "semantic_hash": "756ca2a8f83616a365252b99acdf8401"
+  },
+  "E:\\BoraTradingTool\\docs\\adr\\0002-remove-paper-trading.md": {
+    "mtime": 1785966164.26134,
+    "ast_hash": "e048ee7445392f96ad091397e2ef0fc0",
+    "semantic_hash": "e048ee7445392f96ad091397e2ef0fc0"
+  },
+  "E:\\BoraTradingTool\\docs\\adr\\0003-paper-research-and-manual-execution-boundary.md": {
+    "mtime": 1785966111.695795,
+    "ast_hash": "71fca0beed41e86e73c57db7e06dc94b",
+    "semantic_hash": "71fca0beed41e86e73c57db7e06dc94b"
+  },
+  "E:\\BoraTradingTool\\docs\\adr\\0004-kronos-forecast-intake.md": {
+    "mtime": 1786021855.735913,
+    "ast_hash": "89316dc2131e5f4142c5e94745e2d5f1",
+    "semantic_hash": "89316dc2131e5f4142c5e94745e2d5f1"
+  },
+  "E:\\BoraTradingTool\\docs\\adr\\0005-instrument-scope.md": {
+    "mtime": 1786072425.7365482,
+    "ast_hash": "1f167848f3dec1fbdac28edbef158465",
+    "semantic_hash": "1f167848f3dec1fbdac28edbef158465"
+  },
+  "E:\\BoraTradingTool\\docs\\superpowers\\plans\\2026-08-05-marketpulse-complete-upgrade.md": {
+    "mtime": 1785954981.024721,
+    "ast_hash": "d9edf9e084d9a7127087d1c5c1f1ccde",
+    "semantic_hash": "d9edf9e084d9a7127087d1c5c1f1ccde"
+  },
+  "E:\\BoraTradingTool\\docs\\superpowers\\specs\\2026-08-05-ai-mcp-extension-design.md": {
+    "mtime": 1785954627.647699,
+    "ast_hash": "21d34f7ce332622cae384e66930445ad",
+    "semantic_hash": "21d34f7ce332622cae384e66930445ad"
+  },
+  "E:\\BoraTradingTool\\docs\\superpowers\\specs\\2026-08-05-multi-market-upgrade-design.md": {
+    "mtime": 1785954627.6164975,
+    "ast_hash": "a57df2fb04839e399d1588b5553b6fee",
+    "semantic_hash": "a57df2fb04839e399d1588b5553b6fee"
+  },
+  "E:\\BoraTradingTool\\dashboard-live.png": {
+    "mtime": 1786009242.3744552,
+    "ast_hash": "d3932512bf76076639d325e9f62b6b0e",
+    "semantic_hash": "d3932512bf76076639d325e9f62b6b0e"
+  },
+  "E:\\BoraTradingTool\\memory-map.png": {
+    "mtime": 1786020803.3268661,
+    "ast_hash": "966b8214514c2303f2e3663170c9b196",
+    "semantic_hash": "966b8214514c2303f2e3663170c9b196"
+  },
+  "E:\\BoraTradingTool\\public\\file.svg": {
+    "mtime": 1785948409.1056037,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "E:\\BoraTradingTool\\public\\globe.svg": {
+    "mtime": 1785948409.1131823,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "E:\\BoraTradingTool\\public\\next.svg": {
+    "mtime": 1785948409.1138928,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "E:\\BoraTradingTool\\public\\vercel.svg": {
+    "mtime": 1785948409.1138928,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "E:\\BoraTradingTool\\public\\window.svg": {
+    "mtime": 1785948409.1138928,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\broker.test.ts": {
+    "mtime": 1786210826.9029293,
+    "ast_hash": "cb59756b8dea9e5b2402c17284692199",
+    "semantic_hash": "cb59756b8dea9e5b2402c17284692199"
+  },
+  "E:\\BoraTradingTool\\lib\\execution\\broker.ts": {
+    "mtime": 1786210916.532143,
+    "ast_hash": "b7b04d48545f3bba561b97f7c8655f78",
+    "semantic_hash": "b7b04d48545f3bba561b97f7c8655f78"
+  },
+  "E:\\BoraTradingTool\\lib\\nav-coverage.test.ts": {
+    "mtime": 1786217975.7818842,
+    "ast_hash": "a5e55619017d3ae2ab0bc8e1e01852bd",
+    "semantic_hash": "a5e55619017d3ae2ab0bc8e1e01852bd"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\capital.test.ts": {
+    "mtime": 1786215424.6840484,
+    "ast_hash": "4d3b158e495c42f3030e0d03ffa2697f",
+    "semantic_hash": "4d3b158e495c42f3030e0d03ffa2697f"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\capital.ts": {
+    "mtime": 1786215370.8563693,
+    "ast_hash": "f3549c60321fa14e82689936c8e5ed06",
+    "semantic_hash": "f3549c60321fa14e82689936c8e5ed06"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\cost-model.test.ts": {
+    "mtime": 1786213499.7155368,
+    "ast_hash": "68a8113a670c81e80057e93dd79dea01",
+    "semantic_hash": "68a8113a670c81e80057e93dd79dea01"
+  },
+  "E:\\BoraTradingTool\\lib\\paper\\cost-model.ts": {
+    "mtime": 1786213270.671152,
+    "ast_hash": "ff647fa688e43ca5baf713242553130b",
+    "semantic_hash": "ff647fa688e43ca5baf713242553130b"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\producer.test.ts": {
+    "mtime": 1786216292.0563953,
+    "ast_hash": "7a273ec9a1dc5d328c4be7e98ee14418",
+    "semantic_hash": "7a273ec9a1dc5d328c4be7e98ee14418"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\producer.ts": {
+    "mtime": 1786253041.049019,
+    "ast_hash": "5f082b941be7166c4c8d2f7c2b5e0aa4",
+    "semantic_hash": "5f082b941be7166c4c8d2f7c2b5e0aa4"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\cost-gate.test.ts": {
+    "mtime": 1786217206.3642018,
+    "ast_hash": "6f2e0fe5d3053b93d5f6a98e491b91f1",
+    "semantic_hash": "6f2e0fe5d3053b93d5f6a98e491b91f1"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\cost-gate.ts": {
+    "mtime": 1786217089.2659442,
+    "ast_hash": "6f678bde941eae45b5eaabb892eea2c0",
+    "semantic_hash": "6f678bde941eae45b5eaabb892eea2c0"
+  },
+  "E:\\BoraTradingTool\\quant\\kronos_runner.py": {
+    "mtime": 1786216079.4597838,
+    "ast_hash": "278fa23ce5ed43aeee616434ccd967fe",
+    "semantic_hash": "278fa23ce5ed43aeee616434ccd967fe"
+  },
+  "E:\\BoraTradingTool\\scripts\\forecast-manifest.mts": {
+    "mtime": 1786215759.2274208,
+    "ast_hash": "52a9a7c3e1ed5ba4506c52f7a0f8f79e",
+    "semantic_hash": "52a9a7c3e1ed5ba4506c52f7a0f8f79e"
+  },
+  "E:\\BoraTradingTool\\scripts\\set-paper-capital.mts": {
+    "mtime": 1786218172.5211933,
+    "ast_hash": "acaad141d244318ef9dc964e33722735",
+    "semantic_hash": "acaad141d244318ef9dc964e33722735"
+  },
+  "E:\\BoraTradingTool\\docs\\OWNER_BRIEF_AND_PLAN_2026-08-08.md": {
+    "mtime": 1786215498.6844,
+    "ast_hash": "dd746c16cc0c475b185c7d239632fca9",
+    "semantic_hash": "dd746c16cc0c475b185c7d239632fca9"
+  },
+  "E:\\BoraTradingTool\\components\\forecast\\ForecastValidationPanel.tsx": {
+    "mtime": 1786221491.6861067,
+    "ast_hash": "d7112513808e9b0a8f63b2b1e766f997",
+    "semantic_hash": "d7112513808e9b0a8f63b2b1e766f997"
+  },
+  "E:\\BoraTradingTool\\components\\market\\IntradayDepthPanel.tsx": {
+    "mtime": 1786257839.4738183,
+    "ast_hash": "2751805706694d41d62efa2c2601c110",
+    "semantic_hash": "2751805706694d41d62efa2c2601c110"
+  },
+  "E:\\BoraTradingTool\\components\\paper\\CostViabilityPanel.tsx": {
+    "mtime": 1786221348.866861,
+    "ast_hash": "207492d919c5fc5e5cb68ccf51a3d0e4",
+    "semantic_hash": "207492d919c5fc5e5cb68ccf51a3d0e4"
+  },
+  "E:\\BoraTradingTool\\drizzle\\0007_rehearsal_outcomes.sql": {
+    "mtime": 1786220584.5422678,
+    "ast_hash": "7a031564f19fdeeac4577de1b4395989",
+    "semantic_hash": "7a031564f19fdeeac4577de1b4395989"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\live.test.ts": {
+    "mtime": 1786219370.956782,
+    "ast_hash": "0e6cf2f18241f4033eb750debbf3f066",
+    "semantic_hash": "0e6cf2f18241f4033eb750debbf3f066"
+  },
+  "E:\\BoraTradingTool\\lib\\forecast\\live.ts": {
+    "mtime": 1786220085.2770498,
+    "ast_hash": "48a90fd706c3f96a3df729364cbc3ead",
+    "semantic_hash": "48a90fd706c3f96a3df729364cbc3ead"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\self-repair.test.ts": {
+    "mtime": 1786242363.915298,
+    "ast_hash": "8fe2ac53933629e8427b9947017a0a0b",
+    "semantic_hash": "8fe2ac53933629e8427b9947017a0a0b"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\self-repair.ts": {
+    "mtime": 1786242258.2681863,
+    "ast_hash": "66313976217c5e76fba7950998bc0cc7",
+    "semantic_hash": "66313976217c5e76fba7950998bc0cc7"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\intraday-accumulator.test.ts": {
+    "mtime": 1786248406.819602,
+    "ast_hash": "693dd6caf4858814ea96737830c81f94",
+    "semantic_hash": "693dd6caf4858814ea96737830c81f94"
+  },
+  "E:\\BoraTradingTool\\lib\\market\\intraday-accumulator.ts": {
+    "mtime": 1786248285.6009817,
+    "ast_hash": "ad15180192bd0aa65bb8e166f347c3a8",
+    "semantic_hash": "ad15180192bd0aa65bb8e166f347c3a8"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\forward-driver.ts": {
+    "mtime": 1786221692.1908545,
+    "ast_hash": "63a645c92d4d3fc4569ad64db0c5297e",
+    "semantic_hash": "63a645c92d4d3fc4569ad64db0c5297e"
+  },
+  "E:\\BoraTradingTool\\scripts\\repair-strategy-costs.mts": {
+    "mtime": 1786220245.8820558,
+    "ast_hash": "cc9d69d9e4abdd3d0fd13513aa467056",
+    "semantic_hash": "cc9d69d9e4abdd3d0fd13513aa467056"
+  },
+  "E:\\BoraTradingTool\\e2e\\engines.spec.ts": {
+    "mtime": 1786258224.1190314,
+    "ast_hash": "989d70d37868653734d4d42519744986",
+    "semantic_hash": "989d70d37868653734d4d42519744986"
+  },
+  "E:\\BoraTradingTool\\e2e\\interaction.spec.ts": {
+    "mtime": 1786257119.3608122,
+    "ast_hash": "c68b30862d1137eb33351ebcc4110024",
+    "semantic_hash": "c68b30862d1137eb33351ebcc4110024"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\session-features.test.ts": {
+    "mtime": 1786263466.3408315,
+    "ast_hash": "5fb5ad6142ecaa8b8ebe13eae58160ea",
+    "semantic_hash": "5fb5ad6142ecaa8b8ebe13eae58160ea"
+  },
+  "E:\\BoraTradingTool\\lib\\backtest\\square-off.test.ts": {
+    "mtime": 1786263415.5033646,
+    "ast_hash": "dacbdeea2ca6c0ef7b305530e6a57430",
+    "semantic_hash": "dacbdeea2ca6c0ef7b305530e6a57430"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\cycle.resolution.test.ts": {
+    "mtime": 1786264267.7250702,
+    "ast_hash": "90f4617c9540a98009aab02e4cbba21a",
+    "semantic_hash": "90f4617c9540a98009aab02e4cbba21a"
+  },
+  "E:\\BoraTradingTool\\lib\\learning\\dataset.resolution.test.ts": {
+    "mtime": 1786260943.1545432,
+    "ast_hash": "ec41a613d0be877c08a790d967172d8c",
+    "semantic_hash": "ec41a613d0be877c08a790d967172d8c"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\strategy-catalog.test.ts": {
+    "mtime": 1786252975.2332127,
+    "ast_hash": "9643a7634655053f4b1d9ef6e1ef3f34",
+    "semantic_hash": "9643a7634655053f4b1d9ef6e1ef3f34"
+  },
+  "E:\\BoraTradingTool\\lib\\research\\strategy-catalog.ts": {
+    "mtime": 1786253102.6722448,
+    "ast_hash": "2d49b1cae68392641df4b50b96c3369e",
+    "semantic_hash": "2d49b1cae68392641df4b50b96c3369e"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\auto-gauntlet.test.ts": {
+    "mtime": 1786264089.0128903,
+    "ast_hash": "329cc50db4c5c91f585a8d5e0f32693d",
+    "semantic_hash": "329cc50db4c5c91f585a8d5e0f32693d"
+  },
+  "E:\\BoraTradingTool\\lib\\strategy\\auto-gauntlet.ts": {
+    "mtime": 1786263826.8634808,
+    "ast_hash": "b54a52af42e1524580cc5c087a1849e9",
+    "semantic_hash": "b54a52af42e1524580cc5c087a1849e9"
+  },
+  "E:\\BoraTradingTool\\quant\\nse_history.py": {
+    "mtime": 1786252754.5274572,
+    "ast_hash": "872045cd2be1552c4756985b850e7b2e",
+    "semantic_hash": "872045cd2be1552c4756985b850e7b2e"
+  },
+  "E:\\BoraTradingTool\\quant\\probe_more_sources.py": {
+    "mtime": 1786257641.4482791,
+    "ast_hash": "4f5480ef35fefc54634dcb0114ab8c33",
+    "semantic_hash": "4f5480ef35fefc54634dcb0114ab8c33"
+  },
+  "E:\\BoraTradingTool\\quant\\probe_nse_depth.py": {
+    "mtime": 1786252537.829863,
+    "ast_hash": "5a9badd6b390156572fe2d4fafc1fdb7",
+    "semantic_hash": "5a9badd6b390156572fe2d4fafc1fdb7"
+  },
+  "E:\\BoraTradingTool\\quant\\tv_history.py": {
+    "mtime": 1786262503.3621516,
+    "ast_hash": "3b5c2e2031e25eb75824939ac20fba38",
+    "semantic_hash": "3b5c2e2031e25eb75824939ac20fba38"
+  },
+  "E:\\BoraTradingTool\\scripts\\author-intraday-strategies.mts": {
+    "mtime": 1786263686.9243238,
+    "ast_hash": "e3a5e443bfde1e4699aed4bc0b566485",
+    "semantic_hash": "e3a5e443bfde1e4699aed4bc0b566485"
+  },
+  "E:\\BoraTradingTool\\scripts\\import-nse-history.mts": {
+    "mtime": 1786253091.715215,
+    "ast_hash": "df5728d8cffe71d07f2317eaa9f702be",
+    "semantic_hash": "df5728d8cffe71d07f2317eaa9f702be"
+  },
+  "E:\\BoraTradingTool\\scripts\\remove-debug-strategies.mts": {
+    "mtime": 1786263530.5447793,
+    "ast_hash": "6ba974dbaddd9c7d0d7f25c61f8ebe28",
+    "semantic_hash": "6ba974dbaddd9c7d0d7f25c61f8ebe28"
+  },
+  "E:\\BoraTradingTool\\scripts\\repair-intraday-clock.mts": {
+    "mtime": 1786262573.0744388,
+    "ast_hash": "e1833e70211b4af9d3cc7a2807ec77b2",
+    "semantic_hash": "e1833e70211b4af9d3cc7a2807ec77b2"
+  },
+  "E:\\BoraTradingTool\\docs\\PLAN_INTRADAY_2026-08-09.md": {
+    "mtime": 1786262457.8904047,
+    "ast_hash": "e745454e44bf7baca7bb98afaa125beb",
+    "semantic_hash": "e745454e44bf7baca7bb98afaa125beb"
+  }
+}

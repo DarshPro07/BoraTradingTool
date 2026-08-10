@@ -1,4 +1,5 @@
 import type { AssetType, Exchange, Instrument, Market } from "./types";
+import { findNseInstrument, listCurrentNseInstruments, searchCurrentNseInstruments } from "./security-master";
 
 type CatalogInput = {
   market: Market;
@@ -55,27 +56,6 @@ export const INSTRUMENT_CATALOG: readonly Instrument[] = Object.freeze([
   instrument({ market: "US", exchange: "XNYS", symbol: "BRK-B", name: "Berkshire Hathaway Class B" }),
   instrument({ market: "US", exchange: "XNYS", symbol: "SPY", name: "SPDR S&P 500 ETF", assetType: "ETF" }),
 
-  instrument({ market: "IN", exchange: "XNSE", symbol: "RELIANCE", name: "Reliance Industries" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "TCS", name: "Tata Consultancy Services" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "HDFCBANK", name: "HDFC Bank" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "ICICIBANK", name: "ICICI Bank" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "INFY", name: "Infosys" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "BHARTIARTL", name: "Bharti Airtel" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "SBIN", name: "State Bank of India" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "ITC", name: "ITC" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "LT", name: "Larsen & Toubro" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "HINDUNILVR", name: "Hindustan Unilever" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "BAJFINANCE", name: "Bajaj Finance" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "KOTAKBANK", name: "Kotak Mahindra Bank" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "MARUTI", name: "Maruti Suzuki India" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "SUNPHARMA", name: "Sun Pharmaceutical" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "AXISBANK", name: "Axis Bank" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "TATAMOTORS", name: "Tata Motors" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "TITAN", name: "Titan Company" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "ULTRACEMCO", name: "UltraTech Cement" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "NTPC", name: "NTPC" }),
-  instrument({ market: "IN", exchange: "XNSE", symbol: "NIFTYBEES", name: "Nippon India ETF Nifty 50", assetType: "ETF" }),
-
   instrument({ market: "IN", exchange: "XBOM", symbol: "500325", name: "Reliance Industries" }),
   instrument({ market: "IN", exchange: "XBOM", symbol: "532540", name: "Tata Consultancy Services" }),
   instrument({ market: "IN", exchange: "XBOM", symbol: "500180", name: "HDFC Bank" }),
@@ -90,7 +70,7 @@ export const INSTRUMENT_CATALOG: readonly Instrument[] = Object.freeze([
 
 export function searchInstruments(query: string, exchange?: Exchange): Instrument[] {
   const normalized = query.trim().toUpperCase();
-  return INSTRUMENT_CATALOG.filter((item) => {
+  const staticMatches = INSTRUMENT_CATALOG.filter((item) => {
     if (exchange && item.exchange !== exchange) return false;
     return (
       !normalized ||
@@ -99,5 +79,37 @@ export function searchInstruments(query: string, exchange?: Exchange): Instrumen
       item.providerSymbol.includes(normalized) ||
       item.name.toUpperCase().includes(normalized)
     );
-  }).slice(0, 25);
+  });
+  const nseMatches = !exchange || exchange === "XNSE"
+    ? searchCurrentNseInstruments(normalized, { limit: 25 }).items
+    : [];
+  return (normalized ? [...nseMatches, ...staticMatches] : [...staticMatches, ...nseMatches]).slice(0, 25);
+}
+
+export function listCurrentInstruments(filters: { market?: Market; exchange?: Exchange } = {}): Instrument[] {
+  const includeNse =
+    (!filters.market || filters.market === "IN") && (!filters.exchange || filters.exchange === "XNSE");
+  const current = [
+    ...INSTRUMENT_CATALOG,
+    ...(includeNse ? listCurrentNseInstruments() : []),
+  ];
+  return current.filter(
+    (instrument) =>
+      (!filters.market || instrument.market === filters.market) &&
+      (!filters.exchange || instrument.exchange === filters.exchange),
+  );
+}
+
+export function findCurrentInstrument(identity: string): Instrument | null {
+  const normalized = identity.trim().toUpperCase();
+  return (
+    findNseInstrument(normalized) ??
+    INSTRUMENT_CATALOG.find(
+      (instrument) =>
+        instrument.id === normalized ||
+        instrument.symbol === normalized ||
+        instrument.providerSymbol === normalized,
+    ) ??
+    null
+  );
 }

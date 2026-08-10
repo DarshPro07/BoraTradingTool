@@ -151,7 +151,21 @@
   gap: 0;
   padding: 0 1rem;
   border-bottom: 1px solid var(--border);
+
+  /* Scrolls rather than overflowing.
+   *
+   * At 390px this row held 465px of content with `overflow-x: visible`, so it set the header's
+   * scrollWidth to 465 and dragged the whole document sideways — on every screen, because it lives
+   * in the shell. `.ticker-tape` beside it already clips 2808px correctly; this one did not clip
+   * at all.
+   *
+   * `auto`, not `hidden`: the two workspaces are the primary act of navigation, and hiding the
+   * second one off-screen with no way to reach it would be a worse bug than the overflow. */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.workspace-switch::-webkit-scrollbar { display: none; }
+.workspace-tab { flex: 0 0 auto; }
 .workspace-tab {
   padding: 0.55rem 1.6rem;
   font-size: 12px;
@@ -366,6 +380,58 @@ select {
 .market-search input { min-width: 0; flex: 1; height: 36px; padding: 0 10px; background: transparent; outline: none; font-size: 12px; }
 .market-search button { align-self: stretch; padding: 0 14px; border-left: 1px solid var(--border); color: var(--terminal); font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
 .market-search button:hover { background: var(--terminal); color: #080b0d; }
+
+.instrument-combobox { position: relative; width: 100%; min-width: 0; }
+.market-search .instrument-combobox { flex: 1; }
+.instrument-popover {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(620px, calc(100vw - 20px));
+  max-height: min(520px, 70vh);
+  overflow: hidden;
+  border: 1px solid #34434b;
+  background: #080c0e;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.58);
+}
+.instrument-filter-row {
+  min-height: 42px;
+  padding: 6px 9px;
+  display: grid;
+  grid-template-columns: auto 78px 1fr;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.instrument-filter-row select { min-height: 30px; padding: 0 7px; border: 1px solid var(--border); color: var(--foreground); background: #0d1316; }
+.instrument-filter-row span { text-align: right; }
+.instrument-master-status { padding: 6px 9px; border-bottom: 1px solid var(--border); color: var(--green); font-size: 8px; font-weight: 800; letter-spacing: 0.08em; }
+.instrument-master-status.status-stale,
+.instrument-master-status.status-failed_last_attempt { color: var(--amber); }
+.instrument-master-status.status-unavailable { color: var(--red); }
+.instrument-options { max-height: min(390px, 55vh); overflow-y: auto; overscroll-behavior: contain; }
+.instrument-options li {
+  min-height: 58px;
+  padding: 9px 11px;
+  display: grid;
+  grid-template-columns: minmax(82px, auto) minmax(0, 1fr);
+  gap: 3px 12px;
+  border-bottom: 1px solid rgba(37, 48, 56, 0.7);
+  cursor: pointer;
+}
+.instrument-options li[aria-selected="true"] { background: rgba(255, 122, 26, 0.1); box-shadow: inset 2px 0 var(--terminal); }
+.instrument-option-symbol { color: var(--terminal); font-size: 12px; font-weight: 850; }
+.instrument-option-name { overflow: hidden; color: var(--foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.instrument-option-meta { grid-column: 1 / -1; color: var(--muted-foreground); font-family: var(--font-mono); font-size: 8px; }
+.instrument-options strong { grid-column: 1 / -1; color: var(--red); font-size: 8px; letter-spacing: 0.05em; }
+.instrument-message { min-height: 52px; padding: 16px 11px; color: var(--muted-foreground); font-size: 9px; letter-spacing: 0.05em; }
+.instrument-error { color: var(--red); }
 
 .top-nav-links {
   min-height: 38px;
@@ -608,6 +674,8 @@ select {
   .analysis-report-header { grid-template-columns: 1fr; }
   .verdict { min-height: 90px; }
   .analysis-columns { grid-template-columns: 1fr; }
+  .instrument-popover { position: fixed; top: 122px; left: 10px; right: 10px; width: auto; max-height: calc(100dvh - 132px); }
+  .instrument-options { max-height: calc(100dvh - 240px); }
   .citation-list > div { grid-template-columns: 1fr; }
   .evidence-list { grid-template-columns: 1fr; }
   .research-queue { grid-template-columns: 1fr 1fr; }

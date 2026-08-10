@@ -1,0 +1,6 @@
+E:\BoraTradingTool\docs\plans\thread-engineering\01-reality.md
+E:\BoraTradingTool\docs\plans\thread-engineering\02-product.md
+E:\BoraTradingTool\docs\plans\thread-engineering\03-architecture.md
+E:\BoraTradingTool\docs\plans\thread-engineering\04-program-design.md
+E:\BoraTradingTool\docs\plans\thread-engineering\05-slices.md
+E:\BoraTradingTool\docs\plans\thread-engineering\07-final.md

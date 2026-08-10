@@ -1,4 +1,5 @@
 import { desc, eq } from "drizzle-orm";
+import { identityFor, placeStrategy } from "@/lib/strategy/research-identity";
 import { getDb, schema } from "@/lib/db";
 import type { Candle } from "@/lib/providers/types";
 import { compileStrategy, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
@@ -123,7 +124,7 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
   }
 
   const specs = db.select().from(schema.strategySpecs).all();
-  const parents: { name: string; dsl: StrategyDsl }[] = [];
+  const parents: { name: string; dsl: StrategyDsl; specId: string }[] = [];
   const buried = new Set<string>();
   const living = new Set<string>();
 
@@ -136,7 +137,8 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
       continue;
     }
     living.add(identity);
-    parents.push({ name: spec.name, dsl });
+    // `specId` carried so a bred descendant can inherit this spec's research family.
+    parents.push({ name: spec.name, dsl, specId: spec.id });
   }
 
   const bred = breedGeneration({
@@ -155,6 +157,7 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
   const screen = screenPopulation(bred.candidates, bars);
 
   const survivors: string[] = [];
+  let placedInFamily = 0;
   for (const winner of screen.survivors) {
     const candidate = bred.candidates.find((entry) => entry.id === winner.id);
     if (!candidate) continue;
@@ -166,7 +169,10 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
       .values({
         id,
         hypothesisId: null,
-        parentId: null,
+        // The parent this was mutated or crossed from. Previously hardcoded `null`, which threw
+        // away lineage the breeder had already computed — and made every bred candidate an orphan
+        // with no research family, therefore permanently unvalidatable.
+        parentId: candidate.parentSpecId ?? null,
         name: candidate.id,
         version: 1,
         dsl: JSON.stringify(candidate.dsl),
@@ -179,6 +185,40 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
       })
       .onConflictDoNothing()
       .run();
+
+    // Inherit the parent's research family.
+    //
+    // A mutation or crossover of an existing strategy is a *variant of that idea*: it belongs in
+    // the same family, and it costs that family one more selection trial. That is the whole point
+    // of the family — a search that spawns two hundred siblings and reports the best must carry a
+    // denominator of two hundred, not one apiece.
+    //
+    // A candidate with no placeable parent — a freshly generated entry, or a parent that is itself
+    // unclassified — is left unplaced. It can still be rehearsed, which costs nothing, but it
+    // cannot be validated until a human states which hypothesis it belongs to. Fail closed: the
+    // alternative is inventing a family for a machine-generated rule, which is exactly how a
+    // denominator of one gets manufactured.
+    const parentIdentity = candidate.parentSpecId ? identityFor(candidate.parentSpecId) : null;
+    if (parentIdentity) {
+      placeStrategy({
+        specId: id,
+        campaignId: parentIdentity.campaignId,
+        familyId: parentIdentity.familyId,
+        dsl: candidate.dsl,
+        classification: "SAME_FAMILY",
+        classifiedBy: `factory:gen${generation}`,
+        parentSpecId: candidate.parentSpecId,
+        reason:
+          `Bred by ${candidate.lineage ?? "the factory"} from ${candidate.parentSpecId}. A variant of ` +
+          "its parent's hypothesis, not a new one, so it inherits the family and adds a trial to it.",
+        // Confirmed: inheritance is a mechanical consequence of parentage, not a judgement that
+        // needs a human. The judgement was made when the parent's family was declared.
+        confirmed: true,
+        at: now,
+      });
+      placedInFamily += 1;
+    }
+
     survivors.push(id);
   }
 

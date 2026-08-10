@@ -1,6 +1,28 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { describeExecution, executionContextFor } from "@/lib/broker/execution-profile";
+import type { Market } from "@/lib/market/types";
 import { stableStringify } from "@/lib/util/stable-json";
+
+/**
+ * The DSL names venues (`NSE`, `BSE`, `US`); the calendar and the cost model reason about
+ * countries (`IN`, `US`). One line, in one place, so the two never disagree about which session
+ * clock an NSE strategy runs on.
+ */
+export function marketOf(universeMarket: "US" | "NSE" | "BSE"): Market {
+  return universeMarket === "US" ? "US" : "IN";
+}
+
+/** `"15:20"` → 920. */
+export function clockToMinute(clock: string): number {
+  const [hours, minutes] = clock.split(":");
+  return Number(hours) * 60 + Number(minutes);
+}
+
+/** 920 → `"15:20"`. */
+export function minuteToClock(minute: number): string {
+  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+}
 
 /**
  * Features that are knowable at decision time. The DSL is a closed vocabulary rather than
@@ -31,6 +53,16 @@ export const POINT_IN_TIME_FEATURES = [
   "days_since_earnings",
   "market_cap",
   "adv_20d",
+  // Session-relative quantities. Meaningful only when a bar has a position *within* a trading day,
+  // so they are derivable at intraday resolution and undefined at daily — `compileStrategy`
+  // refuses the combination rather than letting a spec warm up forever and report no trades.
+  //
+  // `opening_range_high`/`_low` are the extremes of the session's first `OPENING_RANGE_MINUTES`,
+  // known only once that window has closed. That is what makes an opening-range breakout
+  // expressible without lookahead: the range is complete history by the time it is referenced.
+  "minutes_since_open",
+  "opening_range_high",
+  "opening_range_low",
   // Kronos forecast quantities (ADR 0004). Both are real numbers the forecast file supplies —
   // the predicted next-bar return, and the cumulative return across the forecast horizon —
   // derived from its bars against the last actual close.
@@ -100,7 +132,43 @@ export const LOOKAHEAD_FEATURES = [
  * and without this a validation result recorded last month could be silently attributed to
  * a spec that now behaves differently.
  */
-export const COMPILER_VERSION = "1.2.0";
+export const COMPILER_VERSION = "1.4.0";
+
+/**
+ * Features that describe a bar's place inside a trading day, and therefore mean nothing on a
+ * daily bar. Kept next to the vocabulary they belong to so the two cannot drift.
+ */
+export const SESSION_FEATURES = [
+  "minutes_since_open",
+  "opening_range_high",
+  "opening_range_low",
+] as const satisfies readonly PointInTimeFeature[];
+
+/**
+ * The length of the opening range, in minutes from the session open.
+ *
+ * Fifteen because it is the interval the Indian intraday literature almost always means by "the
+ * opening range", and because at 5-minute bars it is exactly three bars — a range built from one
+ * or two bars is a coin flip dressed as a level. Declared here rather than made configurable: a
+ * per-strategy range length is a free parameter, and a free parameter over a fixed history is how
+ * a backtest gets optimised into fiction.
+ */
+export const OPENING_RANGE_MINUTES = 15;
+
+/**
+ * Minutes per bar, by DSL resolution. Daily is absent because it has no within-session length.
+ *
+ * This map is also the definition of "intraday" — see `isIntradayResolution`. Deriving the test
+ * from the table rather than writing `resolution !== "D"` matters: a DSL object that never went
+ * through the schema has `resolution === undefined`, and `undefined !== "D"` is true, so a
+ * negative test silently applies session rules to daily bars. A positive one cannot.
+ */
+export const BAR_MINUTES: Readonly<Record<string, number>> = Object.freeze({ "1m": 1, "5m": 5, "15m": 15 });
+
+/** True only for a resolution this system knows the bar length of. */
+export function isIntradayResolution(resolution: string | undefined): boolean {
+  return resolution !== undefined && BAR_MINUTES[resolution] !== undefined;
+}
 
 const COMPARISONS = ["gt", "gte", "lt", "lte"] as const;
 
@@ -179,11 +247,33 @@ export const StrategyDslSchema = z
         stopLossPct: z.number().min(0.1).max(50).optional(),
         takeProfitPct: z.number().min(0.1).max(500).optional(),
         condition: ConditionSchema.optional(),
+        /**
+         * Local exchange time, `HH:MM`, at which an open position is closed.
+         *
+         * Optional and *tightening only*. The engine enforces the broker execution profile's
+         * mandatory exit on every intraday
+         * strategy whether or not this is set — a strategy cannot opt out of the broker's
+         * square-off — so this exists to declare an exit **earlier** than the ceiling, which is a
+         * real strategic choice (the last half hour trades differently from the rest of the day).
+         *
+         * A value at or after the ceiling is refused rather than clamped. Clamping would let a spec
+         * claim 15:29 and quietly behave as 15:20, and the stored DSL would then describe a
+         * strategy that was never run.
+         */
+        squareOffAt: z
+          .string()
+          .trim()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour local exchange time, HH:MM.")
+          .optional(),
       })
       .strict()
       .refine(
-        (exit) => exit.afterDays !== undefined || exit.stopLossPct !== undefined || exit.condition !== undefined,
-        { message: "An exit needs at least a time limit, a stop, or a condition — otherwise positions never close." },
+        (exit) =>
+          exit.afterDays !== undefined ||
+          exit.stopLossPct !== undefined ||
+          exit.condition !== undefined ||
+          exit.squareOffAt !== undefined,
+        { message: "An exit needs at least a time limit, a stop, a condition, or a square-off — otherwise positions never close." },
       ),
     sizing: z.object({ maxPositionPct: z.number().min(0.1).max(25) }).strict(),
     costs: z
@@ -210,6 +300,51 @@ export const StrategyDslSchema = z
   })
   .strict()
   .superRefine((dsl, context) => {
+    if (dsl.exit.squareOffAt !== undefined) {
+      const declared = clockToMinute(dsl.exit.squareOffAt);
+
+      // A daily bar has no time of day, so a square-off on one is not a stricter rule — it is a
+      // rule the engine cannot apply. Refused rather than ignored: a spec whose stored text
+      // promises an exit the run never performs is the worst kind of wrong, because it reads as
+      // careful.
+      if (dsl.universe.resolution === "D") {
+        context.addIssue({
+          code: "custom",
+          path: ["exit", "squareOffAt"],
+          message:
+            "squareOffAt needs a time of day, and a daily bar has none. Either set an intraday " +
+            "resolution or use afterDays.",
+        });
+      } else {
+        // Validated against the broker's execution profile, not a constant. The profile is
+        // effective-dated; authoring uses today's, and the engines re-resolve per run against the
+        // bars' own dates — this check is the early warning, the engine is the enforcement.
+        const resolved = executionContextFor(dsl.universe.market, dsl.universe.resolution, new Date());
+        if (!resolved.available) {
+          context.addIssue({
+            code: "custom",
+            path: ["exit", "squareOffAt"],
+            message:
+              `squareOffAt cannot be validated: ${resolved.reason} A deadline that cannot be checked ` +
+              "cannot be declared.",
+          });
+        } else if (
+          resolved.profile.mandatoryExitMinute !== null &&
+          declared >= resolved.profile.mandatoryExitMinute
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["exit", "squareOffAt"],
+            message:
+              `squareOffAt ${dsl.exit.squareOffAt} is at or after the ` +
+              `${minuteToClock(resolved.profile.mandatoryExitMinute)} deadline the broker already enforces — ` +
+              `${describeExecution(resolved.profile)} A square-off may only tighten that, never extend it — ` +
+              "and it is refused rather than clamped, so the stored spec never describes a run that did not happen.",
+          });
+        }
+      }
+    }
+
     // The cross-field rule: intraday without a declared spread is refused outright rather than
     // defaulted. A default would be a number nobody chose, silently deciding whether the
     // strategy passes — and the whole point is that this figure is a claim someone makes.
@@ -231,7 +366,8 @@ export type CompileErrorCode =
   | "SCHEMA_INVALID"
   | "LOOKAHEAD_FEATURE"
   | "UNKNOWN_FEATURE"
-  | "CONDITION_TOO_DEEP";
+  | "CONDITION_TOO_DEEP"
+  | "SESSION_FEATURE_AT_DAILY";
 
 export interface CompileFailure {
   ok: false;
@@ -343,6 +479,26 @@ export function compileStrategy(input: unknown): CompileResult {
     };
   }
 
+  // A daily bar has no inside. `minutes_since_open` and the opening range are not merely
+  // unavailable there — they are category errors, and the panel would leave them undefined on
+  // every bar, so the strategy would warm up forever and report zero trades. That reads as "no
+  // signal fired", which is a finding about the market rather than a defect in the spec.
+  const sessionAtDaily =
+    dsl.universe.resolution === "D"
+      ? [...features].filter((feature) => (SESSION_FEATURES as readonly string[]).includes(feature))
+      : [];
+  if (sessionAtDaily.length > 0) {
+    return {
+      ok: false,
+      code: "SESSION_FEATURE_AT_DAILY",
+      message:
+        `${sessionAtDaily.join(", ")} describe a bar's position inside a trading day, and a daily bar ` +
+        "has none. Set an intraday resolution, or use a feature that is meaningful on daily bars. " +
+        "Refused rather than left undefined, because a strategy that never evaluates reports no " +
+        "trades — which looks like an answer about the market instead of a broken specification.",
+    };
+  }
+
   const warnings: string[] = [];
 
   // Features the DSL permits but no engine can supply. Compiling them cleanly and failing only
@@ -394,6 +550,29 @@ export function compileStrategy(input: unknown): CompileResult {
       warnings.push(
         "assumedSpreadBps is zero at intraday resolution. A zero spread is a claim that you cross " +
           "the book for free, which no venue offers.",
+      );
+    }
+    // Said out loud on every intraday spec, including the ones that declare nothing. The deadline
+    // is not optional and it changes the results, so an author who has never heard of it should
+    // read it here — with its provenance — rather than discover it in an exit reason. The broker,
+    // the clock, the source and its confidence all come from the execution profile; a profile that
+    // does not exist is itself the warning.
+    const resolvedProfile = executionContextFor(dsl.universe.market, dsl.universe.resolution, new Date());
+    if (!resolvedProfile.available) {
+      warnings.push(
+        `No execution profile covers this universe: ${resolvedProfile.reason} Backtests will refuse ` +
+          "to run this spec until a profile is added.",
+      );
+    } else {
+      const assumptionNotes =
+        resolvedProfile.profile.assumptions.length > 0
+          ? ` Assumptions: ${resolvedProfile.profile.assumptions.join(" ")}`
+          : "";
+      warnings.push(
+        (dsl.exit.squareOffAt === undefined
+          ? `Positions are force-closed whether or not this spec says so — ${describeExecution(resolvedProfile.profile)}`
+          : `Squares off at ${dsl.exit.squareOffAt}, inside the broker deadline — ${describeExecution(resolvedProfile.profile)}`) +
+          assumptionNotes,
       );
     }
   }

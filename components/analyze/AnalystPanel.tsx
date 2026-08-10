@@ -1,13 +1,16 @@
 import type { AnalystRating, PriceTarget } from "@/lib/providers/types";
+import { formatMoney } from "@/lib/market/money";
+import type { Currency } from "@/lib/market/types";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface Props {
   ratings: AnalystRating[];
   priceTarget: PriceTarget;
   currentPrice: number;
+  currency: Currency;
 }
 
-export function AnalystPanel({ ratings, priceTarget, currentPrice }: Props) {
+export function AnalystPanel({ ratings, priceTarget, currentPrice, currency }: Props) {
   const latest = ratings[0];
   if (!latest) return null;
 
@@ -46,7 +49,7 @@ export function AnalystPanel({ ratings, priceTarget, currentPrice }: Props) {
       <div className="border-t border-panel pt-3 space-y-2">
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Price Target</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold font-mono">${priceTarget.mean?.toFixed(2) ?? "—"}</span>
+          <span className="text-2xl font-bold font-mono">{priceTarget.mean !== null ? formatMoney(priceTarget.mean, currency) : "—"}</span>
           {upside !== 0 && (
             <span className={`text-sm font-semibold flex items-center gap-1 ${upside > 0 ? "text-gain" : "text-loss"}`}>
               {upside > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -55,9 +58,9 @@ export function AnalystPanel({ ratings, priceTarget, currentPrice }: Props) {
           )}
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Low: <span className="text-loss font-mono">${priceTarget.low?.toFixed(2) ?? "—"}</span></span>
-          <span>Median: <span className="font-mono">${priceTarget.median?.toFixed(2) ?? "—"}</span></span>
-          <span>High: <span className="text-gain font-mono">${priceTarget.high?.toFixed(2) ?? "—"}</span></span>
+          <span>Low: <span className="text-loss font-mono">{priceTarget.low !== null ? formatMoney(priceTarget.low, currency) : "—"}</span></span>
+          <span>Median: <span className="font-mono">{priceTarget.median !== null ? formatMoney(priceTarget.median, currency) : "—"}</span></span>
+          <span>High: <span className="text-gain font-mono">{priceTarget.high !== null ? formatMoney(priceTarget.high, currency) : "—"}</span></span>
         </div>
       </div>
     </div>

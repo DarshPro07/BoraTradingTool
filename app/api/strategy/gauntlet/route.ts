@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { requireMutationAccess } from "@/lib/security/request";
 import { getDb, schema } from "@/lib/db";
 import { StrategyDslSchema } from "@/lib/strategy/dsl";
-import { runGauntlet } from "@/lib/strategy/gauntlet";
+import { HoldoutBudgetExhausted, ResearchIdentityMissing, runGauntlet } from "@/lib/strategy/gauntlet";
+import { freezeStanding } from "@/lib/strategy/research-freeze";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
-import { marketCandleLoader } from "@/lib/learning/dataset";
+import { snapshotFromStore } from "@/lib/research-data/snapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "SPEC_REQUIRED", message: "specId is required." }, { status: 400 });
   }
 
+  // Checked before the confirmation flag, deliberately. Confirming an irreversible action the
+  // system is not currently willing to perform would read as "you consented, so it happened" —
+  // and the freeze exists precisely because the accounting behind that consent is wrong.
+  const freeze = freezeStanding("gauntlet_trial");
+  if (!freeze.allowed) {
+    return NextResponse.json({ error: "RESEARCH_FROZEN", message: freeze.reason }, { status: 423 });
+  }
+
   // An irreversible action requires an explicit acknowledgement. A caller that has not said it
   // understands the cost has almost certainly not intended to pay it.
   if (body.confirm !== true) {
@@ -67,35 +76,70 @@ export async function POST(request: Request) {
     );
   }
 
-  // Evidence comes from a real replay, not from anything supplied by the caller. A gauntlet fed
-  // caller-supplied returns would grade whatever the caller wanted it to grade.
-  const dataset = await marketCandleLoader()(spec.id, parsed.data);
-  if (Object.keys(dataset).length === 0) {
+  // Evidence comes from a real replay over a RECORDED snapshot (13b) — not from anything the
+  // caller supplies, and not from a provider window, which has no identity to pin a trial to.
+  const snapshot = snapshotFromStore(parsed.data.universe.market, parsed.data.universe.resolution, "gauntlet");
+  if (!snapshot.ok) {
     return NextResponse.json(
       {
-        error: "NO_DATA",
-        message:
-          "No candles are available for this strategy's universe, so there is nothing to validate. The holdout budget was not touched.",
+        error: snapshot.code,
+        message: `${snapshot.message} Neither a trial nor the holdout budget was touched.`,
       },
       { status: 503 },
     );
   }
 
-  const backtest = runPortfolioBacktest(parsed.data, dataset);
+  const backtest = runPortfolioBacktest(parsed.data, snapshot.dataset, {
+    datasetFingerprint: snapshot.fingerprint,
+    datasetSnapshotId: snapshot.snapshotId,
+  });
   if (!backtest.ok) {
     return NextResponse.json({ error: backtest.code, message: backtest.message }, { status: 422 });
   }
 
-  const report = runGauntlet(spec.id, parsed.data, backtest.evidence, "owner");
+  let report;
+  try {
+    report = runGauntlet(
+      spec.id,
+      parsed.data,
+      { ...backtest.evidence, executionProfileId: backtest.execution?.profileId ?? null },
+      "owner",
+    );
+  } catch (caught) {
+    // Both refusals are the machinery working, and both must reach the caller as structured
+    // answers rather than a bare 500 — a refusal that surfaces as a crash reads as a defect and
+    // teaches people to retry it.
+    if (caught instanceof ResearchIdentityMissing) {
+      return NextResponse.json(
+        {
+          error: "RESEARCH_IDENTITY_MISSING",
+          message: caught.message,
+        },
+        { status: 412 },
+      );
+    }
+    if (caught instanceof HoldoutBudgetExhausted) {
+      return NextResponse.json({ error: caught.code, message: caught.message }, { status: 409 });
+    }
+    throw caught;
+  }
 
   return NextResponse.json({
     specId: spec.id,
     name: spec.name,
     passed: report.passed,
     trialsCounted: report.trialsCounted,
+    // 13b provenance: the exact dataset the verdict was computed on.
+    datasetSnapshotId: report.datasetSnapshotId,
+    datasetFingerprint: snapshot.fingerprint,
     summary: report.summary,
     stages: report.stages,
     trades: backtest.trades.length,
     instrumentsEvaluated: backtest.instrumentsEvaluated,
+    // The broker assumptions the replay was actually simulated under — profile id, deadline,
+    // provenance. Null for daily runs. A validation number without its execution assumptions is
+    // a result nobody can audit; the hardcoded 15:20 this system used to carry was invisible in
+    // exactly this position.
+    executionAssumptions: backtest.execution,
   });
 }

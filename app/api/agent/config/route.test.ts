@@ -55,4 +55,18 @@ describe("PATCH /api/agent/config", () => {
     expect(response.status).toBe(200);
     expect(getAgentConfig()).toMatchObject({ maxPositionPct: 100, dailyTradeCap: 1000, watchlistOnly: false });
   });
+
+  it("does not let an unauthenticated local request relax paper-risk limits", async () => {
+    const before = getAgentConfig();
+    const response = await PATCH(request({
+      origin: "http://127.0.0.1:3000",
+      "x-marketpulse-csrf": "1",
+    }));
+    expect(response.status).toBe(401);
+    expect(getAgentConfig()).toMatchObject({
+      maxPositionPct: before.maxPositionPct,
+      dailyTradeCap: before.dailyTradeCap,
+      watchlistOnly: before.watchlistOnly,
+    });
+  });
 });

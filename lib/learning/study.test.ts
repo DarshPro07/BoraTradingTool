@@ -120,6 +120,20 @@ describe("grading", () => {
     });
   });
 
+  it("refuses a self-report on a card that has a graded question", () => {
+    // The bypass this closes: `knowledge_mastery.score` is what `nextCurriculum` sorts on, so a
+    // self-reported pass on a gradeable card drops the concept out of the study queue without the
+    // stored answer ever being consulted. The system would stop asking about something it never
+    // established was known.
+    concept("spread");
+    quiz("spread", ["ask minus bid", "bid minus ask"], "ask minus bid");
+    expect(gradeStudyAnswer({ conceptId: "spread", recalled: true })).toEqual({
+      ok: false,
+      error: "SELF_REPORT_NOT_PERMITTED",
+    });
+    expect(getDb().select().from(schema.knowledgeMastery).all()).toHaveLength(0);
+  });
+
   it("refuses an unknown concept rather than creating orphan mastery", () => {
     // A mastery row for a concept that does not exist can never be surfaced again by
     // `nextCurriculum`, so it would be permanently counted and permanently invisible.

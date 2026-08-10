@@ -7,12 +7,14 @@
     "build": "next build && npm run build:mcp",
     "build:mcp": "node esbuild.mcp.mjs",
     "start": "next start --hostname 127.0.0.1",
+    "sync:nse": "tsx scripts/sync-nse-security-master.mts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --exclude mcp/**/*.test.ts",
     "test:mcp": "npm run build:mcp && vitest run mcp/server.integration.test.ts",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run test && npm run test:mcp && npm run build",
-    "audit:prod": "npm audit --omit=dev --audit-level=high"
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "test:full": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
@@ -44,6 +46,7 @@
     "esbuild": "^0.28.1",
     "shadcn": "^4.11.0",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
   }

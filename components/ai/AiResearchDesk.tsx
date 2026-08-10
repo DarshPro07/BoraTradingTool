@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Bot, BrainCircuit, CheckCircle2, Clock3, Database, Loader2, ShieldCheck } from "lucide-react";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
-import { INSTRUMENT_CATALOG } from "@/lib/market/catalog";
+import { InstrumentCombobox } from "@/components/market/InstrumentCombobox";
 
 type ProviderId = "anthropic" | "openai";
 
@@ -99,20 +99,15 @@ export function AiResearchDesk({ initialInstrumentId }: { initialInstrumentId: s
           <span>READ ONLY</span>
         </div>
         <form onSubmit={analyze} className="p-4 space-y-4">
-          <label className="field-label" htmlFor="ai-instrument">Instrument</label>
-          <input
+          <InstrumentCombobox
             id="ai-instrument"
-            list="ai-instruments"
+            label="Instrument"
             value={instrumentId}
-            onChange={(event) => setInstrumentId(event.target.value.toUpperCase())}
-            className="terminal-input"
+            onValueChange={setInstrumentId}
             required
+            labelClassName="field-label"
+            storageKey="marketpulse.ai.instrument.v1"
           />
-          <datalist id="ai-instruments">
-            {INSTRUMENT_CATALOG.map((instrument) => (
-              <option key={instrument.id} value={instrument.id}>{instrument.name}</option>
-            ))}
-          </datalist>
 
           <fieldset>
             <legend className="field-label mb-2">Model provider</legend>

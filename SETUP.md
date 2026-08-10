@@ -21,6 +21,14 @@ Open `http://127.0.0.1:3000`.
 
 The SQLite database is created and migrated automatically. To place it somewhere else, set `MARKETPULSE_DB_PATH` before startup.
 
+The first NSE search automatically bootstraps the canonical security master from fixed official NSE main-board, SME, and ETF files. The request can take several seconds on a new database. If the automatic fetch is interrupted, retry the search or run the same importer explicitly:
+
+```powershell
+npm run sync:nse
+```
+
+A failed refresh never replaces the last verified master.
+
 ## 3. Choose a Data Mode
 
 ### Deterministic fixture mode

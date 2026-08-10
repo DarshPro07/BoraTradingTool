@@ -1,8 +1,21 @@
 import type { Candle } from "@/lib/providers/types";
+import {
+  describeExecution,
+  executionContextFor,
+  type BrokerExecutionProfile,
+} from "@/lib/broker/execution-profile";
+import { sessionStamps, type SessionStamp } from "@/lib/market/calendar";
 import type { StrategyDsl } from "@/lib/strategy/dsl";
-import { roundTripCostBps } from "@/lib/strategy/dsl";
+import { BAR_MINUTES, clockToMinute, isIntradayResolution, marketOf, minuteToClock, roundTripCostBps } from "@/lib/strategy/dsl";
 import type { GauntletEvidence } from "@/lib/strategy/gauntlet";
-import { collectFeatures, evaluate, type BacktestRefusal, type ExitReason, type Trade } from "./engine";
+import {
+  collectFeatures,
+  evaluate,
+  type BacktestRefusal,
+  type ExecutionAssumption,
+  type ExitReason,
+  type Trade,
+} from "./engine";
 import {
   UNAVAILABLE_FEATURES,
   buildFeaturePanel,
@@ -39,6 +52,8 @@ export interface PortfolioRun {
    * reported returns describe a strategy that could not actually have taken them all.
    */
   signalsRejectedForCapacity: number;
+  /** The broker assumptions this run was simulated under. Null for daily runs. */
+  execution: ExecutionAssumption | null;
 }
 
 export type PortfolioResult = PortfolioRun | BacktestRefusal;
@@ -46,6 +61,8 @@ export type PortfolioResult = PortfolioRun | BacktestRefusal;
 export interface PortfolioOptions {
   inSampleFraction?: number;
   datasetFingerprint?: string;
+  /** 13b: the recorded snapshot the dataset came from. Rides into the evidence unchanged. */
+  datasetSnapshotId?: string;
 }
 
 const MIN_BARS = 30;
@@ -67,6 +84,28 @@ function priorVector(item: Series, index: number): FeatureVector | undefined {
  * Stop is checked before target: from OHLC alone the intrabar path is unknown, so the adverse
  * outcome is assumed rather than the flattering one.
  */
+/** The square-off clock for an intraday run. Null for a daily one, which has no inside-the-day. */
+interface SessionRule {
+  ceilingMinute: number;
+  barMinutes: number;
+}
+
+/**
+ * Must a position open at `index` be flat by that bar's close?
+ *
+ * Mirrors `mustFlatten` in the single-instrument engine exactly. The two engines are held equal by
+ * `parity.test.ts`, and a square-off rule in one of them would break that in the one direction
+ * nobody checks — the portfolio engine is what the rehearsal actually runs.
+ */
+function mustFlatten(item: Series, index: number, session: SessionRule | null): boolean {
+  if (!session || !item.stamps) return false;
+  const stamp = item.stamps[index];
+  if (stamp === undefined) return false;
+  if (stamp.minute + session.barMinutes >= session.ceilingMinute) return true;
+  const next = item.stamps[index + 1];
+  return next !== undefined && next.date !== stamp.date;
+}
+
 function exitFor(
   item: Series,
   position: OpenPosition,
@@ -74,6 +113,7 @@ function exitFor(
   dsl: StrategyDsl,
   stopLoss: number | undefined,
   takeProfit: number | undefined,
+  session: SessionRule | null,
 ): { price: number; reason: ExitReason } | null {
   const bar = item.bars[index];
   const held = index - position.entryIndex;
@@ -84,6 +124,9 @@ function exitFor(
   }
   if (takeProfit !== undefined && bar.high >= position.entryPrice * (1 + takeProfit)) {
     return { price: position.entryPrice * (1 + takeProfit), reason: "take_profit" };
+  }
+  if (mustFlatten(item, index, session)) {
+    return { price: bar.close, reason: "square_off" };
   }
   if (dsl.exit.afterDays !== undefined && held >= dsl.exit.afterDays) {
     return { price: bar.close, reason: "time_limit" };
@@ -97,6 +140,8 @@ function exitFor(
 interface Series {
   instrumentId: string;
   bars: readonly Candle[];
+  /** Local session position per bar. Null for a daily run. */
+  stamps: SessionStamp[] | null;
   panel: FeaturePanel;
   /** Bar index by timestamp, so the merged walk stays O(1) per instrument. */
   indexByTime: Map<number, number>;
@@ -132,6 +177,60 @@ export function runPortfolioBacktest(
     };
   }
 
+  const market = marketOf(dsl.universe.market);
+  const resolution = dsl.universe.resolution;
+  const intraday = isIntradayResolution(resolution);
+
+  // The deadline binds whether or not the spec asked for it; a declared squareOffAt may only
+  // tighten it. Resolved from the broker execution profile against the dataset's own date range —
+  // identical to the single-instrument engine, deliberately, and held equal by `parity.test.ts`.
+  let executionProfile: BrokerExecutionProfile | null = null;
+  if (intraday) {
+    let earliest = Number.POSITIVE_INFINITY;
+    let latest = 0;
+    for (const [, bars] of entries) {
+      if (bars.length === 0) continue;
+      earliest = Math.min(earliest, bars[0].time);
+      latest = Math.max(latest, bars[bars.length - 1].time);
+    }
+    const atFirst = executionContextFor(dsl.universe.market, resolution, new Date(earliest * 1000));
+    if (!atFirst.available) {
+      return { ok: false, code: "EXECUTION_PROFILE_UNAVAILABLE", message: atFirst.reason };
+    }
+    const atLast = executionContextFor(dsl.universe.market, resolution, new Date(latest * 1000));
+    if (!atLast.available || atLast.profile.id !== atFirst.profile.id) {
+      return {
+        ok: false,
+        code: "PROFILE_WINDOW_MISMATCH",
+        message:
+          `This dataset spans more than one execution-profile window (${atFirst.profile.id} at the ` +
+          `start, ${atLast.available ? atLast.profile.id : "none"} at the end). Split the range ` +
+          "rather than letting one run price exits under a rule that was not in force.",
+      };
+    }
+    if (atFirst.profile.mandatoryExitMinute === null) {
+      return {
+        ok: false,
+        code: "EXECUTION_PROFILE_UNAVAILABLE",
+        message:
+          `${atFirst.profile.id} declares no mandatory exit, so an intraday simulation against it ` +
+          "has no deadline to enforce.",
+      };
+    }
+    executionProfile = atFirst.profile;
+  }
+
+  const session: SessionRule | null =
+    intraday && executionProfile !== null
+      ? {
+          ceilingMinute: Math.min(
+            executionProfile.mandatoryExitMinute!,
+            dsl.exit.squareOffAt !== undefined ? clockToMinute(dsl.exit.squareOffAt) : Number.POSITIVE_INFINITY,
+          ),
+          barMinutes: BAR_MINUTES[resolution],
+        }
+      : null;
+
   const series: Series[] = [];
   for (const [instrumentId, bars] of entries) {
     if (bars.length < MIN_BARS) {
@@ -152,7 +251,13 @@ export function runPortfolioBacktest(
     }
     const indexByTime = new Map<number, number>();
     bars.forEach((candle, index) => indexByTime.set(candle.time, index));
-    series.push({ instrumentId, bars, panel: buildFeaturePanel(bars), indexByTime });
+    series.push({
+      instrumentId,
+      bars,
+      stamps: intraday ? sessionStamps(bars.map((bar) => bar.time), market) : null,
+      panel: buildFeaturePanel(bars, { market, resolution }),
+      indexByTime,
+    });
   }
 
   // Deterministic order for slot contention. Arbitrary, and deliberately so: ranking
@@ -186,7 +291,7 @@ export function runPortfolioBacktest(
       const index = item.indexByTime.get(time);
       if (index === undefined) continue;
 
-      const exit = exitFor(item, position, index, dsl, stopLoss, takeProfit);
+      const exit = exitFor(item, position, index, dsl, stopLoss, takeProfit, session);
       if (exit) {
         trades.push(buildTrade(item, position, index, exit, roundTripCost));
         open.delete(item.instrumentId);
@@ -217,7 +322,7 @@ export function runPortfolioBacktest(
       // this a position was never tested against its own entry bar — and a portfolio immune
       // to losing on the bar it entered reports a gentler drawdown than the strategy has.
       // The single-instrument engine has always tested it; this is what keeps them equal.
-      const immediate = exitFor(item, opened, index, dsl, stopLoss, takeProfit);
+      const immediate = exitFor(item, opened, index, dsl, stopLoss, takeProfit, session);
       if (immediate) {
         trades.push(buildTrade(item, opened, index, immediate, roundTripCost));
         open.delete(item.instrumentId);
@@ -231,6 +336,9 @@ export function runPortfolioBacktest(
       if (exitedThisBar.has(item.instrumentId)) continue;
       const index = item.indexByTime.get(time);
       if (index === undefined || index >= item.bars.length - 1) continue;
+      // The fill bar would itself be squared off, so the position would open and close inside one
+      // bar: a round trip's costs for no exposure. Matches the single-instrument engine.
+      if (mustFlatten(item, index + 1, session)) continue;
       if (evaluate(dsl.entry, item.panel.at(index), priorVector(item, index)) === true) {
         pendingEntry.set(item.instrumentId, index + 1);
       }
@@ -259,11 +367,23 @@ export function runPortfolioBacktest(
     trades,
     instrumentsEvaluated: series.length,
     signalsRejectedForCapacity,
+    execution:
+      executionProfile === null
+        ? null
+        : {
+            profileId: executionProfile.id,
+            broker: executionProfile.broker,
+            mandatoryExit: minuteToClock(executionProfile.mandatoryExitMinute!),
+            policyVersion: executionProfile.policyVersion,
+            sourceConfidence: executionProfile.sources[0].confidence,
+            description: describeExecution(executionProfile),
+          },
     evidence: {
       inSampleReturns: trades.slice(0, split).map((trade) => trade.netReturn),
       outOfSampleReturns,
       noTradeReturns: outOfSampleReturns.map(() => 0),
       datasetFingerprint: options.datasetFingerprint,
+      datasetSnapshotId: options.datasetSnapshotId,
     },
   };
 }

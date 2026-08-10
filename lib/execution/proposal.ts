@@ -25,7 +25,14 @@ export interface ProposalInput {
   quantity: number;
   entryPrice: number;
   stopPrice: number;
-  targetPrice: number;
+  /**
+   * Null when the strategy declares no take-profit — its exit is a time limit or a condition.
+   *
+   * Nullable rather than derived, because the obvious fallback (a 2R target, say) would be a
+   * number nobody chose appearing on a ticket as though the strategy had produced it. A missing
+   * target makes reward-to-risk incomputable, which is a fact about the strategy worth showing.
+   */
+  targetPrice: number | null;
   currency: string;
   /** Minutes the proposal stays valid. A stale proposal is a different trade. */
   validForMinutes?: number;
@@ -67,7 +74,12 @@ export function buildProposal(
   const reasons: string[] = [];
 
   const risePerUnit = input.side === "BUY" ? input.entryPrice - input.stopPrice : input.stopPrice - input.entryPrice;
-  const rewardPerUnit = input.side === "BUY" ? input.targetPrice - input.entryPrice : input.entryPrice - input.targetPrice;
+  const rewardPerUnit =
+    input.targetPrice === null
+      ? null
+      : input.side === "BUY"
+        ? input.targetPrice - input.entryPrice
+        : input.entryPrice - input.targetPrice;
 
   // A stop on the wrong side of entry is not a small risk, it is an unbounded one.
   const stopIsProtective = risePerUnit > 0;
@@ -78,7 +90,8 @@ export function buildProposal(
   }
 
   const maxLoss = stopIsProtective ? round(risePerUnit * input.quantity) : Number.POSITIVE_INFINITY;
-  const rewardToRisk = stopIsProtective && rewardPerUnit > 0 ? round(rewardPerUnit / risePerUnit) : null;
+  const rewardToRisk =
+    stopIsProtective && rewardPerUnit !== null && rewardPerUnit > 0 ? round(rewardPerUnit / risePerUnit) : null;
 
   if (input.forwardObservations === 0) {
     reasons.push("No forward observations behind this strategy. Backtest performance is not evidence of edge.");
@@ -126,7 +139,9 @@ export function orderTicket(proposal: Proposal): string {
     `${proposal.side} ${proposal.quantity} ${proposal.symbol}`,
     `Entry  ${proposal.entryPrice} ${proposal.currency} (limit)`,
     `Stop   ${proposal.stopPrice}`,
-    `Target ${proposal.targetPrice}`,
+    proposal.targetPrice !== null
+      ? `Target ${proposal.targetPrice}`
+      : "Target none — this strategy exits on time or condition, not a price",
     Number.isFinite(proposal.maxLoss) ? `Max loss ${proposal.maxLoss} ${proposal.currency}` : "Max loss UNBOUNDED",
     proposal.rewardToRisk !== null ? `R:R ${proposal.rewardToRisk}` : "R:R not computable",
     `Strategy ${proposal.strategyName} · ${proposal.forwardObservations} forward observations`,

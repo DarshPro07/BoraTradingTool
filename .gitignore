@@ -80,3 +80,6 @@ mp-*.mjs
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Thread engineering scratch
+threads/

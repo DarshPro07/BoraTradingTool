@@ -1,0 +1,133 @@
+
+[2mRunning [22m88[2m tests using [22m1[2m worker[22m
+
+  [32mok[39m [2m 1 [22m[desktop-chromium] › e2e\app.spec.ts:40:5 › all primary screens render without runtime errors[2m (19.7s)[22m
+  [32mok[39m [2m 2 [22m[desktop-chromium] › e2e\app.spec.ts:54:5 › market selector and instrument search preserve canonical navigation[2m (4.2s)[22m
+  [32m-[39m  [2m 3 [22m[36m[desktop-chromium] › e2e\app.spec.ts:79:5 › AI desk returns cited fixture analysis[39m
+  [32m-[39m  [2m 4 [22m[36m[desktop-chromium] › e2e\app.spec.ts:89:5 › paper order stays in the simulated ledger[39m
+  [32mok[39m [2m 5 [22m[desktop-chromium] › e2e\app.spec.ts:108:5 › legacy live-order endpoint remains fail-closed[2m (1.4s)[22m
+  [32mok[39m [2m 6 [22m[desktop-chromium] › e2e\app.spec.ts:122:5 › captures dashboard and analyst visual evidence[2m (3.0s)[22m
+  [32mok[39m [2m 7 [22m[desktop-chromium] › e2e\dataset-ledger.spec.ts:96:7 › the experiment ledger — same question, same answer, forever › a completed experiment reopens from its ledger, identically[2m (341ms)[22m
+  [32mok[39m [2m 8 [22m[desktop-chromium] › e2e\dataset-ledger.spec.ts:143:7 › the experiment ledger — same question, same answer, forever › a gauntlet verdict is pinned to its snapshot, in the response AND the trial ledger[2m (152ms)[22m
+  [32mok[39m [2m 9 [22m[desktop-chromium] › e2e\dataset-ledger.spec.ts:190:7 › the experiment ledger — same question, same answer, forever › the rehearsal ledger shows each verdict with the dataset it was judged on[2m (1.8s)[22m
+  [32mok[39m [2m10 [22m[desktop-chromium] › e2e\dataset-ledger.spec.ts:215:7 › the experiment ledger — same question, same answer, forever › the inspector UI serves ledger evidence without any live candle request[2m (5.2s)[22m
+  [32mok[39m [2m11 [22m[desktop-chromium] › e2e\engines.spec.ts:82:7 › cost and capital viability › states what the owner's capital can and cannot trade[2m (2.2s)[22m
+  [32mok[39m [2m12 [22m[desktop-chromium] › e2e\engines.spec.ts:110:7 › cost and capital viability › shows the ladder, including the level at which each product becomes possible[2m (3.2s)[22m
+  [32mok[39m [2m13 [22m[desktop-chromium] › e2e\engines.spec.ts:122:7 › cost and capital viability › explains why delivery costs more, rather than only that it does[2m (2.6s)[22m
+  [32mok[39m [2m14 [22m[desktop-chromium] › e2e\engines.spec.ts:131:7 › forecast validation › reports an empty record as empty, not as a verdict[2m (2.2s)[22m
+  [32mok[39m [2m15 [22m[desktop-chromium] › e2e\engines.spec.ts:148:7 › intraday accumulation › does not claim coverage it has not accumulated[2m (2.3s)[22m
+  [32mok[39m [2m16 [22m[desktop-chromium] › e2e\engines.spec.ts:170:7 › the promotion ladder › gives every strategy a stage and a reason for it[2m (3.4s)[22m
+  [32mok[39m [2m17 [22m[desktop-chromium] › e2e\engines.spec.ts:187:7 › the promotion ladder › never shows a strategy past owner review without forward evidence[2m (5.9s)[22m
+  [32mok[39m [2m18 [22m[desktop-chromium] › e2e\engines.spec.ts:197:7 › navigation reaches every screen › every nav link resolves to a page that renders[2m (11.3s)[22m
+  [32mok[39m [2m19 [22m[desktop-chromium] › e2e\engines.spec.ts:222:7 › the refusals that must never soften › order placement stays fail-closed[2m (2.6s)[22m
+  [32mok[39m [2m20 [22m[desktop-chromium] › e2e\engines.spec.ts:257:7 › the refusals that must never soften › the removed Robinhood path stays removed[2m (2.4s)[22m
+  [32mok[39m [2m21 [22m[desktop-chromium] › e2e\golden-journey.spec.ts:71:7 › golden journey — author, rehearse, refuse › the owner's complete path through the running product[2m (14.7s)[22m
+  [32mok[39m [2m22 [22m[desktop-chromium] › e2e\golden-journey.spec.ts:257:7 › the professor path — prose in, strategy or refusal out › an expressible idea becomes a family-bearing strategy; the others are refused by name[2m (6.0s)[22m
+  [32mok[39m [2m23 [22m[desktop-chromium] › e2e\golden-journey.spec.ts:356:7 › trade inspection — why, what, and where the money went › the inspector answers honestly with and without data[2m (2.7s)[22m
+  [32mok[39m [2m24 [22m[desktop-chromium] › e2e\hypothesis-inbox.spec.ts:17:5 › a held hypothesis appears in the inbox with its held status, not silently vanished[2m (4.0s)[22m
+  [32mok[39m [2m25 [22m[desktop-chromium] › e2e\interaction.spec.ts:42:7 › instrument search › typing a symbol and submitting navigates to that instrument[2m (3.9s)[22m
+  [32mok[39m [2m26 [22m[desktop-chromium] › e2e\interaction.spec.ts:73:7 › instrument search › submitting an empty search does not navigate[2m (2.8s)[22m
+  [32mok[39m [2m27 [22m[desktop-chromium] › e2e\interaction.spec.ts:88:7 › instrument search › the field clears after a successful search[2m (3.7s)[22m
+  [32mok[39m [2m28 [22m[desktop-chromium] › e2e\interaction.spec.ts:102:7 › workspace switching › moves between RESEARCH and EXECUTE and lands on a real view[2m (3.1s)[22m
+  [32mok[39m [2m29 [22m[desktop-chromium] › e2e\interaction.spec.ts:121:7 › workspace switching › the active workspace stays highlighted after navigating within it[2m (1.7s)[22m
+  [32mok[39m [2m30 [22m[desktop-chromium] › e2e\interaction.spec.ts:131:7 › market selector › switching market changes what the selector reports as active[2m (2.4s)[22m
+  [32mok[39m [2m31 [22m[desktop-chromium] › e2e\interaction.spec.ts:149:7 › market selector › the choice survives a reload[2m (3.2s)[22m
+  [32mok[39m [2m32 [22m[desktop-chromium] › e2e\interaction.spec.ts:168:7 › strategy authoring › choosing a template and compiling produces a saved draft[2m (2.4s)[22m
+  [31mx[39m  [2m33 [22m[31m[desktop-chromium] › e2e\interaction.spec.ts:208:7 › mobile › the primary journey works on a phone without horizontal overflow[39m[2m (3.7s)[22m
+  [32mok[39m [2m34 [22m[desktop-chromium] › e2e\interaction.spec.ts:228:7 › mobile › search is reachable and operable on a phone[2m (2.7s)[22m
+  [32mok[39m [2m35 [22m[desktop-chromium] › e2e\interaction.spec.ts:241:7 › failure handling › a failing data request leaves a stated error, not a blank panel or a zero[2m (1.7s)[22m
+  [32mok[39m [2m36 [22m[desktop-chromium] › e2e\interaction.spec.ts:256:7 › failure handling › the app survives going offline and recovers when the network returns[2m (2.6s)[22m
+  [32mok[39m [2m37 [22m[desktop-chromium] › e2e\interaction.spec.ts:272:7 › interaction stress › rapid repeated navigation does not break the shell[2m (3.5s)[22m
+  [32mok[39m [2m38 [22m[desktop-chromium] › e2e\interaction.spec.ts:288:7 › interaction stress › double-submitting the search does not leave the app stranded[2m (2.7s)[22m
+  [32mok[39m [2m39 [22m[desktop-chromium] › e2e\intraday.spec.ts:59:7 › the intraday authoring contract › accepts an opening-range strategy and states the square-off it cannot escape[2m (63ms)[22m
+  [32mok[39m [2m40 [22m[desktop-chromium] › e2e\intraday.spec.ts:88:7 › the intraday authoring contract › refuses a square-off that would outlast the broker's, rather than clamping it[2m (54ms)[22m
+  [32mok[39m [2m41 [22m[desktop-chromium] › e2e\intraday.spec.ts:108:7 › the intraday authoring contract › refuses an opening range on daily bars, which have no inside[2m (49ms)[22m
+  [32mok[39m [2m42 [22m[desktop-chromium] › e2e\intraday.spec.ts:129:7 › the intraday authoring contract › still refuses an intraday strategy that declares no spread[2m (31ms)[22m
+  [32mok[39m [2m43 [22m[desktop-chromium] › e2e\intraday.spec.ts:150:7 › the guarded gauntlet › never spends a trial without an explicit confirmation[2m (34ms)[22m
+  [32mok[39m [2m44 [22m[desktop-chromium] › e2e\intraday.spec.ts:168:7 › the learning page shows progress, not just activity › renders the metrics panel with the execution assumptions strip[2m (2.5s)[22m
+  [32mok[39m [2m45 [22m[mobile-chromium] › e2e\app.spec.ts:40:5 › all primary screens render without runtime errors[2m (17.4s)[22m
+  [32mok[39m [2m46 [22m[mobile-chromium] › e2e\app.spec.ts:54:5 › market selector and instrument search preserve canonical navigation[2m (5.0s)[22m
+  [32m-[39m  [2m47 [22m[36m[mobile-chromium] › e2e\app.spec.ts:79:5 › AI desk returns cited fixture analysis[39m
+  [32m-[39m  [2m48 [22m[36m[mobile-chromium] › e2e\app.spec.ts:89:5 › paper order stays in the simulated ledger[39m
+  [32mok[39m [2m49 [22m[mobile-chromium] › e2e\app.spec.ts:108:5 › legacy live-order endpoint remains fail-closed[2m (2.2s)[22m
+  [32mok[39m [2m50 [22m[mobile-chromium] › e2e\app.spec.ts:122:5 › captures dashboard and analyst visual evidence[2m (7.5s)[22m
+  [32mok[39m [2m51 [22m[mobile-chromium] › e2e\dataset-ledger.spec.ts:96:7 › the experiment ledger — same question, same answer, forever › a completed experiment reopens from its ledger, identically[2m (424ms)[22m
+  [32mok[39m [2m52 [22m[mobile-chromium] › e2e\dataset-ledger.spec.ts:143:7 › the experiment ledger — same question, same answer, forever › a gauntlet verdict is pinned to its snapshot, in the response AND the trial ledger[2m (224ms)[22m
+  [32m-[39m  [2m53 [22m[36m[mobile-chromium] › e2e\dataset-ledger.spec.ts:190:7 › the experiment ledger — same question, same answer, forever › the rehearsal ledger shows each verdict with the dataset it was judged on[39m
+  [32m-[39m  [2m54 [22m[36m[mobile-chromium] › e2e\dataset-ledger.spec.ts:215:7 › the experiment ledger — same question, same answer, forever › the inspector UI serves ledger evidence without any live candle request[39m
+  [32mok[39m [2m55 [22m[mobile-chromium] › e2e\engines.spec.ts:82:7 › cost and capital viability › states what the owner's capital can and cannot trade[2m (4.0s)[22m
+  [32mok[39m [2m56 [22m[mobile-chromium] › e2e\engines.spec.ts:110:7 › cost and capital viability › shows the ladder, including the level at which each product becomes possible[2m (4.7s)[22m
+  [32mok[39m [2m57 [22m[mobile-chromium] › e2e\engines.spec.ts:122:7 › cost and capital viability › explains why delivery costs more, rather than only that it does[2m (3.7s)[22m
+  [32mok[39m [2m58 [22m[mobile-chromium] › e2e\engines.spec.ts:131:7 › forecast validation › reports an empty record as empty, not as a verdict[2m (3.9s)[22m
+  [32mok[39m [2m59 [22m[mobile-chromium] › e2e\engines.spec.ts:148:7 › intraday accumulation › does not claim coverage it has not accumulated[2m (3.7s)[22m
+  [32mok[39m [2m60 [22m[mobile-chromium] › e2e\engines.spec.ts:170:7 › the promotion ladder › gives every strategy a stage and a reason for it[2m (4.8s)[22m
+  [32mok[39m [2m61 [22m[mobile-chromium] › e2e\engines.spec.ts:187:7 › the promotion ladder › never shows a strategy past owner review without forward evidence[2m (3.9s)[22m
+  [32mok[39m [2m62 [22m[mobile-chromium] › e2e\engines.spec.ts:197:7 › navigation reaches every screen › every nav link resolves to a page that renders[2m (10.3s)[22m
+  [32mok[39m [2m63 [22m[mobile-chromium] › e2e\engines.spec.ts:222:7 › the refusals that must never soften › order placement stays fail-closed[2m (3.0s)[22m
+  [32mok[39m [2m64 [22m[mobile-chromium] › e2e\engines.spec.ts:257:7 › the refusals that must never soften › the removed Robinhood path stays removed[2m (3.4s)[22m
+  [32mok[39m [2m65 [22m[mobile-chromium] › e2e\golden-journey.spec.ts:71:7 › golden journey — author, rehearse, refuse › the owner's complete path through the running product[2m (17.5s)[22m
+  [32mok[39m [2m66 [22m[mobile-chromium] › e2e\golden-journey.spec.ts:257:7 › the professor path — prose in, strategy or refusal out › an expressible idea becomes a family-bearing strategy; the others are refused by name[2m (8.8s)[22m
+  [32mok[39m [2m67 [22m[mobile-chromium] › e2e\golden-journey.spec.ts:356:7 › trade inspection — why, what, and where the money went › the inspector answers honestly with and without data[2m (5.3s)[22m
+  [32mok[39m [2m68 [22m[mobile-chromium] › e2e\hypothesis-inbox.spec.ts:17:5 › a held hypothesis appears in the inbox with its held status, not silently vanished[2m (5.1s)[22m
+  [32mok[39m [2m69 [22m[mobile-chromium] › e2e\interaction.spec.ts:42:7 › instrument search › typing a symbol and submitting navigates to that instrument[2m (4.8s)[22m
+  [32mok[39m [2m70 [22m[mobile-chromium] › e2e\interaction.spec.ts:73:7 › instrument search › submitting an empty search does not navigate[2m (4.1s)[22m
+  [32mok[39m [2m71 [22m[mobile-chromium] › e2e\interaction.spec.ts:88:7 › instrument search › the field clears after a successful search[2m (6.4s)[22m
+  [32mok[39m [2m72 [22m[mobile-chromium] › e2e\interaction.spec.ts:102:7 › workspace switching › moves between RESEARCH and EXECUTE and lands on a real view[2m (6.2s)[22m
+  [32mok[39m [2m73 [22m[mobile-chromium] › e2e\interaction.spec.ts:121:7 › workspace switching › the active workspace stays highlighted after navigating within it[2m (3.6s)[22m
+  [32mok[39m [2m74 [22m[mobile-chromium] › e2e\interaction.spec.ts:131:7 › market selector › switching market changes what the selector reports as active[2m (5.3s)[22m
+  [32mok[39m [2m75 [22m[mobile-chromium] › e2e\interaction.spec.ts:149:7 › market selector › the choice survives a reload[2m (4.7s)[22m
+  [32mok[39m [2m76 [22m[mobile-chromium] › e2e\interaction.spec.ts:168:7 › strategy authoring › choosing a template and compiling produces a saved draft[2m (4.3s)[22m
+  [32mok[39m [2m77 [22m[mobile-chromium] › e2e\interaction.spec.ts:208:7 › mobile › the primary journey works on a phone without horizontal overflow[2m (4.9s)[22m
+  [32mok[39m [2m78 [22m[mobile-chromium] › e2e\interaction.spec.ts:228:7 › mobile › search is reachable and operable on a phone[2m (4.0s)[22m
+  [32mok[39m [2m79 [22m[mobile-chromium] › e2e\interaction.spec.ts:241:7 › failure handling › a failing data request leaves a stated error, not a blank panel or a zero[2m (2.3s)[22m
+  [32mok[39m [2m80 [22m[mobile-chromium] › e2e\interaction.spec.ts:256:7 › failure handling › the app survives going offline and recovers when the network returns[2m (5.0s)[22m
+  [32mok[39m [2m81 [22m[mobile-chromium] › e2e\interaction.spec.ts:272:7 › interaction stress › rapid repeated navigation does not break the shell[2m (8.2s)[22m
+  [32mok[39m [2m82 [22m[mobile-chromium] › e2e\interaction.spec.ts:288:7 › interaction stress › double-submitting the search does not leave the app stranded[2m (5.1s)[22m
+  [32mok[39m [2m83 [22m[mobile-chromium] › e2e\intraday.spec.ts:59:7 › the intraday authoring contract › accepts an opening-range strategy and states the square-off it cannot escape[2m (101ms)[22m
+  [32mok[39m [2m84 [22m[mobile-chromium] › e2e\intraday.spec.ts:88:7 › the intraday authoring contract › refuses a square-off that would outlast the broker's, rather than clamping it[2m (45ms)[22m
+  [32mok[39m [2m85 [22m[mobile-chromium] › e2e\intraday.spec.ts:108:7 › the intraday authoring contract › refuses an opening range on daily bars, which have no inside[2m (56ms)[22m
+  [32mok[39m [2m86 [22m[mobile-chromium] › e2e\intraday.spec.ts:129:7 › the intraday authoring contract › still refuses an intraday strategy that declares no spread[2m (47ms)[22m
+  [32mok[39m [2m87 [22m[mobile-chromium] › e2e\intraday.spec.ts:150:7 › the guarded gauntlet › never spends a trial without an explicit confirmation[2m (67ms)[22m
+  [32mok[39m [2m88 [22m[mobile-chromium] › e2e\intraday.spec.ts:168:7 › the learning page shows progress, not just activity › renders the metrics panel with the execution assumptions strip[2m (4.0s)[22m
+
+
+[31m  1) [desktop-chromium] › e2e\interaction.spec.ts:208:7 › mobile › the primary journey works on a phone without horizontal overflow [39m
+
+    Error: /strategies overflows horizontally
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: <= [32m391[39m
+    Received:    [31m403[39m
+
+    [0m [90m 218 |[39m       [90m// One pixel of tolerance for sub-pixel rounding; anything more is a layout the owner has to[39m
+     [90m 219 |[39m       [90m// scroll sideways to read.[39m
+    [31m[1m>[22m[39m[90m 220 |[39m       expect(overflow[33m.[39mdocument[33m,[39m [32m`${route} overflows horizontally`[39m)[33m.[39mtoBeLessThanOrEqual(
+     [90m     |[39m                                                                    [31m[1m^[22m[39m
+     [90m 221 |[39m         overflow[33m.[39mviewport [33m+[39m [35m1[39m[33m,[39m
+     [90m 222 |[39m       )[33m;[39m
+     [90m 223 |[39m     }[0m
+    [2m    at E:\BoraTradingTool\e2e\interaction.spec.ts:220:68[22m
+
+[2m    attachment #1: [1mscreenshot[2m (image/png) [2m──────────────────────────────────────────────────────────[2m[22m
+[2m    test-results\interaction-mobile-the-pri-86c84-without-horizontal-overflow-desktop-chromium\test-failed-1.png[22m
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[2m    attachment #2: [1mvideo[2m (video/webm) [2m──────────────────────────────────────────────────────────────[2m[22m
+[2m    test-results\interaction-mobile-the-pri-86c84-without-horizontal-overflow-desktop-chromium\video.webm[22m
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[2m    Error Context: test-results\interaction-mobile-the-pri-86c84-without-horizontal-overflow-desktop-chromium\error-context.md[22m
+
+[2m    attachment #4: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results\interaction-mobile-the-pri-86c84-without-horizontal-overflow-desktop-chromium\trace.zip[22m
+[2m    Usage:[22m
+
+[2m        npx playwright show-trace test-results\interaction-mobile-the-pri-86c84-without-horizontal-overflow-desktop-chromium\trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  1 failed[39m
+[31m    [desktop-chromium] › e2e\interaction.spec.ts:208:7 › mobile › the primary journey works on a phone without horizontal overflow [39m
+[33m  6 skipped[39m
+[32m  81 passed[39m[2m (5.9m)[22m

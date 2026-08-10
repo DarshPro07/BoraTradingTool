@@ -1,6 +1,12 @@
 import type { Candle } from "@/lib/providers/types";
+import {
+  describeExecution,
+  executionContextFor,
+  type BrokerExecutionProfile,
+} from "@/lib/broker/execution-profile";
+import { sessionStamps } from "@/lib/market/calendar";
 import type { Condition, StrategyDsl } from "@/lib/strategy/dsl";
-import { roundTripCostBps } from "@/lib/strategy/dsl";
+import { BAR_MINUTES, clockToMinute, isIntradayResolution, marketOf, minuteToClock, roundTripCostBps } from "@/lib/strategy/dsl";
 import type { GauntletEvidence } from "@/lib/strategy/gauntlet";
 import { UNAVAILABLE_FEATURES, buildFeaturePanel, isDerivable, type FeaturePanel, type FeatureVector } from "./features";
 
@@ -19,7 +25,14 @@ import { UNAVAILABLE_FEATURES, buildFeaturePanel, isDerivable, type FeaturePanel
  *      value would let a strategy referencing sector strength "pass" on price data alone.
  */
 
-export type ExitReason = "stop_loss" | "take_profit" | "time_limit" | "condition" | "end_of_data";
+export type ExitReason =
+  | "stop_loss"
+  | "take_profit"
+  | "time_limit"
+  | "condition"
+  | "square_off"
+  | "end_of_data";
+
 
 export interface Trade {
   entryIndex: number;
@@ -38,12 +51,34 @@ export interface Trade {
 export type RefusalCode =
   | "FEATURE_NOT_AVAILABLE"
   | "INSUFFICIENT_BARS"
-  | "UNORDERED_BARS";
+  | "UNORDERED_BARS"
+  /** No broker execution profile covers this universe. Refused, never defaulted. */
+  | "EXECUTION_PROFILE_UNAVAILABLE"
+  /** The bars span a profile-version boundary; a run cannot silently change policy mid-way. */
+  | "PROFILE_WINDOW_MISMATCH";
 
 export interface BacktestRefusal {
   ok: false;
   code: RefusalCode;
   message: string;
+}
+
+/**
+ * The execution assumptions a run was actually simulated under.
+ *
+ * Returned with the result rather than logged, so any consumer that shows a number can show what
+ * produced it. The hardcoded 15:20 this replaces was invisible in exactly this position — results
+ * carried no record of the deadline that shaped them.
+ */
+export interface ExecutionAssumption {
+  profileId: string;
+  broker: string;
+  /** "15:25", local exchange time. */
+  mandatoryExit: string;
+  policyVersion: string;
+  sourceConfidence: string;
+  /** One line for the UI: broker, deadline, provenance, forced-close charge. */
+  description: string;
 }
 
 export interface BacktestRun {
@@ -53,6 +88,8 @@ export interface BacktestRun {
   barsEvaluated: number;
   /** Bars where the entry condition could not be evaluated because a feature was warming up. */
   warmingUp: number;
+  /** Null for daily runs, which have no forced exit to assume. */
+  execution: ExecutionAssumption | null;
 }
 
 export type BacktestResult = BacktestRun | BacktestRefusal;
@@ -207,10 +244,83 @@ export function runBacktest(
     };
   }
 
-  const panel: FeaturePanel = buildFeaturePanel(bars);
+  const market = marketOf(dsl.universe.market);
+  const resolution = dsl.universe.resolution;
+  const intraday = isIntradayResolution(resolution);
+
+  const panel: FeaturePanel = buildFeaturePanel(bars, { market, resolution });
   const roundTripCost = roundTripCostBps(dsl, 1) / 10_000;
   const stopLoss = dsl.exit.stopLossPct !== undefined ? dsl.exit.stopLossPct / 100 : undefined;
   const takeProfit = dsl.exit.takeProfitPct !== undefined ? dsl.exit.takeProfitPct / 100 : undefined;
+
+  /**
+   * The square-off clock, resolved from the broker execution profile — never a constant.
+   *
+   * The deadline binds whether or not the spec mentions it — a strategy cannot opt out of the
+   * broker's forced flat, and modelling a position held past it prices a fill that was never
+   * available. A declared `squareOffAt` may only tighten it, which the schema already enforces;
+   * `Math.min` here is belt and braces rather than a second policy.
+   *
+   * Resolved once per run against the bars' own dates, and refused when no profile covers them or
+   * when first and last bar fall under different policy versions. The alternative — a hardcoded
+   * 15:20 — sat here until 2026-08-09 claiming to be Zerodha's square-off, and was wrong: the
+   * broker documents 15:25 for non-CAS equity.
+   */
+  let executionProfile: BrokerExecutionProfile | null = null;
+  if (intraday) {
+    const atFirst = executionContextFor(dsl.universe.market, resolution, new Date(bars[0].time * 1000));
+    if (!atFirst.available) {
+      return { ok: false, code: "EXECUTION_PROFILE_UNAVAILABLE", message: atFirst.reason };
+    }
+    const atLast = executionContextFor(
+      dsl.universe.market,
+      resolution,
+      new Date(bars[bars.length - 1].time * 1000),
+    );
+    if (!atLast.available || atLast.profile.id !== atFirst.profile.id) {
+      return {
+        ok: false,
+        code: "PROFILE_WINDOW_MISMATCH",
+        message:
+          `These bars span more than one execution-profile window (${atFirst.profile.id} at the start, ` +
+          `${atLast.available ? atLast.profile.id : "none"} at the end). A run that silently changed ` +
+          "broker policy mid-way would price exits under a rule that was not in force. Split the range.",
+      };
+    }
+    if (atFirst.profile.mandatoryExitMinute === null) {
+      return {
+        ok: false,
+        code: "EXECUTION_PROFILE_UNAVAILABLE",
+        message:
+          `${atFirst.profile.id} declares no mandatory exit, so an intraday simulation against it has ` +
+          "no deadline to enforce. That describes a product this run cannot honestly model.",
+      };
+    }
+    executionProfile = atFirst.profile;
+  }
+
+  const stamps = intraday ? sessionStamps(bars.map((bar) => bar.time), market) : null;
+  const barMinutes = BAR_MINUTES[resolution];
+  const ceilingMinute = Math.min(
+    executionProfile?.mandatoryExitMinute ?? Number.POSITIVE_INFINITY,
+    dsl.exit.squareOffAt !== undefined ? clockToMinute(dsl.exit.squareOffAt) : Number.POSITIVE_INFINITY,
+  );
+
+  /**
+   * True when a position open at bar `index` must be flat by that bar's close.
+   *
+   * Two independent reasons, both non-negotiable:
+   *   1. the next bar starts at or after the square-off minute, so this is the last bar that can
+   *      be traded out of inside the session;
+   *   2. the next bar belongs to a different session — an intraday position never survives a
+   *      close, and a data gap must not turn one into an overnight hold.
+   */
+  const mustFlatten = (index: number): boolean => {
+    if (!stamps) return false;
+    if (stamps[index].minute + barMinutes >= ceilingMinute) return true;
+    const next = stamps[index + 1];
+    return next !== undefined && next.date !== stamps[index].date;
+  };
 
   const trades: Trade[] = [];
   let warmingUp = 0;
@@ -236,6 +346,10 @@ export function runBacktest(
         exit = { price: position.entryPrice * (1 - stopLoss), reason: "stop_loss" };
       } else if (takeProfit !== undefined && bar.high >= position.entryPrice * (1 + takeProfit)) {
         exit = { price: position.entryPrice * (1 + takeProfit), reason: "take_profit" };
+      } else if (mustFlatten(i)) {
+        // After the intrabar stop and target, which would have fired earlier in the bar, and
+        // before the strategy's own rules, which no longer get a say once the session is over.
+        exit = { price: bar.close, reason: "square_off" };
       } else if (dsl.exit.afterDays !== undefined && held >= dsl.exit.afterDays) {
         exit = { price: bar.close, reason: "time_limit" };
       } else if (dsl.exit.condition && evaluate(dsl.exit.condition, vector, previous) === true) {
@@ -255,7 +369,11 @@ export function runBacktest(
       continue;
     }
     if (signal) {
-      // Decided on this close, filled on the next open.
+      // Decided on this close, filled on the next open — unless that fill bar is itself past the
+      // square-off, in which case the position would open and be flattened in the same bar. That
+      // is not a trade, it is a round trip's costs for no exposure, and counting it would make an
+      // otherwise sound strategy look worse for a reason no trader would have accepted.
+      if (mustFlatten(i + 1)) continue;
       position = { entryIndex: i + 1, entryPrice: bars[i + 1].open };
     }
   }
@@ -277,6 +395,17 @@ export function runBacktest(
     trades,
     barsEvaluated,
     warmingUp,
+    execution:
+      executionProfile === null
+        ? null
+        : {
+            profileId: executionProfile.id,
+            broker: executionProfile.broker,
+            mandatoryExit: minuteToClock(executionProfile.mandatoryExitMinute!),
+            policyVersion: executionProfile.policyVersion,
+            sourceConfidence: executionProfile.sources[0].confidence,
+            description: describeExecution(executionProfile),
+          },
     evidence: {
       inSampleReturns,
       outOfSampleReturns,

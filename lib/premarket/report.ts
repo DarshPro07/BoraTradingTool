@@ -1,4 +1,4 @@
-import { INSTRUMENT_CATALOG, searchInstruments } from "@/lib/market/catalog";
+import { listCurrentInstruments, searchInstruments } from "@/lib/market/catalog";
 import { getMarketPhase, UNAVAILABLE_PREMARKET_INPUTS, type PhaseReading } from "@/lib/market/phases";
 import { getNormalizedQuote } from "@/lib/market/service";
 import type { Instrument, Market, NormalizedQuote } from "@/lib/market/types";
@@ -43,7 +43,7 @@ const UNIVERSE_SIZE = 20;
 
 function universe(market: Market) {
   return market === "US"
-    ? INSTRUMENT_CATALOG.filter((instrument) => instrument.market === "US").slice(0, UNIVERSE_SIZE)
+    ? listCurrentInstruments({ market: "US" }).slice(0, UNIVERSE_SIZE)
     : searchInstruments("", "XNSE").slice(0, UNIVERSE_SIZE);
 }
 

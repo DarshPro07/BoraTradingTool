@@ -11,6 +11,37 @@ const MIGRATIONS = [
   "0004_evidence_and_paper_lifecycle.sql",
   "0005_evidence_snapshots.sql",
   "0006_security_integrity.sql",
+  "0007_rehearsal_outcomes.sql",
+  // Research identity: campaign → family → identity → selection trials → holdout access.
+  // Registered on owner instruction, 2026-08-09. Until this line existed the file sat in
+  // `drizzle/pending/` — this array is the only thing that makes a migration real, and a `.sql`
+  // file in `drizzle/` that is absent from it is applied by nothing while looking applied.
+  "0008_research_identity.sql",
+  // Dataset snapshots + experiment trade ledger. Registered under the owner's 2026-08-09 item-13
+  // instruction ("Add explicit dataset snapshot identity... Every experiment records its dataset
+  // snapshot"). Research reads snapshots from the canonical store; completed experiments reopen
+  // from their ledger, never from a fresh provider window.
+  "0009_dataset_snapshots.sql",
+  // Slice 13b (owner directive 2026-08-09 21:09): "Every quantitative decision must be
+  // reproducible from an explicit immutable experiment manifest." Additive columns only:
+  // experiments.manifest, plus dataset_snapshot_id on selection_trials / holdout_access /
+  // rehearsal_outcomes.
+  "0010_experiment_manifest.sql",
+  // Official NSE security identity and effective-dated listing history. ISIN is durable; existing
+  // symbol-based instrument ids remain operational aliases so no persisted evidence is rewritten.
+  "0011_nse_security_master.sql",
+  // Forward evidence, shadow stage (mission workstream 1, owner directive 2026-08-09 22:51):
+  // frozen challengers, immutable prospective signals, append-only outcomes — all trigger-enforced.
+  "0012_forward_evidence.sql",
+  // WS1b (owner directive 2026-08-10): the paper stage for forward challengers — immutable
+  // execution intents, lifecycle-frozen paper orders, append-only position outcomes, accounts
+  // at real validation capital.
+  "0013_paper_forward.sql",
+  // Fresh installs start the safe research loop without a manual button. The migration changes
+  // only the untouched bootstrap row, so an owner-selected OFF state remains authoritative.
+  "0014_autonomy_default.sql",
+  // The AgentRun ledger: every model call MarketPulse makes, including the refused ones.
+  "0015_agent_runs.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {
@@ -120,6 +151,26 @@ function applyEvidenceLifecycleMigration(sqlite: Database.Database): void {
     WHERE status <> 'OPEN' AND resolved_at IS NULL`);
 }
 
+function applyAutonomyDefaultMigration(sqlite: Database.Database): void {
+  // Some legacy databases recorded 0002 as applied without containing every 0002 table. Upgrade
+  // those databases without inventing state; a genuinely fresh schema always has this row.
+  if (!tableExists(sqlite, "learning_state")) return;
+  const changed = sqlite.prepare(`
+    UPDATE learning_state
+    SET mode = 'learning', updated_by = 'startup-default', updated_at = unixepoch()
+    WHERE id = 1 AND mode = 'off' AND updated_at = 0
+  `).run().changes;
+  if (changed === 0 || !tableExists(sqlite, "audit_events")) return;
+  sqlite.prepare(`
+    INSERT INTO audit_events
+      (actor, action, decision, subject, detail, learning_mode, created_at)
+    VALUES
+      ('startup-default', 'set_learning_mode', 'allowed', 'learning',
+       'Fresh-install default: safe research autonomy starts automatically; financial mutation remains prohibited.',
+       'learning', unixepoch())
+  `).run();
+}
+
 export function migrateDatabase(
   sqlite: Database.Database,
   migrationsDirectory = path.join(process.cwd(), "drizzle"),
@@ -141,6 +192,8 @@ export function migrateDatabase(
         applyEvidenceLifecycleMigration(sqlite);
       } else if (version === "0006_security_integrity.sql") {
         applySecurityIntegrityMigration(sqlite);
+      } else if (version === "0014_autonomy_default.sql") {
+        applyAutonomyDefaultMigration(sqlite);
       } else {
         const sql = fs.readFileSync(/* turbopackIgnore: true */ migrationPath, "utf8");
         sqlite.exec(sql);

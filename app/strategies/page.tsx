@@ -1,11 +1,16 @@
 import { strategyLab } from "@/lib/dashboard/queries";
 import { GATES } from "@/lib/strategy/gauntlet";
 import { EmptyState, Panel, StatTile } from "@/components/system/Panel";
+import { GuidedStrategyFlow } from "@/components/factory/GuidedStrategyFlow";
 import { FeatureSupportPanel } from "@/components/strategy/FeatureSupportPanel";
 import { GraveyardPanel } from "@/components/strategy/GraveyardPanel";
 import { standings } from "@/lib/strategy/promotion";
 import { RunGauntletButton } from "@/components/strategy/RunGauntletButton";
 import { StrategyAuthor } from "@/components/strategy/StrategyAuthor";
+import { TradeInspector } from "@/components/strategy/TradeInspector";
+import { RehearsalLedger } from "@/components/strategy/RehearsalLedger";
+import { QuantAnalyticsPanel } from "@/components/quant/QuantAnalyticsPanel";
+import { HypothesisInbox } from "@/components/research/HypothesisInbox";
 import { StarMap } from "@/components/strategy/StarMap";
 import { ValidationFunnel } from "@/components/strategy/ValidationFunnel";
 
@@ -53,9 +58,32 @@ export default async function StrategyLabPage() {
         />
       </div>
 
-      <Panel title="AUTHOR A STRATEGY">
+      {/* P3: the one guided flow — idea → interpretation → backtest → validate → forward. The
+          composer lives inside it (same testids, same engine); the DSL editor below stays as the
+          power path, which cannot mint research identity and says so. */}
+      <GuidedStrategyFlow />
+
+      <Panel title="AUTHOR A STRATEGY — DSL POWER PATH">
         <StrategyAuthor />
       </Panel>
+
+      {/* Item 15: every recorded hypothesis, including the held ones — a refusal with a stated
+          reason is work in the queue, not work lost. */}
+      <Panel title="HYPOTHESIS INBOX">
+        <HypothesisInbox />
+      </Panel>
+
+      {/* The audit surface: per-trade why/what/where-the-money-went for any stored strategy.
+          A replay, not a trial - it spends nothing and may run freely. */}
+      <Panel title="INSPECT">
+        <TradeInspector specs={strategies.map((strategy) => ({ id: strategy.id, name: strategy.name }))} />
+      </Panel>
+
+      {/* 13b: rehearsal verdicts with the dataset snapshot each was judged on. */}
+      <RehearsalLedger />
+
+      {/* Q1b: metrics that explain themselves — estimator, policy, assumptions, honest nulls. */}
+      <QuantAnalyticsPanel specs={strategies.map((strategy) => ({ id: strategy.id, name: strategy.name }))} />
 
       <FeatureSupportPanel />
 

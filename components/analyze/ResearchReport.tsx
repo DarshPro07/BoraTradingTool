@@ -1,5 +1,7 @@
 import type { Quote, Fundamentals, PriceTarget } from "@/lib/providers/types";
 import type { TechnicalIndicators, Signal } from "@/lib/data/technicals";
+import { formatMoney } from "@/lib/market/money";
+import type { Currency } from "@/lib/market/types";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
   bearSignals: Signal[];
   overallSignal: "buy" | "hold" | "sell";
   priceTarget: PriceTarget;
+  currency: Currency;
 }
 
 const SIGNAL_CONFIG = {
@@ -19,7 +22,7 @@ const SIGNAL_CONFIG = {
   sell: { label: "SELL", icon: TrendingDown, cls: "text-loss", bg: "bg-red/10 border-loss/30" },
 };
 
-export function ResearchReport({ ticker, quote, tech, fundamentals, bullSignals, bearSignals, overallSignal, priceTarget }: Props) {
+export function ResearchReport({ ticker, quote, tech, fundamentals, bullSignals, bearSignals, overallSignal, priceTarget, currency }: Props) {
   const cfg = SIGNAL_CONFIG[overallSignal];
   const Icon = cfg.icon;
   const upside = priceTarget.mean ? ((priceTarget.mean - quote.price) / quote.price) * 100 : null;
@@ -88,10 +91,10 @@ export function ResearchReport({ ticker, quote, tech, fundamentals, bullSignals,
 
       {/* Summary metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-panel">
-        <Metric label="Price" value={`$${quote.price.toFixed(2)}`} />
+        <Metric label="Price" value={formatMoney(quote.price, currency)} />
         <Metric
           label="Price Target"
-          value={priceTarget.mean ? `$${priceTarget.mean.toFixed(2)}` : "—"}
+          value={priceTarget.mean ? formatMoney(priceTarget.mean, currency) : "—"}
           sub={upside !== null ? `${upside > 0 ? "+" : ""}${upside.toFixed(1)}% upside` : undefined}
           subCls={upside !== null ? (upside > 0 ? "text-gain" : "text-loss") : ""}
         />

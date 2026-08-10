@@ -206,6 +206,66 @@ export const instruments = sqliteTable("instruments", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
+export const securityMasterSyncs = sqliteTable("security_master_syncs", {
+  id: text("id").primaryKey(),
+  observedAt: integer("observed_at", { mode: "timestamp" }).notNull(),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  status: text("status").notNull(),
+  sourceManifest: text("source_manifest").notNull(),
+  mainRowCount: integer("main_row_count").notNull().default(0),
+  smeRowCount: integer("sme_row_count").notNull().default(0),
+  totalRows: integer("total_rows").notNull().default(0),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  actor: text("actor").notNull(),
+});
+
+export const nseSecurities = sqliteTable("nse_securities", {
+  isin: text("isin").primaryKey(),
+  firstObservedAt: integer("first_observed_at", { mode: "timestamp" }).notNull(),
+  lastObservedAt: integer("last_observed_at", { mode: "timestamp" }).notNull(),
+});
+
+export const nseListingVersions = sqliteTable("nse_listing_versions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  isin: text("isin").notNull(),
+  exchange: text("exchange").notNull().default("XNSE"),
+  symbol: text("symbol").notNull(),
+  name: text("name").notNull(),
+  series: text("series").notNull(),
+  assetType: text("asset_type").notNull(),
+  listingStatus: text("listing_status").notNull(),
+  dateOfListing: text("date_of_listing"),
+  paidUpValue: real("paid_up_value"),
+  marketLot: integer("market_lot"),
+  faceValue: real("face_value"),
+  effectiveFrom: integer("effective_from", { mode: "timestamp" }).notNull(),
+  effectiveTo: integer("effective_to", { mode: "timestamp" }),
+  sourceSyncId: text("source_sync_id").notNull(),
+});
+
+export const nseSecurityAliases = sqliteTable("nse_security_aliases", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  isin: text("isin").notNull(),
+  exchange: text("exchange").notNull().default("XNSE"),
+  aliasType: text("alias_type").notNull(),
+  alias: text("alias").notNull(),
+  firstObservedAt: integer("first_observed_at", { mode: "timestamp" }).notNull(),
+  lastObservedAt: integer("last_observed_at", { mode: "timestamp" }).notNull(),
+  sourceSyncId: text("source_sync_id").notNull(),
+});
+
+export const nseProviderMappings = sqliteTable("nse_provider_mappings", {
+  provider: text("provider").notNull(),
+  isin: text("isin").notNull(),
+  providerInstrumentId: text("provider_instrument_id"),
+  providerSymbol: text("provider_symbol"),
+  availability: text("availability").notNull(),
+  verifiedAt: integer("verified_at", { mode: "timestamp" }),
+  source: text("source"),
+});
+
 export const paperAccounts = sqliteTable("paper_accounts", {
   currency: text("currency").primaryKey(),
   startingCash: real("starting_cash").notNull(),
@@ -436,6 +496,21 @@ export const trials = sqliteTable("trials", {
   completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
+/**
+ * The latest rehearsal verdict per strategy — what the ladder's `draft` rung was always written
+ * to read, and never received. See `drizzle/0007_rehearsal_outcomes.sql`.
+ */
+export const rehearsalOutcomes = sqliteTable("rehearsal_outcomes", {
+  strategySpecId: text("strategy_spec_id").primaryKey(),
+  verdict: text("verdict").notNull(),
+  reason: text("reason").notNull(),
+  trades: integer("trades").notNull().default(0),
+  instrumentsEvaluated: integer("instruments_evaluated").notNull().default(0),
+  rehearsedAt: integer("rehearsed_at", { mode: "timestamp" }).notNull(),
+  // 13b: the snapshot this verdict was judged on. NULL = pre-manifest legacy row.
+  datasetSnapshotId: text("dataset_snapshot_id"),
+});
+
 export const validationResults = sqliteTable("validation_results", {
   id: text("id").primaryKey(),
   strategySpecId: text("strategy_spec_id").notNull(),
@@ -462,6 +537,132 @@ export const forwardOutcomes = sqliteTable("forward_outcomes", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
+/** Forward evidence, shadow stage — see drizzle/0012_forward_evidence.sql for the triggers. */
+export const forwardChallengers = sqliteTable("forward_challengers", {
+  id: text("id").primaryKey(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  strategyFamilyId: text("strategy_family_id").notNull(),
+  researchCampaignId: text("research_campaign_id").notNull(),
+  activatedAt: integer("activated_at", { mode: "timestamp" }).notNull(),
+  codeFingerprint: text("code_fingerprint").notNull(),
+  engineVersion: text("engine_version").notNull(),
+  executionProfileId: text("execution_profile_id"),
+  feeModelId: text("fee_model_id").notNull(),
+  market: text("market").notNull(),
+  resolution: text("resolution").notNull(),
+  universe: text("universe").notNull(),
+  dslHash: text("dsl_hash").notNull(),
+  promotionExperimentId: text("promotion_experiment_id"),
+  promotionSnapshotId: text("promotion_snapshot_id"),
+  forwardPolicy: text("forward_policy").notNull(),
+  forwardPolicyVersion: text("forward_policy_version").notNull(),
+  status: text("status").notNull(),
+  retiredAt: integer("retired_at", { mode: "timestamp" }),
+  retiredReason: text("retired_reason"),
+  lastEvaluatedTime: integer("last_evaluated_time").notNull().default(0),
+  createdBy: text("created_by").notNull(),
+});
+
+export const forwardSignals = sqliteTable("forward_signals", {
+  id: text("id").primaryKey(),
+  challengerId: text("challenger_id").notNull(),
+  instrumentId: text("instrument_id").notNull(),
+  eventTime: integer("event_time").notNull(),
+  observedAt: integer("observed_at").notNull(),
+  clauseEvidence: text("clause_evidence").notNull(),
+  featureValues: text("feature_values").notNull(),
+  entryPrice: real("entry_price").notNull(),
+  stopPrice: real("stop_price"),
+  targetPrice: real("target_price"),
+  horizonBars: integer("horizon_bars").notNull(),
+  executionProfileId: text("execution_profile_id"),
+  costModelId: text("cost_model_id").notNull(),
+  dataQuality: text("data_quality").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+});
+
+export const forwardSignalOutcomes = sqliteTable("forward_signal_outcomes", {
+  signalId: text("signal_id").primaryKey(),
+  resolvedAt: integer("resolved_at").notNull(),
+  entryFill: real("entry_fill").notNull(),
+  exitPrice: real("exit_price").notNull(),
+  exitTime: integer("exit_time").notNull(),
+  exitReason: text("exit_reason").notNull(),
+  mfe: real("mfe"),
+  mae: real("mae"),
+  grossReturn: real("gross_return").notNull(),
+  costReturn: real("cost_return"),
+  netReturn: real("net_return"),
+  economicsUnavailable: text("economics_unavailable"),
+  benchmarkReturn: real("benchmark_return"),
+  fingerprint: text("fingerprint").notNull(),
+});
+
+/** WS1b paper stage for forward challengers — see drizzle/0013_paper_forward.sql triggers. */
+export const paperForwardAccounts = sqliteTable("paper_forward_accounts", {
+  challengerId: text("challenger_id").primaryKey(),
+  currency: text("currency").notNull(),
+  startingCash: real("starting_cash").notNull(),
+  cash: real("cash").notNull(),
+  enrolledAt: integer("enrolled_at").notNull(),
+  enrolledBy: text("enrolled_by").notNull(),
+});
+
+export const executionIntents = sqliteTable("execution_intents", {
+  id: text("id").primaryKey(),
+  signalId: text("signal_id").notNull(),
+  challengerId: text("challenger_id").notNull(),
+  instrumentId: text("instrument_id").notNull(),
+  decisionTime: integer("decision_time").notNull(),
+  side: text("side").notNull(),
+  desiredQuantity: integer("desired_quantity").notNull(),
+  orderType: text("order_type").notNull(),
+  expectedPrice: real("expected_price").notNull(),
+  stopPrice: real("stop_price"),
+  targetPrice: real("target_price"),
+  capitalBefore: real("capital_before").notNull(),
+  riskBudget: real("risk_budget").notNull(),
+  brokerProfileId: text("broker_profile_id"),
+  feeModelId: text("fee_model_id").notNull(),
+  decision: text("decision").notNull(),
+  rejectReason: text("reject_reason"),
+  fingerprint: text("fingerprint").notNull(),
+});
+
+export const paperForwardOrders = sqliteTable("paper_forward_orders", {
+  intentId: text("intent_id").primaryKey(),
+  challengerId: text("challenger_id").notNull(),
+  instrumentId: text("instrument_id").notNull(),
+  acceptedAt: integer("accepted_at").notNull(),
+  status: text("status").notNull(),
+  fillTime: integer("fill_time"),
+  fillPrice: real("fill_price"),
+  filledQuantity: integer("filled_quantity").notNull().default(0),
+  fees: real("fees"),
+  slippage: real("slippage"),
+  reason: text("reason"),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const paperPositionOutcomes = sqliteTable("paper_position_outcomes", {
+  intentId: text("intent_id").primaryKey(),
+  challengerId: text("challenger_id").notNull(),
+  instrumentId: text("instrument_id").notNull(),
+  entryTime: integer("entry_time").notNull(),
+  entryPrice: real("entry_price").notNull(),
+  quantity: integer("quantity").notNull(),
+  exitTime: integer("exit_time").notNull(),
+  exitPrice: real("exit_price").notNull(),
+  exitReason: text("exit_reason").notNull(),
+  mfe: real("mfe"),
+  mae: real("mae"),
+  grossPnl: real("gross_pnl").notNull(),
+  fees: real("fees").notNull(),
+  netPnl: real("net_pnl").notNull(),
+  capitalAfter: real("capital_after").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+});
+
 export const failureMemory = sqliteTable("failure_memory", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   scope: text("scope").notNull(),
@@ -479,6 +680,125 @@ export const holdoutLedger = sqliteTable("holdout_ledger", {
   actor: text("actor").notNull(),
   resultHash: text("result_hash"),
   queriedAt: integer("queried_at", { mode: "timestamp" }).notNull(),
+});
+
+/**
+ * Research identity — see `drizzle/0008_research_identity.sql`.
+ *
+ * These tables are declared here so the ORM can read them, but the migration that creates them
+ * cannot register itself: `MIGRATIONS` lives in the protected `lib/db/migrate.ts`. Until an owner
+ * adds the line, these tables do not exist at runtime and every query against them throws.
+ *
+ * That is handled rather than worked around — `researchIdentityReady()` in
+ * `lib/strategy/research-identity.ts` treats their absence as "no strategy has an identity", which
+ * fails closed and blocks validation. The interim state is safe, not broken.
+ */
+export const researchCampaigns = sqliteTable("research_campaigns", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  question: text("question").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdBy: text("created_by").notNull(),
+  closedAt: integer("closed_at", { mode: "timestamp" }),
+});
+
+export const strategyFamilies = sqliteTable("strategy_families", {
+  id: text("id").primaryKey(),
+  researchCampaignId: text("research_campaign_id").notNull(),
+  name: text("name").notNull(),
+  economicHypothesis: text("economic_hypothesis").notNull(),
+  mechanism: text("mechanism").notNull(),
+  allowedVariantDimensions: text("allowed_variant_dimensions"),
+  declarationHash: text("declaration_hash").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdBy: text("created_by").notNull(),
+});
+
+export const strategyIdentity = sqliteTable("strategy_identity", {
+  strategySpecId: text("strategy_spec_id").primaryKey(),
+  researchCampaignId: text("research_campaign_id").notNull(),
+  strategyFamilyId: text("strategy_family_id").notNull(),
+  parentSpecId: text("parent_spec_id"),
+  semanticFingerprint: text("semantic_fingerprint").notNull(),
+  validationEligible: integer("validation_eligible").notNull().default(0),
+  classifiedBy: text("classified_by").notNull(),
+  classifiedAt: integer("classified_at", { mode: "timestamp" }).notNull(),
+  classification: text("classification").notNull(),
+  classificationReason: text("classification_reason"),
+});
+
+/** One row per configuration actually tested and allowed to influence selection. */
+export const selectionTrials = sqliteTable("selection_trials", {
+  id: text("id").primaryKey(),
+  researchCampaignId: text("research_campaign_id").notNull(),
+  strategyFamilyId: text("strategy_family_id").notNull(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  configurationFingerprint: text("configuration_fingerprint").notNull(),
+  experimentRunId: text("experiment_run_id"),
+  selectionEligible: integer("selection_eligible").notNull().default(1),
+  reason: text("reason"),
+  evidenceHash: text("evidence_hash"),
+  // 13b: the snapshot the trial's evidence came from. NULL = pre-manifest legacy row.
+  datasetSnapshotId: text("dataset_snapshot_id"),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+});
+
+/** Sealed-holdout entitlement. Budgets are enforced by UNIQUE indexes, not by application logic. */
+export const holdoutAccess = sqliteTable("holdout_access", {
+  id: text("id").primaryKey(),
+  holdoutGenerationId: text("holdout_generation_id").notNull(),
+  researchCampaignId: text("research_campaign_id").notNull(),
+  strategyFamilyId: text("strategy_family_id").notNull(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  experimentRunId: text("experiment_run_id"),
+  requestFingerprint: text("request_fingerprint").notNull(),
+  codeHash: text("code_hash"),
+  datasetHash: text("dataset_hash"),
+  requestedAt: integer("requested_at", { mode: "timestamp" }).notNull(),
+  consumedAt: integer("consumed_at", { mode: "timestamp" }).notNull(),
+  resultDisclosed: integer("result_disclosed").notNull().default(0),
+  reason: text("reason"),
+  // 13b: the snapshot the holdout query ran against. NULL = pre-manifest legacy row.
+  datasetSnapshotId: text("dataset_snapshot_id"),
+});
+
+/** Dataset snapshots + experiment ledger — see drizzle/0009_dataset_snapshots.sql. */
+export const datasetSnapshots = sqliteTable("dataset_snapshots", {
+  id: text("id").primaryKey(),
+  market: text("market").notNull(),
+  resolution: text("resolution").notNull(),
+  instruments: text("instruments").notNull(),
+  firstTime: integer("first_time").notNull(),
+  lastTime: integer("last_time").notNull(),
+  barCount: integer("bar_count").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  sourceLineage: text("source_lineage").notNull(),
+  normalizationVersion: text("normalization_version").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdBy: text("created_by").notNull(),
+});
+
+export const experiments = sqliteTable("experiments", {
+  id: text("id").primaryKey(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  datasetSnapshotId: text("dataset_snapshot_id").notNull(),
+  kind: text("kind").notNull(),
+  engineVersion: text("engine_version").notNull(),
+  executionProfileId: text("execution_profile_id"),
+  tradeCount: integer("trade_count").notNull(),
+  summary: text("summary").notNull(),
+  // 13b: the full reproducibility manifest, as JSON. NULL = pre-manifest legacy row.
+  manifest: text("manifest"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdBy: text("created_by").notNull(),
+});
+
+export const experimentTrades = sqliteTable("experiment_trades", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  experimentId: text("experiment_id").notNull(),
+  tradeIndex: integer("trade_index").notNull(),
+  payload: text("payload").notNull(),
 });
 
 export const evolutionProposals = sqliteTable("evolution_proposals", {
@@ -556,6 +876,11 @@ export type Strategy = typeof strategies.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type RobinhoodPortfolioRow = typeof robinhoodPortfolio.$inferSelect;
 export type InstrumentRow = typeof instruments.$inferSelect;
+export type SecurityMasterSyncRow = typeof securityMasterSyncs.$inferSelect;
+export type NseSecurityRow = typeof nseSecurities.$inferSelect;
+export type NseListingVersionRow = typeof nseListingVersions.$inferSelect;
+export type NseSecurityAliasRow = typeof nseSecurityAliases.$inferSelect;
+export type NseProviderMappingRow = typeof nseProviderMappings.$inferSelect;
 export type PaperAccountRow = typeof paperAccounts.$inferSelect;
 export type PaperOrderRow = typeof paperOrders.$inferSelect;
 export type PaperPositionRow = typeof paperPositions.$inferSelect;
@@ -582,3 +907,31 @@ export type LearningStateRow = typeof learningState.$inferSelect;
 export type ResearchJobRow = typeof researchJobs.$inferSelect;
 export type ResearchJobEventRow = typeof researchJobEvents.$inferSelect;
 export type AiRunRow = typeof aiRuns.$inferSelect;
+
+/**
+ * The AgentRun ledger (§28). Every model call, including the refused ones — a ledger of successes
+ * cannot answer "why did research stop last night", which is what it is for.
+ */
+export const agentRuns = sqliteTable("agent_runs", {
+  id: text("id").primaryKey(),
+  capability: text("capability").notNull(),
+  provider: text("provider").notNull(),
+  model: text("model").notNull(),
+  /** COMPLETED | REFUSED | FAILED — a refusal is an outcome, not an error. */
+  status: text("status").notNull(),
+  trigger: text("trigger").notNull(),
+  instrumentId: text("instrument_id"),
+  evidenceFingerprint: text("evidence_fingerprint"),
+  verificationStatus: text("verification_status"),
+  envelope: text("envelope"),
+  refusalCode: text("refusal_code"),
+  refusalMessage: text("refusal_message"),
+  tokens: integer("tokens"),
+  cost: real("cost"),
+  costCurrency: text("cost_currency"),
+  fallbackReason: text("fallback_reason"),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }).notNull(),
+});
+
+export type AgentRunRow = typeof agentRuns.$inferSelect;

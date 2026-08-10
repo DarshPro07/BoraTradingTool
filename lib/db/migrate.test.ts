@@ -79,6 +79,26 @@ describe("migrateDatabase", () => {
       { currency: "INR", cash: 10_000_000 },
       { currency: "USD", cash: 100_000 },
     ]);
+    expect(sqlite.prepare("SELECT mode, updated_by FROM learning_state WHERE id = 1").get()).toEqual({
+      mode: "learning",
+      updated_by: "startup-default",
+    });
+    sqlite.close();
+  });
+
+  it("preserves an explicit owner OFF state when the autonomy-default migration is applied", () => {
+    const sqlite = temporaryDatabase();
+    migrateDatabase(sqlite);
+    sqlite.prepare("UPDATE learning_state SET mode = 'off', updated_by = 'owner', updated_at = 123 WHERE id = 1").run();
+    sqlite.prepare("DELETE FROM schema_migrations WHERE version = '0014_autonomy_default.sql'").run();
+
+    migrateDatabase(sqlite);
+
+    expect(sqlite.prepare("SELECT mode, updated_by, updated_at FROM learning_state WHERE id = 1").get()).toEqual({
+      mode: "off",
+      updated_by: "owner",
+      updated_at: 123,
+    });
     sqlite.close();
   });
 

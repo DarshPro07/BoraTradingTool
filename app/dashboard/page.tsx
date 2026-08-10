@@ -6,7 +6,7 @@ import { MarketNewsFeed } from "@/components/dashboard/MarketNewsFeed";
 import { SectorHeatmap } from "@/components/dashboard/SectorHeatmap";
 import { TopMoversPanel } from "@/components/dashboard/TopMoversPanel";
 import { getMarketSession } from "@/lib/market/calendar";
-import { INSTRUMENT_CATALOG, searchInstruments } from "@/lib/market/catalog";
+import { listCurrentInstruments, searchInstruments } from "@/lib/market/catalog";
 import { getNormalizedQuote } from "@/lib/market/service";
 import type { Exchange, NormalizedQuote } from "@/lib/market/types";
 import { getProvider } from "@/lib/providers";
@@ -57,7 +57,7 @@ export default async function DashboardPage({
   const config = VIEW_CONFIG[view];
   const primaryMarket = view === "US" ? "US" : "IN";
   const instruments = view === "US"
-    ? INSTRUMENT_CATALOG.filter((instrument) => instrument.market === "US").slice(0, 20)
+    ? listCurrentInstruments({ market: "US" }).slice(0, 20)
     : searchInstruments("", config.exchange).slice(0, 20);
   const provider = getProvider();
   // Quotes and news are independent, but news was awaited *after* the quote batch had already

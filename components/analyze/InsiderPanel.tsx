@@ -1,11 +1,14 @@
 import type { InsiderTransaction } from "@/lib/providers/types";
+import { formatMoney } from "@/lib/market/money";
+import type { Currency } from "@/lib/market/types";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface Props {
   transactions: InsiderTransaction[];
+  currency: Currency;
 }
 
-export function InsiderPanel({ transactions }: Props) {
+export function InsiderPanel({ transactions, currency }: Props) {
   const netChange = transactions.reduce((sum, t) => sum + t.change, 0);
   const purchases = transactions.filter((t) => t.change > 0).length;
   const sales = transactions.filter((t) => t.change < 0).length;
@@ -51,7 +54,7 @@ export function InsiderPanel({ transactions }: Props) {
                     {isBuy ? "+" : ""}{t.change.toLocaleString()}
                   </td>
                   <td className="py-1.5 text-right font-mono text-muted-foreground">
-                    {t.transactionPrice ? `$${t.transactionPrice.toFixed(2)}` : "—"}
+                    {t.transactionPrice ? formatMoney(t.transactionPrice, currency) : "—"}
                   </td>
                   <td className="py-1.5 text-right text-muted-foreground">{t.transactionDate}</td>
                 </tr>

@@ -1,8 +1,11 @@
 import type { TechnicalIndicators } from "@/lib/data/technicals";
+import { formatMoney } from "@/lib/market/money";
+import type { Currency } from "@/lib/market/types";
 
 interface Props {
   tech: TechnicalIndicators;
   price: number;
+  currency: Currency;
 }
 
 function rsiColor(rsi: number | null) {
@@ -24,7 +27,7 @@ function Row({ label, value, sub }: { label: string; value: string; sub?: string
   );
 }
 
-export function TechnicalsPanel({ tech, price }: Props) {
+export function TechnicalsPanel({ tech, price, currency }: Props) {
   const trendBadge = {
     bullish: "text-gain",
     bearish: "text-loss",
@@ -42,13 +45,13 @@ export function TechnicalsPanel({ tech, price }: Props) {
           value={tech.macdLine !== null ? tech.macdLine.toFixed(3) : "—"}
           sub={tech.macdHist !== null ? `Hist: ${tech.macdHist.toFixed(3)}` : undefined}
         />
-        <Row label="SMA 20" value={tech.sma20 !== null ? `$${tech.sma20}` : "—"} sub={tech.sma20 ? (price > tech.sma20 ? "▲ above" : "▼ below") : undefined} />
-        <Row label="SMA 50" value={tech.sma50 !== null ? `$${tech.sma50}` : "—"} sub={tech.sma50 ? (price > tech.sma50 ? "▲ above" : "▼ below") : undefined} />
-        <Row label="SMA 200" value={tech.sma200 !== null ? `$${tech.sma200}` : "—"} sub={tech.sma200 ? (price > tech.sma200 ? "▲ above" : "▼ below") : undefined} />
-        <Row label="BB Upper" value={tech.bbUpper !== null ? `$${tech.bbUpper}` : "—"} />
-        <Row label="BB Lower" value={tech.bbLower !== null ? `$${tech.bbLower}` : "—"} />
-        <Row label="Support" value={tech.support !== null ? `$${tech.support}` : "—"} />
-        <Row label="Resistance" value={tech.resistance !== null ? `$${tech.resistance}` : "—"} />
+        <Row label="SMA 20" value={tech.sma20 !== null ? formatMoney(tech.sma20, currency) : "—"} sub={tech.sma20 ? (price > tech.sma20 ? "▲ above" : "▼ below") : undefined} />
+        <Row label="SMA 50" value={tech.sma50 !== null ? formatMoney(tech.sma50, currency) : "—"} sub={tech.sma50 ? (price > tech.sma50 ? "▲ above" : "▼ below") : undefined} />
+        <Row label="SMA 200" value={tech.sma200 !== null ? formatMoney(tech.sma200, currency) : "—"} sub={tech.sma200 ? (price > tech.sma200 ? "▲ above" : "▼ below") : undefined} />
+        <Row label="BB Upper" value={tech.bbUpper !== null ? formatMoney(tech.bbUpper, currency) : "—"} />
+        <Row label="BB Lower" value={tech.bbLower !== null ? formatMoney(tech.bbLower, currency) : "—"} />
+        <Row label="Support" value={tech.support !== null ? formatMoney(tech.support, currency) : "—"} />
+        <Row label="Resistance" value={tech.resistance !== null ? formatMoney(tech.resistance, currency) : "—"} />
       </div>
 
       <div className="mt-3 pt-3 border-t border-panel flex items-center justify-between">

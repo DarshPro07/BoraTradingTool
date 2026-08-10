@@ -80,6 +80,7 @@ This strategy is decision support. It cannot authorize or place a broker order.`
 
 function seedDefaults(sqlite: Database.Database): void {
   const now = Math.floor(Date.now() / 1000);
+  seedTestSecurityMaster(sqlite, now);
   const count = sqlite.prepare("SELECT COUNT(*) AS count FROM strategies").get() as { count: number };
   if (count.count === 0) {
     const result = sqlite
@@ -104,6 +105,61 @@ function seedDefaults(sqlite: Database.Database): void {
        VALUES (1, 'off', 'real', 1, ?)`,
     )
     .run(now);
+}
+
+function seedTestSecurityMaster(sqlite: Database.Database, now: number): void {
+  if (process.env.MARKETPULSE_TEST_MODE !== "1") return;
+  const existing = sqlite.prepare("SELECT COUNT(*) AS count FROM security_master_syncs").get() as { count: number };
+  if (existing.count > 0) return;
+
+  const successId = `nse_test_success_${now}`;
+  const failedId = `nse_test_failed_${now}`;
+  const observedAt = now - 3_600;
+  sqlite
+    .prepare(`
+      INSERT INTO security_master_syncs
+        (id, observed_at, started_at, completed_at, status, source_manifest,
+         main_row_count, sme_row_count, total_rows, actor)
+      VALUES (?, ?, ?, ?, 'SUCCEEDED', ?, 4, 1, 5, 'playwright-fixture')
+    `)
+    .run(successId, observedAt, observedAt, observedAt, JSON.stringify([{ kind: "TEST_FIXTURE" }]));
+
+  const listings = [
+    ["INE002A01018", "RELIANCE", "Reliance Industries Limited", "EQ", "AVAILABLE"],
+    ["INE467B01029", "TCS", "Tata Consultancy Services Limited", "EQ", "AVAILABLE"],
+    ["INE495P01020", "BECTORFOOD", "Mrs. Bectors Food Specialities Limited", "EQ", "AVAILABLE"],
+    ["INE040A01034", "BANKBE", "Bank Surveillance Fixture Limited", "BE", "AVAILABLE"],
+    ["INE999Z01012", "SMALLSME", "Small SME Fixture Limited", "SM", "UNAVAILABLE"],
+  ] as const;
+  const insertSecurity = sqlite.prepare(
+    "INSERT INTO nse_securities (isin, first_observed_at, last_observed_at) VALUES (?, ?, ?)",
+  );
+  const insertListing = sqlite.prepare(`
+    INSERT INTO nse_listing_versions
+      (isin, exchange, symbol, name, series, asset_type, listing_status, date_of_listing,
+       paid_up_value, market_lot, face_value, effective_from, source_sync_id)
+    VALUES (?, 'XNSE', ?, ?, ?, 'EQUITY', 'LISTED', '2020-01-01', 10, 1, 10, ?, ?)
+  `);
+  const insertMapping = sqlite.prepare(`
+    INSERT INTO nse_provider_mappings
+      (provider, isin, provider_symbol, availability, verified_at, source)
+    VALUES ('TEST_FIXTURE', ?, ?, ?, ?, 'playwright fixture')
+  `);
+  for (const [isin, symbol, name, series, availability] of listings) {
+    insertSecurity.run(isin, observedAt, observedAt);
+    insertListing.run(isin, symbol, name, series, observedAt, successId);
+    insertMapping.run(isin, `${symbol}.NS`, availability, observedAt);
+  }
+
+  sqlite
+    .prepare(`
+      INSERT INTO security_master_syncs
+        (id, observed_at, started_at, completed_at, status, source_manifest,
+         total_rows, error_code, error_message, actor)
+      VALUES (?, ?, ?, ?, 'FAILED', ?, 0, 'MALFORMED_SOURCE',
+              'Fixture failed attempt; last-good master retained.', 'playwright-fixture')
+    `)
+    .run(failedId, now, now, now, JSON.stringify([{ kind: "TEST_FIXTURE_FAILURE" }]));
 }
 
 export { schema };

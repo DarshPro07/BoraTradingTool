@@ -78,6 +78,10 @@ export const NAV_SECTIONS: readonly NavSection[] = Object.freeze([
  * being a tab they have to remember to visit.
  */
 export const UTILITY_LINKS: readonly NavChild[] = Object.freeze([
+  // Chrome rather than a workspace tab for the same reason /learning is: the brain is the
+  // one-glance answer to "what is it doing and what is missing", wanted from every page —
+  // and RESEARCH is already at its six-view scan limit.
+  { href: "/brain", label: "Brain", blurb: "What the system knows, does, and still lacks" },
   { href: "/learning", label: "Autonomy", blurb: "Mode ladder and what each tier may do" },
   { href: "/data-quality", label: "Data", blurb: "Freshness and provenance per resource" },
   { href: "/settings", label: "Settings", blurb: "Providers, keys, owner controls" },

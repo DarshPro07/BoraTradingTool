@@ -26,7 +26,9 @@ export function GraveyardPanel({ limit = 12 }: { limit?: number }) {
           {graves.map((grave) => (
             <li key={grave.specId} className="border-b border-panel pb-1.5">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-muted-foreground line-through">
+                {/* break-all: generated names are one long unbreakable token, and a name must
+                    never widen the page past a phone viewport. */}
+                <span className="text-muted-foreground line-through break-all">
                   {grave.name} v{grave.version}
                 </span>
                 <span className="text-[10px] text-muted-foreground">

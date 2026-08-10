@@ -1,26 +1,91 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Search, TrendingUp } from "lucide-react";
 import { MarketSelector } from "./MarketSelector";
 import { ModeBadge } from "./ModeBadge";
 import { SystemPulse } from "@/components/system/SystemPulse";
+import { InstrumentCombobox } from "@/components/market/InstrumentCombobox";
 import { NAV_SECTIONS, UTILITY_LINKS, activeSection } from "@/lib/nav";
+import type { Exchange, Instrument } from "@/lib/market/types";
+
+type InstrumentSearchResult = Instrument & { isin?: string; securityId?: string };
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const [opening, setOpening] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const section = activeSection(pathname);
+  const selectedExchange: Exchange | undefined = searchParams.get("market") === "NSE"
+    ? "XNSE"
+    : searchParams.get("market") === "BSE"
+      ? "XBOM"
+      : undefined;
 
-  function handleSearch(event: React.FormEvent) {
+  /**
+   * Whether the submit handler is actually attached yet.
+   *
+   * Until React hydrates, this form renders fully — visible, focusable, apparently ready — and
+   * does nothing at all, because `onSubmit` calls the router and the router is not there. A user
+   * on a slow connection who types a symbol and presses OPEN gets silence and no explanation.
+   *
+   * Found by Playwright: the first test against a cold page failed reproducibly while every later
+   * test, hitting a warm one, passed. Disabling the control until it works turns an invisible
+   * no-op into visible, momentary unavailability, which is the honest state.
+   */
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
-    const instrument = query.trim().toUpperCase();
-    if (!instrument) return;
-    router.push(`/analyze/${encodeURIComponent(instrument)}`);
-    setQuery("");
+    const requested = query.trim();
+    if (!requested || opening) return;
+
+    setOpening(true);
+    setSubmitError("");
+    try {
+      const parameters = new URLSearchParams({ q: requested, limit: "25" });
+      if (selectedExchange) parameters.set("exchange", selectedExchange);
+      const response = await fetch(
+        `/api/market/instruments?${parameters}`,
+        { cache: "no-store" },
+      );
+      const data = (await response.json()) as {
+        instruments?: InstrumentSearchResult[];
+        pagination?: { total?: number };
+        message?: string;
+      };
+      if (!response.ok) {
+        setSubmitError(data.message ?? "Instrument search is unavailable.");
+        return;
+      }
+
+      const normalized = requested.toUpperCase();
+      const instruments = data.instruments ?? [];
+      const exact = instruments.find((instrument) =>
+        [instrument.id, instrument.symbol, instrument.providerSymbol, instrument.isin, instrument.securityId]
+          .some((identity) => identity?.toUpperCase() === normalized),
+      );
+      const instrument = exact ?? (data.pagination?.total === 1 ? instruments[0] : undefined);
+      if (!instrument) {
+        setSubmitError(instruments.length === 0
+          ? "No matching instrument found."
+          : "Select an instrument from the matching results.");
+        return;
+      }
+
+      router.push(`/analyze/${encodeURIComponent(instrument.id)}`);
+      setQuery("");
+    } catch {
+      setSubmitError("Instrument search is unavailable.");
+    } finally {
+      setOpening(false);
+    }
   }
 
   return (
@@ -34,18 +99,29 @@ export function TopNav() {
         <ModeBadge />
         <SystemPulse />
 
-        <form onSubmit={handleSearch} className="market-search" role="search">
+        <form
+          onSubmit={handleSearch}
+          className="market-search"
+          role="search"
+          data-hydrated={hydrated ? "1" : "0"}
+        >
           <Search className="w-3.5 h-3.5" aria-hidden="true" />
-          <label htmlFor="instrument-search" className="sr-only">
-            Search instrument
-          </label>
-          <input
+          <InstrumentCombobox
             id="instrument-search"
+            label="Search instrument"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="AAPL, RELIANCE.NS, or canonical ID"
+            onValueChange={(value) => {
+              setQuery(value);
+              setSubmitError("");
+            }}
+            placeholder="Symbol, company, or ISIN"
+            className=""
+            exchange={selectedExchange}
           />
-          <button type="submit">OPEN</button>
+          <span role="alert" aria-live="polite" className="sr-only">{submitError}</span>
+          <button type="submit" disabled={!hydrated || opening} aria-disabled={!hydrated || opening}>
+            {opening ? "OPENING..." : "OPEN"}
+          </button>
         </form>
       </div>
 

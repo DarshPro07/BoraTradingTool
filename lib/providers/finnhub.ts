@@ -16,6 +16,7 @@ import type {
 import { scoreSentiment } from "@/lib/data/sentiment";
 
 const BASE_URL = "https://finnhub.io/api/v1";
+const FINNHUB_TIMEOUT_MS = 4_000;
 
 export class FinnhubProvider implements DataProvider {
   private apiKey: string;
@@ -37,6 +38,7 @@ export class FinnhubProvider implements DataProvider {
     // cache that states its age beats two that disagree about it.
     const res = await fetch(url.toString(), {
       headers: { "X-Finnhub-Token": this.apiKey },
+      signal: AbortSignal.timeout(FINNHUB_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`Finnhub ${path} → ${res.status}`);
     return res.json();

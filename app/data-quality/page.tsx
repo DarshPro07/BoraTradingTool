@@ -1,5 +1,7 @@
 import { dataQuality } from "@/lib/dashboard/queries";
 import { DatasetPanel } from "@/components/market/DatasetPanel";
+import { ForecastValidationPanel } from "@/components/forecast/ForecastValidationPanel";
+import { IntradayDepthPanel } from "@/components/market/IntradayDepthPanel";
 import { DataState, Panel, Provenance, StatTile } from "@/components/system/Panel";
 import { kronosCoverage } from "@/lib/forecast/kronos";
 import { StateBadge } from "@/components/system/PanelState";
@@ -53,6 +55,11 @@ export default async function DataQualityPage() {
       {/* Imported history sits on the data-quality screen rather than its own, because whether a
           dataset may be trusted is the same question the rest of this page answers. */}
       <DatasetPanel />
+      {/* Placed beside coverage deliberately: "the model ran" and "the model is any good" are
+          different questions, and only the second one is worth acting on. */}
+      {/* The answer to "can an intraday strategy be validated here at all", which until now was no. */}
+      <IntradayDepthPanel />
+      <ForecastValidationPanel />
 
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex items-center gap-3">

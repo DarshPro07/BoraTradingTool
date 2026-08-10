@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
 
@@ -16,18 +17,31 @@ export function LearningModeControl({ current }: { current: string }) {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState<string | null>(null);
+  const [ownerToken, setOwnerToken] = useState("");
+  const [ownerUnlocked, setOwnerUnlocked] = useState(false);
 
-  // The owner-token ceremony is gone, deliberately and by instruction. It used to sit here as a
-  // form reading "UNLOCK OWNER CONTROLS" and a line promising fifteen minutes of access.
-  //
-  // It was removed from `requireOwnerMutationAccess` first, and leaving the form behind was the
-  // real defect — worse than either state on its own. A control that appears to gate something
-  // and gates nothing teaches the operator that the interface's claims are decorative, which is
-  // the opposite of what every refusal message in this system is trying to establish.
-  //
-  // What still holds, and is asserted in `lib/security/request.test.ts`: the request must be
-  // loopback-bound, carry the CSRF header, and present no bearer token. That last one is why an
-  // autonomous agent still cannot flip its own mode or relax its own risk ceilings.
+  async function unlockOwner(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending("unlock");
+    setError(null);
+    try {
+      const response = await mutationFetch("/api/owner/session", {
+        method: "POST",
+        body: JSON.stringify({ token: ownerToken }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { message?: string };
+        setError(body.message ?? "Unable to unlock owner controls.");
+        return;
+      }
+      setOwnerToken("");
+      setOwnerUnlocked(true);
+    } catch {
+      setError("Could not reach the application.");
+    } finally {
+      setPending(null);
+    }
+  }
 
   async function setMode(mode: string) {
     setPending(mode);
@@ -82,6 +96,29 @@ export function LearningModeControl({ current }: { current: string }) {
 
   return (
     <div className="space-y-3">
+      {!ownerUnlocked ? (
+        <form onSubmit={unlockOwner} className="flex flex-wrap items-end gap-2 border border-panel p-3">
+          <label className="min-w-52 flex-1 text-xs text-muted-foreground">
+            Owner token
+            <input
+              type="password"
+              value={ownerToken}
+              onChange={(event) => setOwnerToken(event.target.value)}
+              autoComplete="current-password"
+              minLength={32}
+              required
+              className="terminal-input mt-1"
+            />
+          </label>
+          <button type="submit" disabled={pending !== null} className="terminal-action min-h-11 px-4 disabled:opacity-50">
+            {pending === "unlock" ? "UNLOCKING..." : "UNLOCK OWNER CONTROLS"}
+          </button>
+        </form>
+      ) : (
+        <p className="text-xs text-gain">Owner controls unlocked for 15 minutes.</p>
+      )}
+
+      <fieldset disabled={!ownerUnlocked} className="space-y-3 disabled:opacity-50">
       <div className="grid gap-2 sm:grid-cols-2">
         {MODES.map((mode) => (
           <button
@@ -101,9 +138,8 @@ export function LearningModeControl({ current }: { current: string }) {
       </div>
 
       <p className="text-[10px] text-muted-foreground leading-relaxed border border-panel p-2">
-        These controls are open to anything running on this machine. Mutations are restricted to
-        loopback with a CSRF header, and a bearer token is refused — so the autonomous worker
-        cannot change its own mode — but there is no owner password.
+        Owner controls require a short-lived HttpOnly session. Mutations remain restricted to
+        loopback with a CSRF header, and an autonomous-worker bearer token is always refused.
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -119,6 +155,7 @@ export function LearningModeControl({ current }: { current: string }) {
           Proposals always require your approval, in every mode.
         </span>
       </div>
+      </fieldset>
 
       {error ? <p className="text-xs text-loss">{error}</p> : null}
       {cycle ? <p className="text-xs text-muted-foreground leading-relaxed">{cycle}</p> : null}

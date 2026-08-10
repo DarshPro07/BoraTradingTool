@@ -4,6 +4,7 @@ import "./globals.css";
 import { TopNav } from "@/components/layout/TopNav";
 import { TickerTape } from "@/components/layout/TickerTape";
 import { AutonomyStrip } from "@/components/layout/AutonomyStrip";
+import { DevBuildBadge } from "@/components/layout/DevBuildBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1">{children}</main>
         <footer className="border-t border-panel px-4 py-2 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2">
           <span>Decision support only. AI output is model-generated research opinion; broker execution is disabled.</span>
+          <DevBuildBadge />
           <span className="text-amber">PAPER MODE</span>
         </footer>
       </body>

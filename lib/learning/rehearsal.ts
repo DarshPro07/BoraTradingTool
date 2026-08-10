@@ -1,12 +1,18 @@
 import { getDb, schema } from "@/lib/db";
 import { evaluateAutonomousAction, type LearningMode } from "@/lib/governance/policy";
-import { StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
+import { COMPILER_VERSION, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { checkRediscovery, listGraveyard } from "@/lib/strategy/graveyard";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
 import { collectFeatures } from "@/lib/backtest/engine";
 import { isDerivable } from "@/lib/backtest/features";
 import { runSimulationBattery, type BatteryReport } from "@/lib/simulation/battery";
-import type { Candle } from "@/lib/providers/types";
+import { buildManifest, BATTERY_SEED } from "@/lib/research-data/manifest";
+import {
+  recordExperiment,
+  snapshotFromStore,
+  type SnapshotRefusal,
+  type SnapshotResult,
+} from "@/lib/research-data/snapshot";
 
 /**
  * Validation *rehearsal* — what the gauntlet would say, without spending a trial.
@@ -25,6 +31,17 @@ import type { Candle } from "@/lib/providers/types";
  * a trial on* — which is the decision that was previously being made blind.
  */
 
+/**
+ * The one `not_evaluable` reason that says nothing about the strategy.
+ *
+ * A feature gap ("no engine derives market_cap") is a durable fact about this deployment. A data
+ * outage is a fact about the last ten seconds — the provider rate-limits, the loader returns
+ * empty, and every candidate on that market reports it. Exported so the cycle can tell the two
+ * apart before persisting a verdict, rather than matching on prose that would drift.
+ */
+export const NO_DATA_REASON =
+  "No stored candles for this strategy's universe. Missing data is reported, never replaced with a default series.";
+
 export interface RehearsalOutcome {
   specId: string;
   name: string;
@@ -37,6 +54,11 @@ export interface RehearsalOutcome {
   /** Signals dropped because every position slot was full — the strategy's real capacity. */
   signalsRejectedForCapacity: number;
   battery: BatteryReport | null;
+  /** 13b: the snapshot this verdict was judged on. Null when the candidate never reached data. */
+  datasetSnapshotId: string | null;
+  datasetFingerprint: string | null;
+  /** True when the verdict is only "the store has no bars" — an ingestion fact, not a judgement. */
+  dataMissing?: boolean;
 }
 
 export interface RehearsalReport {
@@ -50,19 +72,22 @@ export interface RehearsalReport {
 }
 
 /**
- * The dataset for one strategy, keyed by instrument id.
+ * Where rehearsal data comes from (13b): a snapshot source, never a provider.
  *
- * A dataset rather than one series, because the DSL's universe is a *market*, not a symbol.
- * Replaying a market-wide strategy against a single instrument gives it unlimited position
- * slots, so `maxPositions` never binds and the strategy looks like it had capacity it never
- * had. The portfolio engine exists precisely to make that constraint observable.
+ * The signature is the contract. A source must answer with a *recorded snapshot* — dataset plus
+ * snapshot id plus fingerprint — or a refusal that names what is missing. There is no shape here
+ * a provider window can satisfy honestly, which is what closed the silent-fallback path: the old
+ * injectable loader returned bare bars, and bare bars carry no identity to pin a verdict to.
  *
- * Injected, and async, so this stays testable without a provider or a network.
+ * Injected so tests can seed synthetic snapshots; defaults to the canonical store.
  */
-export type CandleLoader = (
-  specId: string,
-  dsl: StrategyDsl,
-) => Promise<Readonly<Record<string, readonly Candle[]>>>;
+export type ResearchDatasetSource = (
+  market: StrategyDsl["universe"]["market"],
+  resolution: string,
+) => SnapshotResult | SnapshotRefusal;
+
+export const storeDatasetSource: ResearchDatasetSource = (market, resolution) =>
+  snapshotFromStore(market, resolution, "rehearsal");
 
 const MAX_PER_CYCLE = 10;
 
@@ -71,10 +96,32 @@ function empty(ranAt: string, skipped: string[], summary: string): RehearsalRepo
 }
 
 export async function runValidationRehearsal(
-  loadCandles: CandleLoader,
+  source: ResearchDatasetSource,
   mode: LearningMode,
   now = new Date(),
 ): Promise<RehearsalReport> {
+  // One snapshot per (market, resolution) per pass: candidates share markets, and the fingerprint
+  // hash over ~30k bars is work worth doing once, not ten times.
+  const snapshots = new Map<string, SnapshotResult | SnapshotRefusal>();
+  const datasetFor = (dsl: StrategyDsl): SnapshotResult | SnapshotRefusal => {
+    const key = `${dsl.universe.market}|${dsl.universe.resolution}`;
+    const held = snapshots.get(key);
+    if (held) return held;
+    let built: SnapshotResult | SnapshotRefusal;
+    try {
+      built = source(dsl.universe.market, dsl.universe.resolution);
+    } catch (caught) {
+      // A crashing source costs this candidate, not the cycle — and is reported as unavailable
+      // data, never replaced with a default series.
+      built = {
+        ok: false,
+        code: "NO_STORED_DATA",
+        message: `Dataset source failed: ${caught instanceof Error ? caught.message : String(caught)}. Treated as unavailable data.`,
+      };
+    }
+    snapshots.set(key, built);
+    return built;
+  };
   const ranAt = now.toISOString();
   const skipped: string[] = [];
 
@@ -114,6 +161,8 @@ export async function runValidationRehearsal(
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
         battery: null,
+        datasetSnapshotId: null,
+        datasetFingerprint: null,
       });
       continue;
     }
@@ -137,6 +186,8 @@ export async function runValidationRehearsal(
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
         battery: null,
+        datasetSnapshotId: null,
+        datasetFingerprint: null,
       });
       continue;
     }
@@ -155,27 +206,37 @@ export async function runValidationRehearsal(
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
         battery: null,
+        datasetSnapshotId: null,
+        datasetFingerprint: null,
       });
       continue;
     }
 
-    const dataset = await loadDataset(loadCandles, spec.id, parsedDsl);
-    if (!dataset || Object.keys(dataset).length === 0) {
+    const snapshot = datasetFor(parsedDsl);
+    if (!snapshot.ok) {
+      // Fail closed, with the gap named. The refusal message identifies market and resolution and
+      // classifies the remedy as ingestion — never a provider call inside a running evaluation.
       outcomes.push({
         specId: spec.id,
         name: spec.name,
         status: spec.status,
         verdict: "not_evaluable",
-        reason: "No stored candles for this strategy's universe. Missing data is reported, never replaced with a default series.",
+        reason: snapshot.message,
         trades: 0,
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
         battery: null,
+        datasetSnapshotId: null,
+        datasetFingerprint: null,
+        dataMissing: true,
       });
       continue;
     }
 
-    const backtest = runPortfolioBacktest(parsedDsl, dataset);
+    const backtest = runPortfolioBacktest(parsedDsl, snapshot.dataset, {
+      datasetFingerprint: snapshot.fingerprint,
+      datasetSnapshotId: snapshot.snapshotId,
+    });
     if (!backtest.ok) {
       outcomes.push({
         specId: spec.id,
@@ -187,6 +248,8 @@ export async function runValidationRehearsal(
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
         battery: null,
+        datasetSnapshotId: null,
+        datasetFingerprint: null,
       });
       continue;
     }
@@ -207,6 +270,27 @@ export async function runValidationRehearsal(
     const verdict =
       battery.verdict === "pass" ? "would_pass" : battery.verdict === "fail" ? "would_fail" : "not_evaluable";
 
+    // 13b: the verdict's reproducibility manifest, in the experiment ledger. Idempotent on
+    // (spec, snapshot, kind, engine) — an unchanged store re-rehearsed writes nothing new. This
+    // records no trial and touches no holdout; the rehearsal's zero-cost doctrine stands.
+    recordExperiment({
+      specId: spec.id,
+      snapshotId: snapshot.snapshotId,
+      kind: "rehearsal",
+      engineVersion: COMPILER_VERSION,
+      executionProfileId: backtest.execution?.profileId ?? null,
+      summary: `${verdict}: ${battery.summary}`,
+      trades: [],
+      actor: "rehearsal",
+      manifest: buildManifest({
+        strategyVersionId: spec.id,
+        datasetSnapshotId: snapshot.snapshotId,
+        datasetFingerprint: snapshot.fingerprint,
+        brokerExecutionProfileId: backtest.execution?.profileId ?? null,
+        randomSeed: BATTERY_SEED,
+      }),
+    });
+
     outcomes.push({
       specId: spec.id,
       name: spec.name,
@@ -217,6 +301,8 @@ export async function runValidationRehearsal(
       instrumentsEvaluated: backtest.instrumentsEvaluated,
       signalsRejectedForCapacity: backtest.signalsRejectedForCapacity,
       battery,
+      datasetSnapshotId: snapshot.snapshotId,
+      datasetFingerprint: snapshot.fingerprint,
     });
   }
 
@@ -242,23 +328,6 @@ export async function runValidationRehearsal(
             .map((outcome) => `${outcome.name} (${outcome.trades} trades / ${outcome.instrumentsEvaluated} instruments)`)
             .join(", ")}. A rehearsal is not evidence — the gauntlet still has to be run deliberately.${buried}`,
   };
-}
-
-/**
- * A loader that throws costs that one candidate, not the cycle. A provider outage during an
- * idle pass must not take down the pass — and must not be reported as "no data" either, which
- * is why the message distinguishes them.
- */
-async function loadDataset(
-  loadCandles: CandleLoader,
-  specId: string,
-  dsl: StrategyDsl,
-): Promise<Readonly<Record<string, readonly Candle[]>> | null> {
-  try {
-    return await loadCandles(specId, dsl);
-  } catch {
-    return null;
-  }
 }
 
 /** A spec stored under an older compiler is a fact to report, not a crash. */

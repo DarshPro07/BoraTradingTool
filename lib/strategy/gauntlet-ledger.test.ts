@@ -4,8 +4,9 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { closeDbForTests, getDb, schema } from "@/lib/db";
 import { recordHypothesis, recordStrategySpec } from "@/lib/knowledge/repository";
+import { FIXTURE_FAMILY, placeInTestFamily, registerTestSnapshot } from "./identity-fixture";
 import type { StrategyDsl } from "./dsl";
-import { HoldoutBudgetExhausted, holdoutUsage, runGauntlet } from "./gauntlet";
+import { DatasetIdentityMissing, HoldoutBudgetExhausted, holdoutUsage, runGauntlet } from "./gauntlet";
 
 const temporaryDirectories: string[] = [];
 let previousPath: string | undefined;
@@ -42,13 +43,30 @@ function evaluate(specId: string, holdoutId?: string) {
   return runGauntlet(specId, DSL, {
     inSampleReturns: returns(),
     outOfSampleReturns: returns(),
+    datasetSnapshotId: "dss_ledger_test",
+    datasetFingerprint: "fp_ledger_test",
     ...(holdoutId ? { holdoutId } : {}),
   });
 }
 
+/**
+ * Seed a spec AND place it in a declared family.
+ *
+ * Placement is now a precondition of validation: `runGauntlet` throws `ResearchIdentityMissing`
+ * without it. The family argument is what these tests are actually about — the denominator is
+ * scoped to the family, so which family a spec is in *is* the behaviour under test.
+ */
+function seed(name: string, familyId = FIXTURE_FAMILY, extra: Record<string, unknown> = {}): string {
+  const id = recordStrategySpec({ name, version: 1, dsl: DSL, createdBy: "test", ...extra });
+  placeInTestFamily(id, DSL, familyId);
+  // Evidence names this snapshot; the experiments ledger holds a real FK to it.
+  registerTestSnapshot("dss_ledger_test", "fp_ledger_test");
+  return id;
+}
+
 describe("multiple-testing denominator", () => {
   it("counts evaluations, not the gate rows each evaluation writes", () => {
-    const specId = recordStrategySpec({ name: "solo", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("solo");
 
     expect(evaluate(specId).trialsCounted).toBe(1);
 
@@ -61,32 +79,55 @@ describe("multiple-testing denominator", () => {
     expect(getDb().select().from(schema.trials).all().length).toBe(rowsAfterFirst * 2);
   });
 
-  it("deflates against sibling specs from the same hypothesis", () => {
-    // A search that spawns many variants and reports the best previously showed a
-    // denominator of 1 for each, because each spec had been evaluated exactly once.
-    const hypothesisId = recordHypothesis({
-      title: "Gap continuation",
-      statement: "Large opening gaps on high relative volume continue intraday.",
-      createdBy: "test",
-    });
-
-    const first = recordStrategySpec({ name: "variant_a", version: 1, dsl: DSL, createdBy: "test", hypothesisId });
-    const second = recordStrategySpec({ name: "variant_b", version: 1, dsl: DSL, createdBy: "test", hypothesisId });
+  it("deflates against sibling specs in the same declared family", () => {
+    // A search that spawns many variants and reports the best previously showed a denominator of 1
+    // for each, because each spec had been evaluated exactly once.
+    //
+    // This test used to key the family on `hypothesisId`. Every spec in the real registry had that
+    // column null, so the mechanism was correct and inert — the bug this whole layer exists to fix.
+    // The family is now declared explicitly and cannot be null.
+    const first = seed("variant_a");
+    const second = seed("variant_b");
 
     expect(evaluate(first).trialsCounted).toBe(1);
     expect(evaluate(second).trialsCounted).toBe(2);
   });
 
   it("does not let an unrelated strategy raise another's bar", () => {
-    const a = recordStrategySpec({ name: "unrelated_a", version: 1, dsl: DSL, createdBy: "test" });
-    const b = recordStrategySpec({ name: "unrelated_b", version: 1, dsl: DSL, createdBy: "test" });
+    // Different families: one strategy's search must not penalise an unrelated one.
+    const a = seed("unrelated_a", "fam_alpha");
+    const b = seed("unrelated_b", "fam_beta");
 
     evaluate(a);
     expect(evaluate(b).trialsCounted).toBe(1);
   });
 
+  it("writes the attempt to the selection ledger before computing anything from it", () => {
+    // The ledger is the mechanism; the historical validation-row count is only a floor for
+    // families that predate it. Asserted directly so a regression cannot leave the ledger empty
+    // while the denominator still looks right for the wrong reason.
+    const specId = seed("ledger_written");
+    expect(getDb().select().from(schema.selectionTrials).all()).toHaveLength(0);
+
+    evaluate(specId);
+
+    const trials = getDb().select().from(schema.selectionTrials).all();
+    expect(trials).toHaveLength(1);
+    expect(trials[0].strategyFamilyId).toBe(FIXTURE_FAMILY);
+    expect(trials[0].strategySpecId).toBe(specId);
+  });
+
+  it("does not inflate the bar when the identical configuration is re-run", () => {
+    // Re-running a backtest is not a second search. A configuration fingerprint that counted it
+    // twice would punish reproducibility.
+    const specId = seed("rerun_same_config");
+    evaluate(specId);
+    evaluate(specId);
+    expect(getDb().select().from(schema.selectionTrials).all()).toHaveLength(1);
+  });
+
   it("stores the denominator it actually deflated by", () => {
-    const specId = recordStrategySpec({ name: "stored", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("stored");
     const report = evaluate(specId);
     const [row] = getDb().select().from(schema.validationResults).all();
     expect(row.trialsCounted).toBe(report.trialsCounted);
@@ -95,19 +136,19 @@ describe("multiple-testing denominator", () => {
 
 describe("locked holdout", () => {
   it("consumes the budget when holdout evidence is supplied", () => {
-    const specId = recordStrategySpec({ name: "holdout_spec", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("holdout_spec");
     evaluate(specId, "holdout_2026");
     expect(holdoutUsage(specId)).toHaveLength(1);
   });
 
   it("refuses a second query rather than producing a number to discard", () => {
-    const specId = recordStrategySpec({ name: "holdout_twice", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("holdout_twice");
     evaluate(specId, "holdout_2026");
     expect(() => evaluate(specId, "holdout_2026")).toThrow(HoldoutBudgetExhausted);
   });
 
   it("refuses before writing a second validation result", () => {
-    const specId = recordStrategySpec({ name: "holdout_atomic", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("holdout_atomic");
     evaluate(specId, "holdout_2026");
     expect(() => evaluate(specId, "holdout_2026")).toThrow();
     // The refused attempt left no trace beyond the original evaluation.
@@ -115,7 +156,7 @@ describe("locked holdout", () => {
   });
 
   it("leaves the budget untouched when no holdout is claimed", () => {
-    const specId = recordStrategySpec({ name: "no_holdout", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("no_holdout");
     evaluate(specId);
     evaluate(specId);
     expect(holdoutUsage(specId)).toHaveLength(0);
@@ -124,9 +165,74 @@ describe("locked holdout", () => {
 
 describe("validation identity", () => {
   it("gives every evaluation a distinct id even within one millisecond", () => {
-    const specId = recordStrategySpec({ name: "rapid", version: 1, dsl: DSL, createdBy: "test" });
+    const specId = seed("rapid");
     for (let i = 0; i < 5; i += 1) evaluate(specId);
     const ids = getDb().select().from(schema.validationResults).all().map((row) => row.id);
     expect(new Set(ids).size).toBe(5);
+  });
+});
+
+describe("13b — a trial is pinned to the dataset it judged", () => {
+  it("refuses evidence that carries no dataset snapshot identity", () => {
+    // The fail-closed door. A provider window has no snapshot id, so this is also the test that
+    // fails if anyone reintroduces provider bars into validation.
+    const specId = seed("no_identity_evidence");
+    expect(() =>
+      runGauntlet(specId, DSL, { inSampleReturns: returns(), outOfSampleReturns: returns() }),
+    ).toThrow(DatasetIdentityMissing);
+    // And nothing was spent finding out: the refusal happens before the trial is recorded.
+    expect(getDb().select().from(schema.selectionTrials).all()).toHaveLength(0);
+  });
+
+  it("persists the snapshot id on the selection trial", () => {
+    const specId = seed("trial_pins_snapshot");
+    evaluate(specId);
+    const trials = getDb().select().from(schema.selectionTrials).all();
+    expect(trials.length).toBeGreaterThan(0);
+    for (const trial of trials) expect(trial.datasetSnapshotId).toBe("dss_ledger_test");
+  });
+
+  it("persists the snapshot id on the holdout access record", () => {
+    const specId = seed("holdout_pins_snapshot");
+    evaluate(specId, "gen_13b");
+    const access = getDb().select().from(schema.holdoutAccess).all();
+    expect(access).toHaveLength(1);
+    expect(access[0].datasetSnapshotId).toBe("dss_ledger_test");
+  });
+
+  it("records a gauntlet experiment whose manifest names every reproducibility input", () => {
+    const specId = seed("manifest_recorded");
+    const report = evaluate(specId);
+    expect(report.datasetSnapshotId).toBe("dss_ledger_test");
+    const experiments = getDb().select().from(schema.experiments).all();
+    const run = experiments.find((row) => row.kind === "gauntlet" && row.strategySpecId === specId);
+    expect(run).toBeDefined();
+    const manifest = JSON.parse(run!.manifest!) as Record<string, unknown>;
+    for (const field of [
+      "strategyVersionId",
+      "datasetSnapshotId",
+      "datasetFingerprint",
+      "engineVersion",
+      "feeModelId",
+      "marketCalendarVersion",
+      "codeFingerprint",
+      "createdAt",
+    ]) {
+      expect(manifest[field], field).toBeTruthy();
+    }
+    expect(manifest.datasetSnapshotId).toBe("dss_ledger_test");
+  });
+
+  it("is deterministic: identical evidence in two fresh families produces identical verdicts", () => {
+    // Not two runs on ONE spec — a second run there rightly changes the trial denominator. Two
+    // independent families, each judging the same evidence for the first time, must agree exactly.
+    const first = seed("det_a", "family_det_a");
+    const second = seed("det_b", "family_det_b");
+    const once = evaluate(first);
+    const twice = evaluate(second);
+    expect(twice.stages.map((entry) => [entry.kind, entry.verdict, entry.metrics])).toEqual(
+      once.stages.map((entry) => [entry.kind, entry.verdict, entry.metrics]),
+    );
+    expect(twice.passed).toBe(once.passed);
   });
 });

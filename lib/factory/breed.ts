@@ -1,4 +1,11 @@
 import { DERIVABLE_FEATURES } from "@/lib/backtest/features";
+import {
+  MAX_POSITION_PCT,
+  OWNER_CAPITAL,
+  breedingBasis,
+  costsForCapital,
+  type BreedingBasis,
+} from "@/lib/paper/capital";
 import { compileStrategy, type StrategyDsl } from "@/lib/strategy/dsl";
 import { strategyIdentity } from "@/lib/strategy/graveyard";
 import type { Candidate } from "./screen";
@@ -150,25 +157,86 @@ function mutateCondition(condition: Condition, random: () => number): Condition 
   return condition;
 }
 
+/**
+ * Memoised because it is pure — it depends only on `OWNER_CAPITAL` and the fee schedule, neither
+ * of which moves at runtime — and because breeding calls it once per candidate.
+ */
+let cachedBasis: BreedingBasis | null = null;
+function basis(): BreedingBasis {
+  return (cachedBasis ??= breedingBasis());
+}
+
+/**
+ * The bid-ask spread an intraday candidate assumes it crosses, in basis points.
+ *
+ * **Stated, not measured.** This deployment has no quote or depth feed, and the DSL refuses an
+ * intraday strategy that declares no spread precisely so the number is an argued claim rather than
+ * an omission. Five basis points is a conservative figure for liquid NSE large caps; it is the one
+ * input here that a real microstructure feed would replace outright.
+ */
+const ASSUMED_INTRADAY_SPREAD_BPS = 5;
+
 function baseDsl(name: string, entry: Condition, random: () => number, market: string): StrategyDsl {
+  const { capital, positions, product } = basis();
+
+  // Breed at a resolution the capital can actually trade.
+  //
+  // This is the defect that deadlocked the whole system. `costsForCapital` was already asked for
+  // INTRADAY costs — because that is all ₹1,000 can trade — while `universe` omitted `resolution`,
+  // so the schema defaulted it to "D". Every bred candidate was therefore *priced* as intraday and
+  // *shaped* as delivery.
+  //
+  // The consequence was silent and total: `auto-gauntlet`'s `tradable_at_capital` guard reads the
+  // product implied by the resolution, saw DELIVERY, and refused. The factory manufactured
+  // candidates its own sibling module could never accept, so nothing ever reached `validated`,
+  // nothing reached paper forward, and the trade board was empty by construction.
+  const intraday = product === "INTRADAY";
+  const resolution = intraday ? "5m" : "D";
+
   return {
     name,
-    universe: { market, maxPositions: 10 },
+    // Derived, not assumed. Ten positions was a plausible default that nothing checked against
+    // the account: at the owner's stated ₹1,000 it means ₹100 per position, on which the flat
+    // ₹15.93 DP charge alone is 16%. See `lib/paper/capital.ts`.
+    universe: { market, maxPositions: positions, resolution },
     entry,
-    exit: {
-      afterDays: 3 + Math.floor(random() * 12),
-      stopLossPct: round(1.5 + random() * 6),
+    // An intraday candidate exits on its stop, its target, or the broker's square-off — which the
+    // engine enforces whether or not the spec mentions it. `afterDays` is deliberately omitted
+    // there: it counts *bars*, so at 5 minutes "afterDays: 12" would mean an hour while reading as
+    // a fortnight, and a generated spec should not carry a unit trap nobody chose.
+    exit: intraday
+      ? {
+          stopLossPct: round(0.3 + random() * 1.2),
+          takeProfitPct: round(0.6 + random() * 2.4),
+        }
+      : {
+          afterDays: 3 + Math.floor(random() * 12),
+          stopLossPct: round(1.5 + random() * 6),
+        },
+    sizing: { maxPositionPct: Math.min(MAX_POSITION_PCT, Math.floor(100 / positions)) },
+    // Never zero, and no longer a guess. The previous `{ commissionBps: 3, slippageBps: 7 }` —
+    // 20 bps a round trip — understated the real cost by between two- and eightyfold depending
+    // on position size, so every candidate ever screened was optimised against a market cheaper
+    // than the one it would trade in.
+    costs: {
+      ...costsForCapital({ capital, positions, market: OWNER_CAPITAL.market, product }),
+      // Required by the schema at intraday resolution, and omitted at daily so every existing
+      // daily spec keeps its exact prior cost.
+      ...(intraday ? { assumedSpreadBps: ASSUMED_INTRADAY_SPREAD_BPS } : {}),
     },
-    sizing: { maxPositionPct: 10 },
-    // Never zero. A candidate bred at zero cost is optimised against a market that does not
-    // charge for trading, and it will out-screen every honest one in the population.
-    costs: { commissionBps: 3, slippageBps: 7 },
   } as StrategyDsl;
 }
 
 export interface BreedInput {
-  /** Existing specs to mutate and cross. May be empty on a cold start. */
-  parents: readonly { name: string; dsl: StrategyDsl }[];
+  /**
+   * Existing specs to mutate and cross. May be empty on a cold start.
+   *
+   * `specId` is carried so a bred candidate can inherit its parent's research family. A mutation or
+   * crossover of an existing strategy is a *variant of that idea*, not a new one — and a candidate
+   * with no family cannot be validated at all, so dropping the parentage here made every bred
+   * strategy permanently unvalidatable.
+   */
+  parents: readonly { name: string; dsl: StrategyDsl; specId?: string }[];
   /** Identities already buried, so the graveyard is not re-excavated. */
   buriedIdentities: ReadonlySet<string>;
   /** Identities already in the registry, so a generation does not re-propose what exists. */
@@ -204,7 +272,15 @@ export interface BreedReport {
  */
 export function breedGeneration(input: BreedInput): BreedReport {
   const random = rng(input.seed);
-  const market = input.market ?? "US";
+  // The owner's market by default, not "US". The factory bred American strategies for an owner
+  // who trades NSE in rupees — every candidate in the population was for a market they cannot
+  // reach at their capital, and the cost model that screens them is the Indian one.
+  //
+  // Translated, not passed through: the DSL's `universe.market` is an *exchange* ("US" | "NSE" |
+  // "BSE") while `OWNER_CAPITAL.market` is a *country* ("IN" | "US"). Handing "IN" straight to the
+  // schema failed every candidate silently — `breedGeneration` returned an empty population and
+  // the factory looked like it had simply found nothing.
+  const market = input.market ?? (OWNER_CAPITAL.market === "IN" ? "NSE" : "US");
   const report: BreedReport = {
     candidates: [],
     rediscovered: 0,
@@ -243,6 +319,14 @@ export function breedGeneration(input: BreedInput): BreedReport {
     const name = `f${input.generation}_${lineage}_${report.candidates.length + 1}`;
     const dsl = baseDsl(name, entry, random, market);
 
+    // Which parent this descends from, for family inheritance. A freshly generated entry (`gen`)
+    // has none and is genuinely a new idea; a mutation or crossover descends from `parent`.
+    //
+    // For a crossover the *first* parent is recorded. Conservative on purpose: when two lineages
+    // meet, the rule is inherit-rather-than-invent, because a new family resets contamination
+    // history and "when in doubt, same family" only costs a little statistical power.
+    const derivedFrom = lineage === "gen" ? undefined : parent?.specId;
+
     // The compiler is the authority on what is a strategy — including the lookahead refusal. A
     // breeder that emitted specs the compiler would reject would be filling the registry with
     // rows that can never be evaluated.
@@ -264,7 +348,7 @@ export function breedGeneration(input: BreedInput): BreedReport {
     }
 
     seen.add(identity);
-    report.candidates.push({ id: name, dsl });
+    report.candidates.push({ id: name, dsl, parentSpecId: derivedFrom, lineage });
   }
 
   return report;

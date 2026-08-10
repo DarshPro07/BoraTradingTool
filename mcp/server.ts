@@ -57,7 +57,12 @@ function bounded(value: unknown): Record<string, unknown> {
       ? (value as Record<string, unknown>)
       : { value };
   }
+  // The envelope carries the ok/code contract, because the caller did NOT receive the data.
+  // Without them a truncated quant-core resource had neither `ok` nor `data` — an answer shaped
+  // like silent emptiness, which is the one shape this server exists to never produce.
   return {
+    ok: false,
+    code: "RESPONSE_TRUNCATED",
     truncated: true,
     originalCharacters: text.length,
     preview: text.slice(0, MAX_OUTPUT_CHARACTERS - 200),

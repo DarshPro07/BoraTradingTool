@@ -1,7 +1,7 @@
 import { collectFeatures, evaluate } from "@/lib/backtest/engine";
 import { buildFeaturePanel, isDerivable } from "@/lib/backtest/features";
 import type { Candle } from "@/lib/providers/types";
-import type { StrategyDsl } from "@/lib/strategy/dsl";
+import { marketOf, type StrategyDsl } from "@/lib/strategy/dsl";
 import type { QuantCandidate } from "./contract";
 
 /**
@@ -42,6 +42,21 @@ export interface SignalScan {
   refusals: string[];
 }
 
+/** One strategy's entry condition firing on one instrument's last bar. */
+export interface FiredSignal {
+  spec: ScannableSpec;
+  instrumentId: string;
+  bars: readonly Candle[];
+  /** Index of the bar whose close produced the signal. Always the last bar in `bars`. */
+  at: number;
+}
+
+export interface SignalSweep {
+  fired: FiredSignal[];
+  evaluated: number;
+  refusals: string[];
+}
+
 /**
  * How a strategy's lifecycle status becomes a contract verdict.
  *
@@ -69,12 +84,21 @@ function requiredFeatures(dsl: StrategyDsl): string[] {
   return [...required];
 }
 
-export function scanForSignals(
+/**
+ * Which (strategy, instrument) pairs have a live entry signal on the last bar.
+ *
+ * Split out from `scanForSignals` because two consumers need the same three-valued evaluation and
+ * only one of them wants a `QuantCandidate`. The board (`lib/execution/board.ts`) needs the spec
+ * and the bars so it can price a stop and a target; the contract type carries neither and is
+ * frozen. Duplicating the loop would have meant two warm-up rules and two definitions of
+ * "unknown", which is exactly the divergence this module exists to prevent.
+ */
+export function firedSignals(
   specs: readonly ScannableSpec[],
   dataset: Readonly<Record<string, readonly Candle[]>>,
   symbolFor: (instrumentId: string) => string = (id) => id,
-): SignalScan {
-  const candidates: QuantCandidate[] = [];
+): SignalSweep {
+  const fired: FiredSignal[] = [];
   const refusals = new Set<string>();
   let evaluated = 0;
 
@@ -104,7 +128,13 @@ export function scanForSignals(
         continue;
       }
 
-      const panel = buildFeaturePanel(bars);
+      // Session context, or an intraday strategy's opening range comes back undefined here and the
+      // scan reports "still inside its warm-up window" forever — a wiring gap that reads as a
+      // legitimate refusal.
+      const panel = buildFeaturePanel(bars, {
+        market: marketOf(spec.dsl.universe.market),
+        resolution: spec.dsl.universe.resolution,
+      });
       const last = bars.length - 1;
       evaluated += 1;
 
@@ -113,28 +143,16 @@ export function scanForSignals(
         continue;
       }
 
-      const fired = evaluate(spec.dsl.entry, panel.at(last), panel.at(last - 1));
-      if (fired === undefined) {
+      const signalled = evaluate(spec.dsl.entry, panel.at(last), panel.at(last - 1));
+      if (signalled === undefined) {
         // Distinct from `false`. Reporting an unknown as "no signal" is the failure this module
         // is shaped to avoid.
         refusals.add(`${symbolFor(instrumentId)}: ${spec.name} could not be evaluated on the last bar.`);
         continue;
       }
-      if (!fired) continue;
+      if (!signalled) continue;
 
-      const { verdict, blockers } = verdictFor(spec.status);
-      candidates.push({
-        symbol: symbolFor(instrumentId),
-        // The engine is long-only — `runBacktest` computes `(exit - entry) / entry` with no short
-        // path — so claiming a short candidate would describe a trade this system cannot model.
-        side: "PAPER_LONG_CANDIDATE",
-        setup: spec.name,
-        // Null, deliberately. An entry condition is a boolean; it carries no strength, and a
-        // fabricated score would be ranked on by whoever reads the board.
-        score: null,
-        verdict,
-        blockers,
-      });
+      fired.push({ spec, instrumentId, bars, at: last });
     }
   }
 
@@ -144,6 +162,32 @@ export function scanForSignals(
     );
   }
 
+  return { fired, evaluated, refusals: [...refusals] };
+}
+
+export function scanForSignals(
+  specs: readonly ScannableSpec[],
+  dataset: Readonly<Record<string, readonly Candle[]>>,
+  symbolFor: (instrumentId: string) => string = (id) => id,
+): SignalScan {
+  const sweep = firedSignals(specs, dataset, symbolFor);
+
+  const candidates: QuantCandidate[] = sweep.fired.map((signal) => {
+    const { verdict, blockers } = verdictFor(signal.spec.status);
+    return {
+      symbol: symbolFor(signal.instrumentId),
+      // The engine is long-only — `runBacktest` computes `(exit - entry) / entry` with no short
+      // path — so claiming a short candidate would describe a trade this system cannot model.
+      side: "PAPER_LONG_CANDIDATE",
+      setup: signal.spec.name,
+      // Null, deliberately. An entry condition is a boolean; it carries no strength, and a
+      // fabricated score would be ranked on by whoever reads the board.
+      score: null,
+      verdict,
+      blockers,
+    };
+  });
+
   // Strongest first, then by symbol so the ordering is stable across passes and two boards can be
   // diffed without spurious churn.
   const rank = { PAPER_CANDIDATE: 0, RESEARCH_ONLY: 1, BLOCKED: 2 };
@@ -151,5 +195,5 @@ export function scanForSignals(
     (a, b) => rank[a.verdict] - rank[b.verdict] || a.symbol.localeCompare(b.symbol) || a.setup!.localeCompare(b.setup!),
   );
 
-  return { candidates, evaluated, refusals: [...refusals] };
+  return { candidates, evaluated: sweep.evaluated, refusals: sweep.refusals };
 }

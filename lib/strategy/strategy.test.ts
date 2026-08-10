@@ -4,6 +4,8 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { closeDbForTests, getDb, schema } from "@/lib/db";
 import { recordStrategySpec } from "@/lib/knowledge/repository";
+import { FIXTURE_FAMILY, placeInTestFamily, registerTestSnapshot } from "./identity-fixture";
+import { requestHoldoutAccess } from "./selection-ledger";
 import { compileStrategy, roundTripCostBps, type StrategyDsl } from "./dsl";
 import {
   createRandom,
@@ -192,8 +194,14 @@ describe("statistics", () => {
   });
 });
 
-function seedSpec(name = "gap_quality"): string {
-  return recordStrategySpec({ name, version: 1, dsl: VALID_DSL, createdBy: "test" });
+function seedSpec(name = "gap_quality", familyId = FIXTURE_FAMILY): string {
+  const id = recordStrategySpec({ name, version: 1, dsl: VALID_DSL, createdBy: "test" });
+  // Every spec a test validates must now belong to a declared family — `runGauntlet` throws
+  // otherwise. That is the contract under repair, not an inconvenience to route around.
+  placeInTestFamily(id, VALID_DSL as StrategyDsl, familyId);
+  // Evidence names this snapshot; the experiments ledger holds a real FK to it.
+  registerTestSnapshot();
+  return id;
 }
 
 function goodReturns(count = 60): number[] {
@@ -204,6 +212,8 @@ describe("validation gauntlet", () => {
   it("rejects a strategy whose edge disappears out of sample", () => {
     const specId = seedSpec();
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(),
       outOfSampleReturns: Array.from({ length: 60 }, (_, index) => (index % 2 === 0 ? 0.005 : -0.01)),
     });
@@ -216,6 +226,8 @@ describe("validation gauntlet", () => {
   it("marks a small sample inconclusive rather than passing it", () => {
     const specId = seedSpec();
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(10),
       outOfSampleReturns: goodReturns(10),
     });
@@ -228,6 +240,8 @@ describe("validation gauntlet", () => {
   it("records every stage as a trial in the ledger", () => {
     const specId = seedSpec();
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(),
       outOfSampleReturns: goodReturns(),
     });
@@ -240,6 +254,8 @@ describe("validation gauntlet", () => {
   it("writes a validation result and updates the strategy status", () => {
     const specId = seedSpec();
     runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(),
       outOfSampleReturns: Array.from({ length: 60 }, () => -0.01),
     });
@@ -255,6 +271,8 @@ describe("validation gauntlet", () => {
   it("records failure memory so the same dead end is visible later", () => {
     const specId = seedSpec();
     runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(),
       outOfSampleReturns: Array.from({ length: 60 }, () => -0.01),
     });
@@ -269,6 +287,8 @@ describe("validation gauntlet", () => {
     // Thin edge: 20bps round trip doubled wipes it out.
     const thin = Array.from({ length: 60 }, (_, index) => (index % 2 === 0 ? 0.0022 : -0.0012));
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: thin,
       outOfSampleReturns: thin,
     });
@@ -280,6 +300,8 @@ describe("validation gauntlet", () => {
     const specId = seedSpec();
     const flat = Array.from({ length: 60 }, () => 0);
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: flat,
       outOfSampleReturns: flat,
       noTradeReturns: Array.from({ length: 60 }, () => 0.001),
@@ -291,6 +313,8 @@ describe("validation gauntlet", () => {
   it("refuses an unpaired benchmark instead of comparing it", () => {
     const specId = seedSpec();
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: goodReturns(),
       outOfSampleReturns: goodReturns(),
       noTradeReturns: Array.from({ length: 10 }, () => 0),
@@ -305,6 +329,8 @@ describe("validation gauntlet", () => {
     // Mean of +1bp per trade riding on ±1% swings: positive, but statistically pure noise.
     const noisy = Array.from({ length: 60 }, (_, index) => (index % 2 === 0 ? 0.0102 : -0.01));
     const report = runGauntlet(specId, VALID_DSL as StrategyDsl, {
+      datasetSnapshotId: "dss_test",
+      datasetFingerprint: "fp_test",
       inSampleReturns: noisy,
       outOfSampleReturns: noisy,
     });
@@ -316,11 +342,11 @@ describe("validation gauntlet", () => {
     const specId = seedSpec();
     const returns = goodReturns();
 
-    runGauntlet(specId, VALID_DSL as StrategyDsl, { inSampleReturns: returns, outOfSampleReturns: returns });
+    runGauntlet(specId, VALID_DSL as StrategyDsl, { inSampleReturns: returns, outOfSampleReturns: returns, datasetSnapshotId: "dss_test", datasetFingerprint: "fp_test" });
     const firstDsr = getDb().select().from(schema.validationResults).all()[0].deflatedSharpe;
 
     for (let round = 0; round < 4; round += 1) {
-      runGauntlet(specId, VALID_DSL as StrategyDsl, { inSampleReturns: returns, outOfSampleReturns: returns });
+      runGauntlet(specId, VALID_DSL as StrategyDsl, { inSampleReturns: returns, outOfSampleReturns: returns, datasetSnapshotId: "dss_test", datasetFingerprint: "fp_test" });
     }
     const results = getDb().select().from(schema.validationResults).all();
     const lastDsr = results[results.length - 1].deflatedSharpe;
@@ -348,12 +374,25 @@ describe("locked holdout guard", () => {
     expect(second.message).toMatch(/unbiased estimate/);
   });
 
-  it("tracks budgets per strategy, not globally", () => {
+  it("tracks the legacy ledger per strategy — but it is no longer the enforcement", () => {
+    // This asserted the vulnerability as intended behaviour. A per-spec key means a rename, a copy
+    // or a new version buys another look at the one sample the strategy was never fitted to.
+    //
+    // `requestHoldout` still records per spec, because `holdoutStanding()` reads it to decide the
+    // promotion rung. Enforcement moved to `requestHoldoutAccess`, gated at family AND campaign
+    // level — asserted directly below, and exhaustively in `research-identity.test.ts` T3-T6, T8.
     const first = seedSpec("alpha_one");
     const second = seedSpec("alpha_two");
 
     expect(requestHoldout("holdout_2026", first, "worker").granted).toBe(true);
     expect(requestHoldout("holdout_2026", second, "worker").granted).toBe(true);
+
+    // The real gate: both specs are in one family, so the second is refused.
+    expect(requestHoldoutAccess({ holdoutGenerationId: "gen_2026", specId: first, requestFingerprint: "a" }).granted).toBe(true);
+    const blocked = requestHoldoutAccess({ holdoutGenerationId: "gen_2026", specId: second, requestFingerprint: "b" });
+    expect(blocked.granted).toBe(false);
+    if (blocked.granted) return;
+    expect(blocked.code).toBe("FAMILY_BUDGET_SPENT");
   });
 
   it("cannot be reset by deleting ledger rows", () => {

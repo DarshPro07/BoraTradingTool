@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildPreMarketReport } from "./report";
 import type { Instrument, NormalizedQuote } from "@/lib/market/types";
+import { useNseSecurityMasterFixture } from "@/lib/market/security-master.test-fixture";
+
+useNseSecurityMasterFixture();
 
 /**
  * The contract under test is not "does it fetch quotes" — it is what happens when a quote does

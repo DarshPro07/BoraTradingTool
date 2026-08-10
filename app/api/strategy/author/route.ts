@@ -66,7 +66,34 @@ export async function POST(request: Request) {
   const createdBy = typeof payload.createdBy === "string" && payload.createdBy.trim() ? payload.createdBy.trim() : "owner";
   const hypothesisId = typeof payload.hypothesisId === "string" && payload.hypothesisId.trim() ? payload.hypothesisId.trim() : undefined;
 
-  const id = recordStrategySpec({ name: parsed.data.name, dsl: parsed.data, createdBy, hypothesisId });
+  let id: string;
+  try {
+    id = recordStrategySpec({ name: parsed.data.name, dsl: parsed.data, createdBy, hypothesisId });
+  } catch (caught) {
+    // `strategy_specs` is unique on (name, version) and `recordStrategySpec` derives its id from
+    // exactly those, so re-authoring an existing name threw straight through this handler and
+    // reached the browser as a bare 500. Compiling a template twice — or double-clicking COMPILE
+    // AND SAVE — is enough to hit it, and an opaque server error gives the author nothing to act
+    // on when the real answer is "that name is taken".
+    //
+    // Answered as 409, not absorbed by auto-incrementing the version: a new version of a strategy
+    // is a deliberate act with real consequences for the trial ledger, and quietly minting one on
+    // a stray second click would fill the registry with versions nobody chose to create.
+    const message = caught instanceof Error ? caught.message : String(caught);
+    if (/UNIQUE constraint failed: strategy_specs/i.test(message)) {
+      return NextResponse.json(
+        {
+          error: "NAME_ALREADY_EXISTS",
+          message:
+            `A strategy called "${parsed.data.name}" already exists at this version. ` +
+            "Rename it, or set an explicit version to author a new revision — versions are not " +
+            "created automatically, because each one carries its own trial history.",
+        },
+        { status: 409 },
+      );
+    }
+    throw caught;
+  }
 
   return NextResponse.json(
     {

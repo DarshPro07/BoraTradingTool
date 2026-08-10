@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { closeDbForTests } from "@/lib/db";
-import { getLearningMode } from "@/lib/governance/runtime";
+import { getLearningMode, setLearningMode } from "@/lib/governance/runtime";
 import { createOwnerSession } from "@/lib/security/request";
 import { PATCH } from "./route";
 
@@ -17,6 +17,7 @@ beforeEach(() => {
   vi.stubEnv("MARKETPULSE_AGENT_TOKEN", AGENT_TOKEN);
   vi.stubEnv("MARKETPULSE_OWNER_TOKEN", OWNER_TOKEN);
   closeDbForTests();
+  setLearningMode("off", "owner");
 });
 
 afterEach(() => {
@@ -51,5 +52,16 @@ describe("PATCH /api/learning", () => {
     );
     expect(response.status).toBe(200);
     expect(getLearningMode()).toBe("evolving");
+  });
+
+  it("does not let an unauthenticated local request change learning mode", async () => {
+    const response = await PATCH(
+      patchRequest({
+        origin: "http://127.0.0.1:3000",
+        "x-marketpulse-csrf": "1",
+      }),
+    );
+    expect(response.status).toBe(401);
+    expect(getLearningMode()).toBe("off");
   });
 });
