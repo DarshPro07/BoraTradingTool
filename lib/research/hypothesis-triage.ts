@@ -1,4 +1,5 @@
 import { POINT_IN_TIME_FEATURES, type Condition } from "@/lib/strategy/dsl";
+import { compileResearchProse, type CompiledStrategy, type ConditionCandidate } from "./semantic-compiler";
 import { DERIVABLE_FEATURES } from "@/lib/backtest/features";
 
 /**
@@ -43,7 +44,9 @@ export type TriageVerdict =
   /** Not about a trade at all — a claim about the system, the method, or the research process. */
   | "NOT_A_TRADING_RULE"
   /** Nothing mapped. Says nothing about the idea, only that this table could not read it. */
-  | "UNCLEAR";
+  | "UNCLEAR"
+  /** The stated conditions cannot all hold at once within one lifecycle scope. */
+  | "CONTRADICTORY";
 
 /**
  * Phrases that denote a feature this engine derives.
@@ -137,6 +140,21 @@ export type ExtractedCondition = (
   interpreted: string;
 };
 
+/** The compiler's candidate, in the shape this module's consumers already read. */
+function asExtractedCondition(candidate: ConditionCandidate): ExtractedCondition {
+  const shared = { evidence: candidate.sourceText, interpreted: candidate.interpreted };
+  switch (candidate.kind) {
+    case "SCALAR":
+      return { kind: "scalar", feature: candidate.feature.id, op: candidate.op as never, value: candidate.value as number, ...shared };
+    case "RANGE":
+      return { kind: "range", feature: candidate.feature.id, low: candidate.low as number, high: candidate.high as number, ...shared };
+    case "COMPARE":
+      return { kind: "compare", left: candidate.feature.id, right: (candidate.right as { id: string }).id, op: candidate.op as never, ...shared };
+    case "CROSS":
+      return { kind: "cross", left: candidate.feature.id, right: (candidate.right as { id: string }).id, direction: candidate.direction as never, ...shared };
+  }
+}
+
 /** Every feature a condition depends on — both sides, for comparisons and crosses. */
 export function conditionFeatures(condition: ExtractedCondition): string[] {
   return condition.kind === "compare" || condition.kind === "cross"
@@ -151,6 +169,12 @@ export interface TriageResult {
   conditions: ExtractedCondition[];
   /** Quantities the hypothesis needs that this deployment cannot derive. */
   missingQuantities: string[];
+  /**
+   * The compiler's full record: every clause with its classification and why, every refused
+   * candidate with its reason, contradictions, and the per-scope DSL. This is what lets a surface
+   * show YOU SAID → INTERPRETED → NOT USED AS A RULE instead of a bare list of conditions.
+   */
+  compiled?: CompiledStrategy;
 }
 
 export interface HypothesisInput {
@@ -411,16 +435,31 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
     };
   }
 
-  const conditions = extractConditions(text);
-  if (conditions.length === 0) {
+  // The SEMANTIC COMPILER owns prose -> conditions. It segments and CLASSIFIES clauses before
+  // reading any number, so an observation ("RSI currently 64.1") and an indicator's period
+  // ("20-day SMA") can never become trading thresholds, and entry/exit stay in separate scopes.
+  const compiled = compileResearchProse(text);
+
+  if (compiled.verdict === "CONTRADICTORY") {
+    return {
+      verdict: "CONTRADICTORY",
+      reason: compiled.reason,
+      conditions: [],
+      missingQuantities: [],
+      compiled,
+    };
+  }
+
+  const conditions = compiled.conditions.map(asExtractedCondition);
+  if (compiled.verdict === "NO_RULE_FOUND" || conditions.length === 0) {
     return {
       verdict: "UNCLEAR",
       reason:
-        "No feature-and-threshold pair could be read from this text. That is a statement about this " +
-        "lexicon, not about the hypothesis: it maps phrasing, not meaning. A hypothesis stating its " +
-        "conditions in other words is refused here and is still worth expressing by hand.",
+        `${compiled.reason} This is a statement about what the compiler can read, not about the ` +
+        "hypothesis: a rule stated in other words is refused here and is still worth expressing by hand.",
       conditions: [],
       missingQuantities: [],
+      compiled,
     };
   }
 
@@ -435,6 +474,7 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
       reason: `The lexicon produced ${notDerivable.join(", ")}, which no engine here derives from price data.`,
       conditions: [],
       missingQuantities: notDerivable,
+      compiled,
     };
   }
 
@@ -446,6 +486,7 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
       ". Every threshold comes from the hypothesis itself; none was defaulted.",
     conditions,
     missingQuantities: [],
+    compiled,
   };
 }
 

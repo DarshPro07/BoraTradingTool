@@ -197,7 +197,11 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
       name: specNameFor(hypothesis.title, hypothesis.id),
       description: hypothesis.statement.slice(0, 500),
       universe: { market, maxPositions: basis.positions },
-      entry: entryConditionFrom(triage.conditions),
+      // The ENTRY scope only. Flattening every condition into the entry would put the exit rule
+      // inside it — "close above SMA20" AND "close below SMA20" — producing a rule that can never
+      // fire, which is precisely the contradiction the compiler exists to prevent. The per-scope
+      // fallback keeps older callers working when no compiler record is present.
+      entry: triage.compiled?.scopes.ENTRY ?? entryConditionFrom(triage.conditions),
       // A stop is required or the compiler warns that exit rests on time alone; `afterDays` gives
       // the idea a bounded holding period. Both are stated defaults for a *screen*, which is what
       // this class of hypothesis describes — the hypothesis states entry conditions, not exits.

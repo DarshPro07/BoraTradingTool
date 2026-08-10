@@ -121,7 +121,7 @@ describe("it abstains rather than inventing", () => {
     expect(result.verdict).toBe("UNCLEAR");
     expect(result.conditions).toHaveLength(0);
     // The refusal must own its limitation rather than blame the hypothesis.
-    expect(result.reason).toMatch(/statement about this lexicon/i);
+    expect(result.reason).toMatch(/statement about what the compiler can read/i);
   });
 
   it("does not pair a feature with a number from an unrelated clause", () => {

@@ -69,10 +69,14 @@ path — Claude Code serves RESEARCH.
    correctly returns UNCLEAR. Settle the DSL band representation BEFORE coding it.
 3) **DONE 01:20 — all 6 NSE failures root-fixed**; unit suite fully green (1,496/0 failed).
    Duplicate ISIN is now an instrument-level IDENTITY_CONFLICT, not a market-wide outage.
-   **NEW TOP PRIORITY instead: the prose extractor is not reliable on real multi-clause prose**
-   (FINDINGS 01:40 — period leaks via neighbouring feature names, self-contradictory rules,
-   descriptive values read as thresholds). Needs clause segmentation, not another patch. The
-   research→strategy leg is NOT WORKING for real prose and must not be demonstrated.
+   **RESOLVED 02:10 — Semantic Strategy Compiler landed** (`lib/research/semantic-compiler.ts`):
+   segment → classify → typed candidates with source spans → parameter guard → per-scope AST →
+   satisfiability. Real NIFTYBEES prose compiles correctly; real SBIN prose is REFUSED as
+   CONTRADICTORY naming the exact conflict. Suite 1,508/0 failed.
+   **NEXT, in this order and do not invert it:** (a) Golden Journey on the browser, (b) render the
+   AgentRun ledger on /brain. Compiler tuning that would help but is not blocking: past-tense
+   price narration ("has pulled back to 1071, still above its 20-day SMA") is currently read as a
+   rule rather than an observation, which is what makes the SBIN paragraph ambiguous.
 4) Then: §23 AI runtime boot screen · §32/33 scanner · §59 decision brief.
 
 PRIOR NEXT TASK (superseded — M4/Codex is no longer the critical path):

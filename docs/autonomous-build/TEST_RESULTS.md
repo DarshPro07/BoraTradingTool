@@ -1,5 +1,49 @@
 # Test results (append newest first; numbers only from actual runs)
 
+## 2026-08-11 02:10 IST — **SEMANTIC STRATEGY COMPILER LANDED**; suite 1,508 / 0 failed
+`lib/research/semantic-compiler.ts` replaces the regex extractor in the authoring path.
+Pipeline: prose → sentences → clauses (exact offsets) → CLASSIFY → typed candidates with source
+spans → parameter guard → per-scope AST → interval-algebra satisfiability → verdict.
+
+**Suite: 1,508 passed / 2 skipped / 0 failed (1,510). tsc 0.** +12 from the paragraph suite.
+
+**Acceptance on REAL model-written prose — both required outcomes demonstrated:**
+- **A. Correct IR.** The NIFTYBEES paragraph that produced the seven-condition nonsense rule now
+  compiles to `ENTRY: close > sma20 AND 55 <= rsi14 <= 70` · `EXIT: close < sma20`. Every
+  observation ("currently 64.1", "+1.6% above SMA20", "+2.76% above SMA50") is classified
+  OBSERVATION and refused as a threshold; no indicator period reaches a comparison.
+- **B. Honest refusal.** A fresh SBIN research paragraph (claude-sonnet-5, SOURCE_VERIFIED) is
+  REFUSED as `CONTRADICTORY`, naming the conflict: *"close must be both above and below sma20
+  during ENTRY"*. The prose really does say both — it narrates a pullback while stating the price
+  is still above the SMA — so refusing is correct. **No strategy was authored.**
+
+**The three original defect classes, each closed structurally rather than by pattern:**
+1. *Parameter leakage* — feature mentions are located first with spans covering their period
+   digits; a numeric operand overlapping a mention is refused as a PARAMETER. `SMA20 > 20` is
+   unreachable, not merely unlikely.
+2. *Descriptive-value leakage* — clauses are classified BEFORE any number is read; observations
+   and parentheticals cannot yield conditions whatever they contain.
+3. *Contradiction* — interval algebra per (scope, feature). Entry and exit are different scopes,
+   so "enter 55-70, exit below 50" is NOT flagged, while "above 60 and below 50" is, with the
+   conflicting clauses quoted back as the unsat core.
+
+**Two more defects found while building it:** the source-span self-check caught the compiler's own
+`sourceText`/offset drift on its first run (spans are now exact by construction); and the operand
+nearest the comparator now wins — "rsi_14 crosses above 70 on the daily close" had been reading
+`close` as the operand and discarding the 70.
+
+**Scope leak fixed in the author:** it ANDed every condition into the entry, which would have put
+`close < sma20` (an EXIT rule) inside the entry alongside `close > sma20`. It now uses
+`compiled.scopes.ENTRY`.
+
+**Both pre-compiler strategies are INVALIDATED, not deleted:** `stg_f044275a8bc41e3f` and
+`stg_9c9a0b318d7bafad`, each with an `AUTHORING_SEMANTIC_DEFECT` audit row.
+
+**NOT DONE, deliberately, and in this order next:** Golden Journey (step 12), then `/brain`
+AgentRun rendering (step 13). Both were left because the compiler landed at 02:10 and running a
+browser journey on a freshly-changed authoring path proves nothing yet.
+
+
 ## 2026-08-11 01:20 IST — **FULL UNIT SUITE GREEN**, and the IR now reads real research prose
 - **1,496 passed / 2 skipped / 0 failed (1,498) across 120 files. tsc exit 0.** First fully green
   unit suite: the six long-standing NSE security-master failures are ROOT-fixed (not muted), and
