@@ -527,8 +527,54 @@ function exactSpan(prose: string, start: number, end: number): { start: number; 
 
 /* ------------------------------------------------------------- compilation */
 
+/**
+ * Blank out parenthetical asides, preserving every character offset.
+ *
+ * An aside is decoration by the rule already stated for whole-clause parentheticals — but an
+ * INLINE one ("...between 55 and 70 (currently 64.1, +2.3 today) and close is above SMA20") was
+ * being split into clauses of its own, which took the rest of the rule with it and lost the whole
+ * thing. Refusing was safe but wrong: the trading meaning is unchanged by the aside.
+ *
+ * Replacing with spaces of EQUAL LENGTH is what makes this safe to do before segmentation — every
+ * source span computed downstream still indexes the original prose exactly, so provenance is
+ * untouched.
+ */
+export function maskParentheticals(prose: string): string {
+  const characters = [...prose];
+  let depth = 0;
+  let openedAt = -1;
+
+  for (let index = 0; index < characters.length; index += 1) {
+    if (characters[index] === "(") {
+      if (depth === 0) openedAt = index;
+      depth += 1;
+      continue;
+    }
+    if (characters[index] !== ")") continue;
+    depth = Math.max(0, depth - 1);
+    if (depth !== 0 || openedAt === -1) continue;
+
+    const inner = prose.slice(openedAt + 1, index);
+    // A parenthetical is NOT automatically decoration. "(gap >= 3%, relative volume >= 1)" IS the
+    // rule — masking it deleted the strategy. What marks an aside is that it describes the
+    // present ("currently 64.1") or states no condition at all ("not overbought"); a
+    // parenthetical that states a comparison is content and stays.
+    const describesNow = OBSERVATION_MARKERS.some((marker) => inner.toLowerCase().includes(marker));
+    const statesCondition = COMPARATOR_WORDS.test(inner);
+    if (describesNow || !statesCondition) {
+      for (let blank = openedAt; blank <= index; blank += 1) characters[blank] = " ";
+    }
+    openedAt = -1;
+  }
+
+  return characters.join("");
+}
+
 export function compileResearchProse(prose: string): CompiledStrategy {
-  const sentences = segmentSentences(prose);
+  // Segmentation, classification and extraction all read the masked text; every SPAN still points
+  // into the original, because masking preserves length.
+  const readable = maskParentheticals(prose);
+  const sentences = segmentSentences(readable);
   const spans: Span[] = [];
   const sentenceOf = new Map<Span, number>();
 
@@ -540,8 +586,8 @@ export function compileResearchProse(prose: string): CompiledStrategy {
   });
 
   const clauses = classifyClauses(spans, (span) => sentenceOf.get(span) ?? 0);
-  const mentions = findFeatureMentions(prose);
-  const parameterSpans = findParameterSpans(prose);
+  const mentions = findFeatureMentions(readable);
+  const parameterSpans = findParameterSpans(readable);
   const conditions: ConditionCandidate[] = [];
   const rejected: RejectedCandidate[] = [];
 

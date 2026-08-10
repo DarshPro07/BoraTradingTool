@@ -202,10 +202,22 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
       // fire, which is precisely the contradiction the compiler exists to prevent. The per-scope
       // fallback keeps older callers working when no compiler record is present.
       entry: triage.compiled?.scopes.ENTRY ?? entryConditionFrom(triage.conditions),
-      // A stop is required or the compiler warns that exit rests on time alone; `afterDays` gives
-      // the idea a bounded holding period. Both are stated defaults for a *screen*, which is what
-      // this class of hypothesis describes — the hypothesis states entry conditions, not exits.
-      exit: { afterDays: 5, stopLossPct: 2 },
+      // The research's OWN exit rule when it stated one — P0 cross-layer parity.
+      //
+      // The compiler computed `scopes.EXIT` and this discarded it, substituting a time-and-stop
+      // default. The surface would then show "INTERPRETED: exit when close < SMA20" while the
+      // backtest actually ran a 5-day timeout, so YOU SAID != INTERPRETED != ACTUALLY TESTED —
+      // a violation of the product's core promise, not a missing feature.
+      //
+      // afterDays and stopLossPct remain as BOUNDS beside the stated rule: a research exit says
+      // when the thesis is wrong, not how long capital may sit or how much may be lost, and the
+      // compiler warns when an exit rests on time alone. Both are declared in `assumptionsAdded`
+      // so the addition is visible rather than silent.
+      exit: {
+        afterDays: 5,
+        stopLossPct: 2,
+        ...(triage.compiled?.scopes.EXIT ? { condition: triage.compiled.scopes.EXIT } : {}),
+      },
       sizing: { maxPositionPct: Math.min(25, Math.floor(100 / basis.positions)) },
       costs: costsForCapital({
         capital: basis.capital,
@@ -333,7 +345,12 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
         features: conditionFeatures(condition),
       })),
       assumptionsAdded: [
-        "exit: afterDays 5 with a 2% stop - screen-class default, the hypothesis stated entries only",
+        // The assumption must describe what was ACTUALLY built. Claiming "the hypothesis stated
+        // entries only" while its exit rule sits in the spec would be a false provenance record.
+        triage.compiled?.scopes.EXIT
+          ? "exit: the hypothesis's OWN exit rule, plus afterDays 5 and a 2% stop as bounds - " +
+            "a stated exit says when the thesis is wrong, not how long capital may sit or how much may be lost"
+          : "exit: afterDays 5 with a 2% stop - screen-class default, the hypothesis stated entries only",
         `sizing: max ${Math.min(25, Math.floor(100 / basis.positions))}% per position from the capital basis`,
         "costs: computed from the owner's capital at delivery rates, not stated in the hypothesis",
         "long-only: direction was not stated and buy-side is the conservative reading",

@@ -1,5 +1,43 @@
 # Findings (root causes and load-bearing discoveries; evidence-labelled)
 
+- **FIXED (P0) 2026-08-11 02:50 — the research's own EXIT rule was computed and thrown away.**
+  The compiler produced `scopes.EXIT` and the author substituted a time-and-stop default, so a
+  surface could show *"INTERPRETED: exit when close < SMA20"* over a spec that actually backtested
+  a 5-day timeout. That is not a missing feature — it breaks the product's core promise at the
+  third arrow: **YOU SAID → INTERPRETED → ACTUALLY TESTED**. The DSL already supported
+  `exit.condition`, so no schema change was needed. `afterDays`/`stopLossPct` remain BESIDE the
+  stated rule as bounds (a research exit says when the thesis is wrong, not how long capital may
+  sit), and the provenance text no longer claims "the hypothesis stated entries only" when it did
+  not. Proven across all four layers by `lib/research/scope-parity.test.ts`:
+  prose → compiler AST → Strategy IR → **backtest-compiled executable rule**.
+
+- **NEW TEST LAYER 2026-08-11 02:55 — metamorphic semantic tests** (`metamorphic.test.ts`).
+  1,500 example tests passed while the compiler produced `close > 20` and `rsi14 >= 2473.7`.
+  Example tests only check inputs someone thought of; these check a RELATION: *adding words that
+  do not change the trading meaning must not change the Strategy IR*. Every defect this compiler
+  has had would have violated it. Properties pinned: decoration cannot change rules · no
+  decorative number becomes a threshold · entry and exit never collapse · reordering descriptive
+  clauses changes nothing · equivalent phrasing compiles equivalently or REFUSES (never silently
+  differs) · incompatible dimensions never compile.
+
+- **FIXED 2026-08-11 02:55 — an inline parenthetical destroyed the whole rule** (caught by the
+  metamorphic property, not by an example). "…between 55 and 70 (currently 64.1, +2.3 today) and
+  close is above SMA20" segmented the aside into clauses and lost the rest of the rule with it.
+  Asides are now masked at EQUAL LENGTH before segmentation, so every source span still indexes
+  the original prose exactly. **The first attempt was too aggressive and deleted a real rule**:
+  "(gap >= 3%, relative volume >= 1)" IS the specification. An aside is decoration only when it
+  describes the present or states no comparison at all; a parenthetical stating a condition is
+  content and stays.
+
+- **READY 2026-08-11 03:00 — the dependency parser is installed and verified on this machine.**
+  spaCy + `en_core_web_sm` under `C:/Users/marke/AppData/Local/Programs/Python/Python312/python.exe`.
+  Smoke parse of "Enter when close is above the 20-day and 50-day SMAs":
+  `20 --nummod--> day --nmod--> SMAs` · `SMAs --pobj--> above` · `50-day --conj--> day`.
+  That is exactly the evidence the position heuristics could not recover: the 20 is structurally a
+  MODIFIER of the indicator name, the SMAs are the OBJECT of the comparator, and the coordination
+  is explicit. **The next session can begin `SyntaxAttachmentResolver` immediately — no setup.**
+
+
 - **OPEN / DESIGN 2026-08-11 02:30 — clause→operator ATTACHMENT is not solved by heuristics, and
   the owner's original instinct (dependency parsing) was right. My deviation was wrong.**
   Four live probes (TCS · RELIANCE · NIFTYBEES · SBIN, real claude-sonnet-5 research) drove three
