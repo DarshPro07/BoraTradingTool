@@ -1,5 +1,36 @@
 # Work queue (ordered; every item carries its dependency)
 
+## SYNTAX ATTACHMENT — **PARSER PROVEN 2026-08-11 03:40, NOT YET WIRED IN**
+Full detail and the exact next task: `docs/plans/syntax-attachment/00-status.md`. Checkpoint `f852a31`.
+
+Built and verified: `quant/syntax_parser.py` (persistent spaCy worker, one model load, syntax only),
+`lib/research/syntax/resolver.ts` (`SyntaxAttachmentResolver` — the compiler never imports spaCy),
+`lib/research/syntax/attachment.ts` (COPULA / QUANTIFIER / COORDINATED climbs, else
+`AMBIGUOUS_ATTACHMENT`). **10/10 operators attached correctly, 0 wrong**, on the real
+TCS/RELIANCE/NIFTYBEES/SBIN prose via the running worker
+(`npx tsx scripts/verify-syntax-attachment.mts`). Suite 1538 → 1544, tsc clean.
+
+**Model pinned `en_core_web_sm` 3.8.0 ON MEASUREMENT, against expectation** — 86% vs
+`en_core_web_trf` 79% on this corpus, 8.6× faster. Generic parser benchmarks did not transfer.
+
+**Config is mandatory, not discoverable** — `SYNTAX_PARSER_PYTHON` /  `SYNTAX_PARSER_MODEL`.
+`python` first on PATH here is `/d/hermes/hermes-agent/venv/Scripts/python` and has no spaCy.
+
+**NEXT EXECUTABLE TASK:** wire `resolveAttachment` into `compileResearchProse`, deleting the five
+positional rules (`semantic-compiler.ts:461,482,506,622-627,668-671`). Feed the **ORIGINAL** prose
+to the parser — `:576` currently hands the masked text to everything, and masking alters syntax;
+keep the mask for clause segmentation only and merge by character offset. All existing guards still
+run after attachment. Then items 11–14 (corpus acceptance, metamorphic, cross-layer parity,
+parser provenance persisted with the authored strategy).
+
+**BLOCKER (external to this work):** `agent_runs` and `stock_analysis_reports` are **both empty** —
+there is no persisted research envelope, so any Golden-Journey step specified as "replay an already
+persisted SOURCE_VERIFIED envelope" cannot run until a live provider run persists one.
+
+**NOT A CODE DEFECT:** the `/ai` hydration mismatch the owner hit is a stale `.next` client bundle
+(`UTILITY_LINKS` is a frozen literal with no branching; server had `/brain`, client did not).
+Stop dev server → delete `.next/` → restart. Must be cleared before the DevTools gate.
+
 ## M5 RESEARCH BRIDGE — **DONE 2026-08-10 23:45** (was the meeting-release blocker)
 Path built, live-proven, and re-runnable: browser → `POST /api/research/stock` →
 `lib/research/bridge.ts` → `lib/runtime/gateway.ts` → headless `claude` → typed envelope.
