@@ -66,6 +66,15 @@ const FEATURE_LEXICON: ReadonlyArray<{ phrases: readonly string[]; feature: stri
   { phrases: ["52-week low", "52 week low"], feature: "distance_from_52w_low" },
   { phrases: ["opening range"], feature: "opening_range_high" },
   { phrases: ["price floor", "price above", "share price"], feature: "close" },
+  // Moving averages: real research prose compares price to them constantly ("close above the
+  // 20-day SMA"), and every name below is already in POINT_IN_TIME_FEATURES, so the lexicon
+  // still cannot invent a feature this deployment does not derive.
+  { phrases: ["200-day sma", "200 day sma", "sma_200", "sma200", "200-day moving average"], feature: "sma200" },
+  { phrases: ["50-day sma", "50 day sma", "sma_50", "sma50", "50-day moving average"], feature: "sma50" },
+  { phrases: ["20-day sma", "20 day sma", "sma_20", "sma20", "20-day moving average"], feature: "sma20" },
+  { phrases: ["26-day ema", "ema_26", "ema26"], feature: "ema26" },
+  { phrases: ["12-day ema", "ema_12", "ema12"], feature: "ema12" },
+  { phrases: ["closing price", "close"], feature: "close" },
 ]);
 
 /**
@@ -105,12 +114,34 @@ const META_MARKERS: readonly string[] = Object.freeze([
   "the research loop",
 ]);
 
-export interface ExtractedCondition {
-  feature: string;
-  op: "gt" | "gte" | "lt" | "lte";
-  value: number;
+export type Comparison = "gt" | "gte" | "lt" | "lte";
+
+/**
+ * One condition read out of a hypothesis, in the shape the prose actually stated.
+ *
+ * A band is NOT stored as its lower bound. "RSI-14 between 55 and 70" narrowed to `rsi14 >= 55`
+ * would test a materially different rule than the one written, and would do it silently — the
+ * same class of defect as reading an indicator's period as its threshold. Every variant carries
+ * `evidence` (the author's words) and `interpreted` (this engine's reading of them) so a human
+ * can check the reading instead of trusting it.
+ */
+export type ExtractedCondition = (
+  | { kind: "scalar"; feature: string; op: Comparison; value: number }
+  | { kind: "range"; feature: string; low: number; high: number }
+  | { kind: "compare"; left: string; right: string; op: Comparison }
+  | { kind: "cross"; left: string; right: string; direction: "above" | "below" }
+) & {
   /** The exact words this came from, so a reader can check the reading rather than trust it. */
   evidence: string;
+  /** This engine's reading of those words, in plain terms. */
+  interpreted: string;
+};
+
+/** Every feature a condition depends on — both sides, for comparisons and crosses. */
+export function conditionFeatures(condition: ExtractedCondition): string[] {
+  return condition.kind === "compare" || condition.kind === "cross"
+    ? [condition.left, condition.right]
+    : [condition.feature];
 }
 
 export interface TriageResult {
@@ -129,7 +160,7 @@ export interface HypothesisInput {
 }
 
 /** Comparison words, mapped to DSL operators. Longest first so ">=" beats ">". */
-const COMPARATORS: ReadonlyArray<{ tokens: readonly string[]; op: ExtractedCondition["op"] }> = Object.freeze([
+const COMPARATORS: ReadonlyArray<{ tokens: readonly string[]; op: Comparison }> = Object.freeze([
   { tokens: [">=", "≥", "at least", "or more", "or higher", "above or equal"], op: "gte" },
   { tokens: ["<=", "≤", "at most", "or less", "or lower", "below or equal"], op: "lte" },
   { tokens: [">", "above", "greater than", "exceeds", "over"], op: "gt" },
@@ -144,18 +175,64 @@ const COMPARATORS: ReadonlyArray<{ tokens: readonly string[]; op: ExtractedCondi
  */
 function matchComparator(
   window: string,
-): { op: ExtractedCondition["op"]; endsAt: number } | null {
+): { op: Comparison; endsAt: number } | null {
+  // EARLIEST in the text wins, not first in the table.
+  //
+  // Choosing by table order made "rsi_14 is below 30 and the close is above the 200-day SMA" read
+  // the LATER "above" — from an unrelated clause about a different feature — as rsi's comparator,
+  // and the rsi condition was then lost entirely. Ties go to the longer token so ">=" beats ">".
+  let best: { op: Comparison; endsAt: number; startsAt: number; length: number } | null = null;
+  const leadingSpace = window.length - window.trimStart().length;
+
   for (const candidate of COMPARATORS) {
     for (const token of candidate.tokens) {
-      const leadingSpace = window.length - window.trimStart().length;
-      if (window.trimStart().startsWith(token)) {
-        return { op: candidate.op, endsAt: leadingSpace + token.length };
+      const startsAt = window.trimStart().startsWith(token)
+        ? leadingSpace
+        : window.indexOf(` ${token} `) === -1
+          ? -1
+          : window.indexOf(` ${token} `) + 1;
+      if (startsAt === -1) continue;
+
+      const better =
+        best === null || startsAt < best.startsAt || (startsAt === best.startsAt && token.length > best.length);
+      if (better) {
+        best = { op: candidate.op, endsAt: startsAt + token.length, startsAt, length: token.length };
       }
-      const spaced = window.indexOf(` ${token} `);
-      if (spaced !== -1) return { op: candidate.op, endsAt: spaced + token.length + 2 };
+    }
+  }
+  return best === null ? null : { op: best.op, endsAt: best.endsAt };
+}
+
+/** A stable key per condition, so one clause is not read twice from overlapping phrase matches. */
+function signatureOf(condition: ExtractedCondition): string {
+  if (condition.kind === "compare" || condition.kind === "cross") {
+    return `${condition.kind}:${condition.left}:${condition.right}`;
+  }
+  return `${condition.kind}:${condition.feature}`;
+}
+
+/**
+ * The feature named at the START of this text, if any.
+ *
+ * Used for the right-hand side of "close above the 20-day SMA". Anchored at the start (after
+ * articles) rather than searched anywhere in the window, so a feature mentioned later in an
+ * unrelated clause cannot be pulled in as an operand — the same clause-bleed the sentence clip
+ * already guards against for numbers.
+ */
+function featureAt(text: string): { feature: string } | null {
+  const head = text.replace(/^[\s,]*(?:the\s+|its\s+|their\s+|a\s+|an\s+)?/, "");
+  for (const entry of lexiconLongestFirst()) {
+    for (const phrase of entry.phrases) {
+      if (head.startsWith(phrase)) return { feature: entry.feature };
     }
   }
   return null;
+}
+
+function lexiconLongestFirst() {
+  return [...FEATURE_LEXICON].sort(
+    (a, b) => Math.max(...b.phrases.map((p) => p.length)) - Math.max(...a.phrases.map((p) => p.length)),
+  );
 }
 
 /**
@@ -171,9 +248,7 @@ function extractConditions(text: string): ExtractedCondition[] {
   const haystack = text.toLowerCase();
 
   // Longest phrases first: "relative volume" must win over "volume".
-  const entries = [...FEATURE_LEXICON].sort(
-    (a, b) => Math.max(...b.phrases.map((p) => p.length)) - Math.max(...a.phrases.map((p) => p.length)),
-  );
+  const entries = lexiconLongestFirst();
 
   for (const entry of entries) {
     for (const phrase of entry.phrases) {
@@ -197,8 +272,69 @@ function extractConditions(text: string): ExtractedCondition[] {
           }),
         );
         const window = raw.slice(0, boundary);
+        const evidence = text.slice(at, at + phrase.length + 40).trim();
+        const already = (signature: string) => found.some((existing) => signatureOf(existing) === signature);
+
+        // A BAND, read as a band. "between 55 and 70" narrowed to ">= 55" would silently test a
+        // different rule than the one written — the same defect class as the period-as-threshold
+        // bug, and just as invisible in the resulting backtest.
+        const band = /^[\s_-]*\d*\s*(?:is\s+|are\s+)?between\s+(-?\d+(?:\.\d+)?)\s*%?\s+and\s+(-?\d+(?:\.\d+)?)/.exec(window);
+        if (band) {
+          const low = Math.min(Number(band[1]), Number(band[2]));
+          const high = Math.max(Number(band[1]), Number(band[2]));
+          const signature = `range:${entry.feature}`;
+          if (!already(signature)) {
+            found.push({
+              kind: "range",
+              feature: entry.feature,
+              low,
+              high,
+              evidence,
+              interpreted: `${low} <= ${entry.feature} <= ${high}`,
+            });
+          }
+          continue;
+        }
+
         const comparator = matchComparator(window);
         if (!comparator) continue;
+        const after = window.slice(comparator.endsAt);
+
+        // A CROSSING is an event between consecutive bars, not a state. "EMA12 crosses above
+        // EMA26" firing on every bar it stays above would be a different rule entirely.
+        // Scan the whole clause, not just the text before the comparator: "crosses" can sit on
+        // either side of the comparator word depending on phrasing, and the window is already
+        // clipped to a single clause, so a crossing named here belongs to this condition.
+        const crossing = /cross/.test(window);
+        const rightFeature = featureAt(after);
+        if (rightFeature && rightFeature.feature !== entry.feature) {
+          const direction = comparator.op === "gt" || comparator.op === "gte" ? "above" : "below";
+          const signature = crossing
+            ? `cross:${entry.feature}:${rightFeature.feature}`
+            : `compare:${entry.feature}:${rightFeature.feature}`;
+          if (!already(signature)) {
+            found.push(
+              crossing
+                ? {
+                    kind: "cross",
+                    left: entry.feature,
+                    right: rightFeature.feature,
+                    direction,
+                    evidence,
+                    interpreted: `${entry.feature} crosses ${direction} ${rightFeature.feature}`,
+                  }
+                : {
+                    kind: "compare",
+                    left: entry.feature,
+                    right: rightFeature.feature,
+                    op: comparator.op,
+                    evidence,
+                    interpreted: `${entry.feature} ${comparator.op} ${rightFeature.feature}`,
+                  },
+            );
+          }
+          continue;
+        }
 
         // The number must come from AFTER the comparator, not from anywhere in the window.
         //
@@ -207,15 +343,18 @@ function extractConditions(text: string): ExtractedCondition[] {
         // bar. That rule backtests, produces trades and means nothing — a nonsense condition
         // wearing the costume of a tested one. Every feature a researcher names carries its
         // period (rsi_14, sma_20, atr_14), so this fired on the common case, not an edge one.
-        const number = /(-?\d+(?:\.\d+)?)\s*%?/.exec(window.slice(comparator.endsAt));
+        const number = /(-?\d+(?:\.\d+)?)\s*%?/.exec(after);
         if (!number) continue;
 
-        if (found.some((existing) => existing.feature === entry.feature)) continue;
+        const signature = `scalar:${entry.feature}`;
+        if (already(signature)) continue;
         found.push({
+          kind: "scalar",
           feature: entry.feature,
           op: comparator.op,
           value: Number(number[1]),
-          evidence: text.slice(at, at + phrase.length + 40).trim(),
+          evidence,
+          interpreted: `${entry.feature} ${comparator.op} ${number[1]}`,
         });
       }
     }
@@ -287,9 +426,9 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
 
   // Belt and braces: the lexicon can only emit vocabulary names, but a typo in the table would be
   // caught here rather than at compile time with a less obvious message.
-  const notDerivable = conditions
-    .map((condition) => condition.feature)
-    .filter((feature) => !(DERIVABLE_FEATURES as readonly string[]).includes(feature));
+  const notDerivable = [...new Set(conditions.flatMap(conditionFeatures))].filter(
+    (feature) => !(DERIVABLE_FEATURES as readonly string[]).includes(feature),
+  );
   if (notDerivable.length > 0) {
     return {
       verdict: "NEEDS_FEATURE",
@@ -303,7 +442,7 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
     verdict: "EXPRESSIBLE",
     reason:
       `Read ${conditions.length} condition(s) directly from the text: ` +
-      conditions.map((condition) => `${condition.feature} ${condition.op} ${condition.value}`).join(", ") +
+      conditions.map((condition) => condition.interpreted).join(", ") +
       ". Every threshold comes from the hypothesis itself; none was defaulted.",
     conditions,
     missingQuantities: [],
@@ -312,11 +451,27 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
 
 /** The entry condition implied by an expressible hypothesis. */
 export function entryConditionFrom(conditions: readonly ExtractedCondition[]): Condition {
-  const clauses: Condition[] = conditions.map((condition) => ({
-    feature: condition.feature,
-    op: condition.op,
-    value: condition.value,
-  }));
+  const clauses: Condition[] = conditions.map((condition) => {
+    switch (condition.kind) {
+      case "scalar":
+        return { feature: condition.feature, op: condition.op, value: condition.value };
+      case "range":
+        // The band compiles to BOTH bounds. This is the "actually tested" form, and it is what
+        // makes the interpretation checkable: a reader can see that nothing was dropped.
+        return {
+          all: [
+            { feature: condition.feature, op: "gte" as const, value: condition.low },
+            { feature: condition.feature, op: "lte" as const, value: condition.high },
+          ],
+        };
+      case "compare":
+        return { compare: [condition.left, condition.right] as [string, string], op: condition.op };
+      case "cross":
+        return condition.direction === "above"
+          ? { crossover: [condition.left, condition.right] as [string, string] }
+          : { crossunder: [condition.left, condition.right] as [string, string] };
+    }
+  });
   return clauses.length === 1 ? clauses[0] : { all: clauses };
 }
 

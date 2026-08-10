@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compileStrategy, StrategyDslSchema } from "@/lib/strategy/dsl";
 import {
+  conditionFeatures,
   entryConditionFrom,
   hypothesisTriage,
   LEXICON_FEATURES,
@@ -76,7 +77,7 @@ describe("the one that can be expressed", () => {
 
     expect(result.verdict).toBe("EXPRESSIBLE");
 
-    const byFeature = Object.fromEntries(result.conditions.map((c) => [c.feature, c]));
+    const byFeature = Object.fromEntries(result.conditions.flatMap((c) => conditionFeatures(c).map((f) => [f, c])));
     expect(byFeature.gap_pct).toMatchObject({ op: "gte", value: 3 });
     expect(byFeature.rvol).toMatchObject({ op: "gte", value: 1 });
   });
@@ -128,7 +129,7 @@ describe("it abstains rather than inventing", () => {
       title: "Unrelated numbers",
       statement: "Relative volume matters. Separately, we hold at most 4 positions and 12 instruments.",
     });
-    expect(result.conditions.find((c) => c.feature === "rvol")).toBeUndefined();
+    expect(result.conditions.find((c) => conditionFeatures(c).includes("rvol"))).toBeUndefined();
   });
 
   it("prefers the longer phrase, so 'relative volume' is not read as 'volume'", () => {
@@ -136,7 +137,7 @@ describe("it abstains rather than inventing", () => {
       title: "Phrase precedence",
       statement: "Screen for relative volume >= 2 on liquid names.",
     });
-    expect(result.conditions.map((c) => c.feature)).toContain("rvol");
+    expect(result.conditions.flatMap(conditionFeatures)).toContain("rvol");
   });
 
   it("asks whether it is a trading rule before reading thresholds", () => {
@@ -174,10 +175,9 @@ describe("thresholds are read after the comparator, not from the indicator's per
         "Open a long position when rsi_14 crosses above 70 and then turns down, evaluated on daily bar close.",
     });
 
-    const rsi = result.conditions.find((condition) => condition.feature === "rsi14");
+    const rsi = result.conditions.find((condition) => conditionFeatures(condition).includes("rsi14"));
     expect(rsi, "rsi14 condition should be extracted").toBeDefined();
-    expect(rsi?.value).toBe(70);
-    expect(rsi?.op).toBe("gt");
+    expect(rsi).toMatchObject({ kind: "scalar", value: 70, op: "gt" });
   });
 
   it("still reads a threshold when the feature carries no period digits", () => {
@@ -186,6 +186,105 @@ describe("thresholds are read after the comparator, not from the indicator's per
       statement: "Enter when the gap is above 3 percent on the opening bar of the session.",
     });
 
-    expect(result.conditions.find((condition) => condition.feature === "gap_pct")?.value).toBe(3);
+    expect(result.conditions.find((c) => conditionFeatures(c).includes("gap_pct"))).toMatchObject({ value: 3 });
+  });
+});
+
+
+/**
+ * The semantic-authoring adversarial suite.
+ *
+ * Every case is prose a real researcher writes. The invariant running through all of them, and the
+ * reason this suite exists at all: **a number that is part of an indicator's NAME must never
+ * become a trading threshold.** One defect of that shape (rsi_14 -> "rsi14 > 14") already reached
+ * an authored strategy, and it backtested cleanly while testing nothing.
+ */
+describe("semantic authoring — adversarial suite", () => {
+  const triage = (statement: string) => hypothesisTriage({ title: "Adversarial case", statement });
+
+  it("reads a crossing over a level as that level", () => {
+    expect(triage("Enter when rsi_14 crosses above 70 on the daily close.").conditions).toContainEqual(
+      expect.objectContaining({ kind: "scalar", feature: "rsi14", op: "gt", value: 70 }),
+    );
+  });
+
+  it("reads a band as BOTH bounds, never as its lower one", () => {
+    const result = triage("Enter when rsi_14 is between 55 and 70 on the daily close.");
+
+    expect(result.conditions).toContainEqual(
+      expect.objectContaining({ kind: "range", feature: "rsi14", low: 55, high: 70 }),
+    );
+    // And the compiled rule tests both ends — this is the "actually tested" form.
+    expect(entryConditionFrom(result.conditions)).toEqual({
+      all: [
+        { feature: "rsi14", op: "gte", value: 55 },
+        { feature: "rsi14", op: "lte", value: 70 },
+      ],
+    });
+  });
+
+  it("reads a feature-to-feature comparison rather than hunting for a number", () => {
+    expect(triage("Enter when the close is above the 20-day SMA.").conditions).toContainEqual(
+      expect.objectContaining({ kind: "compare", left: "close", right: "sma20", op: "gt" }),
+    );
+  });
+
+  it("reads a moving-average crossing as a crossing event, not a state", () => {
+    const result = triage("Enter when the 12-day EMA crosses above the 26-day EMA.");
+
+    expect(result.conditions).toContainEqual(
+      expect.objectContaining({ kind: "cross", left: "ema12", right: "ema26", direction: "above" }),
+    );
+    expect(entryConditionFrom(result.conditions)).toEqual({ crossover: ["ema12", "ema26"] });
+  });
+
+  it("reads one moving average against another", () => {
+    expect(triage("Enter when the 20-day SMA is above the 50-day SMA.").conditions).toContainEqual(
+      expect.objectContaining({ kind: "compare", left: "sma20", right: "sma50", op: "gt" }),
+    );
+  });
+
+  it("reads a compound rule as every one of its clauses", () => {
+    const result = triage("Enter when rsi_14 is below 30 and the close is above the 200-day SMA.");
+
+    expect(result.conditions).toContainEqual(
+      expect.objectContaining({ kind: "scalar", feature: "rsi14", op: "lt", value: 30 }),
+    );
+    expect(result.conditions).toContainEqual(
+      expect.objectContaining({ kind: "compare", left: "close", right: "sma200", op: "gt" }),
+    );
+  });
+
+  it("THE INVARIANT: no indicator period ever becomes a threshold", () => {
+    // Each statement names an indicator whose period is a number. None of those numbers is a
+    // threshold, and none may appear as one.
+    const cases: { statement: string; period: number; feature: string }[] = [
+      { statement: "Enter when rsi_14 crosses above 70.", period: 14, feature: "rsi14" },
+      { statement: "Enter when rsi_14 is between 55 and 70.", period: 14, feature: "rsi14" },
+      { statement: "Exit when atr_14 is above 25.", period: 14, feature: "atr14" },
+      { statement: "Enter when the close is above the 20-day SMA.", period: 20, feature: "sma20" },
+      { statement: "Enter when the close is above the 200-day SMA.", period: 200, feature: "sma200" },
+    ];
+
+    for (const { statement, period, feature } of cases) {
+      for (const condition of triage(statement).conditions) {
+        const thresholds =
+          condition.kind === "scalar"
+            ? [condition.value]
+            : condition.kind === "range"
+              ? [condition.low, condition.high]
+              : [];
+        expect(
+          thresholds,
+          `"${statement}" produced ${JSON.stringify(condition)} — ${period} is ${feature}'s period, not a threshold`,
+        ).not.toContain(period);
+      }
+    }
+  });
+
+  it("still refuses prose that states no condition at all", () => {
+    expect(triage("Momentum strategies on Indian equities are interesting to study.").verdict).not.toBe(
+      "EXPRESSIBLE",
+    );
   });
 });

@@ -6,7 +6,7 @@ import { breedingBasis, costsForCapital, OWNER_CAPITAL } from "@/lib/paper/capit
 import { compileStrategy, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { costStanding } from "@/lib/strategy/cost-gate";
 import { placeStrategy, researchIdentityReady } from "@/lib/strategy/research-identity";
-import { entryConditionFrom, hypothesisTriage, type TriageVerdict } from "./hypothesis-triage";
+import { conditionFeatures, entryConditionFrom, hypothesisTriage, type TriageVerdict } from "./hypothesis-triage";
 
 /**
  * Turn a formed hypothesis into a draft strategy — or refuse it, on the record.
@@ -72,7 +72,13 @@ export interface AuthorOutcome {
 
 export interface AuthoringProvenance {
   youSaid: { title: string; statement: string; rationale: string | null };
-  interpreted: { feature: string; op: string; value: number; readFrom: string }[];
+  /**
+   * One entry per condition read from the prose: the author's exact words, and this engine's
+   * reading of them. Deliberately NOT {feature, op, value} — a band, a feature-to-feature
+   * comparison and a crossing are not scalar triples, and flattening them into one would hide
+   * exactly the interpretation a reader needs to check.
+   */
+  interpreted: { readFrom: string; interpreted: string; features: string[] }[];
   /** Everything the system chose that the owner did not state. Silence here would be a lie. */
   assumptionsAdded: string[];
   featuresRequired: string[];
@@ -312,10 +318,9 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
     const provenance: AuthoringProvenance = {
       youSaid: { title: hypothesis.title, statement: hypothesis.statement, rationale: hypothesis.rationale },
       interpreted: triage.conditions.map((condition) => ({
-        feature: condition.feature,
-        op: condition.op,
-        value: condition.value,
         readFrom: condition.evidence,
+        interpreted: condition.interpreted,
+        features: conditionFeatures(condition),
       })),
       assumptionsAdded: [
         "exit: afterDays 5 with a 2% stop - screen-class default, the hypothesis stated entries only",
@@ -323,7 +328,8 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
         "costs: computed from the owner's capital at delivery rates, not stated in the hypothesis",
         "long-only: direction was not stated and buy-side is the conservative reading",
       ],
-      featuresRequired: triage.conditions.map((condition) => condition.feature),
+      // Both sides of a comparison or crossing are required, not just the left one.
+      featuresRequired: [...new Set(triage.conditions.flatMap(conditionFeatures))],
       familyId,
       whyThisFamily:
         "The hypothesis IS the family: its statement is the economic claim, and this spec is its first expression. No similarity merge was applied.",

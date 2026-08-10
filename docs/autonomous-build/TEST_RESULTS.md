@@ -1,5 +1,20 @@
 # Test results (append newest first; numbers only from actual runs)
 
+## 2026-08-11 01:20 IST — **FULL UNIT SUITE GREEN**, and the IR now reads real research prose
+- **1,496 passed / 2 skipped / 0 failed (1,498) across 120 files. tsc exit 0.** First fully green
+  unit suite: the six long-standing NSE security-master failures are ROOT-fixed (not muted), and
+  the semantic-authoring adversarial suite adds 8 new tests.
+- **NSE duplicate-ISIN:** a repeated ISIN is now an instrument-level IDENTITY_CONFLICT recorded in
+  `audit_events`, not a market-wide `NSE_SECURITY_MASTER_UNAVAILABLE`. Regression tests proven to
+  fail first. Test doubles that silently served the wrong fixture, and one test that reached the
+  LIVE exchange, were both fixed rather than adjusted.
+- **Adversarial suite** (`hypothesis-triage.test.ts`) covers crossing-over-a-level, band, feature
+  comparison, MA crossing, MA-vs-MA, compound, and one standing invariant: **no indicator period
+  ever becomes a trading threshold** — asserted across five statements naming periods 14/20/200.
+- Building that suite found three more real defects (FINDINGS 01:10), including a regex containing
+  a literal backspace character that made every crossing silently compile to a state comparison.
+
+
 ## 2026-08-11 00:45 IST — RESEARCH → STRATEGY HAND-OFF WIRED; A REAL DEFECT CAUGHT BY RUNNING IT
 - **Hand-off proven live (:3115):** stored TCS envelope → `POST /api/research/hypotheses` →
   HTTP 201, verdict **EXPRESSIBLE**, authored `stg_f044275a8bc41e3f` in family

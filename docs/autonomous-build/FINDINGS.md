@@ -1,5 +1,37 @@
 # Findings (root causes and load-bearing discoveries; evidence-labelled)
 
+- **FIXED 2026-08-11 01:10 — three more semantic-authoring defects, found by building the
+  adversarial suite the owner asked for.** All three were invisible to reading and only appeared
+  when real research prose was run through the extractor:
+  1. **The comparator was chosen by TABLE order, not text position.** "rsi_14 is below 30 and the
+     close is above the 200-day SMA" read the LATER "above" — from an unrelated clause about a
+     different feature — as rsi's comparator, and the rsi condition was then dropped entirely.
+     Earliest match now wins; ties go to the longer token so ">=" still beats ">".
+  2. **The band regex was anchored before the indicator's period suffix**, so "rsi_14 is between
+     55 and 70" matched nothing (the window starts "_14 is between…") and the whole hypothesis
+     came back UNCLEAR.
+  3. **A regex contained a literal BACKSPACE character (0x08) instead of ``**, introduced by
+     shell-heredoc escaping when the code was written. `/cross…/` can never match, so
+     every crossing was silently downgraded to a state comparison — "EMA12 crosses above EMA26"
+     became "EMA12 > EMA26", which fires on every bar it stays above rather than on the cross.
+     **It was invisible to `grep` and defeated exact-string editing** (the tool could not match a
+     line the reader could see), which is what finally exposed it. Every changed file was then
+     scanned for stray control characters: clean, this was the only instance.
+
+- **DONE 2026-08-11 01:10 — Strategy IR needed no new condition types.** The DSL already had
+  scalar comparison, feature-to-feature comparison, crossover/crossunder and all/any/not; a band
+  compiles to `all:[gte low, lte high]`, so BOTH bounds are tested and nothing is silently
+  narrowed. The gap was entirely in the prose extractor, which now emits four condition kinds
+  (scalar · range · compare · cross), each carrying `evidence` (the author's words) and
+  `interpreted` (this engine's reading) so YOU SAID → INTERPRETED → ACTUALLY TESTED is checkable
+  per condition rather than per strategy.
+
+- **DONE 2026-08-11 01:15 — `stg_f044275a8bc41e3f` is INVALIDATED, not hidden.** status =
+  `invalidated`, with an audit row: actor `semantic-defect-review`, denial code
+  `AUTHORING_SEMANTIC_DEFECT`. Preserved deliberately: it is the evidence that the defect existed
+  and was caught, and the system can say so out loud.
+
+
 - **FIXED 2026-08-11 00:35 — the hypothesis triage read an indicator's PERIOD as its THRESHOLD.**
   Found by running the first real research→strategy hand-off, not by reading code. The extractor
   located a comparator anywhere in its 40-character window and then took the **first number in
