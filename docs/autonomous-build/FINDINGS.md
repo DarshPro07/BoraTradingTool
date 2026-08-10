@@ -1,5 +1,57 @@
 # Findings (root causes and load-bearing discoveries; evidence-labelled)
 
+- **OPEN / DESIGN 2026-08-11 02:30 — clause→operator ATTACHMENT is not solved by heuristics, and
+  the owner's original instinct (dependency parsing) was right. My deviation was wrong.**
+  Four live probes (TCS · RELIANCE · NIFTYBEES · SBIN, real claude-sonnet-5 research) drove three
+  consecutive fix→new-defect cycles, each intermediate state authoring semantically wrong
+  strategies that passed every unit test:
+  1. `close > 20` — elliptical coordination ("the 20-day **and** 50-day SMAs") leaves "20-day" with
+     no adjacent indicator, so no feature mention formed and the period escaped the span guard.
+  2. `50 <= sma20 <= 70` — the subject was taken as the clause's FIRST mention, so an RSI band
+     landed on a moving average.
+  3. `rsi14 >= 2473.7` and `compare: [rsi14, sma20]` — after switching to nearest-left subject, a
+     share price attached to an oscillator. **Perfectly satisfiable, so no contradiction check
+     could ever catch it.** It is not a weaker rule; it is not about anything.
+  Real research prose puts long coordinated clauses between an operator and its operand. Position
+  heuristics cannot recover that binding — a syntactic parse can. **Recommendation for the next
+  session: dependency parsing at the candidate stage, upstream of the span check, the parameter
+  guard and the satisfiability gate, all of which stay deterministic and stay as they are.**
+
+- **FIXED 2026-08-11 02:30 — three guards now make attachment failure SAFE rather than silent.**
+  - `findParameterSpans`: a number followed by day/period/session/bar/week is a parameter BY THE
+    GRAMMAR OF THE PHRASE, independent of whether any feature was resolved. Closes the elliptical
+    leak for indicators the compiler cannot even name.
+  - Subject = nearest feature to the operator's LEFT, not the clause's first mention.
+  - **Dimensional analysis** (`findDimensionErrors`): PRICE · OSCILLATOR · RATIO · PERCENT ·
+    VOLUME. A cross-dimension comparison, or an oscillator level outside 0-100, is REFUSED with
+    `DIMENSION_ERROR`. This is the guard that catches misattachment the satisfiability gate
+    structurally cannot.
+  After all three: every one of the four live probes now either REFUSES or produces a
+  dimensionally clean rule. None authors nonsense.
+
+- **FIXED 2026-08-11 02:00 — "the entry price" was read as an entry RULE.** In a TCS exit sentence
+  ("...more than 2x atr_14 from the entry price"), the substring "entry" matched, that clause
+  became ENTRY, and every clause after it inherited ENTRY — dragging the exit's "rsi_14 crosses
+  above 70" into the entry band and manufacturing a contradiction. A reference to a position that
+  already exists is not an instruction to open one.
+
+- **RECURRENCE 2026-08-11 02:15 — the 0x08 corruption returned, in TWO regexes.** Writing ``
+  through the shell-heredoc path yields a literal BACKSPACE, not a word boundary. Both the
+  entry-marker regex and the parameter-span regex were silently inert. **Rule for this repo: never
+  author regex escapes through a shell heredoc — use the file-write tools.** All changed files
+  re-scanned after repair: clean.
+
+- **OPEN 2026-08-11 02:35 — the compiler's EXIT scope is computed but not consumed.** The authored
+  spec still uses the default time-and-stop exit; `compiled.scopes.EXIT` is discarded. Not a
+  correctness bug (the default is stated as an assumption in provenance) but the research's own
+  exit rule is being thrown away.
+
+- **OPEN 2026-08-11 02:35 — verdicts are not stable across runs.** The same instrument produces
+  different prose on each research call, so TCS/NIFTYBEES/SBIN moved between EXPRESSIBLE,
+  CONTRADICTORY and UNCLEAR across probes. **A demo cannot rely on a named instrument producing a
+  named verdict** — pin a recorded envelope for the meeting rather than re-researching live.
+
+
 - **OPEN / SEVERE 2026-08-11 01:40 — the prose extractor is NOT reliable on real multi-clause
   research prose. The research→strategy leg must not be presented as working.**
   Evidence, from the live NIFTYBEES chain against the fixed extractor (spec `stg_9c9a0b318d7bafad`):

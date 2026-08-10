@@ -122,7 +122,8 @@ export interface RejectedCandidate {
     | "INDICATOR_PARAMETER_NOT_A_THRESHOLD"
     | "OBSERVATION_NOT_A_RULE"
     | "NO_OPERAND"
-    | "UNCLASSIFIED_CLAUSE";
+    | "UNCLASSIFIED_CLAUSE"
+    | "DIMENSION_MISMATCH";
 }
 
 export interface Contradiction {
@@ -133,7 +134,7 @@ export interface Contradiction {
   conflicting: { clauseId: string; sourceText: string; interpreted: string }[];
 }
 
-export type CompilerVerdict = "EXPRESSIBLE" | "CONTRADICTORY" | "NO_RULE_FOUND";
+export type CompilerVerdict = "EXPRESSIBLE" | "CONTRADICTORY" | "NO_RULE_FOUND" | "DIMENSION_ERROR";
 
 export interface CompiledStrategy {
   verdict: CompilerVerdict;
@@ -202,6 +203,27 @@ const FEATURE_PATTERNS: readonly FeaturePattern[] = Object.freeze([
     build: () => ({ id: "volume", indicator: "VOLUME", parameters: {} }),
   },
 ]);
+
+/**
+ * Spans of numbers that are STRUCTURALLY parameters, whatever feature they belong to.
+ *
+ * The mention-span guard protects "20" in "20-day SMA" because the number sits inside a resolved
+ * feature. It does NOT protect elliptical coordination — "the 20-day and 50-day SMAs" leaves
+ * "20-day" with no adjacent indicator, so no mention forms and the 20 became an operand
+ * (`close > 20`). Found by the live TCS/NIFTYBEES probes, 2026-08-11.
+ *
+ * This guard is independent of feature resolution: a number followed by day/period/session/bar is
+ * a parameter by the grammar of the phrase, and can never be a level to compare against. It
+ * therefore holds even for indicators this compiler cannot name.
+ */
+export function findParameterSpans(text: string): { start: number; end: number; text: string }[] {
+  const spans: { start: number; end: number; text: string }[] = [];
+  const regex = /\b(\d{1,4})\s*-?\s*(?:day|days|period|periods|session|sessions|bar|bars|week|weeks)\b/gi;
+  for (let match = regex.exec(text); match !== null; match = regex.exec(text)) {
+    spans.push({ start: match.index, end: match.index + match[0].length, text: match[0] });
+  }
+  return spans;
+}
 
 /**
  * Every feature mentioned in the text, with the span that NAMES it.
@@ -307,7 +329,21 @@ export function segmentClauses(sentence: string, offset: number): Span[] {
 
 /* ----------------------------------------------------------- classification */
 
-const ENTRY_MARKERS = ["enter", "entry", "buy", "go long", "open a long", "open a position", "initiate"];
+const ENTRY_MARKERS = ["enter", "buy", "go long", "open a long", "open a position", "initiate"];
+
+/**
+ * "entry" as a RULE, not as a noun.
+ *
+ * Found by the live TCS probe: an exit sentence said "...if a close drops more than 2x atr_14 from
+ * the entry price", the substring "entry" matched, that clause became an ENTRY rule, and every
+ * clause after it inherited ENTRY — dragging the exit's "rsi_14 crosses above 70" into the entry
+ * band and manufacturing a contradiction against 50-70. The prose was fine; the classifier was not.
+ *
+ * A reference to a previous entry ("the entry price", "since entry", "from entry") describes a
+ * position that already exists. Only entry in rule position opens one.
+ */
+const ENTRY_AS_RULE =
+  /(?<!\b(?:the|an|its|his|their|from|since|after|at|above|below|near|to)\s)\bentry\b(?!\s+(?:price|point|level|bar|candle|prices))/i;
 const EXIT_MARKERS = ["exit", "square off", "close the position", "take profit", "sell", "book profit"];
 const RISK_MARKERS = ["stop", "stop-loss", "stop loss", "risk no more", "protective stop"];
 const INVALIDATION_MARKERS = ["invalidate", "invalidates", "invalidation", "thesis fails", "setup fails"];
@@ -350,7 +386,7 @@ export function classifyClauses(clauses: Span[], sentenceIndexOf: (span: Span) =
     const base = { id, text, start: span.start, end: span.end, sentenceIndex };
 
     const parenthetical = /^\s*\(/.test(trimmed) || (trimmed.startsWith("(") && !trimmed.includes(")"));
-    const entry = has(text, ENTRY_MARKERS);
+    const entry = has(text, ENTRY_MARKERS) ?? (ENTRY_AS_RULE.test(text) ? "entry" : null);
     const exit = has(text, EXIT_MARKERS);
     const risk = has(text, RISK_MARKERS);
     const invalidation = has(text, INVALIDATION_MARKERS);
@@ -448,14 +484,20 @@ function operandNumber(
   clauseStart: number,
   from: number,
   mentions: readonly FeatureMention[],
-): { value: number; start: number; end: number } | { blockedBy: FeatureMention } | null {
+  parameterSpans: readonly { start: number; end: number; text: string }[],
+): { value: number; start: number; end: number } | { blockedBy: string } | null {
   const regex = /-?\d+(?:\.\d+)?/g;
   regex.lastIndex = from;
   for (let match = regex.exec(clauseText); match !== null; match = regex.exec(clauseText)) {
     const absoluteStart = clauseStart + match.index;
     const absoluteEnd = absoluteStart + match[0].length;
-    const inside = mentions.find((mention) => absoluteStart < mention.end && mention.start < absoluteEnd);
-    if (inside) return { blockedBy: inside };
+
+    const inMention = mentions.find((mention) => absoluteStart < mention.end && mention.start < absoluteEnd);
+    if (inMention) return { blockedBy: `${inMention.id} (${inMention.indicator} period)` };
+
+    const inParameter = parameterSpans.find((span) => absoluteStart < span.end && span.start < absoluteEnd);
+    if (inParameter) return { blockedBy: `the period in "${inParameter.text.trim()}"` };
+
     return { value: Number(match[0]), start: absoluteStart, end: absoluteEnd };
   }
   return null;
@@ -499,6 +541,7 @@ export function compileResearchProse(prose: string): CompiledStrategy {
 
   const clauses = classifyClauses(spans, (span) => sentenceOf.get(span) ?? 0);
   const mentions = findFeatureMentions(prose);
+  const parameterSpans = findParameterSpans(prose);
   const conditions: ConditionCandidate[] = [];
   const rejected: RejectedCandidate[] = [];
 
@@ -520,14 +563,22 @@ export function compileResearchProse(prose: string): CompiledStrategy {
       continue;
     }
 
-    // The feature this clause is about — its own, or the one the previous clause established.
-    // "RSI must be above 60 and below 50" leaves the second clause without a subject.
+    // The subject of an operator is the NEAREST FEATURE TO ITS LEFT, not the first one in the
+    // clause.
+    //
+    // Found by the live TCS/NIFTYBEES probes: "closes above both its 20-day and 50-day SMAs with
+    // RSI-14 between 50 and 70" took the clause's first mention as the subject of every operator,
+    // so the RSI band landed on sma20 — `50 <= sma20 <= 70`, comparing a price to an oscillator
+    // level. Dimensionally nonsense, and it authored cleanly.
+    //
+    // A clause with no feature to the left of its operator inherits the last subject in the same
+    // scope, which is what carries "RSI must be above 60 and below 50" across its second clause.
     const inherited = [...conditions].reverse().find((candidate) => candidate.scope === scope);
-    const subject = clauseMentions[0] ?? (inherited ? { ...inherited.feature, start: -1, end: -1 } : null);
-    if (!subject) continue;
-
-    const relative = (absolute: number) => absolute - clause.start;
-    const searchFrom = clauseMentions[0] ? relative(clauseMentions[0].end) : 0;
+    const subjectAt = (position: number): FeatureMention | null => {
+      const toLeft = clauseMentions.filter((mention) => mention.end <= position);
+      if (toLeft.length > 0) return toLeft[toLeft.length - 1];
+      return inherited ? { ...inherited.feature, start: -1, end: -1 } : null;
+    };
 
     // A band first: "between 55 and 70" contains a comparator word but is one condition.
     const bandMatch = /between\s+(-?\d+(?:\.\d+)?)\s*%?\s+and\s+(-?\d+(?:\.\d+)?)/i.exec(clause.text);
@@ -535,28 +586,32 @@ export function compileResearchProse(prose: string): CompiledStrategy {
       const low = Math.min(Number(bandMatch[1]), Number(bandMatch[2]));
       const high = Math.max(Number(bandMatch[1]), Number(bandMatch[2]));
       const start = clause.start + bandMatch.index;
+      const bandSubject = subjectAt(start);
+      if (!bandSubject) continue;
       conditions.push({
         kind: "RANGE",
         scope,
         clauseId: clause.id,
-        feature: { id: subject.id, indicator: subject.indicator, parameters: subject.parameters },
+        feature: { id: bandSubject.id, indicator: bandSubject.indicator, parameters: bandSubject.parameters },
         low,
         high,
         ...(({ start: from, end: to, text }) => ({ sourceText: text, sourceStart: from, sourceEnd: to }))(
           exactSpan(prose, start, start + bandMatch[0].length),
         ),
         evidence: "EXPLICIT",
-        interpreted: `${low} <= ${subject.id} <= ${high}`,
+        interpreted: `${low} <= ${bandSubject.id} <= ${high}`,
       });
       continue;
     }
 
-    const comparator = firstComparator(clause.text, searchFrom);
+    const comparator = firstComparator(clause.text, 0);
     if (!comparator) continue;
+    const subject = subjectAt(clause.start + comparator.start);
+    if (!subject) continue;
 
     const crossing = /cross(?:es|ed|ing)?/i.test(clause.text);
     const right = featureAfter(clause.start + comparator.end, clause.end, mentions);
-    const operand = operandNumber(clause.text, clause.start, comparator.end, mentions);
+    const operand = operandNumber(clause.text, clause.start, comparator.end, mentions, parameterSpans);
 
     // The operand is whatever sits NEAREST the comparator.
     //
@@ -595,9 +650,8 @@ export function compileResearchProse(prose: string): CompiledStrategy {
         sourceText: clause.text.trim(),
         code: "INDICATOR_PARAMETER_NOT_A_THRESHOLD",
         reason:
-          `The only number after the comparator is ${operand.blockedBy.parameters.period ?? "a parameter"}, ` +
-          `which names ${operand.blockedBy.id} (${operand.blockedBy.indicator} period). An indicator's ` +
-          "parameter is not a level to compare against.",
+          `The only number after the comparator is ${operand.blockedBy}. An indicator's parameter ` +
+          "is not a level to compare against.",
       });
       continue;
     }
@@ -618,7 +672,22 @@ export function compileResearchProse(prose: string): CompiledStrategy {
   }
 
   const contradictions = findContradictions(conditions, prose);
+  const dimensionErrors = findDimensionErrors(conditions);
   const scopes = buildScopes(conditions);
+
+  if (dimensionErrors.length > 0) {
+    return {
+      verdict: "DIMENSION_ERROR",
+      reason:
+        `${dimensionErrors.map((error) => error.reason).join(" ")} No strategy was authored: a rule ` +
+        "comparing incompatible quantities is not a weaker rule, it is a different one that nobody wrote.",
+      clauses,
+      conditions,
+      rejected: [...rejected, ...dimensionErrors],
+      contradictions,
+      scopes: {},
+    };
+  }
 
   if (contradictions.length > 0) {
     return {
@@ -663,6 +732,85 @@ export function compileResearchProse(prose: string): CompiledStrategy {
     contradictions,
     scopes,
   };
+}
+
+/* ---------------------------------------------------------- dimensions */
+
+/**
+ * What KIND of quantity a feature is.
+ *
+ * The live probes produced `rsi14 >= 2473.7` (a share price as an oscillator level) and
+ * `compare: [rsi14, sma20]` (an oscillator against a moving average). Both are dimensionally
+ * impossible, both authored cleanly, and neither is caught by any amount of satisfiability
+ * checking — the constraints are perfectly satisfiable, they are just not about anything.
+ *
+ * This is the guard that makes attachment failures SAFE. It cannot fix a misattached operator; it
+ * can refuse to author one, which is the difference between a wrong strategy and an honest refusal.
+ */
+export type Dimension = "PRICE" | "OSCILLATOR" | "RATIO" | "PERCENT" | "VOLUME";
+
+const DIMENSION_OF: Readonly<Record<string, Dimension>> = Object.freeze({
+  close: "PRICE", open: "PRICE", high: "PRICE", low: "PRICE",
+  sma20: "PRICE", sma50: "PRICE", sma200: "PRICE", ema12: "PRICE", ema26: "PRICE",
+  rsi14: "OSCILLATOR",
+  atr14: "PRICE",
+  rvol: "RATIO",
+  gap_pct: "PERCENT",
+  volume: "VOLUME",
+});
+
+/** RSI is bounded by construction. A level outside it is not a threshold anyone meant. */
+const OSCILLATOR_RANGE = Object.freeze({ min: 0, max: 100 });
+
+export function dimensionOf(featureId: string): Dimension | null {
+  return DIMENSION_OF[featureId] ?? null;
+}
+
+/**
+ * Conditions whose quantities cannot be compared. Returned as refusals, never repaired: a guess at
+ * what the author meant is exactly the fabrication this compiler exists to prevent.
+ */
+export function findDimensionErrors(conditions: readonly ConditionCandidate[]): RejectedCandidate[] {
+  const errors: RejectedCandidate[] = [];
+
+  for (const condition of conditions) {
+    const left = dimensionOf(condition.feature.id);
+
+    if (condition.kind === "COMPARE" || condition.kind === "CROSS") {
+      const right = dimensionOf((condition.right as FeatureRef).id);
+      if (left && right && left !== right) {
+        errors.push({
+          clauseId: condition.clauseId,
+          sourceText: condition.sourceText,
+          code: "DIMENSION_MISMATCH",
+          reason:
+            `"${condition.interpreted}" compares a ${left} with a ${right}. These are different ` +
+            "kinds of quantity, so the comparison has no meaning — the operator was almost " +
+            "certainly attached to the wrong feature.",
+        });
+      }
+      continue;
+    }
+
+    const levels =
+      condition.kind === "RANGE" ? [condition.low as number, condition.high as number] : [condition.value as number];
+    if (left === "OSCILLATOR") {
+      const outside = levels.filter((level) => level < OSCILLATOR_RANGE.min || level > OSCILLATOR_RANGE.max);
+      if (outside.length > 0) {
+        errors.push({
+          clauseId: condition.clauseId,
+          sourceText: condition.sourceText,
+          code: "DIMENSION_MISMATCH",
+          reason:
+            `"${condition.interpreted}" puts ${outside.join(", ")} on ${condition.feature.id}, which is ` +
+            `bounded to ${OSCILLATOR_RANGE.min}-${OSCILLATOR_RANGE.max}. That level belongs to a ` +
+            "different quantity in the same sentence.",
+        });
+      }
+    }
+  }
+
+  return errors;
 }
 
 /* ------------------------------------------------------- satisfiability */

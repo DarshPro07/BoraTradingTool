@@ -73,8 +73,12 @@ path — Claude Code serves RESEARCH.
    segment → classify → typed candidates with source spans → parameter guard → per-scope AST →
    satisfiability. Real NIFTYBEES prose compiles correctly; real SBIN prose is REFUSED as
    CONTRADICTORY naming the exact conflict. Suite 1,508/0 failed.
-   **NEXT, in this order and do not invert it:** (a) Golden Journey on the browser, (b) render the
-   AgentRun ledger on /brain. Compiler tuning that would help but is not blocking: past-tense
+   **02:35 STATUS: the compiler FAILS SAFE but ATTACHMENT IS UNSOLVED** (FINDINGS 02:30). Live
+   probes on TCS/RELIANCE/NIFTYBEES/SBIN now all either refuse or produce a dimensionally clean
+   rule — none authors nonsense — but three guards were needed to get there and the underlying
+   binding of operators to operands still relies on position. **Next session: dependency parsing
+   at the candidate stage.** THEN, and not before: (a) Golden Journey, (b) /brain AgentRun.
+   NOT DONE this session: Golden Journey, Brain, DevTools pass. MEETING_RELEASE remains FAILED. Compiler tuning that would help but is not blocking: past-tense
    price narration ("has pulled back to 1071, still above its 20-day SMA") is currently read as a
    rule rather than an observation, which is what makes the SBIN paragraph ambiguous.
 4) Then: §23 AI runtime boot screen · §32/33 scanner · §59 decision brief.

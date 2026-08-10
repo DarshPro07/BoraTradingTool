@@ -440,7 +440,7 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
   // ("20-day SMA") can never become trading thresholds, and entry/exit stay in separate scopes.
   const compiled = compileResearchProse(text);
 
-  if (compiled.verdict === "CONTRADICTORY") {
+  if (compiled.verdict === "CONTRADICTORY" || compiled.verdict === "DIMENSION_ERROR") {
     return {
       verdict: "CONTRADICTORY",
       reason: compiled.reason,
