@@ -260,7 +260,13 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
         .values({
           id: familyId,
           researchCampaignId: RESEARCH_CAMPAIGN.id,
-          name: hypothesis.title.slice(0, 120),
+          // Unique per hypothesis, because the table's UNIQUE key is (campaign, NAME) while the
+          // guard above checks the ID. Two hypotheses legitimately share a title — the research
+          // bridge names a proposal after the instrument it is about, so researching the same
+          // stock twice produces two distinct claims with identical titles — and merging them
+          // into one family would understate the multiple-testing denominator. One family per
+          // hypothesis is the design; the suffix is what makes the database agree.
+          name: `${hypothesis.title.slice(0, 110)} · ${hypothesis.id.slice(-6)}`,
           // The hypothesis itself is the family's economic claim. Nothing invented.
           economicHypothesis: hypothesis.statement,
           mechanism: hypothesis.rationale ?? hypothesis.statement,

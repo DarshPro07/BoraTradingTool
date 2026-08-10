@@ -1,5 +1,49 @@
 # Findings (root causes and load-bearing discoveries; evidence-labelled)
 
+- **OPEN / SEVERE 2026-08-11 01:40 — the prose extractor is NOT reliable on real multi-clause
+  research prose. The research→strategy leg must not be presented as working.**
+  Evidence, from the live NIFTYBEES chain against the fixed extractor (spec `stg_9c9a0b318d7bafad`):
+
+      prose : "closes above both its 20-day and 50-day SMAs while RSI-14 sits in the 50-70 range
+               (currently 64.1, price +1.6% above SMA20 and +2.76% above SMA50)"
+      entry : all[ sma50 > 50, sma20 > sma50, sma20 < 50, close > 20,
+                   close < sma20, 50 <= rsi14 <= 70, rsi14 < 50 ]
+
+  Three separate failures in one rule:
+  1. **Period-as-threshold STILL leaks** in a different form: `sma50 > 50` and `close > 20` come
+     from "20-day and 50-day SMAs" — the period is now part of a NEIGHBOURING feature's name, not
+     a suffix on its own, so the earlier fix does not see it.
+  2. **Self-contradiction**: `50 <= rsi14 <= 70` AND `rsi14 < 50` are ANDed together. The rule can
+     never fire. It would backtest to zero trades — not a false positive, but not a rule either.
+  3. **Clause bleed at scale**: seven conditions were harvested from one paragraph containing a
+     parenthetical of CURRENT VALUES ("currently 64.1, +1.6% above SMA20"). Descriptive numbers
+     were read as rule thresholds.
+
+  **Why the adversarial suite passed anyway:** every case in it is a single clean clause. It pins
+  the invariants it states, and those hold — but it does not resemble a paragraph a model writes.
+  That is a real limitation of the suite and is stated here rather than discovered later.
+
+  **Assessment:** this is not another patch. A 40-character window scanned per feature phrase
+  cannot separate a rule clause from a descriptive aside; the extractor needs clause segmentation
+  (split on "when/while/and/,", bind one condition per clause, and REFUSE a clause containing
+  present-tense descriptive values) before it can be trusted. Until then the honest verdict for
+  the research→strategy leg is **NOT WORKING for real prose**, notwithstanding that the DSL,
+  the band compilation and the hand-off plumbing are all verified.
+
+  **Cheap guard worth adding first** (not implemented — deliberately not written at 01:40 with a
+  degraded view): refuse to author when extracted conditions contradict each other for one
+  feature. It converts a silently-wrong strategy into an honest refusal, which is this system's
+  stated preference.
+
+- **FIXED 2026-08-11 01:30 — authoring 500'd when two hypotheses shared a title.** The family
+  guard checked the family ID (derived per hypothesis, never collides) while the table's UNIQUE
+  key is (campaign, NAME), which does — the research bridge names a proposal after the instrument
+  it is about, so researching one stock twice yields two distinct claims with identical titles.
+  The sweep died with SQLITE_CONSTRAINT_UNIQUE and took the whole hand-off with it. Family names
+  are now unique per hypothesis; merging them instead would have understated the multiple-testing
+  denominator. Regression test proven to fail first.
+
+
 - **FIXED 2026-08-11 01:10 — three more semantic-authoring defects, found by building the
   adversarial suite the owner asked for.** All three were invisible to reading and only appeared
   when real research prose was run through the extractor:

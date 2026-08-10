@@ -67,8 +67,12 @@ path — Claude Code serves RESEARCH.
    **Next for this leg:** the extractor reads only `feature <op> number`, so research prose using
    a band ("RSI-14 between 55 and 70") or a feature-vs-feature comparison ("close above sma_20")
    correctly returns UNCLEAR. Settle the DSL band representation BEFORE coding it.
-3) **The 6 pre-existing NSE unit failures** (FINDINGS 23:45) — reproduce the duplicate-ISIN
-   `NSE_SECURITY_MASTER_UNAVAILABLE` against the live 3,314-row master before editing specs.
+3) **DONE 01:20 — all 6 NSE failures root-fixed**; unit suite fully green (1,496/0 failed).
+   Duplicate ISIN is now an instrument-level IDENTITY_CONFLICT, not a market-wide outage.
+   **NEW TOP PRIORITY instead: the prose extractor is not reliable on real multi-clause prose**
+   (FINDINGS 01:40 — period leaks via neighbouring feature names, self-contradictory rules,
+   descriptive values read as thresholds). Needs clause segmentation, not another patch. The
+   research→strategy leg is NOT WORKING for real prose and must not be demonstrated.
 4) Then: §23 AI runtime boot screen · §32/33 scanner · §59 decision brief.
 
 PRIOR NEXT TASK (superseded — M4/Codex is no longer the critical path):
