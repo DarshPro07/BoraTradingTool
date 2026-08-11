@@ -20,5 +20,8 @@ export function mutationFetch(input: RequestInfo | URL, init: RequestInit = {}):
     headers.set("content-type", "application/json");
   }
 
-  return fetch(input, { ...init, headers });
+  // Explicit rather than relied upon: the owner session is a cookie, and a control that dropped it
+  // would fail owner-gated routes with a 401 that looks like a permissions bug rather than a
+  // transport one.
+  return fetch(input, { credentials: "same-origin", ...init, headers });
 }

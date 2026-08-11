@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * The one button. Start MarketPulse, then leave.
@@ -89,12 +90,11 @@ export function AutonomousControl({ profile }: { profile: string }) {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(path, {
+      // Through the SHARED helper, not a hand-rolled fetch. This control shipped without the CSRF
+      // header and was a dead button that every unit test passed — the header is not something each
+      // control should be trusted to remember.
+      const response = await mutationFetch(path, {
         method: "POST",
-        // Every mutation in this application carries this header; `requireMutationAccess` rejects
-        // the request without it. Omitting it produced a button that clicked, reported nothing, and
-        // did nothing — which is precisely the dead-control class this work exists to eliminate.
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify(body),
       });
       if (!response.ok && response.status !== 404) {
