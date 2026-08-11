@@ -836,6 +836,41 @@ export function compileResearchProse(
     // A band first: "between 55 and 70" contains a comparator word but is one condition.
     const bandMatch = /between\s+(-?\d+(?:\.\d+)?)\s*%?\s+and\s+(-?\d+(?:\.\d+)?)/i.exec(clause.text);
     if (bandMatch) {
+      /**
+       * THE GUARD APPLIES TO BAND BOUNDS TOO.
+       *
+       * The band path read its two numbers straight out of the regex and never asked whether they
+       * were periods, so "RSI-14 is between 20 and 50 days of range" compiled to `20 <= rsi14 <= 50`
+       * — a period phrase turned into a trading threshold, which is the single defect class this
+       * whole compiler exists to prevent. Every other operand route checked; this one did not,
+       * because it was written before the guard existed and nothing rechecked it.
+       *
+       * Found by an adversarial probe, not by a test that already existed.
+       */
+      // Bound offsets located inside the matched text, so the guard sees the exact digits rather
+      // than the whole "between X and Y" phrase.
+      let cursor = bandMatch.index;
+      const boundSpans = [bandMatch[1], bandMatch[2]].map((digits) => {
+        const at = clause.text.indexOf(digits, cursor);
+        cursor = at + digits.length;
+        return { start: clause.start + at, end: clause.start + at + digits.length };
+      });
+
+      const blocked = boundSpans
+        .map((span) => parameterGuard(span.start, span.end, mentions, parameterSpans))
+        .find((outcome) => outcome !== null);
+      if (blocked) {
+        rejected.push({
+          clauseId: clause.id,
+          sourceText: clause.text.trim(),
+          code: "INDICATOR_PARAMETER_NOT_A_THRESHOLD",
+          reason:
+            `A bound of this range is ${blocked.blockedBy}. A lookback length is not a level to ` +
+            "compare against.",
+        });
+        continue;
+      }
+
       const low = Math.min(Number(bandMatch[1]), Number(bandMatch[2]));
       const high = Math.max(Number(bandMatch[1]), Number(bandMatch[2]));
       const start = clause.start + bandMatch.index;

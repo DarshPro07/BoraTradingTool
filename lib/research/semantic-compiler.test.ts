@@ -383,3 +383,30 @@ describe("dimensional analysis — the guard that makes attachment failures safe
     ).toEqual([]);
   });
 });
+
+describe("a band bound is guarded exactly like every other operand", () => {
+  /**
+   * REGRESSION. The band path read its two numbers straight from the regex and never asked whether
+   * they were periods, so "between 20 and 50 days of range" compiled to `20 <= rsi14 <= 50`. Every
+   * other operand route ran the parameter guard; this one predated it and nothing rechecked.
+   *
+   * Verified to FAIL before the guard was added to the band branch.
+   */
+  it("refuses a range whose bound is a lookback length", () => {
+    const prose = "Enter when RSI-14 is between 20 and 50 days of range.";
+    const result = compileResearchProse(prose);
+
+    expect(thresholds(result), "a period must never become a band bound").not.toContain(50);
+    expect(result.conditions.filter((condition) => condition.kind === "RANGE")).toHaveLength(0);
+    expect(result.rejected.map((entry) => entry.code)).toContain("INDICATOR_PARAMETER_NOT_A_THRESHOLD");
+  });
+
+  it("still reads a genuine band that names no period", () => {
+    const result = compileResearchProse("Enter while RSI-14 is between 55 and 70.");
+
+    const band = result.conditions.find((condition) => condition.kind === "RANGE");
+    expect(band?.feature.id).toBe("rsi14");
+    expect(band?.low).toBe(55);
+    expect(band?.high).toBe(70);
+  });
+});
