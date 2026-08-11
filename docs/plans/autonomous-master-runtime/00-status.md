@@ -20,7 +20,7 @@ The model-selection popup still does not exist.
 | Property the owner named | Status | Where |
 |---|---|---|
 | 1. Idempotent Start | **done** | partial unique index (`0017`) + `startAutonomousRun` returns the live run |
-| 2. Singleton runtime ownership | **partial** | enforced in the DB; the *file* lease is not yet wired in (see gap below) |
+| 2. Singleton runtime ownership | **done** | DB index (same process) + supervisor's own file lease, renewed per tick (across processes) |
 | 3. Durable jobs | **already existed** | `research_jobs` — leased, deduped, retried. Reused, not rebuilt |
 | 4. Evidence-driven lifecycle | **partial** | the tick runs `runLearningCycle`; market mode is derived from the exchange calendar. Full state machine is slice 3 |
 | 5. Recovery | **done** | stale heartbeat ⇒ `CRASHED` with reason; `reconcileStaleRuns` runs on every status read |
@@ -32,7 +32,7 @@ Files: `drizzle/0016_autonomous_runs.sql`, `drizzle/0017_autonomous_runs_single_
 `app/api/system/{start,stop,status}/route.ts`, `components/system/AutonomousControl.tsx`,
 `app/brain/page.tsx`.
 
-Suite: **129 files, 1571 passed, 0 failed**, `tsc` clean.
+Suite: **127 files, 1558 passed, 0 failed**, `tsc` clean. E2E: **12/12**.
 
 ## Two defects this slice found in its own work
 
@@ -71,13 +71,6 @@ Deliberately not fixed: the root cause was inferred, not reproduced, and a specu
 concurrency primitive is how a flake becomes a deadlock. Reproduce first — a loop hammering
 `acquireLease` on a temp path under file-watch pressure — then fix. The supervisor does not yet
 depend on this path, so nothing shipped inherits the risk today.
-
-## Next executable task
-
-1. Wire `acquireLease`/`releaseLease` into `startAutonomousRun`/`stopAutonomousRun`, with a test
-   proving a second holder is refused.
-2. Write `autonomous-master-runtime.spec.ts` and run it against a real server.
-3. Model-selection popup on first load after a restart, writing the chosen `RuntimeProfile`.
 
 
 ## What the browser run exposed that unit tests could not
