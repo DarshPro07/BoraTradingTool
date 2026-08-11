@@ -9,6 +9,8 @@ import { nextStep } from "@/lib/guide/next-step";
 import { lastCycleRun } from "@/lib/learning/run-log";
 import { listJobs, queueStats } from "@/lib/research/queue";
 import { Panel } from "@/components/system/Panel";
+import { AutonomousControl } from "@/components/system/AutonomousControl";
+import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +99,11 @@ export default function BrainPage() {
 
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
+      {/* The one button. Everything beneath the governance ceiling runs itself after this. */}
+      <Panel title="MARKETPULSE — AUTONOMOUS RUNTIME">
+        <AutonomousControl profile={RUNTIME_PROFILES[0]} />
+      </Panel>
+
       <Panel title="MARKETPULSE BRAIN — WHAT THE SYSTEM KNOWS, DOES, AND STILL LACKS">
         <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]" data-testid="brain-system">
           <div>

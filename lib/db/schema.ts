@@ -935,3 +935,31 @@ export const agentRuns = sqliteTable("agent_runs", {
 });
 
 export type AgentRunRow = typeof agentRuns.$inferSelect;
+
+/**
+ * One row per press of "Start MarketPulse".
+ *
+ * The ticker lives in the server process; the WORK lives in `researchJobs`, which is leased,
+ * deduped and retried. This table is what makes an interrupted run visible: a stale `heartbeatAt`
+ * is how a dead process is detected and reconciled, instead of leaving a silent gap.
+ */
+export const autonomousRuns = sqliteTable("autonomous_runs", {
+  id: text("id").primaryKey(),
+  /** STARTING | RUNNING | DEGRADED | STOPPED | CRASHED — DEGRADED is running with a named fault. */
+  status: text("status").notNull(),
+  runtimeProfile: text("runtime_profile").notNull(),
+  /** The learning mode as it was at start: a record of what was permitted, never a control. */
+  governanceCeiling: text("governance_ceiling").notNull(),
+  marketMode: text("market_mode").notNull(),
+  nextAction: text("next_action"),
+  lastCheckpoint: text("last_checkpoint"),
+  reason: text("reason"),
+  ticks: integer("ticks").notNull().default(0),
+  host: text("host").notNull(),
+  pid: integer("pid").notNull(),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  heartbeatAt: integer("heartbeat_at", { mode: "timestamp" }).notNull(),
+  stoppedAt: integer("stopped_at", { mode: "timestamp" }),
+});
+
+export type AutonomousRunRow = typeof autonomousRuns.$inferSelect;

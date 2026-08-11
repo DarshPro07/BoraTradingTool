@@ -1,0 +1,101 @@
+{
+  "prose": "Enter when RSI-14 is above 60.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 30,
+        "text": "Enter when RSI-14 is above 60."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 11,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 18,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 21,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "60",
+        "lemma": "60",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 27,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 29,
+        "end": 30,
+        "isSentStart": false
+      }
+    ]
+  }
+}

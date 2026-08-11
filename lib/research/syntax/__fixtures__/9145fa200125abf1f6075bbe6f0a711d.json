@@ -1,0 +1,125 @@
+{
+  "prose": "Enter when the underlying RSI-14 is above 55.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 45,
+        "text": "Enter when the underlying RSI-14 is above 55."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 5,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 4,
+        "start": 11,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "underlying",
+        "lemma": "underlie",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 15,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "RSI-14",
+        "lemma": "rsi-14",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 5,
+        "start": 26,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 33,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 5,
+        "start": 36,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 6,
+        "start": 42,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 44,
+        "end": 45,
+        "isSentStart": false
+      }
+    ]
+  }
+}

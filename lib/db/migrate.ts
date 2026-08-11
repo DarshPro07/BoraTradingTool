@@ -42,6 +42,8 @@ const MIGRATIONS = [
   "0014_autonomy_default.sql",
   // The AgentRun ledger: every model call MarketPulse makes, including the refused ones.
   "0015_agent_runs.sql",
+  "0016_autonomous_runs.sql",
+  "0017_autonomous_runs_single_live.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {
