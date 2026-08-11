@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { useTemporaryDatabase } from "@/lib/db/testing";
+import { acquireLease, currentLease, leasePath } from "@/lib/learning/lease";
 import { getDb, schema } from "@/lib/db";
 import {
   liveRun,
@@ -8,6 +9,8 @@ import {
   startAutonomousRun,
   stopAutonomousRun,
   STALE_MS,
+  LEASE_TTL_MS,
+  supervisorLeasePath,
 } from "./supervisor";
 
 useTemporaryDatabase();
@@ -138,5 +141,43 @@ describe("the governance ceiling is recorded, never raised", () => {
     const start = events.find((event) => event.action === "autonomous_run_start");
     expect(start?.subject).toBe(run.id);
     expect(start?.detail).toContain("ceiling=");
+  });
+});
+
+describe("singleton ownership across processes", () => {
+  /**
+   * The unique index stops two requests inside ONE server. It cannot see a second Node process
+   * pointed at the same database — that is what the lease is for, and the two answer different
+   * questions.
+   */
+  it("refuses to start when another process already holds the runtime lease", () => {
+    acquireLease("some-other-process", supervisorLeasePath(), Date.now(), LEASE_TTL_MS);
+
+    expect(() => startAutonomousRun("claude-code", "test", new Date(), noTick)).toThrow(
+      /SUPERVISOR_ALREADY_OWNED/,
+    );
+    expect(getDb().select().from(schema.autonomousRuns).all()).toHaveLength(0);
+  });
+
+  it("releases the lease on stop, so the next start is not locked out", () => {
+    startAutonomousRun("claude-code", "test", new Date(), noTick);
+    expect(currentLease(supervisorLeasePath())).not.toBeNull();
+
+    stopAutonomousRun("done", "test");
+
+    expect(currentLease(supervisorLeasePath())).toBeNull();
+    expect(() => startAutonomousRun("claude-code", "test", new Date(), noTick)).not.toThrow();
+  });
+
+  /**
+   * The supervisor must NOT hold the cycle lease. `runLearningCycle` takes that one itself, so a
+   * supervisor holding it would block the very cycle it exists to run — a deadlock in which the
+   * machine reports RUNNING forever and does nothing.
+   */
+  it("does not take the cycle lease", () => {
+    startAutonomousRun("claude-code", "test", new Date(), noTick);
+
+    expect(supervisorLeasePath()).not.toBe(leasePath());
+    expect(currentLease(leasePath()), "the cycle lease must remain free").toBeNull();
   });
 });

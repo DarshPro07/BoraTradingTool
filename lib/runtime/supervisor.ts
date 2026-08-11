@@ -6,6 +6,8 @@ import { getMarketPhase } from "@/lib/market/phases";
 import { getLearningMode } from "@/lib/governance/runtime";
 import { queueStats } from "@/lib/research/queue";
 import { runLearningCycle } from "@/lib/learning/cycle";
+import { acquireLease, currentLease, releaseLease } from "@/lib/learning/lease";
+import { databasePath } from "@/lib/db";
 
 /**
  * The autonomous supervisor: one press of Start, then the machine runs itself.
@@ -53,6 +55,28 @@ export const TICK_MS = 60_000;
  * progressing normally.
  */
 export const STALE_MS = 5 * TICK_MS;
+
+/**
+ * The supervisor's OWN lease file — deliberately not the cycle lease.
+ *
+ * `runLearningCycle` already wraps its work in `withCycleLease` on the default path. Had the
+ * supervisor taken that same lease it would have held it for the whole tick and then blocked the
+ * very cycle it exists to run: a self-deadlock on the first tick, in which the machine reports
+ * RUNNING forever and does nothing. Two locks, two questions — "who owns this runtime" and "who is
+ * running a cycle right now".
+ */
+export function supervisorLeasePath(): string {
+  return `${databasePath()}.supervisor-lease`;
+}
+
+/**
+ * The lease expires exactly when the run it belongs to is declared CRASHED.
+ *
+ * One threshold governs both, so a killed server can be restarted and Start pressed again as soon
+ * as its run is reconciled — rather than being refused for the lease library's default ten minutes
+ * while `/brain` already says CRASHED, which reads as the product being broken.
+ */
+export const LEASE_TTL_MS = STALE_MS;
 
 export interface AutonomousRun {
   id: string;
@@ -150,8 +174,21 @@ export function reconcileStaleRuns(now = new Date()): number {
       // and a silent killer the moment that changes.
       .where(eq(schema.autonomousRuns.id, row.id))
       .run();
+
+    // Free the dead run's lease. Without this a killed server stays locked out for the whole TTL
+    // while `/brain` already says CRASHED — which reads as the product being broken, and is exactly
+    // the "kill it, restart it, press Start" path the recovery requirement describes.
+    // Read the record regardless of expiry: we know this holder is gone.
+    const held = heldBy(row.id);
+    if (held) releaseLease(held.holder, held.acquiredAt, supervisorLeasePath());
   }
   return stale.length;
+}
+
+/** The lease record for a holder, ignoring expiry — used when we already know the holder is dead. */
+function heldBy(holder: string): { holder: string; acquiredAt: number } | null {
+  const record = currentLease(supervisorLeasePath(), 0, Number.MAX_SAFE_INTEGER);
+  return record && record.holder === holder ? record : null;
 }
 
 /** The live run, if any. Reconciles stale rows first so a phantom is never reported as running. */
@@ -240,9 +277,21 @@ export function startAutonomousRun(
     stoppedAt: null,
   };
 
+  // SINGLETON ACROSS PROCESSES. The unique index stops two requests inside one server; this stops a
+  // second Node process pointed at the same database, which the index cannot see.
+  const lease = acquireLease(run.id, supervisorLeasePath(), now.getTime(), LEASE_TTL_MS);
+  if (lease === null) {
+    const holder = currentLease(supervisorLeasePath(), now.getTime(), LEASE_TTL_MS);
+    throw new Error(
+      `SUPERVISOR_ALREADY_OWNED: another process holds the runtime lease (${holder?.holder ?? "unknown"}). ` +
+        "Only one autonomous supervisor may own a database.",
+    );
+  }
+
   try {
     getDb().insert(schema.autonomousRuns).values(run).run();
   } catch (caught) {
+    releaseLease(lease.holder, lease.acquiredAt, supervisorLeasePath());
     // The unique index fired: another request won the race. Its run is the answer.
     const winner = liveRun(now);
     if (winner) return { run: winner, created: false };
@@ -265,6 +314,11 @@ export function stopAutonomousRun(reason: string, actor = "owner:studio", now = 
   if (!run) return null;
 
   clearTicking();
+  // Read the holder record rather than reconstructing `acquiredAt` from `startedAt`: drizzle stores
+  // timestamps truncated to whole seconds while the lease records milliseconds, so a reconstructed
+  // value would never match and the lease would silently outlive the run that owned it.
+  const held = currentLease(supervisorLeasePath(), now.getTime(), LEASE_TTL_MS);
+  if (held?.holder === run.id) releaseLease(held.holder, held.acquiredAt, supervisorLeasePath());
   getDb()
     .update(schema.autonomousRuns)
     .set({ status: "STOPPED", stoppedAt: now, reason, nextAction: null })
@@ -316,6 +370,18 @@ export async function tick(runId: string, now = new Date()): Promise<void> {
     if (!row || row.id !== runId) {
       clearTicking();
       return;
+    }
+
+    /**
+     * RENEW THE LEASE. `acquiredAt` is fixed at acquisition, so a lease whose TTL equals the
+     * staleness threshold would be judged expired after five minutes of perfectly healthy running
+     * — and another process could take ownership of a live runtime. The heartbeat and the lease
+     * must age together, so both are refreshed here.
+     */
+    const held = currentLease(supervisorLeasePath(), 0, Number.MAX_SAFE_INTEGER);
+    if (held?.holder === runId) {
+      releaseLease(held.holder, held.acquiredAt, supervisorLeasePath());
+      acquireLease(runId, supervisorLeasePath(), now.getTime(), LEASE_TTL_MS);
     }
 
     const mode = marketModeNow(now);
