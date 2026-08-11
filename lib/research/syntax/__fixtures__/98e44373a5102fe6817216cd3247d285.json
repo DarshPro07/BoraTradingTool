@@ -1,0 +1,233 @@
+{
+  "prose": "the prevailing uptrend is more likely to persist than reverse over a multi-week swing horizon.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 94,
+        "text": "the prevailing uptrend is more likely to persist than reverse over a multi-week swing horizon."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 2,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "prevailing",
+        "lemma": "prevail",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 2,
+        "start": 4,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "uptrend",
+        "lemma": "uptrend",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 15,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 23,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "more",
+        "lemma": "more",
+        "pos": "ADV",
+        "tag": "RBR",
+        "dep": "advmod",
+        "headIndex": 5,
+        "start": 26,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "likely",
+        "lemma": "likely",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 3,
+        "start": 31,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 7,
+        "start": 38,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "persist",
+        "lemma": "persist",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "xcomp",
+        "headIndex": 5,
+        "start": 41,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "than",
+        "lemma": "than",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 9,
+        "start": 49,
+        "end": 53,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "reverse",
+        "lemma": "reverse",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "advcl",
+        "headIndex": 7,
+        "start": 54,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "over",
+        "lemma": "over",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 9,
+        "start": 62,
+        "end": 66,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 16,
+        "start": 67,
+        "end": 68,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "multi",
+        "lemma": "multi",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 16,
+        "start": 69,
+        "end": 74,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "-",
+        "lemma": "-",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 16,
+        "start": 74,
+        "end": 75,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "week",
+        "lemma": "week",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 16,
+        "start": 75,
+        "end": 79,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "swing",
+        "lemma": "swing",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 16,
+        "start": 80,
+        "end": 85,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "horizon",
+        "lemma": "horizon",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 10,
+        "start": 86,
+        "end": 93,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 3,
+        "start": 93,
+        "end": 94,
+        "isSentStart": false
+      }
+    ]
+  }
+}

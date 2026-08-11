@@ -1,0 +1,149 @@
+{
+  "prose": "the resulting uptrend regime tends to persist rather than immediately reverse",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 77,
+        "text": "the resulting uptrend regime tends to persist rather than immediately reverse"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "resulting",
+        "lemma": "result",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 3,
+        "start": 4,
+        "end": 13,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "uptrend",
+        "lemma": "uptrend",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 3,
+        "start": 14,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "regime",
+        "lemma": "regime",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 22,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "tends",
+        "lemma": "tend",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 29,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 6,
+        "start": 35,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "persist",
+        "lemma": "persist",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "xcomp",
+        "headIndex": 4,
+        "start": 38,
+        "end": 45,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "rather",
+        "lemma": "rather",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 8,
+        "start": 46,
+        "end": 52,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "than",
+        "lemma": "than",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "cc",
+        "headIndex": 6,
+        "start": 53,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "immediately",
+        "lemma": "immediately",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 10,
+        "start": 58,
+        "end": 69,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "reverse",
+        "lemma": "reverse",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "conj",
+        "headIndex": 4,
+        "start": 70,
+        "end": 77,
+        "isSentStart": false
+      }
+    ]
+  }
+}

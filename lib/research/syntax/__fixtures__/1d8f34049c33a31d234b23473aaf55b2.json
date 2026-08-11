@@ -1,0 +1,77 @@
+{
+  "prose": "Gaps are worth studying.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 24,
+        "text": "Gaps are worth studying."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Gaps",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "are",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBP",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 5,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "worth",
+        "lemma": "worth",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 1,
+        "start": 9,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "studying",
+        "lemma": "study",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "xcomp",
+        "headIndex": 2,
+        "start": 15,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 23,
+        "end": 24,
+        "isSentStart": false
+      }
+    ]
+  }
+}

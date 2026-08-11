@@ -1,0 +1,101 @@
+{
+  "prose": "RSI is between 55 and 70.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 25,
+        "text": "RSI is between 55 and 70."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI",
+        "lemma": "RSI",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "quantmod",
+        "headIndex": 3,
+        "start": 7,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "attr",
+        "headIndex": 1,
+        "start": 15,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 3,
+        "start": 18,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 3,
+        "start": 22,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 24,
+        "end": 25,
+        "isSentStart": false
+      }
+    ]
+  }
+}

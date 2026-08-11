@@ -1,0 +1,293 @@
+{
+  "prose": " The transferable part is the shape — gap plus relative volume plus a liquidity floor — not the thresholds.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 111,
+        "text": " The transferable part is the shape â€” gap plus relative volume plus a liquidity floor â€” not the thresholds."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "The",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 1,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "transferable",
+        "lemma": "transferable",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 3,
+        "start": 5,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "part",
+        "lemma": "part",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 18,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 23,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 9,
+        "start": 26,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "shape",
+        "lemma": "shape",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 9,
+        "start": 30,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "â€",
+        "lemma": "â€",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nummod",
+        "headIndex": 6,
+        "start": 36,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "”",
+        "lemma": "\"",
+        "pos": "PUNCT",
+        "tag": "''",
+        "dep": "punct",
+        "headIndex": 9,
+        "start": 38,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "gap",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "attr",
+        "headIndex": 4,
+        "start": 40,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "plus",
+        "lemma": "plus",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 9,
+        "start": 44,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "relative",
+        "lemma": "relative",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 12,
+        "start": 49,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "volume",
+        "lemma": "volume",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 9,
+        "start": 58,
+        "end": 64,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "plus",
+        "lemma": "plus",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 12,
+        "start": 65,
+        "end": 69,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 17,
+        "start": 70,
+        "end": 71,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "liquidity",
+        "lemma": "liquidity",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 16,
+        "start": 72,
+        "end": 81,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "floor",
+        "lemma": "floor",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 17,
+        "start": 82,
+        "end": 87,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": "â€",
+        "lemma": "â€",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "conj",
+        "headIndex": 12,
+        "start": 88,
+        "end": 90,
+        "isSentStart": false
+      },
+      {
+        "index": 18,
+        "text": "”",
+        "lemma": "\"",
+        "pos": "PUNCT",
+        "tag": "''",
+        "dep": "punct",
+        "headIndex": 12,
+        "start": 90,
+        "end": 91,
+        "isSentStart": false
+      },
+      {
+        "index": 19,
+        "text": "not",
+        "lemma": "not",
+        "pos": "PART",
+        "tag": "RB",
+        "dep": "neg",
+        "headIndex": 9,
+        "start": 92,
+        "end": 95,
+        "isSentStart": false
+      },
+      {
+        "index": 20,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 21,
+        "start": 96,
+        "end": 99,
+        "isSentStart": false
+      },
+      {
+        "index": 21,
+        "text": "thresholds",
+        "lemma": "threshold",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "appos",
+        "headIndex": 9,
+        "start": 100,
+        "end": 110,
+        "isSentStart": false
+      },
+      {
+        "index": 22,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 110,
+        "end": 111,
+        "isSentStart": false
+      }
+    ]
+  }
+}

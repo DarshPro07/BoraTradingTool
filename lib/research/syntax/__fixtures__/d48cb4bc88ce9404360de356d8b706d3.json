@@ -1,0 +1,77 @@
+{
+  "prose": "momentum has been constructive.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 31,
+        "text": "momentum has been constructive."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "momentum",
+        "lemma": "momentum",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 8,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "has",
+        "lemma": "have",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 9,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "been",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBN",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 13,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "constructive",
+        "lemma": "constructive",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 2,
+        "start": 18,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 30,
+        "end": 31,
+        "isSentStart": false
+      }
+    ]
+  }
+}

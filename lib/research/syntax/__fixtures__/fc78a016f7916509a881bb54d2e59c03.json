@@ -1,0 +1,53 @@
+{
+  "prose": "Adversarial case.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 17,
+        "text": "Adversarial case."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Adversarial",
+        "lemma": "adversarial",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 11,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "case",
+        "lemma": "case",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 12,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 16,
+        "end": 17,
+        "isSentStart": false
+      }
+    ]
+  }
+}

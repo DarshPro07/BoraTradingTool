@@ -1,0 +1,65 @@
+{
+  "prose": "The 20-day",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 10,
+        "text": "The 20-day"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "The",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 3,
+        "start": 4,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 3,
+        "start": 6,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 7,
+        "end": 10,
+        "isSentStart": false
+      }
+    ]
+  }
+}

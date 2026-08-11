@@ -1,0 +1,77 @@
+{
+  "prose": "which sits at 1071.4.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 21,
+        "text": "which sits at 1071.4."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "which",
+        "lemma": "which",
+        "pos": "PRON",
+        "tag": "WDT",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "sits",
+        "lemma": "sit",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "at",
+        "lemma": "at",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 11,
+        "end": 13,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "1071.4",
+        "lemma": "1071.4",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 14,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 20,
+        "end": 21,
+        "isSentStart": false
+      }
+    ]
+  }
+}

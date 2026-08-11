@@ -1,0 +1,125 @@
+{
+  "prose": " Coverage of triggered conditions is not recorded.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 50,
+        "text": " Coverage of triggered conditions is not recorded."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Coverage",
+        "lemma": "Coverage",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubjpass",
+        "headIndex": 7,
+        "start": 1,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "of",
+        "lemma": "of",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 10,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "triggered",
+        "lemma": "trigger",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 13,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "conditions",
+        "lemma": "condition",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 23,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "auxpass",
+        "headIndex": 7,
+        "start": 34,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "not",
+        "lemma": "not",
+        "pos": "PART",
+        "tag": "RB",
+        "dep": "neg",
+        "headIndex": 7,
+        "start": 37,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "recorded",
+        "lemma": "record",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "ROOT",
+        "headIndex": 7,
+        "start": 41,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 49,
+        "end": 50,
+        "isSentStart": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "prose": "Hold while price stays above the 50-day and 100-day averages.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 61,
+        "text": "Hold while price stays above the 50-day and 100-day averages."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Hold",
+        "lemma": "hold",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "while",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 3,
+        "start": 5,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "stays",
+        "lemma": "stay",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 17,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 23,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 13,
+        "start": 29,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 33,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 35,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 13,
+        "start": 36,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 8,
+        "start": 40,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "100",
+        "lemma": "100",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 12,
+        "start": 44,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 12,
+        "start": 47,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 8,
+        "start": 48,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "averages",
+        "lemma": "average",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 52,
+        "end": 60,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 60,
+        "end": 61,
+        "isSentStart": false
+      }
+    ]
+  }
+}

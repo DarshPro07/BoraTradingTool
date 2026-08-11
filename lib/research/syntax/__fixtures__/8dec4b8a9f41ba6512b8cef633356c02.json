@@ -1,0 +1,113 @@
+{
+  "prose": " Enter while RSI-14 is above 55.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 32,
+        "text": " Enter while RSI-14 is above 55."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "while",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 4,
+        "start": 7,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 13,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 1,
+        "start": 20,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 23,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 29,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 31,
+        "end": 32,
+        "isSentStart": false
+      }
+    ]
+  }
+}

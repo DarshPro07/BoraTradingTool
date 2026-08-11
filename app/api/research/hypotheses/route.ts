@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   // The same engine the learning cycle runs — one triage implementation, nowhere to drift. It
   // sweeps every unauthored hypothesis (idempotent), and we report this one's outcome.
-  const report = authorFromHypotheses("owner:studio");
+  const report = await authorFromHypotheses("owner:studio");
   const outcome = report.outcomes.find((entry) => entry.hypothesisId === hypothesisId);
 
   // Authored on an earlier pass: the outcome list skips it, so the spec is looked up directly.

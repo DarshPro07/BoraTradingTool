@@ -1,0 +1,149 @@
+{
+  "prose": "Consider entry only while RSI is between 55 and 70.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 51,
+        "text": "Consider entry only while RSI is between 55 and 70."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Consider",
+        "lemma": "consider",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 8,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 0,
+        "start": 9,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "only",
+        "lemma": "only",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 5,
+        "start": 15,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "while",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 5,
+        "start": 20,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "RSI",
+        "lemma": "RSI",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 5,
+        "start": 26,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 30,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 5,
+        "start": 33,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 6,
+        "start": 41,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 7,
+        "start": 44,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 7,
+        "start": 48,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 50,
+        "end": 51,
+        "isSentStart": false
+      }
+    ]
+  }
+}

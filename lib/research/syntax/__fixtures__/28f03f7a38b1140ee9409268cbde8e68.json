@@ -1,0 +1,238 @@
+{
+  "prose": " If so, disagreement is usable as a skip filter rather than merely something to display.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 1,
+        "text": " "
+      },
+      {
+        "start": 1,
+        "end": 88,
+        "text": "If so, disagreement is usable as a skip filter rather than merely something to display."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 0,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "If",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 2,
+        "start": 1,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 2,
+        "text": "so",
+        "lemma": "so",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advcl",
+        "headIndex": 5,
+        "start": 4,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": ",",
+        "lemma": ",",
+        "pos": "PUNCT",
+        "tag": ",",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 6,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "disagreement",
+        "lemma": "disagreement",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 5,
+        "start": 8,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 5,
+        "start": 21,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "usable",
+        "lemma": "usable",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 5,
+        "start": 24,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "as",
+        "lemma": "as",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 6,
+        "start": 31,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 10,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "skip",
+        "lemma": "skip",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "amod",
+        "headIndex": 10,
+        "start": 36,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "filter",
+        "lemma": "filter",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 41,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "rather",
+        "lemma": "rather",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 12,
+        "start": 48,
+        "end": 54,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "than",
+        "lemma": "than",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "cc",
+        "headIndex": 10,
+        "start": 55,
+        "end": 59,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "merely",
+        "lemma": "merely",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 14,
+        "start": 60,
+        "end": 66,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "something",
+        "lemma": "something",
+        "pos": "PRON",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 10,
+        "start": 67,
+        "end": 76,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 16,
+        "start": 77,
+        "end": 79,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "display",
+        "lemma": "display",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "relcl",
+        "headIndex": 14,
+        "start": 80,
+        "end": 87,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 87,
+        "end": 88,
+        "isSentStart": false
+      }
+    ]
+  }
+}

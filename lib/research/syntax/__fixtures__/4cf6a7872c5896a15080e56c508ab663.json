@@ -1,0 +1,149 @@
+{
+  "prose": "Enter when RSI-14 rises above the 20-day SMA.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 45,
+        "text": "Enter when RSI-14 rises above the 20-day SMA."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 11,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "rises",
+        "lemma": "rise",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 18,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 24,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 9,
+        "start": 30,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 34,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 36,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 9,
+        "start": 37,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 41,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 44,
+        "end": 45,
+        "isSentStart": false
+      }
+    ]
+  }
+}

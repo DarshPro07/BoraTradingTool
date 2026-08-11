@@ -1,0 +1,41 @@
+{
+  "prose": " Separately",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 11,
+        "text": " Separately"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Separately",
+        "lemma": "separately",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 11,
+        "isSentStart": false
+      }
+    ]
+  }
+}

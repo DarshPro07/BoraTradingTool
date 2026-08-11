@@ -1,0 +1,77 @@
+{
+  "prose": "RSI must be above 60",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 20,
+        "text": "RSI must be above 60"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI",
+        "lemma": "RSI",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "must",
+        "lemma": "must",
+        "pos": "AUX",
+        "tag": "MD",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 4,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "be",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 9,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 12,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "60",
+        "lemma": "60",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 18,
+        "end": 20,
+        "isSentStart": false
+      }
+    ]
+  }
+}

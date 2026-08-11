@@ -1,0 +1,185 @@
+{
+  "prose": " Whether it carries information is an empirical question this system can answer.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 80,
+        "text": " Whether it carries information is an empirical question this system can answer."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Whether",
+        "lemma": "whether",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 3,
+        "start": 1,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "it",
+        "lemma": "it",
+        "pos": "PRON",
+        "tag": "PRP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 9,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "carries",
+        "lemma": "carry",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "csubj",
+        "headIndex": 5,
+        "start": 12,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "information",
+        "lemma": "information",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 3,
+        "start": 20,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 5,
+        "start": 32,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "an",
+        "lemma": "an",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 8,
+        "start": 35,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "empirical",
+        "lemma": "empirical",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 8,
+        "start": 38,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "question",
+        "lemma": "question",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "attr",
+        "headIndex": 5,
+        "start": 48,
+        "end": 56,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "this",
+        "lemma": "this",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 10,
+        "start": 57,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "system",
+        "lemma": "system",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 12,
+        "start": 62,
+        "end": 68,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "can",
+        "lemma": "can",
+        "pos": "AUX",
+        "tag": "MD",
+        "dep": "aux",
+        "headIndex": 12,
+        "start": 69,
+        "end": 72,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "answer",
+        "lemma": "answer",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "relcl",
+        "headIndex": 8,
+        "start": 73,
+        "end": 79,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 79,
+        "end": 80,
+        "isSentStart": false
+      }
+    ]
+  }
+}

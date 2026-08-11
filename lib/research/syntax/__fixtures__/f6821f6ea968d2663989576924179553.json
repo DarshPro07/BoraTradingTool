@@ -1,0 +1,77 @@
+{
+  "prose": "because trends tend to persist",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 30,
+        "text": "because trends tend to persist"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "because",
+        "lemma": "because",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 2,
+        "start": 0,
+        "end": 7,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "trends",
+        "lemma": "trend",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 8,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "tend",
+        "lemma": "tend",
+        "pos": "VERB",
+        "tag": "VBP",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 15,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 4,
+        "start": 20,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "persist",
+        "lemma": "persist",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "xcomp",
+        "headIndex": 2,
+        "start": 23,
+        "end": 30,
+        "isSentStart": false
+      }
+    ]
+  }
+}

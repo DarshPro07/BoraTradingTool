@@ -1,0 +1,41 @@
+{
+  "prose": "gaps.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 5,
+        "text": "gaps."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "gaps",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 4,
+        "end": 5,
+        "isSentStart": false
+      }
+    ]
+  }
+}

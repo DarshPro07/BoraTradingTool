@@ -1,0 +1,77 @@
+{
+  "prose": "if rsi_14 crosses above 70",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 26,
+        "text": "if rsi_14 crosses above 70"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "if",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 2,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "rsi_14",
+        "lemma": "rsi_14",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 3,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "crosses",
+        "lemma": "cross",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 10,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 18,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 24,
+        "end": 26,
+        "isSentStart": false
+      }
+    ]
+  }
+}

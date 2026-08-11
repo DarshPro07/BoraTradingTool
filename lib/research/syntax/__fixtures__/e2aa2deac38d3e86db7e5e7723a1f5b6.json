@@ -1,0 +1,221 @@
+{
+  "prose": " Entry: enter when close is above sma_20 and rsi_14 is between 45 and 65.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 73,
+        "text": " Entry: enter when close is above sma_20 and rsi_14 is between 45 and 65."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Entry",
+        "lemma": "Entry",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 1,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 6,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 8,
+        "end": 13,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 5,
+        "start": 14,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 6,
+        "start": 19,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ccomp",
+        "headIndex": 3,
+        "start": 25,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 6,
+        "start": 28,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "sma_20",
+        "lemma": "sma_20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 34,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 8,
+        "start": 41,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "rsi_14",
+        "lemma": "rsi_14",
+        "pos": "PROPN",
+        "tag": "NNPS",
+        "dep": "nsubj",
+        "headIndex": 11,
+        "start": 45,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "conj",
+        "headIndex": 3,
+        "start": 52,
+        "end": 54,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "quantmod",
+        "headIndex": 13,
+        "start": 55,
+        "end": 62,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "45",
+        "lemma": "45",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "attr",
+        "headIndex": 11,
+        "start": 63,
+        "end": 65,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 13,
+        "start": 66,
+        "end": 69,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "65",
+        "lemma": "65",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 13,
+        "start": 70,
+        "end": 72,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 11,
+        "start": 72,
+        "end": 73,
+        "isSentStart": false
+      }
+    ]
+  }
+}

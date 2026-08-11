@@ -1,0 +1,77 @@
+{
+  "prose": "relative volume >= 1",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 20,
+        "text": "relative volume >= 1"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "relative",
+        "lemma": "relative",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 8,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "volume",
+        "lemma": "volume",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 9,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ">",
+        "lemma": ">",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "appos",
+        "headIndex": 1,
+        "start": 16,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "=",
+        "lemma": "=",
+        "pos": "SYM",
+        "tag": "SYM",
+        "dep": "appos",
+        "headIndex": 1,
+        "start": 17,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "1",
+        "lemma": "1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 1,
+        "start": 19,
+        "end": 20,
+        "isSentStart": false
+      }
+    ]
+  }
+}

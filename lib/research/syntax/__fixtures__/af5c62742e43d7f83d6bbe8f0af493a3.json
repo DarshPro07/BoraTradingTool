@@ -1,0 +1,209 @@
+{
+  "prose": "if a close drops more than 2x atr_14 (~133.7 points) from the entry price",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 73,
+        "text": "if a close drops more than 2x atr_14 (~133.7 points) from the entry price"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "if",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 3,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 2,
+        "start": 3,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 5,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "drops",
+        "lemma": "drop",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "more",
+        "lemma": "more",
+        "pos": "ADJ",
+        "tag": "JJR",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 17,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "than",
+        "lemma": "than",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 22,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "2x",
+        "lemma": "2x",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "compound",
+        "headIndex": 7,
+        "start": 27,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "atr_14",
+        "lemma": "atr_14",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 30,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "(",
+        "lemma": "(",
+        "pos": "PUNCT",
+        "tag": "-LRB-",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 37,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "~133.7",
+        "lemma": "~133.7",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 10,
+        "start": 38,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "points",
+        "lemma": "point",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "appos",
+        "headIndex": 7,
+        "start": 45,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ")",
+        "lemma": ")",
+        "pos": "PUNCT",
+        "tag": "-RRB-",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 51,
+        "end": 52,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "from",
+        "lemma": "from",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 53,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 15,
+        "start": 58,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 15,
+        "start": 62,
+        "end": 67,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 12,
+        "start": 68,
+        "end": 73,
+        "isSentStart": false
+      }
+    ]
+  }
+}

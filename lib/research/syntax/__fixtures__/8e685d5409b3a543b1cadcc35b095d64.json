@@ -1,0 +1,29 @@
+{
+  "prose": "Hold",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 4,
+        "text": "Hold"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Hold",
+        "lemma": "hold",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      }
+    ]
+  }
+}

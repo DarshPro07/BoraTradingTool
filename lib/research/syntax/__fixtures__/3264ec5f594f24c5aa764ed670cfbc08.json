@@ -1,0 +1,41 @@
+{
+  "prose": "Our gauntlet",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 12,
+        "text": "Our gauntlet"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Our",
+        "lemma": "our",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "gauntlet",
+        "lemma": "gauntlet",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 12,
+        "isSentStart": false
+      }
+    ]
+  }
+}

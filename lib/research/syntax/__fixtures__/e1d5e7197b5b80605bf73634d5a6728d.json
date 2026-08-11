@@ -1,0 +1,65 @@
+{
+  "prose": "close is above SMA20",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 20,
+        "text": "close is above SMA20"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "acomp",
+        "headIndex": 1,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 6,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 9,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 15,
+        "end": 20,
+        "isSentStart": false
+      }
+    ]
+  }
+}

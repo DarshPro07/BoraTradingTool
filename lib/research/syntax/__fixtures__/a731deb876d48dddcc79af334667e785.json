@@ -1,0 +1,233 @@
+{
+  "prose": "instruments where two independently-prompted models reach opposing stances resolve worse than instruments where they agree.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 123,
+        "text": "instruments where two independently-prompted models reach opposing stances resolve worse than instruments where they agree."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "instruments",
+        "lemma": "instrument",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 10,
+        "start": 0,
+        "end": 11,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "where",
+        "lemma": "where",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 7,
+        "start": 12,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "two",
+        "lemma": "two",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 6,
+        "start": 18,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "independently",
+        "lemma": "independently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 5,
+        "start": 22,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 35,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "prompted",
+        "lemma": "prompt",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "amod",
+        "headIndex": 6,
+        "start": 36,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "models",
+        "lemma": "model",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 7,
+        "start": 45,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "reach",
+        "lemma": "reach",
+        "pos": "VERB",
+        "tag": "VBP",
+        "dep": "relcl",
+        "headIndex": 0,
+        "start": 52,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "opposing",
+        "lemma": "oppose",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 9,
+        "start": 58,
+        "end": 66,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "stances",
+        "lemma": "stance",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "dobj",
+        "headIndex": 7,
+        "start": 67,
+        "end": 74,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "resolve",
+        "lemma": "resolve",
+        "pos": "VERB",
+        "tag": "VBP",
+        "dep": "ROOT",
+        "headIndex": 10,
+        "start": 75,
+        "end": 82,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "worse",
+        "lemma": "bad",
+        "pos": "ADJ",
+        "tag": "JJR",
+        "dep": "dobj",
+        "headIndex": 10,
+        "start": 83,
+        "end": 88,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "than",
+        "lemma": "than",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 11,
+        "start": 89,
+        "end": 93,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "instruments",
+        "lemma": "instrument",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 12,
+        "start": 94,
+        "end": 105,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "where",
+        "lemma": "where",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 16,
+        "start": 106,
+        "end": 111,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "they",
+        "lemma": "they",
+        "pos": "PRON",
+        "tag": "PRP",
+        "dep": "nsubj",
+        "headIndex": 16,
+        "start": 112,
+        "end": 116,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "agree",
+        "lemma": "agree",
+        "pos": "VERB",
+        "tag": "VBP",
+        "dep": "relcl",
+        "headIndex": 13,
+        "start": 117,
+        "end": 122,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 10,
+        "start": 122,
+        "end": 123,
+        "isSentStart": false
+      }
+    ]
+  }
+}

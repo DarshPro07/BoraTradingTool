@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { compileResearchProse, type CompiledStrategy } from "./semantic-compiler";
+import { compileResearchProse as compileWithParse, type CompiledStrategy } from "./semantic-compiler";
+
+import { parseFixtures } from "./syntax/fixtures";
+
+// The parse is DATA, not a service call: `compileResearchProse` stays synchronous and
+// `hypothesisTriage` stays pure. Fixtures are real output from the pinned `en_core_web_sm`,
+// recorded once (see lib/research/syntax/fixtures.ts).
+const compileResearchProse = (prose: string) => compileWithParse(prose, parseFixtures(prose));
 
 /**
  * Metamorphic semantic tests.

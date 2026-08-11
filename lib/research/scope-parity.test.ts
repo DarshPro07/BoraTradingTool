@@ -4,8 +4,17 @@ import { getDb, schema } from "@/lib/db";
 import { compileStrategy, StrategyDslSchema } from "@/lib/strategy/dsl";
 import { recordHypothesis } from "@/lib/knowledge/repository";
 import { authorFromHypotheses } from "./hypothesis-author";
-import { compileResearchProse } from "./semantic-compiler";
-import { hypothesisTriage } from "./hypothesis-triage";
+import { compileResearchProse as compileWithParse } from "./semantic-compiler";
+import { hypothesisTriage as triageWithParse, triageText } from "./hypothesis-triage";
+
+import { parseFixtures, fixtureResolver } from "./syntax/fixtures";
+
+// The parse is DATA, not a service call: `compileResearchProse` stays synchronous and
+// `hypothesisTriage` stays pure. Fixtures are real output from the pinned `en_core_web_sm`,
+// recorded once (see lib/research/syntax/fixtures.ts).
+const compileResearchProse = (prose: string) => compileWithParse(prose, parseFixtures(prose));
+const hypothesisTriage = (input: { title: string; statement: string; rationale?: string | null }) =>
+  triageWithParse({ ...input, parses: parseFixtures(triageText(input)) });
 
 useTemporaryDatabase();
 
@@ -47,14 +56,14 @@ describe("scope parity across every layer", () => {
     expect(triage.compiled?.scopes.EXIT).toEqual(compileResearchProse(PROSE).scopes.EXIT);
   });
 
-  it("the authored Strategy IR keeps the research's own exit rule, and the backtest compiles it", () => {
+  it("the authored Strategy IR keeps the research's own exit rule, and the backtest compiles it", async () => {
     recordHypothesis({
       title: "Scope parity across layers",
       statement: PROSE,
       market: "NSE",
       createdBy: "test",
     });
-    authorFromHypotheses("test");
+    await authorFromHypotheses("test", new Date(), fixtureResolver());
 
     const spec = getDb().select().from(schema.strategySpecs).all().at(-1);
     expect(spec, "a spec should have been authored").toBeDefined();

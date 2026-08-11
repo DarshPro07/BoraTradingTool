@@ -1,0 +1,137 @@
+{
+  "prose": "20-day SMA above 50-day SMA.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 28,
+        "text": "20-day SMA above 50-day SMA."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 2,
+        "end": 3,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 3,
+        "start": 3,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 7,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 7,
+        "start": 17,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 19,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 8,
+        "start": 20,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 24,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 3,
+        "start": 27,
+        "end": 28,
+        "isSentStart": false
+      }
+    ]
+  }
+}

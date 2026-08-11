@@ -1,0 +1,89 @@
+{
+  "prose": "we hold at most 4 positions",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 27,
+        "text": "we hold at most 4 positions"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "we",
+        "lemma": "we",
+        "pos": "PRON",
+        "tag": "PRP",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "hold",
+        "lemma": "hold",
+        "pos": "VERB",
+        "tag": "VBP",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 3,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "at",
+        "lemma": "at",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 8,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "most",
+        "lemma": "most",
+        "pos": "ADJ",
+        "tag": "JJS",
+        "dep": "advmod",
+        "headIndex": 4,
+        "start": 11,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "4",
+        "lemma": "4",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 5,
+        "start": 16,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "positions",
+        "lemma": "position",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "dobj",
+        "headIndex": 1,
+        "start": 18,
+        "end": 27,
+        "isSentStart": false
+      }
+    ]
+  }
+}

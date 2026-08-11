@@ -38,6 +38,8 @@ export interface Attachment {
   operand: ParsedToken | null;
   /** "between 50 and 70" carries 70 here; coordinated objects generally. */
   operandConjuncts: ParsedToken[];
+  /** "3 percent" — the quantity modifying a unit operand. Null when the operand is itself the value. */
+  operandQuantifier: ParsedToken | null;
   /** How it was derived, in words a reader can disagree with. Recorded as provenance. */
   route: string;
 }
@@ -73,13 +75,47 @@ function childrenOf(tokens: readonly ParsedToken[], token: ParsedToken): ParsedT
 function operandOf(
   tokens: readonly ParsedToken[],
   operator: ParsedToken,
-): { operand: ParsedToken | null; conjuncts: ParsedToken[] } {
-  const direct = childrenOf(tokens, operator).find((child) => child.dep === "pobj");
+): { operand: ParsedToken | null; conjuncts: ParsedToken[]; quantifier: ParsedToken | null } {
+  // A symbolic operator takes its quantity as a `nummod` CHILD rather than a prepositional object:
+  // "relative volume >= 2" hangs the 2 off the `=`.
+  const direct =
+    childrenOf(tokens, operator).find((child) => child.dep === "pobj") ??
+    childrenOf(tokens, operator).find((child) => child.dep === "nummod" || child.pos === "NUM");
   // In the QUANTIFIER structure the operator hangs off its own object, so the object is the head.
   const head = headOf(tokens, operator);
+
+  /**
+   * SYMBOLIC comparators have no prepositional object.
+   *
+   * Researchers write "gap >= 3%" and "relative volume >= 1" constantly, and spaCy parses `>=` as
+   * loose SYM/ADP tokens hanging off the SUBJECT — so the quantity is a sibling of the operator
+   * under the same head, not a child of it. Reading only `pobj` reported NO_OPERAND and threw away
+   * both thresholds of the one hypothesis in this repository that is actually expressible.
+   *
+   * Siblings are ranked by relation, never by distance: a bare number first, then an apposed
+   * nominal (the "%" in "3%") whose own `nummod` carries the value.
+   */
+  const sibling = (() => {
+    if (direct || head === null) return null;
+    const siblings = childrenOf(tokens, head).filter(
+      (child) =>
+        child.index !== operator.index &&
+        child.pos !== "PUNCT" &&
+        child.pos !== "SYM" &&
+        child.pos !== "ADP" &&
+        // `amod` is part of the subject's own name ("RELATIVE volume"), never its operand.
+        child.dep !== "amod",
+    );
+    return (
+      siblings.find((child) => child.pos === "NUM") ??
+      siblings.find((child) => child.dep === "appos" || child.dep === "attr" || child.dep === "dobj") ??
+      null
+    );
+  })();
+
   const operand =
-    direct ?? (head !== null && CLIMBABLE_POS.has(head.pos) ? head : null);
-  if (!operand) return { operand: null, conjuncts: [] };
+    direct ?? (head !== null && CLIMBABLE_POS.has(head.pos) ? head : null) ?? sibling;
+  if (!operand) return { operand: null, conjuncts: [], quantifier: null };
 
   // A coordinated OPERATOR is not a bound. In "close is above SMA20 and below SMA50" the token
   // `below` is a `conj` of `SMA20`, so an unfiltered sweep reports it as the upper bound of the
@@ -92,7 +128,14 @@ function operandOf(
       candidate.pos !== "ADP" &&
       candidate.pos !== "VERB",
   );
-  return { operand, conjuncts };
+
+  // "above 3 percent" — the object of the preposition is the UNIT (`percent`), and the quantity is
+  // its `nummod` child. Reading the object alone reports "percent is not a number" and throws away
+  // a perfectly explicit threshold.
+  const quantifier =
+    tokens.find((candidate) => candidate.headIndex === operand.index && candidate.dep === "nummod") ?? null;
+
+  return { operand, conjuncts, quantifier };
 }
 
 /**
@@ -121,7 +164,7 @@ export function resolveAttachment(
     };
   }
 
-  const { operand, conjuncts } = operandOf(tokens, operator);
+  const { operand, conjuncts, quantifier } = operandOf(tokens, operator);
 
   // (3) COORDINATED — inherit from the operator this one is conjoined to.
   if (operator.dep === "conj") {
@@ -142,6 +185,7 @@ export function resolveAttachment(
               subject: inherited.attachment.subject,
               operand,
               operandConjuncts: conjuncts,
+              operandQuantifier: quantifier,
               route: `coordinated with "${anchor.text}" (${inherited.attachment.route})`,
             },
           };
@@ -188,6 +232,7 @@ export function resolveAttachment(
           subject: chosen,
           operand,
           operandConjuncts: conjuncts,
+          operandQuantifier: quantifier,
           route: [`subject "${chosen.text}" (${chosen.dep}) of "${node.text}"`, ...route].join(", "),
         },
       };
@@ -201,16 +246,35 @@ export function resolveAttachment(
     };
   }
 
-  if (isFeature(node)) {
+  // A feature can arrive as a MODIFIER of the head noun rather than as the head itself: spaCy
+  // reads "rsi_14 crosses" as a single nominal, tagging `crosses` NOUN with `rsi_14` as its
+  // `compound` child. The comparison is still about rsi_14.
+  const nominal =
+    (isFeature(node)
+      ? node
+      : childrenOf(tokens, node).find(
+          (child) => ["compound", "nmod", "amod", "poss"].includes(child.dep) && isFeature(child),
+        )) ??
+    // "Screen FOR relative volume >= 2" — the feature is the object of the head's preposition. The
+    // operator hangs off the sentence root, so without this route a perfectly explicit screen
+    // refuses.
+    childrenOf(tokens, node)
+      .filter((child) => child.dep === "prep")
+      .flatMap((preposition) => childrenOf(tokens, preposition))
+      .find((child) => child.dep === "pobj" && isFeature(child)) ??
+    null;
+
+  if (nominal) {
     return {
       ok: true,
       attachment: {
         operatorIndex,
         operatorText: operator.text,
-        subject: node,
+        subject: nominal,
         operand,
         operandConjuncts: conjuncts,
-        route: [`head "${node.text}" (${node.dep})`, ...route].join(", "),
+        operandQuantifier: quantifier,
+        route: [`${nominal === node ? "head" : "modifier of"} "${node.text}" (${node.dep})`, ...route].join(", "),
       },
     };
   }

@@ -1,0 +1,113 @@
+{
+  "prose": " Momentum has been improving all week.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 38,
+        "text": " Momentum has been improving all week."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Momentum",
+        "lemma": "Momentum",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 1,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "has",
+        "lemma": "have",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 4,
+        "start": 10,
+        "end": 13,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "been",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBN",
+        "dep": "aux",
+        "headIndex": 4,
+        "start": 14,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "improving",
+        "lemma": "improve",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 19,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "all",
+        "lemma": "all",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 6,
+        "start": 29,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "week",
+        "lemma": "week",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 4,
+        "start": 33,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 37,
+        "end": 38,
+        "isSentStart": false
+      }
+    ]
+  }
+}

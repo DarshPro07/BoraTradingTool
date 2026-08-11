@@ -1,0 +1,53 @@
+{
+  "prose": "Breadth has improved",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 20,
+        "text": "Breadth has improved"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Breadth",
+        "lemma": "Breadth",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 7,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "has",
+        "lemma": "have",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 8,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "improved",
+        "lemma": "improve",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 12,
+        "end": 20,
+        "isSentStart": false
+      }
+    ]
+  }
+}

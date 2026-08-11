@@ -1,0 +1,197 @@
+{
+  "prose": "Enter when the 50-day SMA is rising and RSI-14 is above 55.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 59,
+        "text": "Enter when the 50-day SMA is rising and RSI-14 is above 55."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 8,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 6,
+        "start": 11,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 5,
+        "start": 15,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 17,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 6,
+        "start": 18,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 8,
+        "start": 22,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 8,
+        "start": 26,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "rising",
+        "lemma": "rise",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 29,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 8,
+        "start": 36,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 11,
+        "start": 40,
+        "end": 46,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "conj",
+        "headIndex": 0,
+        "start": 47,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 11,
+        "start": 50,
+        "end": 55,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 12,
+        "start": 56,
+        "end": 58,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 11,
+        "start": 58,
+        "end": 59,
+        "isSentStart": false
+      }
+    ]
+  }
+}

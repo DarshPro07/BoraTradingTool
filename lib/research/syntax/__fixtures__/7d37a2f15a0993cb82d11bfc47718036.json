@@ -1,0 +1,137 @@
+{
+  "prose": "the close is above the 200-day SMA.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 35,
+        "text": "the close is above the 200-day SMA."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "close",
+        "lemma": "close",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 4,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 10,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 13,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 8,
+        "start": 19,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "200",
+        "lemma": "200",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 7,
+        "start": 23,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 26,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 8,
+        "start": 27,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 31,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      }
+    ]
+  }
+}

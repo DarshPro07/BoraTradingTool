@@ -1,0 +1,65 @@
+{
+  "prose": "RSI-14 currently reads 64.1",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 27,
+        "text": "RSI-14 currently reads 64.1"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI-14",
+        "lemma": "rsi-14",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 7,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "reads",
+        "lemma": "read",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 17,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "dobj",
+        "headIndex": 2,
+        "start": 23,
+        "end": 27,
+        "isSentStart": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,293 @@
+{
+  "prose": "RSI-14 sits in the 50-70 range (currently 64.1, price +1.6% above SMA20 and +2.76% above SMA50)",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 95,
+        "text": "RSI-14 sits in the 50-70 range (currently 64.1, price +1.6% above SMA20 and +2.76% above SMA50)"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "sits",
+        "lemma": "sit",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 7,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "in",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 12,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 7,
+        "start": 15,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 6,
+        "start": 19,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "-",
+        "lemma": "-",
+        "pos": "SYM",
+        "tag": "SYM",
+        "dep": "punct",
+        "headIndex": 6,
+        "start": 21,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 7,
+        "start": 22,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "range",
+        "lemma": "range",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 25,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "(",
+        "lemma": "(",
+        "pos": "PUNCT",
+        "tag": "-LRB-",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 31,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 10,
+        "start": 32,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "appos",
+        "headIndex": 7,
+        "start": 42,
+        "end": 46,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ",",
+        "lemma": ",",
+        "pos": "PUNCT",
+        "tag": ",",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 46,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 13,
+        "start": 48,
+        "end": 53,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "+1.6",
+        "lemma": "+1.6",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "compound",
+        "headIndex": 14,
+        "start": 54,
+        "end": 58,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "%",
+        "lemma": "%",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 15,
+        "start": 58,
+        "end": 59,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 7,
+        "start": 60,
+        "end": 65,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 15,
+        "start": 66,
+        "end": 71,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 7,
+        "start": 72,
+        "end": 75,
+        "isSentStart": false
+      },
+      {
+        "index": 18,
+        "text": "+2.76",
+        "lemma": "+2.76",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "compound",
+        "headIndex": 19,
+        "start": 76,
+        "end": 81,
+        "isSentStart": false
+      },
+      {
+        "index": 19,
+        "text": "%",
+        "lemma": "%",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 7,
+        "start": 81,
+        "end": 82,
+        "isSentStart": false
+      },
+      {
+        "index": 20,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 19,
+        "start": 83,
+        "end": 88,
+        "isSentStart": false
+      },
+      {
+        "index": 21,
+        "text": "SMA50",
+        "lemma": "SMA50",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 20,
+        "start": 89,
+        "end": 94,
+        "isSentStart": false
+      },
+      {
+        "index": 22,
+        "text": ")",
+        "lemma": ")",
+        "pos": "PUNCT",
+        "tag": "-RRB-",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 94,
+        "end": 95,
+        "isSentStart": false
+      }
+    ]
+  }
+}

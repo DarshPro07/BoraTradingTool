@@ -1,0 +1,65 @@
+{
+  "prose": " Consider entry only",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 20,
+        "text": " Consider entry only"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Consider",
+        "lemma": "consider",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 1,
+        "start": 10,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "only",
+        "lemma": "only",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 16,
+        "end": 20,
+        "isSentStart": false
+      }
+    ]
+  }
+}

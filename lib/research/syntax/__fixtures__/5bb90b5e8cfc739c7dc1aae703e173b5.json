@@ -1,0 +1,137 @@
+{
+  "prose": "IN:XNSE:NIFTYBEES — LONG SWING.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 33,
+        "text": "IN:XNSE:NIFTYBEES â€” LONG SWING."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "IN",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 2,
+        "end": 3,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "XNSE",
+        "lemma": "XNSE",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 0,
+        "start": 3,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 7,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "NIFTYBEES",
+        "lemma": "NIFTYBEES",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "compound",
+        "headIndex": 5,
+        "start": 8,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "â€",
+        "lemma": "â€",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nmod",
+        "headIndex": 8,
+        "start": 18,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "”",
+        "lemma": "\"",
+        "pos": "PUNCT",
+        "tag": "''",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 20,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "LONG",
+        "lemma": "long",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 8,
+        "start": 22,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "SWING",
+        "lemma": "swing",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "appos",
+        "headIndex": 2,
+        "start": 27,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 32,
+        "end": 33,
+        "isSentStart": false
+      }
+    ]
+  }
+}

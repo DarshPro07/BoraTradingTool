@@ -1,0 +1,65 @@
+{
+  "prose": "may carry information.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 22,
+        "text": "may carry information."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "may",
+        "lemma": "may",
+        "pos": "AUX",
+        "tag": "MD",
+        "dep": "aux",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "carry",
+        "lemma": "carry",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "information",
+        "lemma": "information",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 1,
+        "start": 10,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 21,
+        "end": 22,
+        "isSentStart": false
+      }
+    ]
+  }
+}

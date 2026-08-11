@@ -1,0 +1,101 @@
+{
+  "prose": "trend-following stop is preferred.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 34,
+        "text": "trend-following stop is preferred."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "trend",
+        "lemma": "trend",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 5,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "following",
+        "lemma": "follow",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 3,
+        "start": 6,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "stop",
+        "lemma": "stop",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 16,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 21,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "preferred",
+        "lemma": "prefer",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "acomp",
+        "headIndex": 4,
+        "start": 24,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 33,
+        "end": 34,
+        "isSentStart": false
+      }
+    ]
+  }
+}

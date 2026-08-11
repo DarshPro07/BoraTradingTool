@@ -1,0 +1,77 @@
+{
+  "prose": "exiting after five sessions.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 28,
+        "text": "exiting after five sessions."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "exiting",
+        "lemma": "exit",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 7,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "after",
+        "lemma": "after",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 0,
+        "start": 8,
+        "end": 13,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "five",
+        "lemma": "five",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 3,
+        "start": 14,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "sessions",
+        "lemma": "session",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 1,
+        "start": 19,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 27,
+        "end": 28,
+        "isSentStart": false
+      }
+    ]
+  }
+}

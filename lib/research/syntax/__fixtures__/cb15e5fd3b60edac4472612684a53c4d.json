@@ -1,0 +1,269 @@
+{
+  "prose": "Enter while RSI-14 is between 55 and 70 (currently 64.1, +2.3 today) and close is above SMA20.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 94,
+        "text": "Enter while RSI-14 is between 55 and 70 (currently 64.1, +2.3 today) and close is above SMA20."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "while",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 3,
+        "start": 6,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 12,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 19,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 22,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 30,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 5,
+        "start": 33,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 5,
+        "start": 37,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "(",
+        "lemma": "(",
+        "pos": "PUNCT",
+        "tag": "-LRB-",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 40,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 10,
+        "start": 41,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "npadvmod",
+        "headIndex": 0,
+        "start": 51,
+        "end": 55,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ",",
+        "lemma": ",",
+        "pos": "PUNCT",
+        "tag": ",",
+        "dep": "punct",
+        "headIndex": 10,
+        "start": 55,
+        "end": 56,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "+2.3",
+        "lemma": "+2.3",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "advmod",
+        "headIndex": 0,
+        "start": 57,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "today",
+        "lemma": "today",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 0,
+        "start": 62,
+        "end": 67,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": ")",
+        "lemma": ")",
+        "pos": "PUNCT",
+        "tag": "-RRB-",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 67,
+        "end": 68,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 0,
+        "start": 69,
+        "end": 72,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "nsubj",
+        "headIndex": 17,
+        "start": 73,
+        "end": 78,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "conj",
+        "headIndex": 0,
+        "start": 79,
+        "end": 81,
+        "isSentStart": false
+      },
+      {
+        "index": 18,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 17,
+        "start": 82,
+        "end": 87,
+        "isSentStart": false
+      },
+      {
+        "index": 19,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 18,
+        "start": 88,
+        "end": 93,
+        "isSentStart": false
+      },
+      {
+        "index": 20,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 17,
+        "start": 93,
+        "end": 94,
+        "isSentStart": false
+      }
+    ]
+  }
+}

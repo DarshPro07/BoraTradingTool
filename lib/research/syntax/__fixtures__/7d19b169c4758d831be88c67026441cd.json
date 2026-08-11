@@ -1,0 +1,161 @@
+{
+  "prose": " Exit: Close the position        if close falls below sma_50",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 60,
+        "text": " Exit: Close the position        if close falls below sma_50"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Exit",
+        "lemma": "exit",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 5,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 5,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "Close",
+        "lemma": "close",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "acl",
+        "headIndex": 1,
+        "start": 7,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 5,
+        "start": 13,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "position",
+        "lemma": "position",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 3,
+        "start": 17,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "       ",
+        "lemma": "       ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 5,
+        "start": 26,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "if",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 9,
+        "start": 33,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 9,
+        "start": 36,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "falls",
+        "lemma": "fall",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "advcl",
+        "headIndex": 3,
+        "start": 42,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "below",
+        "lemma": "below",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 9,
+        "start": 48,
+        "end": 53,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "sma_50",
+        "lemma": "sma_50",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 10,
+        "start": 54,
+        "end": 60,
+        "isSentStart": false
+      }
+    ]
+  }
+}

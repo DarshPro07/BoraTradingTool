@@ -1,0 +1,125 @@
+{
+  "prose": "also exit on close below sma_20 if a tighter",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 44,
+        "text": "also exit on close below sma_20 if a tighter"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "also",
+        "lemma": "also",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "exit",
+        "lemma": "exit",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 5,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "on",
+        "lemma": "on",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 10,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "amod",
+        "headIndex": 2,
+        "start": 13,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "below",
+        "lemma": "below",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 19,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "sma_20",
+        "lemma": "sma_20",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 25,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "if",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 8,
+        "start": 32,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 8,
+        "start": 35,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "tighter",
+        "lemma": "tight",
+        "pos": "ADJ",
+        "tag": "JJR",
+        "dep": "advcl",
+        "headIndex": 1,
+        "start": 37,
+        "end": 44,
+        "isSentStart": false
+      }
+    ]
+  }
+}

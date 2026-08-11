@@ -1,0 +1,125 @@
+{
+  "prose": "RSI-14 is in the 50-70 momentum band",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 36,
+        "text": "RSI-14 is in the 50-70 momentum band"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI-14",
+        "lemma": "rsi-14",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 7,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "in",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 10,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 8,
+        "start": 13,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 6,
+        "start": 17,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 6,
+        "start": 19,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 20,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "momentum",
+        "lemma": "momentum",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 8,
+        "start": 23,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "band",
+        "lemma": "band",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 32,
+        "end": 36,
+        "isSentStart": false
+      }
+    ]
+  }
+}

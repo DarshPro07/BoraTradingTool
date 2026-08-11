@@ -1,0 +1,185 @@
+{
+  "prose": "Gap-and-RVOL screen transferred to NSE liquid mid-caps.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 55,
+        "text": "Gap-and-RVOL screen transferred to NSE liquid mid-caps."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Gap",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 5,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 3,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 0,
+        "start": 4,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 7,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "RVOL",
+        "lemma": "RVOL",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "conj",
+        "headIndex": 0,
+        "start": 8,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "screen",
+        "lemma": "screen",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 5,
+        "start": 13,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "transferred",
+        "lemma": "transfer",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "acl",
+        "headIndex": 5,
+        "start": 20,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "to",
+        "lemma": "to",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 6,
+        "start": 32,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "NSE",
+        "lemma": "NSE",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "compound",
+        "headIndex": 9,
+        "start": 35,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "liquid",
+        "lemma": "liquid",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 39,
+        "end": 45,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "mid",
+        "lemma": "mid",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 46,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "-",
+        "lemma": "-",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 49,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "caps",
+        "lemma": "cap",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 50,
+        "end": 54,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 54,
+        "end": 55,
+        "isSentStart": false
+      }
+    ]
+  }
+}

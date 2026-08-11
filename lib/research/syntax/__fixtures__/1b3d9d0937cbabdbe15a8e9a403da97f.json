@@ -1,0 +1,137 @@
+{
+  "prose": " The 50-day SMA is at 1027.7.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 29,
+        "text": " The 50-day SMA is at 1027.7."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "The",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 5,
+        "start": 1,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 4,
+        "start": 5,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 7,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 5,
+        "start": 8,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 6,
+        "start": 12,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 6,
+        "start": 16,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "at",
+        "lemma": "at",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 6,
+        "start": 19,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "1027.7",
+        "lemma": "1027.7",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 7,
+        "start": 22,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 6,
+        "start": 28,
+        "end": 29,
+        "isSentStart": false
+      }
+    ]
+  }
+}

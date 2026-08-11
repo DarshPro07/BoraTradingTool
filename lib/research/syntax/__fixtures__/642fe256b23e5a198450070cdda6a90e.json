@@ -1,0 +1,161 @@
+{
+  "prose": " Entry: Open a long position when close remains above sma_20",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 60,
+        "text": " Entry: Open a long position when close remains above sma_20"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 6,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "Open",
+        "lemma": "open",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "acl",
+        "headIndex": 1,
+        "start": 8,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 6,
+        "start": 13,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "long",
+        "lemma": "long",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 6,
+        "start": 15,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "position",
+        "lemma": "position",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 3,
+        "start": 20,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 9,
+        "start": 29,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 9,
+        "start": 34,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "remains",
+        "lemma": "remain",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 3,
+        "start": 40,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 9,
+        "start": 48,
+        "end": 53,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "sma_20",
+        "lemma": "sma_20",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 10,
+        "start": 54,
+        "end": 60,
+        "isSentStart": false
+      }
+    ]
+  }
+}

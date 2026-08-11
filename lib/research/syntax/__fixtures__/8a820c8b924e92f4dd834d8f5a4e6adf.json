@@ -1,0 +1,101 @@
+{
+  "prose": "Enter while close is above SMA20.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 33,
+        "text": "Enter while close is above SMA20."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "while",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 3,
+        "start": 6,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 12,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 18,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 21,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 27,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 32,
+        "end": 33,
+        "isSentStart": false
+      }
+    ]
+  }
+}

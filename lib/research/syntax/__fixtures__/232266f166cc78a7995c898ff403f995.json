@@ -1,0 +1,53 @@
+{
+  "prose": "signalling momentum exhaustion",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 30,
+        "text": "signalling momentum exhaustion"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "signalling",
+        "lemma": "signal",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 10,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "momentum",
+        "lemma": "momentum",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 2,
+        "start": 11,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "exhaustion",
+        "lemma": "exhaustion",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 0,
+        "start": 20,
+        "end": 30,
+        "isSentStart": false
+      }
+    ]
+  }
+}

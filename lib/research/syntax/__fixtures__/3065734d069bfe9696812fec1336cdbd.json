@@ -1,0 +1,209 @@
+{
+  "prose": "RSI-14 is currently 64.1 and price sits 1.6% above its 20-day SMA.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 66,
+        "text": "RSI-14 is currently 64.1 and price sits 1.6% above its 20-day SMA."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI-14",
+        "lemma": "rsi-14",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 7,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 10,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "attr",
+        "headIndex": 1,
+        "start": 20,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 1,
+        "start": 25,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 6,
+        "start": 29,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "sits",
+        "lemma": "sit",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "conj",
+        "headIndex": 1,
+        "start": 35,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "1.6",
+        "lemma": "1.6",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 40,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "%",
+        "lemma": "%",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 9,
+        "start": 43,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 6,
+        "start": 45,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 14,
+        "start": 51,
+        "end": 54,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 13,
+        "start": 55,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 13,
+        "start": 57,
+        "end": 58,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 14,
+        "start": 58,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 9,
+        "start": 62,
+        "end": 65,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 6,
+        "start": 65,
+        "end": 66,
+        "isSentStart": false
+      }
+    ]
+  }
+}

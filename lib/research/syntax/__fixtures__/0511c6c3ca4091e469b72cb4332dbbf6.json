@@ -1,0 +1,137 @@
+{
+  "prose": " Open a long position when rsi_14 crosses above 70",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 50,
+        "text": " Open a long position when rsi_14 crosses above 70"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Open",
+        "lemma": "open",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 5,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 4,
+        "start": 6,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "long",
+        "lemma": "long",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 8,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "position",
+        "lemma": "position",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 1,
+        "start": 13,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 7,
+        "start": 22,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "rsi_14",
+        "lemma": "rsi_14",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "compound",
+        "headIndex": 7,
+        "start": 27,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "crosses",
+        "lemma": "cross",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "advcl",
+        "headIndex": 1,
+        "start": 34,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 7,
+        "start": 42,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 8,
+        "start": 48,
+        "end": 50,
+        "isSentStart": false
+      }
+    ]
+  }
+}

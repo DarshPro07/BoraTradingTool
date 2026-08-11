@@ -1,0 +1,281 @@
+{
+  "prose": "Enter when close is above both its 20-day and 50-day SMAs with RSI-14 between 50 and 70.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 88,
+        "text": "Enter when close is above both its 20-day and 50-day SMAs with RSI-14 between 50 and 70."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ccomp",
+        "headIndex": 0,
+        "start": 17,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 20,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "both",
+        "lemma": "both",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "det",
+        "headIndex": 14,
+        "start": 26,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 14,
+        "start": 31,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 9,
+        "start": 35,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 9,
+        "start": 37,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 14,
+        "start": 38,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 9,
+        "start": 42,
+        "end": 45,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 13,
+        "start": 46,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 13,
+        "start": 48,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 9,
+        "start": 49,
+        "end": 52,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "SMAs",
+        "lemma": "sma",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 53,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": "with",
+        "lemma": "with",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 58,
+        "end": 62,
+        "isSentStart": false
+      },
+      {
+        "index": 16,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 15,
+        "start": 63,
+        "end": 69,
+        "isSentStart": false
+      },
+      {
+        "index": 17,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "quantmod",
+        "headIndex": 18,
+        "start": 70,
+        "end": 77,
+        "isSentStart": false
+      },
+      {
+        "index": 18,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 16,
+        "start": 78,
+        "end": 80,
+        "isSentStart": false
+      },
+      {
+        "index": 19,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 18,
+        "start": 81,
+        "end": 84,
+        "isSentStart": false
+      },
+      {
+        "index": 20,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 18,
+        "start": 85,
+        "end": 87,
+        "isSentStart": false
+      },
+      {
+        "index": 21,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 87,
+        "end": 88,
+        "isSentStart": false
+      }
+    ]
+  }
+}

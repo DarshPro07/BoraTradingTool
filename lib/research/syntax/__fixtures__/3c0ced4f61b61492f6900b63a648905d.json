@@ -1,0 +1,149 @@
+{
+  "prose": "RSI-14 currently reads 64.1, comfortably above its recent range.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 64,
+        "text": "RSI-14 currently reads 64.1, comfortably above its recent range."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI-14",
+        "lemma": "rsi-14",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 7,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "reads",
+        "lemma": "read",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 17,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "dobj",
+        "headIndex": 2,
+        "start": 23,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ",",
+        "lemma": ",",
+        "pos": "PUNCT",
+        "tag": ",",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 27,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "comfortably",
+        "lemma": "comfortably",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 6,
+        "start": 29,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 41,
+        "end": 46,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 9,
+        "start": 47,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "recent",
+        "lemma": "recent",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 9,
+        "start": 51,
+        "end": 57,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "range",
+        "lemma": "range",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 6,
+        "start": 58,
+        "end": 63,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 63,
+        "end": 64,
+        "isSentStart": false
+      }
+    ]
+  }
+}

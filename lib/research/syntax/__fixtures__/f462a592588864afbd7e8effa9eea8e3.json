@@ -1,0 +1,161 @@
+{
+  "prose": "Breadth has improved and the 50-day SMA is rising.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 50,
+        "text": "Breadth has improved and the 50-day SMA is rising."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Breadth",
+        "lemma": "Breadth",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 7,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "has",
+        "lemma": "have",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 8,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "improved",
+        "lemma": "improve",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 12,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 2,
+        "start": 21,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 8,
+        "start": 25,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 7,
+        "start": 29,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 31,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 8,
+        "start": 32,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 10,
+        "start": 36,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 10,
+        "start": 40,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "rising",
+        "lemma": "rise",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "conj",
+        "headIndex": 2,
+        "start": 43,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 10,
+        "start": 49,
+        "end": 50,
+        "isSentStart": false
+      }
+    ]
+  }
+}

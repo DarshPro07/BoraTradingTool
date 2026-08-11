@@ -1,0 +1,89 @@
+{
+  "prose": "TCS is in an established uptrend ",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 32,
+        "text": "TCS is in an established uptrend"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "TCS",
+        "lemma": "TCS",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "in",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 7,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "an",
+        "lemma": "an",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 5,
+        "start": 10,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "established",
+        "lemma": "establish",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "amod",
+        "headIndex": 5,
+        "start": 13,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "uptrend",
+        "lemma": "uptrend",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 25,
+        "end": 32,
+        "isSentStart": false
+      }
+    ]
+  }
+}

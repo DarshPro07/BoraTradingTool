@@ -566,7 +566,7 @@ async function runCycleBody(
   // the expected output: of the three this system has formed, two are not expressible as strategies
   // at all. See `lib/research/hypothesis-triage.ts`.
   try {
-    const authored = authorFromHypotheses(workerId);
+    const authored = await authorFromHypotheses(workerId);
     if (authored.considered > 0) actions.push(`Hypotheses: ${authored.summary}`);
   } catch (caught) {
     skipped.push(

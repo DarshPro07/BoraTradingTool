@@ -1,0 +1,77 @@
+{
+  "prose": "gap >= 3%",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 9,
+        "text": "gap >= 3%"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "gap",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": ">",
+        "lemma": ">",
+        "pos": "SYM",
+        "tag": "$",
+        "dep": "dep",
+        "headIndex": 0,
+        "start": 4,
+        "end": 5,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "=",
+        "lemma": "=",
+        "pos": "SYM",
+        "tag": "SYM",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 5,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "3",
+        "lemma": "3",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 4,
+        "start": 7,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "%",
+        "lemma": "%",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "appos",
+        "headIndex": 0,
+        "start": 8,
+        "end": 9,
+        "isSentStart": false
+      }
+    ]
+  }
+}

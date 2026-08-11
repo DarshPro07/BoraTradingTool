@@ -1,0 +1,53 @@
+{
+  "prose": "12 instruments.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 15,
+        "text": "12 instruments."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "12",
+        "lemma": "12",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 2,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "instruments",
+        "lemma": "instrument",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 3,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 14,
+        "end": 15,
+        "isSentStart": false
+      }
+    ]
+  }
+}

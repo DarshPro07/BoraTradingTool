@@ -1,0 +1,185 @@
+{
+  "prose": "Enter when close is above SMA20 and RSI-14 is between 55 and 70.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 64,
+        "text": "Enter when close is above SMA20 and RSI-14 is between 55 and 70."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "csubj",
+        "headIndex": 8,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ccomp",
+        "headIndex": 0,
+        "start": 17,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 20,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 26,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 5,
+        "start": 32,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "conj",
+        "headIndex": 5,
+        "start": 36,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 8,
+        "start": 43,
+        "end": 45,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "between",
+        "lemma": "between",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 8,
+        "start": 46,
+        "end": 53,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "55",
+        "lemma": "55",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 9,
+        "start": 54,
+        "end": 56,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 10,
+        "start": 57,
+        "end": 60,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "70",
+        "lemma": "70",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "conj",
+        "headIndex": 10,
+        "start": 61,
+        "end": 63,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 63,
+        "end": 64,
+        "isSentStart": false
+      }
+    ]
+  }
+}

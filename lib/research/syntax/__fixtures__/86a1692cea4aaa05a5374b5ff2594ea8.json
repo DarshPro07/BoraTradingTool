@@ -1,0 +1,149 @@
+{
+  "prose": " Momentum strategies on Indian equities are interesting to study.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 65,
+        "text": " Momentum strategies on Indian equities are interesting to study."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Momentum",
+        "lemma": "Momentum",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "compound",
+        "headIndex": 2,
+        "start": 1,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "strategies",
+        "lemma": "strategy",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 6,
+        "start": 10,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "on",
+        "lemma": "on",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 21,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "Indian",
+        "lemma": "indian",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 5,
+        "start": 24,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "equities",
+        "lemma": "equity",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 31,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "are",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBP",
+        "dep": "ROOT",
+        "headIndex": 6,
+        "start": 40,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "interesting",
+        "lemma": "interesting",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 6,
+        "start": 44,
+        "end": 55,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 9,
+        "start": 56,
+        "end": 58,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "study",
+        "lemma": "study",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "xcomp",
+        "headIndex": 7,
+        "start": 59,
+        "end": 64,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 6,
+        "start": 64,
+        "end": 65,
+        "isSentStart": false
+      }
+    ]
+  }
+}

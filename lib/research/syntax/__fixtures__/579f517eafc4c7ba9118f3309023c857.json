@@ -1,0 +1,77 @@
+{
+  "prose": "with RSI-14 in a constructive",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 29,
+        "text": "with RSI-14 in a constructive"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "with",
+        "lemma": "with",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 0,
+        "start": 5,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "in",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 12,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 4,
+        "start": 15,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "constructive",
+        "lemma": "constructive",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 17,
+        "end": 29,
+        "isSentStart": false
+      }
+    ]
+  }
+}

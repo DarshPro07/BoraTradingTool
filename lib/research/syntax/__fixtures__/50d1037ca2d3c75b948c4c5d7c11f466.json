@@ -1,0 +1,77 @@
+{
+  "prose": "Our gauntlet and gaps.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 22,
+        "text": "Our gauntlet and gaps."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Our",
+        "lemma": "our",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "gauntlet",
+        "lemma": "gauntlet",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 1,
+        "start": 13,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "gaps",
+        "lemma": "gap",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "conj",
+        "headIndex": 1,
+        "start": 17,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 21,
+        "end": 22,
+        "isSentStart": false
+      }
+    ]
+  }
+}

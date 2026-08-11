@@ -1,0 +1,125 @@
+{
+  "prose": "Entry: enter when close is above SMA20.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 39,
+        "text": "Entry: enter when close is above SMA20."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": ":",
+        "lemma": ":",
+        "pos": "PUNCT",
+        "tag": ":",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 5,
+        "end": 6,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 7,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 4,
+        "start": 13,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 5,
+        "start": 18,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "ccomp",
+        "headIndex": 2,
+        "start": 24,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 5,
+        "start": 27,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 6,
+        "start": 33,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 38,
+        "end": 39,
+        "isSentStart": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "prose": "not extended.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 13,
+        "text": "not extended."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "not",
+        "lemma": "not",
+        "pos": "PART",
+        "tag": "RB",
+        "dep": "neg",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "extended",
+        "lemma": "extend",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 4,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 12,
+        "end": 13,
+        "isSentStart": false
+      }
+    ]
+  }
+}

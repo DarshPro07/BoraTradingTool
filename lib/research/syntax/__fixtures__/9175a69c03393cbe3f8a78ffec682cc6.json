@@ -1,0 +1,173 @@
+{
+  "prose": "does not record which branches of a composite entry condition actually fired.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 77,
+        "text": "does not record which branches of a composite entry condition actually fired."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "does",
+        "lemma": "do",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "not",
+        "lemma": "not",
+        "pos": "PART",
+        "tag": "RB",
+        "dep": "neg",
+        "headIndex": 2,
+        "start": 5,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "record",
+        "lemma": "record",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 9,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "which",
+        "lemma": "which",
+        "pos": "DET",
+        "tag": "WDT",
+        "dep": "det",
+        "headIndex": 4,
+        "start": 16,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "branches",
+        "lemma": "branch",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "nsubj",
+        "headIndex": 11,
+        "start": 22,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "of",
+        "lemma": "of",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 31,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 9,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "composite",
+        "lemma": "composite",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 9,
+        "start": 36,
+        "end": 45,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "entry",
+        "lemma": "entry",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 9,
+        "start": 46,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "condition",
+        "lemma": "condition",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 52,
+        "end": 61,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "actually",
+        "lemma": "actually",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 11,
+        "start": 62,
+        "end": 70,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "fired",
+        "lemma": "fire",
+        "pos": "VERB",
+        "tag": "VBD",
+        "dep": "ccomp",
+        "headIndex": 2,
+        "start": 71,
+        "end": 76,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 76,
+        "end": 77,
+        "isSentStart": false
+      }
+    ]
+  }
+}

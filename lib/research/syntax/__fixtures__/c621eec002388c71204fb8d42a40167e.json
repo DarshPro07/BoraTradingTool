@@ -1,0 +1,137 @@
+{
+  "prose": "Untriggered-signal blind spot in our own gauntlet.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 50,
+        "text": "Untriggered-signal blind spot in our own gauntlet."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Untriggered",
+        "lemma": "untriggere",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "amod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 11,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 11,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "signal",
+        "lemma": "signal",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 4,
+        "start": 12,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "blind",
+        "lemma": "blind",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 19,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "spot",
+        "lemma": "spot",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 25,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "in",
+        "lemma": "in",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 30,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "our",
+        "lemma": "our",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 8,
+        "start": 33,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "own",
+        "lemma": "own",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 8,
+        "start": 37,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "gauntlet",
+        "lemma": "gauntlet",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 41,
+        "end": 49,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 49,
+        "end": 50,
+        "isSentStart": false
+      }
+    ]
+  }
+}

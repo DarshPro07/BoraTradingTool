@@ -1,0 +1,149 @@
+{
+  "prose": "Enter when the close is above both the 20-day",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 45,
+        "text": "Enter when the close is above both the 20-day"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 4,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 11,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "close",
+        "lemma": "close",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 15,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 21,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 24,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "both",
+        "lemma": "both",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "preconj",
+        "headIndex": 5,
+        "start": 30,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 10,
+        "start": 35,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 10,
+        "start": 39,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 10,
+        "start": 41,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 0,
+        "start": 42,
+        "end": 45,
+        "isSentStart": false
+      }
+    ]
+  }
+}

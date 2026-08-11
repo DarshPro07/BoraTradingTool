@@ -1,0 +1,185 @@
+{
+  "prose": " The 50-day SMA is rising and breadth has improved recently.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 60,
+        "text": " The 50-day SMA is rising and breadth has improved recently."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "The",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 5,
+        "start": 1,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 4,
+        "start": 5,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 7,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 5,
+        "start": 8,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 7,
+        "start": 12,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 7,
+        "start": 16,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "rising",
+        "lemma": "rise",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "ROOT",
+        "headIndex": 7,
+        "start": 19,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 7,
+        "start": 26,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "breadth",
+        "lemma": "breadth",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 11,
+        "start": 30,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "has",
+        "lemma": "have",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "aux",
+        "headIndex": 11,
+        "start": 38,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "improved",
+        "lemma": "improve",
+        "pos": "VERB",
+        "tag": "VBN",
+        "dep": "conj",
+        "headIndex": 7,
+        "start": 42,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "recently",
+        "lemma": "recently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 11,
+        "start": 51,
+        "end": 59,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 11,
+        "start": 59,
+        "end": 60,
+        "isSentStart": false
+      }
+    ]
+  }
+}

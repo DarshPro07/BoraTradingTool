@@ -1,0 +1,89 @@
+{
+  "prose": "the close stays above SMA20.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 28,
+        "text": "the close stays above SMA20."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 2,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 2,
+        "start": 4,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "stays",
+        "lemma": "stay",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 10,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 16,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "SMA20",
+        "lemma": "SMA20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 22,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 27,
+        "end": 28,
+        "isSentStart": false
+      }
+    ]
+  }
+}

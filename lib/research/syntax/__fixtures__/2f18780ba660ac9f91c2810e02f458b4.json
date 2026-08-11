@@ -1,0 +1,161 @@
+{
+  "prose": " Screen for relative volume >= 2 on liquid names.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 49,
+        "text": " Screen for relative volume >= 2 on liquid names."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Screen",
+        "lemma": "Screen",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "for",
+        "lemma": "for",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 8,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "relative",
+        "lemma": "relative",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 12,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "volume",
+        "lemma": "volume",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 21,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": ">",
+        "lemma": ">",
+        "pos": "SYM",
+        "tag": "$",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 28,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "=",
+        "lemma": "=",
+        "pos": "SYM",
+        "tag": "SYM",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 29,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "2",
+        "lemma": "2",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 6,
+        "start": 31,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "on",
+        "lemma": "on",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 33,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "liquid",
+        "lemma": "liquid",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 10,
+        "start": 36,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "names",
+        "lemma": "name",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 8,
+        "start": 43,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 48,
+        "end": 49,
+        "isSentStart": false
+      }
+    ]
+  }
+}

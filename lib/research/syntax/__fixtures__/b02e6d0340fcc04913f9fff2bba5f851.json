@@ -1,0 +1,53 @@
+{
+  "prose": "remaining unverified.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 21,
+        "text": "remaining unverified."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "remaining",
+        "lemma": "remain",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 9,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "unverified",
+        "lemma": "unverified",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "acomp",
+        "headIndex": 0,
+        "start": 10,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 20,
+        "end": 21,
+        "isSentStart": false
+      }
+    ]
+  }
+}

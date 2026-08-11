@@ -1,0 +1,161 @@
+{
+  "prose": "Enter when price is above its 20-day moving average.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 52,
+        "text": "Enter when price is above its 20-day moving average."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 17,
+        "end": 19,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 20,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 10,
+        "start": 26,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 30,
+        "end": 32,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 32,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 10,
+        "start": 33,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "moving",
+        "lemma": "moving",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 10,
+        "start": 37,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "average",
+        "lemma": "average",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 44,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 51,
+        "end": 52,
+        "isSentStart": false
+      }
+    ]
+  }
+}

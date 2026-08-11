@@ -1,0 +1,77 @@
+{
+  "prose": "then rolls back below it",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 24,
+        "text": "then rolls back below it"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "then",
+        "lemma": "then",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "rolls",
+        "lemma": "roll",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 5,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "back",
+        "lemma": "back",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 11,
+        "end": 15,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "below",
+        "lemma": "below",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 16,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "it",
+        "lemma": "it",
+        "pos": "PRON",
+        "tag": "PRP",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 22,
+        "end": 24,
+        "isSentStart": false
+      }
+    ]
+  }
+}

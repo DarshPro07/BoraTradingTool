@@ -1,0 +1,89 @@
+{
+  "prose": "200-day moving averages.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 24,
+        "text": "200-day moving averages."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "200",
+        "lemma": "200",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 3,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 3,
+        "start": 4,
+        "end": 7,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "moving",
+        "lemma": "move",
+        "pos": "VERB",
+        "tag": "VBG",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 8,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "averages",
+        "lemma": "average",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 15,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 4,
+        "start": 23,
+        "end": 24,
+        "isSentStart": false
+      }
+    ]
+  }
+}

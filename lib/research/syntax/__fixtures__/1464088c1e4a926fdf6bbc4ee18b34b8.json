@@ -1,0 +1,77 @@
+{
+  "prose": "price tends to continue.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 24,
+        "text": "price tends to continue."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "price",
+        "lemma": "price",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "tends",
+        "lemma": "tend",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 6,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "to",
+        "lemma": "to",
+        "pos": "PART",
+        "tag": "TO",
+        "dep": "aux",
+        "headIndex": 3,
+        "start": 12,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "continue",
+        "lemma": "continue",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "xcomp",
+        "headIndex": 1,
+        "start": 15,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 23,
+        "end": 24,
+        "isSentStart": false
+      }
+    ]
+  }
+}

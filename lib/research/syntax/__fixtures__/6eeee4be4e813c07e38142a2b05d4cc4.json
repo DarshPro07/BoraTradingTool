@@ -1,0 +1,209 @@
+{
+  "prose": "Enter when the close is above the 20-day and 50-day SMAs.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 57,
+        "text": "Enter when the close is above the 20-day and 50-day SMAs."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 4,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 11,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "close",
+        "lemma": "close",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 4,
+        "start": 15,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "is",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 21,
+        "end": 23,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 24,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 14,
+        "start": 30,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 9,
+        "start": 34,
+        "end": 36,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 9,
+        "start": 36,
+        "end": 37,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nmod",
+        "headIndex": 14,
+        "start": 37,
+        "end": 40,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 9,
+        "start": 41,
+        "end": 44,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 13,
+        "start": 45,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 13,
+        "start": 47,
+        "end": 48,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "conj",
+        "headIndex": 9,
+        "start": 48,
+        "end": 51,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": "SMAs",
+        "lemma": "sma",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 52,
+        "end": 56,
+        "isSentStart": false
+      },
+      {
+        "index": 15,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 56,
+        "end": 57,
+        "isSentStart": false
+      }
+    ]
+  }
+}

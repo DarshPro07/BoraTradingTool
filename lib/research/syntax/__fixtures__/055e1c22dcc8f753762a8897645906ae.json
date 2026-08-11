@@ -1,0 +1,53 @@
+{
+  "prose": " If so",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 6,
+        "text": " If so"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "If",
+        "lemma": "if",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 2,
+        "start": 1,
+        "end": 3,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "so",
+        "lemma": "so",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 4,
+        "end": 6,
+        "isSentStart": false
+      }
+    ]
+  }
+}

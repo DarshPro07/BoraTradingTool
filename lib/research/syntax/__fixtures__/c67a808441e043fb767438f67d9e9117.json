@@ -1,0 +1,113 @@
+{
+  "prose": "sma_20 remains above sma_50 (trend intact)",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 42,
+        "text": "sma_20 remains above sma_50 (trend intact)"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "sma_20",
+        "lemma": "sma_20",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 1,
+        "start": 0,
+        "end": 6,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "remains",
+        "lemma": "remain",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 7,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 1,
+        "start": 15,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "sma_50",
+        "lemma": "sma_50",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 2,
+        "start": 21,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "(",
+        "lemma": "(",
+        "pos": "PUNCT",
+        "tag": "-LRB-",
+        "dep": "punct",
+        "headIndex": 3,
+        "start": 28,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "trend",
+        "lemma": "trend",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 6,
+        "start": 29,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "intact",
+        "lemma": "intact",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 3,
+        "start": 35,
+        "end": 41,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": ")",
+        "lemma": ")",
+        "pos": "PUNCT",
+        "tag": "-RRB-",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 41,
+        "end": 42,
+        "isSentStart": false
+      }
+    ]
+  }
+}

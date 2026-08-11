@@ -1,0 +1,125 @@
+{
+  "prose": "When NIFTYBEES closes above its 20-day SMA",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 42,
+        "text": "When NIFTYBEES closes above its 20-day SMA"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "When",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 2,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "NIFTYBEES",
+        "lemma": "NIFTYBEES",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 5,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "closes",
+        "lemma": "close",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 15,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 22,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 8,
+        "start": 28,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 7,
+        "start": 32,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 7,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 8,
+        "start": 35,
+        "end": 38,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "SMA",
+        "lemma": "SMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 39,
+        "end": 42,
+        "isSentStart": false
+      }
+    ]
+  }
+}

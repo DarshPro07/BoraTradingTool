@@ -1,0 +1,173 @@
+{
+  "prose": "ideally on a pullback toward sma_20 rather than at a fresh high.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 64,
+        "text": "ideally on a pullback toward sma_20 rather than at a fresh high."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "ideally",
+        "lemma": "ideally",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 7,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "on",
+        "lemma": "on",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 8,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 3,
+        "start": 11,
+        "end": 12,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "pullback",
+        "lemma": "pullback",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 1,
+        "start": 13,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "toward",
+        "lemma": "toward",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 3,
+        "start": 22,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "sma_20",
+        "lemma": "sma_20",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 4,
+        "start": 29,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "rather",
+        "lemma": "rather",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 7,
+        "start": 36,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "than",
+        "lemma": "than",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "cc",
+        "headIndex": 1,
+        "start": 43,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "at",
+        "lemma": "at",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 7,
+        "start": 48,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "a",
+        "lemma": "a",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 11,
+        "start": 51,
+        "end": 52,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "fresh",
+        "lemma": "fresh",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 11,
+        "start": 53,
+        "end": 58,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "high",
+        "lemma": "high",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 8,
+        "start": 59,
+        "end": 63,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 63,
+        "end": 64,
+        "isSentStart": false
+      }
+    ]
+  }
+}

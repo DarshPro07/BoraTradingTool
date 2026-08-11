@@ -1,0 +1,125 @@
+{
+  "prose": "RSI must be above 60 and below 50.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 34,
+        "text": "RSI must be above 60 and below 50."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "RSI",
+        "lemma": "RSI",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "must",
+        "lemma": "must",
+        "pos": "AUX",
+        "tag": "MD",
+        "dep": "aux",
+        "headIndex": 2,
+        "start": 4,
+        "end": 8,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "be",
+        "lemma": "be",
+        "pos": "AUX",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 9,
+        "end": 11,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 12,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "60",
+        "lemma": "60",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 18,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 4,
+        "start": 21,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "below",
+        "lemma": "below",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "conj",
+        "headIndex": 4,
+        "start": 25,
+        "end": 30,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "50",
+        "lemma": "50",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "pobj",
+        "headIndex": 6,
+        "start": 31,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 2,
+        "start": 33,
+        "end": 34,
+        "isSentStart": false
+      }
+    ]
+  }
+}

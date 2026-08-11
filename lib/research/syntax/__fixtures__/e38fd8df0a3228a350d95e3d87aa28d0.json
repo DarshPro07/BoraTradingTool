@@ -1,0 +1,89 @@
+{
+  "prose": "comfortably above its recent range.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 35,
+        "text": "comfortably above its recent range."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "comfortably",
+        "lemma": "comfortably",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 11,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 12,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 4,
+        "start": 18,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "recent",
+        "lemma": "recent",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 22,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "range",
+        "lemma": "range",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "pobj",
+        "headIndex": 1,
+        "start": 29,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      }
+    ]
+  }
+}

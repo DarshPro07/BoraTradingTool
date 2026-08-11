@@ -1,0 +1,53 @@
+{
+  "prose": "then turns down",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 15,
+        "text": "then turns down"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "then",
+        "lemma": "then",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 1,
+        "start": 0,
+        "end": 4,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "turns",
+        "lemma": "turn",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 5,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "down",
+        "lemma": "down",
+        "pos": "ADP",
+        "tag": "RP",
+        "dep": "prt",
+        "headIndex": 1,
+        "start": 11,
+        "end": 15,
+        "isSentStart": false
+      }
+    ]
+  }
+}

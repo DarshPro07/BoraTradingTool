@@ -1,0 +1,41 @@
+{
+  "prose": "liquidity floors",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 16,
+        "text": "liquidity floors"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "liquidity",
+        "lemma": "liquidity",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 1,
+        "start": 0,
+        "end": 9,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "floors",
+        "lemma": "floor",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 10,
+        "end": 16,
+        "isSentStart": false
+      }
+    ]
+  }
+}

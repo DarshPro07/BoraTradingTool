@@ -1,0 +1,89 @@
+{
+  "prose": "its RSI-14 currently reads 64.1.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 32,
+        "text": "its RSI-14 currently reads 64.1."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 1,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "RSI-14",
+        "lemma": "RSI-14",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 3,
+        "start": 4,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "currently",
+        "lemma": "currently",
+        "pos": "ADV",
+        "tag": "RB",
+        "dep": "advmod",
+        "headIndex": 3,
+        "start": 11,
+        "end": 20,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "reads",
+        "lemma": "read",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 3,
+        "start": 21,
+        "end": 26,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "64.1",
+        "lemma": "64.1",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "dobj",
+        "headIndex": 3,
+        "start": 27,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 3,
+        "start": 31,
+        "end": 32,
+        "isSentStart": false
+      }
+    ]
+  }
+}

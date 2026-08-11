@@ -1,4 +1,6 @@
 import type { Condition } from "@/lib/strategy/dsl";
+import { resolveAttachment } from "./syntax/attachment";
+import type { ParsedToken, SyntaxParse } from "./syntax/resolver";
 
 /**
  * The Semantic Strategy Compiler.
@@ -123,7 +125,9 @@ export interface RejectedCandidate {
     | "OBSERVATION_NOT_A_RULE"
     | "NO_OPERAND"
     | "UNCLASSIFIED_CLAUSE"
-    | "DIMENSION_MISMATCH";
+    | "DIMENSION_MISMATCH"
+    /** The dependency parse did not determine which feature the operator governs. */
+    | "AMBIGUOUS_ATTACHMENT";
 }
 
 export interface Contradiction {
@@ -299,6 +303,54 @@ export function segmentClauses(sentence: string, offset: number): Span[] {
   for (let match = band.exec(sentence); match !== null; match = band.exec(sentence)) {
     protectedRanges.push([match.index, match.index + match[0].length]);
   }
+
+  /**
+   * A SURVIVING parenthesis is CONTENT, and its interior is segmented on its own.
+   *
+   * "(gap >= 3%, relative volume >= 1, with price and liquidity floors)" was cut at its commas
+   * along with the text around it, leaving the fragment " A pre-market gap screen (gap >= 3%" —
+   * in which the "%" is governed by `screen`, a noun from OUTSIDE the condition, so the threshold
+   * became unreachable and the one expressible hypothesis in this repository compiled to half of
+   * itself.
+   *
+   * Keeping the whole parenthetical as one clause is equally wrong: its commas separate genuinely
+   * distinct conditions. So the bracketed text is segmented independently of its surroundings, and
+   * each condition inside it becomes a clause that stands alone — which is also the form the
+   * parser reads most reliably.
+   *
+   * Decorative asides are already blanked to spaces by `maskParentheticals`, so anything still
+   * bracketed here states a condition.
+   */
+  const groups: [number, number][] = [];
+  let depth = 0;
+  let openedAt = -1;
+  for (let index = 0; index < sentence.length; index += 1) {
+    if (sentence[index] === "(") {
+      if (depth === 0) openedAt = index;
+      depth += 1;
+    } else if (sentence[index] === ")") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0 && openedAt !== -1) {
+        groups.push([openedAt, index]);
+        openedAt = -1;
+      }
+    }
+  }
+
+  if (groups.length > 0) {
+    const spans: Span[] = [];
+    let cursor = 0;
+    for (const [open, close] of groups) {
+      const before = sentence.slice(cursor, open);
+      if (before.trim()) spans.push(...segmentClauses(before, offset + cursor));
+      const interior = sentence.slice(open + 1, close);
+      if (interior.trim()) spans.push(...segmentClauses(interior, offset + open + 1));
+      cursor = close + 1;
+    }
+    const after = sentence.slice(cursor);
+    if (after.trim()) spans.push(...segmentClauses(after, offset + cursor));
+    return spans;
+  }
   const isProtected = (index: number) =>
     protectedRanges.some(([from, to]) => index >= from && index < to);
 
@@ -458,18 +510,37 @@ const COMPARATORS: readonly { tokens: readonly string[]; op: ComparisonOp }[] = 
   { tokens: ["<", "below", "less than", "under", "falls below", "drops below"], op: "lt" },
 ]);
 
-function firstComparator(text: string, from: number): { op: ComparisonOp; start: number; end: number } | null {
+/**
+ * EVERY comparator in the clause, left to right, longest match wins on a tie.
+ *
+ * Finding only the FIRST one silently dropped the second half of "close is above SMA20 and below
+ * SMA50" — the clause separator list splits on " and ", but when it does not (no comma, one
+ * clause) the `below` was never read at all. Losing a rule is as wrong as misreading one; it just
+ * fails quietly.
+ *
+ * This is LEXICAL DETECTION, not attachment. Which feature a comparator governs is decided by the
+ * dependency tree; where the comparator word sits is decided by reading the words.
+ */
+function allComparators(text: string): { op: ComparisonOp; start: number; end: number }[] {
   const lower = text.toLowerCase();
-  let best: { op: ComparisonOp; start: number; end: number } | null = null;
+  const found: { op: ComparisonOp; start: number; end: number }[] = [];
+
   for (const { tokens, op } of COMPARATORS) {
     for (const token of tokens) {
-      const at = lower.indexOf(token, from);
-      if (at === -1) continue;
-      const better = best === null || at < best.start || (at === best.start && token.length > best.end - best.start);
-      if (better) best = { op, start: at, end: at + token.length };
+      for (let at = lower.indexOf(token); at !== -1; at = lower.indexOf(token, at + 1)) {
+        found.push({ op, start: at, end: at + token.length });
+      }
     }
   }
-  return best;
+
+  found.sort((left, right) => left.start - right.start || right.end - left.end);
+
+  const kept: typeof found = [];
+  for (const candidate of found) {
+    const overlaps = kept.some((existing) => candidate.start < existing.end && existing.start < candidate.end);
+    if (!overlaps) kept.push(candidate);
+  }
+  return kept;
 }
 
 /**
@@ -479,36 +550,93 @@ function firstComparator(text: string, from: number): { op: ComparisonOp; start:
  * "20-day SMA" holds a 20 that names the indicator; it is not a level anything is compared to.
  * Refusing here — rather than filtering later — is what makes `SMA20 > 20` unreachable.
  */
-function operandNumber(
-  clauseText: string,
-  clauseStart: number,
-  from: number,
+function parameterGuard(
+  start: number,
+  end: number,
   mentions: readonly FeatureMention[],
   parameterSpans: readonly { start: number; end: number; text: string }[],
-): { value: number; start: number; end: number } | { blockedBy: string } | null {
-  const regex = /-?\d+(?:\.\d+)?/g;
-  regex.lastIndex = from;
-  for (let match = regex.exec(clauseText); match !== null; match = regex.exec(clauseText)) {
-    const absoluteStart = clauseStart + match.index;
-    const absoluteEnd = absoluteStart + match[0].length;
+): { blockedBy: string } | null {
+  const inMention = mentions.find((mention) => start < mention.end && mention.start < end);
+  if (inMention) return { blockedBy: `${inMention.id} (${inMention.indicator} period)` };
 
-    const inMention = mentions.find((mention) => absoluteStart < mention.end && mention.start < absoluteEnd);
-    if (inMention) return { blockedBy: `${inMention.id} (${inMention.indicator} period)` };
+  const inParameter = parameterSpans.find((span) => start < span.end && span.start < end);
+  if (inParameter) return { blockedBy: `the period in "${inParameter.text.trim()}"` };
 
-    const inParameter = parameterSpans.find((span) => absoluteStart < span.end && span.start < absoluteEnd);
-    if (inParameter) return { blockedBy: `the period in "${inParameter.text.trim()}"` };
-
-    return { value: Number(match[0]), start: absoluteStart, end: absoluteEnd };
-  }
   return null;
 }
 
-function featureAfter(
-  position: number,
-  clauseEnd: number,
+/** The mention whose span covers this token, or null. The bridge from grammar to features. */
+function mentionAt(
+  start: number,
+  end: number,
   mentions: readonly FeatureMention[],
 ): FeatureMention | null {
-  return mentions.find((mention) => mention.start >= position && mention.end <= clauseEnd) ?? null;
+  return mentions.find((mention) => start < mention.end && mention.start < end) ?? null;
+}
+
+/**
+ * The token a COMPARATOR SPAN actually hangs on.
+ *
+ * A comparator phrase is not one token and its first word is often not the one the tree uses:
+ * "falls below SMA50" starts on the VERB `falls`, whose head is the sentence's subject-less root,
+ * so resolving from it reports AMBIGUOUS and loses a perfectly clear exit rule. The preposition is
+ * the token that governs the object, so the last ADP in the span wins, and the last token
+ * otherwise.
+ */
+function operatorTokenIn(parse: SyntaxParse, start: number, end: number): ParsedToken | null {
+  const inside = parse.tokens.filter((token) => token.start < end && start < token.end);
+  if (inside.length === 0) return null;
+  const prepositions = inside.filter((token) => token.pos === "ADP");
+  return (prepositions.length > 0 ? prepositions : inside)[Math.max(0, (prepositions.length > 0 ? prepositions : inside).length - 1)];
+}
+
+/**
+ * Clause texts, taken from the ORIGINAL prose, in the order the compiler will read them.
+ *
+ * Exported so the async edge knows exactly what to parse. The parser is given ONE CLAUSE AT A TIME,
+ * not the whole paragraph, and that is a correctness requirement rather than a performance choice:
+ * `en_core_web_sm` parses "RSI-14 is between 55 and 70." correctly on its own, but inside
+ * "Enter when close is above SMA20 and RSI-14 is between 55 and 70." it reads `RSI-14` as a
+ * conjunct of `SMA20` and the band loses its subject entirely. A wrong tree cannot be walked into
+ * a right answer, so the fix is to hand the parser a unit it can parse.
+ *
+ * These are slices of the ORIGINAL text, never the masked view — masking alters syntax, and a
+ * syntactic parser must not be asked what altered syntax meant. Offsets still line up because
+ * masking preserves length.
+ */
+export function clauseSlicesOf(prose: string): string[] {
+  const readable = maskParentheticals(prose);
+  const clauses = classifiedClauses(prose).flatMap((clause) => [
+    prose.slice(clause.start, clause.end),
+    // The same clause with its DECORATIVE asides blanked. Used only when the original will not
+    // resolve: "rsi_14 is between 50 and 70 (momentum present but not overbought)" parses with the
+    // 50 as a modifier of `present` — a word from the aside — and the band loses its subject.
+    // Blanking decoration is not altering the rule's syntax; the rule's own tokens and offsets are
+    // untouched, and only text the classifier already ruled out is removed.
+    readable.slice(clause.start, clause.end),
+  ]);
+  // Sentences too. A clause split off at " and " can lose the token that governs it — "RSI must be
+  // above 60 and below 50." leaves "below 50." as a bare root with nothing to attach to. The
+  // sentence still holds the coordination, so it is parsed as well and used only when the clause
+  // parse cannot resolve. Escalating to a LARGER syntactic unit is not a positional fallback: the
+  // answer still comes from a tree.
+  const sentences = segmentSentences(readable).map((sentence) => prose.slice(sentence.start, sentence.end));
+  return [...new Set([...clauses, ...sentences])];
+}
+
+function classifiedClauses(prose: string): Clause[] {
+  const readable = maskParentheticals(prose);
+  const spans: Span[] = [];
+  const sentenceOf = new Map<Span, number>();
+
+  segmentSentences(readable).forEach((sentence, sentenceIndex) => {
+    for (const clause of segmentClauses(sentence.text, sentence.start)) {
+      spans.push(clause);
+      sentenceOf.set(clause, sentenceIndex);
+    }
+  });
+
+  return classifyClauses(spans, (span) => sentenceOf.get(span) ?? 0);
 }
 
 /**
@@ -570,22 +698,26 @@ export function maskParentheticals(prose: string): string {
   return characters.join("");
 }
 
-export function compileResearchProse(prose: string): CompiledStrategy {
-  // Segmentation, classification and extraction all read the masked text; every SPAN still points
-  // into the original, because masking preserves length.
+/**
+ * TWO REPRESENTATIONS, ONE COORDINATE SPACE.
+ *
+ * Segmentation, classification and feature-finding read the MASKED text, so a decorative aside can
+ * neither become a clause nor contribute a threshold. ATTACHMENT reads `parse`, which is the
+ * dependency parse of the **original** prose — masking changes syntax, and a syntactic parser must
+ * not be asked what altered syntax meant.
+ *
+ * The two views stay mergeable because `maskParentheticals` replaces each aside with spaces of
+ * EQUAL LENGTH: every offset below indexes both views, and the original, identically.
+ *
+ * `parse` is REQUIRED and has no default. A default would be the positional fallback returning
+ * through the back door — see docs/plans/syntax-attachment/03-architecture.md.
+ */
+export function compileResearchProse(
+  prose: string,
+  parses: Readonly<Record<string, SyntaxParse>>,
+): CompiledStrategy {
   const readable = maskParentheticals(prose);
-  const sentences = segmentSentences(readable);
-  const spans: Span[] = [];
-  const sentenceOf = new Map<Span, number>();
-
-  sentences.forEach((sentence, sentenceIndex) => {
-    for (const clause of segmentClauses(sentence.text, sentence.start)) {
-      spans.push(clause);
-      sentenceOf.set(clause, sentenceIndex);
-    }
-  });
-
-  const clauses = classifyClauses(spans, (span) => sentenceOf.get(span) ?? 0);
+  const clauses = classifiedClauses(prose);
   const mentions = findFeatureMentions(readable);
   const parameterSpans = findParameterSpans(readable);
   const conditions: ConditionCandidate[] = [];
@@ -609,21 +741,96 @@ export function compileResearchProse(prose: string): CompiledStrategy {
       continue;
     }
 
-    // The subject of an operator is the NEAREST FEATURE TO ITS LEFT, not the first one in the
-    // clause.
-    //
-    // Found by the live TCS/NIFTYBEES probes: "closes above both its 20-day and 50-day SMAs with
-    // RSI-14 between 50 and 70" took the clause's first mention as the subject of every operator,
-    // so the RSI band landed on sma20 — `50 <= sma20 <= 70`, comparing a price to an oscillator
-    // level. Dimensionally nonsense, and it authored cleanly.
-    //
-    // A clause with no feature to the left of its operator inherits the last subject in the same
-    // scope, which is what carries "RSI must be above 60 and below 50" across its second clause.
-    const inherited = [...conditions].reverse().find((candidate) => candidate.scope === scope);
-    const subjectAt = (position: number): FeatureMention | null => {
-      const toLeft = clauseMentions.filter((mention) => mention.end <= position);
-      if (toLeft.length > 0) return toLeft[toLeft.length - 1];
-      return inherited ? { ...inherited.feature, start: -1, end: -1 } : null;
+    /**
+     * Which feature an operator governs, and what it is compared against — from the dependency
+     * tree, never from a character distance.
+     *
+     * The rule this replaces was "the nearest feature to the operator's LEFT, else inherit the
+     * last subject in scope". It was itself the third repair of an earlier positional rule, and
+     * every one of them authored a clean, wrong, fully-tested strategy on live probe prose:
+     * "…20-day and 50-day SMAs with RSI-14 between 50 and 70" put the RSI band on sma20, giving
+     * `50 <= sma20 <= 70` — an oscillator level on a price.
+     *
+     * A token names a feature iff a FEATURE MENTION covers it. That single predicate is the whole
+     * of the trading knowledge the grammar walk is given, and it is what stops the walk resolving
+     * "When NIFTYBEES closes above X" to the instrument rather than the price.
+     */
+    // The clause's OWN parse. Token offsets inside it are clause-relative; `absolute` lifts them
+    // back into prose coordinates so mentions, parameter spans and source spans all agree.
+    // Clause first, then the enclosing sentence if the clause cannot resolve on its own.
+    const enclosing = segmentSentences(readable).find(
+      (sentence) => sentence.start <= clause.start && clause.end <= sentence.end,
+    );
+    const units: { parse: SyntaxParse; base: number }[] = [];
+    const clauseParse = parses[prose.slice(clause.start, clause.end)];
+    if (clauseParse) units.push({ parse: clauseParse, base: clause.start });
+    const maskedParse = parses[readable.slice(clause.start, clause.end)];
+    if (maskedParse && maskedParse !== clauseParse) units.push({ parse: maskedParse, base: clause.start });
+    if (enclosing) {
+      const sentenceParse = parses[prose.slice(enclosing.start, enclosing.end)];
+      if (sentenceParse && sentenceParse !== clauseParse) {
+        units.push({ parse: sentenceParse, base: enclosing.start });
+      }
+    }
+
+    const attach = (
+      operatorStart: number,
+      operatorEnd: number,
+    ): { subject: FeatureMention; operand: ParsedToken | null; conjuncts: ParsedToken[]; quantifier: ParsedToken | null; base: number } | { ambiguous: string } => {
+      if (units.length === 0) {
+        return { ambiguous: "No dependency parse was supplied for this clause, so attachment is undetermined." };
+      }
+
+      let lastReason = "The comparator spans no parsed token.";
+      for (const unit of units) {
+        const lift = (token: ParsedToken) => ({
+          start: unit.base + token.start,
+          end: unit.base + token.end,
+        });
+
+        const operatorToken = operatorTokenIn(
+          unit.parse,
+          operatorStart - unit.base,
+          operatorEnd - unit.base,
+        );
+        if (!operatorToken) continue;
+
+        const attached = resolveAttachment(unit.parse, operatorToken.index, (candidate) => {
+          const span = lift(candidate);
+          return mentionAt(span.start, span.end, mentions) !== null;
+        });
+        if (!attached.ok) {
+          lastReason = attached.reason;
+          continue;
+        }
+
+        const { subject, operand, operandConjuncts, operandQuantifier } = attached.attachment;
+        const span = lift(subject);
+        const mention = mentionAt(span.start, span.end, mentions);
+        if (!mention) {
+          lastReason = `"${subject.text}" governs the comparison but names no known feature.`;
+          continue;
+        }
+        return {
+          subject: mention,
+          operand,
+          conjuncts: operandConjuncts,
+          quantifier: operandQuantifier,
+          base: unit.base,
+        };
+      }
+      return { ambiguous: lastReason };
+    };
+
+    const refuseAmbiguous = (reason: string) => {
+      rejected.push({
+        clauseId: clause.id,
+        sourceText: clause.text.trim(),
+        code: "AMBIGUOUS_ATTACHMENT",
+        reason:
+          `${reason} No condition was read from this clause — guessing which feature an operator ` +
+          "governs is precisely what produced every wrong strategy this compiler exists to prevent.",
+      });
     };
 
     // A band first: "between 55 and 70" contains a comparator word but is one condition.
@@ -632,8 +839,12 @@ export function compileResearchProse(prose: string): CompiledStrategy {
       const low = Math.min(Number(bandMatch[1]), Number(bandMatch[2]));
       const high = Math.max(Number(bandMatch[1]), Number(bandMatch[2]));
       const start = clause.start + bandMatch.index;
-      const bandSubject = subjectAt(start);
-      if (!bandSubject) continue;
+      const band = attach(start, start + bandMatch[0].length);
+      if ("ambiguous" in band) {
+        refuseAmbiguous(band.ambiguous);
+        continue;
+      }
+      const bandSubject = band.subject;
       conditions.push({
         kind: "RANGE",
         scope,
@@ -650,71 +861,112 @@ export function compileResearchProse(prose: string): CompiledStrategy {
       continue;
     }
 
-    const comparator = firstComparator(clause.text, 0);
-    if (!comparator) continue;
-    const subject = subjectAt(clause.start + comparator.start);
-    if (!subject) continue;
+    // EVERY comparator in the clause, each attached independently. Reading only the first one
+    // silently dropped the second rule of "close is above SMA20 and below SMA50" whenever the
+    // clause splitter did not separate them.
+    for (const comparator of allComparators(clause.text)) {
+      const operatorStart = clause.start + comparator.start;
+      const attached = attach(operatorStart, clause.start + comparator.end);
+      if ("ambiguous" in attached) {
+        refuseAmbiguous(attached.ambiguous);
+        continue;
+      }
 
-    const crossing = /cross(?:es|ed|ing)?/i.test(clause.text);
-    const right = featureAfter(clause.start + comparator.end, clause.end, mentions);
-    const operand = operandNumber(clause.text, clause.start, comparator.end, mentions, parameterSpans);
+      const subject = attached.subject;
+      const operandToken = attached.operand;
+      if (!operandToken) {
+        rejected.push({
+          clauseId: clause.id,
+          sourceText: clause.text.trim(),
+          code: "NO_OPERAND",
+          reason: "The comparison names no right-hand side, so there is no level or feature to test against.",
+        });
+        continue;
+      }
 
-    // The operand is whatever sits NEAREST the comparator.
-    //
-    // "rsi_14 crosses above 70 on the daily close" names a feature later in the clause; preferring
-    // the feature produced "rsi14 crosses above close" and threw the 70 away. Comparing positions
-    // is the principled rule: a comparator governs what immediately follows it, not the next
-    // feature word anywhere in the sentence.
-    const numberAt = operand !== null && !("blockedBy" in operand) ? operand.start : Number.POSITIVE_INFINITY;
-    const featureAt_ = right && right.id !== subject.id ? right.start : Number.POSITIVE_INFINITY;
+      const crossing = /cross(?:es|ed|ing)?/i.test(clause.text);
 
-    if (right && right.id !== subject.id && featureAt_ < numberAt) {
-      const direction = comparator.op === "gt" || comparator.op === "gte" ? "above" : "below";
+      // Feature-to-feature. Note this is also how "close is above the 20-day SMA" resolves: the
+      // operand token falls inside the SMA's mention, so the comparison is against the INDICATOR.
+      // The old positional reading took the bare 20 and authored `close > 20`.
+      const absolute = (token: ParsedToken) => ({ start: attached.base + token.start, end: attached.base + token.end });
+      const operandSpan = absolute(operandToken);
+      const right = mentionAt(operandSpan.start, operandSpan.end, mentions);
+      if (right && right.id !== subject.id) {
+        const direction = comparator.op === "gt" || comparator.op === "gte" ? "above" : "below";
+        conditions.push({
+          kind: crossing ? "CROSS" : "COMPARE",
+          scope,
+          clauseId: clause.id,
+          feature: { id: subject.id, indicator: subject.indicator, parameters: subject.parameters },
+          right: { id: right.id, indicator: right.indicator, parameters: right.parameters },
+          op: comparator.op,
+          direction,
+          ...(({ start: from, end: to, text }) => ({ sourceText: text, sourceStart: from, sourceEnd: to }))(
+            exactSpan(prose, clause.start, clause.end),
+          ),
+          evidence: "EXPLICIT",
+          interpreted: crossing
+            ? `${subject.id} crosses ${direction} ${right.id}`
+            : `${subject.id} ${comparator.op} ${right.id}`,
+        });
+        continue;
+      }
+
+      // THE GUARD, unchanged in intent and now applied to the span the PARSER chose rather than to
+      // the next number rightwards: a numeric operand covered by a feature mention or a period
+      // phrase is that indicator's PARAMETER, never a level.
+      const blocked = parameterGuard(operandSpan.start, operandSpan.end, mentions, parameterSpans);
+      if (blocked) {
+        rejected.push({
+          clauseId: clause.id,
+          sourceText: clause.text.trim(),
+          code: "INDICATOR_PARAMETER_NOT_A_THRESHOLD",
+          reason:
+            `The operand of this comparison is ${blocked.blockedBy}. An indicator's parameter is ` +
+            "not a level to compare against.",
+        });
+        continue;
+      }
+
+      // "above 3 percent" — the prepositional object is the UNIT, and the quantity modifies it.
+      const quantifierToken = attached.quantifier;
+      const value = Number.isFinite(Number(operandToken.text))
+        ? Number(operandToken.text)
+        : quantifierToken
+          ? Number(quantifierToken.text)
+          : Number.NaN;
+      const valueSpan = Number.isFinite(Number(operandToken.text)) || !quantifierToken
+        ? operandSpan
+        : absolute(quantifierToken);
+      if (!Number.isFinite(value)) {
+        rejected.push({
+          clauseId: clause.id,
+          sourceText: clause.text.trim(),
+          code: "NO_OPERAND",
+          reason: `"${operandToken.text}" is the operand of this comparison but is neither a known feature nor a number.`,
+        });
+        continue;
+      }
+
       conditions.push({
-        kind: crossing ? "CROSS" : "COMPARE",
+        kind: "SCALAR",
         scope,
         clauseId: clause.id,
         feature: { id: subject.id, indicator: subject.indicator, parameters: subject.parameters },
-        right: { id: right.id, indicator: right.indicator, parameters: right.parameters },
         op: comparator.op,
-        direction,
+        value,
         ...(({ start: from, end: to, text }) => ({ sourceText: text, sourceStart: from, sourceEnd: to }))(
-          exactSpan(prose, clause.start, clause.end),
+          exactSpan(
+            prose,
+            Math.min(operatorStart, valueSpan.start),
+            Math.max(clause.start + comparator.end, valueSpan.end),
+          ),
         ),
         evidence: "EXPLICIT",
-        interpreted: crossing
-          ? `${subject.id} crosses ${direction} ${right.id}`
-          : `${subject.id} ${comparator.op} ${right.id}`,
+        interpreted: `${subject.id} ${comparator.op} ${value}`,
       });
-      continue;
     }
-
-    if (operand === null) continue;
-    if ("blockedBy" in operand) {
-      rejected.push({
-        clauseId: clause.id,
-        sourceText: clause.text.trim(),
-        code: "INDICATOR_PARAMETER_NOT_A_THRESHOLD",
-        reason:
-          `The only number after the comparator is ${operand.blockedBy}. An indicator's parameter ` +
-          "is not a level to compare against.",
-      });
-      continue;
-    }
-
-    conditions.push({
-      kind: "SCALAR",
-      scope,
-      clauseId: clause.id,
-      feature: { id: subject.id, indicator: subject.indicator, parameters: subject.parameters },
-      op: comparator.op,
-      value: operand.value,
-      ...(({ start: from, end: to, text }) => ({ sourceText: text, sourceStart: from, sourceEnd: to }))(
-        exactSpan(prose, clause.start + comparator.start, operand.end),
-      ),
-      evidence: "EXPLICIT",
-      interpreted: `${subject.id} ${comparator.op} ${operand.value}`,
-    });
   }
 
   const contradictions = findContradictions(conditions, prose);

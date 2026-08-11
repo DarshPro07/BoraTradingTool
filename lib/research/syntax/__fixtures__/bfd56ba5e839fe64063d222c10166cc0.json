@@ -1,0 +1,77 @@
+{
+  "prose": "non-overbought 60 zone",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 22,
+        "text": "non-overbought 60 zone"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "non",
+        "lemma": "non",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 0,
+        "end": 3,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "-",
+        "lemma": "-",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 3,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "overbought",
+        "lemma": "overbought",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 4,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "60",
+        "lemma": "60",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 4,
+        "start": 15,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "zone",
+        "lemma": "zone",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 4,
+        "start": 18,
+        "end": 22,
+        "isSentStart": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "prose": " Exit when close falls below SMA50.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 35,
+        "text": " Exit when close falls below SMA50."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Exit",
+        "lemma": "exit",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "ROOT",
+        "headIndex": 1,
+        "start": 1,
+        "end": 5,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 4,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "close",
+        "lemma": "close",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 4,
+        "start": 11,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "falls",
+        "lemma": "fall",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "advcl",
+        "headIndex": 1,
+        "start": 17,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "below",
+        "lemma": "below",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 4,
+        "start": 23,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "SMA50",
+        "lemma": "SMA50",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 5,
+        "start": 29,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 1,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      }
+    ]
+  }
+}

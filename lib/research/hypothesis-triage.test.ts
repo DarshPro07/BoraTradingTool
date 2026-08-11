@@ -3,10 +3,18 @@ import { compileStrategy, StrategyDslSchema } from "@/lib/strategy/dsl";
 import {
   conditionFeatures,
   entryConditionFrom,
-  hypothesisTriage,
+  hypothesisTriage as triageWithParse,
   LEXICON_FEATURES,
   VOCABULARY,
 } from "./hypothesis-triage";
+import { triageText } from "./hypothesis-triage";
+import { parseFixtures } from "./syntax/fixtures";
+
+
+// The parse travels as data so `hypothesisTriage` stays pure. Fixtures are real output from the
+// pinned en_core_web_sm — see lib/research/syntax/fixtures.ts.
+const hypothesisTriage = (input: { title: string; statement: string; rationale?: string | null }) =>
+  triageWithParse({ ...input, parses: parseFixtures(triageText(input)) });
 
 /**
  * The three hypotheses this system has actually formed, used verbatim as fixtures.

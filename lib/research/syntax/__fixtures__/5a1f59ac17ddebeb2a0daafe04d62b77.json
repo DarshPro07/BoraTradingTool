@@ -1,0 +1,197 @@
+{
+  "prose": " Gap behaviour on Indian mid-caps deserves attention and may carry information.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 79,
+        "text": " Gap behaviour on Indian mid-caps deserves attention and may carry information."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": " ",
+        "lemma": " ",
+        "pos": "SPACE",
+        "tag": "_SP",
+        "dep": "dep",
+        "headIndex": 1,
+        "start": 0,
+        "end": 1,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "Gap",
+        "lemma": "gap",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 2,
+        "start": 1,
+        "end": 4,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "behaviour",
+        "lemma": "behaviour",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "nsubj",
+        "headIndex": 8,
+        "start": 5,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "on",
+        "lemma": "on",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 15,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "Indian",
+        "lemma": "indian",
+        "pos": "ADJ",
+        "tag": "JJ",
+        "dep": "amod",
+        "headIndex": 5,
+        "start": 18,
+        "end": 24,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "mid",
+        "lemma": "mid",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 25,
+        "end": 28,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "-",
+        "lemma": "-",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 28,
+        "end": 29,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "caps",
+        "lemma": "cap",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "pobj",
+        "headIndex": 3,
+        "start": 29,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "deserves",
+        "lemma": "deserve",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 8,
+        "start": 34,
+        "end": 42,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "attention",
+        "lemma": "attention",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 8,
+        "start": 43,
+        "end": 52,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "and",
+        "lemma": "and",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "cc",
+        "headIndex": 8,
+        "start": 53,
+        "end": 56,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "may",
+        "lemma": "may",
+        "pos": "AUX",
+        "tag": "MD",
+        "dep": "aux",
+        "headIndex": 12,
+        "start": 57,
+        "end": 60,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "carry",
+        "lemma": "carry",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "conj",
+        "headIndex": 8,
+        "start": 61,
+        "end": 66,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "information",
+        "lemma": "information",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "dobj",
+        "headIndex": 12,
+        "start": 67,
+        "end": 78,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 78,
+        "end": 79,
+        "isSentStart": false
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fixtureResolver } from "./syntax/fixtures";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { getDb, schema } from "@/lib/db";
 import { recordHypothesis } from "@/lib/knowledge/repository";
@@ -21,7 +22,7 @@ useTemporaryDatabase();
  * hypothesis rather than merging two distinct economic claims into one family.
  */
 describe("authoring survives two hypotheses that share a title", () => {
-  it("gives each its own family instead of failing the sweep", () => {
+  it("gives each its own family instead of failing the sweep", async () => {
     const first = recordHypothesis({
       title: "IN:XNSE:NIFTYBEES — LONG SWING",
       statement: "Enter when rsi_14 is above 55 on the daily close, exiting on a close below sma_20.",
@@ -39,7 +40,7 @@ describe("authoring survives two hypotheses that share a title", () => {
 
     // The sweep must not throw. Before the fix this raised
     // SQLITE_CONSTRAINT_UNIQUE: strategy_families.research_campaign_id, strategy_families.name
-    const report = authorFromHypotheses("test");
+    const report = await authorFromHypotheses("test", new Date(), fixtureResolver());
 
     const families = getDb().select().from(schema.strategyFamilies).all();
     const names = families.map((family) => family.name);

@@ -1,0 +1,197 @@
+{
+  "prose": "Enter when the 12-day EMA crosses above the 26-day EMA.",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 55,
+        "text": "Enter when the 12-day EMA crosses above the 26-day EMA."
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "Enter",
+        "lemma": "enter",
+        "pos": "VERB",
+        "tag": "VB",
+        "dep": "ROOT",
+        "headIndex": 0,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "when",
+        "lemma": "when",
+        "pos": "SCONJ",
+        "tag": "WRB",
+        "dep": "advmod",
+        "headIndex": 7,
+        "start": 6,
+        "end": 10,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 7,
+        "start": 11,
+        "end": 14,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "12",
+        "lemma": "12",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 5,
+        "start": 15,
+        "end": 17,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 5,
+        "start": 17,
+        "end": 18,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 7,
+        "start": 18,
+        "end": 21,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "EMA",
+        "lemma": "EMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "compound",
+        "headIndex": 7,
+        "start": 22,
+        "end": 25,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "crosses",
+        "lemma": "cross",
+        "pos": "NOUN",
+        "tag": "NNS",
+        "dep": "advcl",
+        "headIndex": 0,
+        "start": 26,
+        "end": 33,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 7,
+        "start": 34,
+        "end": 39,
+        "isSentStart": false
+      },
+      {
+        "index": 9,
+        "text": "the",
+        "lemma": "the",
+        "pos": "DET",
+        "tag": "DT",
+        "dep": "det",
+        "headIndex": 13,
+        "start": 40,
+        "end": 43,
+        "isSentStart": false
+      },
+      {
+        "index": 10,
+        "text": "26",
+        "lemma": "26",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 12,
+        "start": 44,
+        "end": 46,
+        "isSentStart": false
+      },
+      {
+        "index": 11,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 12,
+        "start": 46,
+        "end": 47,
+        "isSentStart": false
+      },
+      {
+        "index": 12,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "compound",
+        "headIndex": 13,
+        "start": 47,
+        "end": 50,
+        "isSentStart": false
+      },
+      {
+        "index": 13,
+        "text": "EMA",
+        "lemma": "EMA",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "pobj",
+        "headIndex": 8,
+        "start": 51,
+        "end": 54,
+        "isSentStart": false
+      },
+      {
+        "index": 14,
+        "text": ".",
+        "lemma": ".",
+        "pos": "PUNCT",
+        "tag": ".",
+        "dep": "punct",
+        "headIndex": 0,
+        "start": 54,
+        "end": 55,
+        "isSentStart": false
+      }
+    ]
+  }
+}

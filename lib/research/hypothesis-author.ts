@@ -6,7 +6,16 @@ import { breedingBasis, costsForCapital, OWNER_CAPITAL } from "@/lib/paper/capit
 import { compileStrategy, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { costStanding } from "@/lib/strategy/cost-gate";
 import { placeStrategy, researchIdentityReady } from "@/lib/strategy/research-identity";
-import { conditionFeatures, entryConditionFrom, hypothesisTriage, type TriageVerdict } from "./hypothesis-triage";
+import {
+  conditionFeatures,
+  entryConditionFrom,
+  hypothesisTriage,
+  triageText,
+  type TriageVerdict,
+} from "./hypothesis-triage";
+import { SpaCyDependencyResolver } from "./syntax/resolver";
+import { clauseSlicesOf } from "./semantic-compiler";
+import type { SyntaxAttachmentResolver, SyntaxParse } from "./syntax/resolver";
 
 /**
  * Turn a formed hypothesis into a draft strategy — or refuse it, on the record.
@@ -133,7 +142,18 @@ function record(outcome: AuthorOutcome, actor: string, at: Date): void {
  * running this every cycle does not fill the registry with duplicates or inflate the family's
  * trial count with specs nobody asked for.
  */
-export function authorFromHypotheses(actor = "research-loop", now = new Date()): AuthorReport {
+export async function authorFromHypotheses(
+  actor = "research-loop",
+  now = new Date(),
+  /**
+   * INJECTED so a test does not have to spawn Python.
+   *
+   * Loading `en_core_web_sm` costs seconds, and under a loaded parallel suite it exceeded the 30s
+   * test timeout — a green unit suite turning red purely from scheduling. Production still gets
+   * the real worker; tests supply a resolver backed by recorded parses of the same model.
+   */
+  resolver: SyntaxAttachmentResolver = SpaCyDependencyResolver.fromEnv(),
+): Promise<AuthorReport> {
   const db = getDb();
   const hypotheses = db.select().from(schema.researchHypotheses).all();
 
@@ -164,6 +184,14 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
   const basis = breedingBasis();
   const outcomes: AuthorOutcome[] = [];
 
+  // ONE worker for the whole batch. The model load is the cost, so it is paid once here rather
+  // than per hypothesis — and it is paid at this boundary precisely so `hypothesisTriage` and
+  // `compileResearchProse` below it stay pure and synchronous.
+  //
+  // If the parser is unavailable this THROWS and nothing is authored. That is the intended
+  // behaviour: attachment cannot be guessed, so a strategy cannot be written without it. The
+  // learning cycle already records the reason and continues with the rest of the pass.
+  try {
   for (const hypothesis of hypotheses) {
     // Already authored? The link is the spec's `hypothesisId` — the first non-null values this
     // registry will hold.
@@ -174,11 +202,19 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
       .get();
     if (existing) continue;
 
-    const triage = hypothesisTriage({
+    const input = {
       title: hypothesis.title,
       statement: hypothesis.statement,
       rationale: hypothesis.rationale,
-    });
+    };
+    // ONE PARSE PER CLAUSE. The parser is markedly more accurate on a single clause than on a
+    // whole paragraph, and `clauseSlicesOf` is the compiler's own segmentation, so the keys it
+    // will look up are exactly the ones recorded here.
+    const parses: Record<string, SyntaxParse> = {};
+    for (const slice of clauseSlicesOf(triageText(input))) {
+      if (!parses[slice]) parses[slice] = await resolver.parse(slice);
+    }
+    const triage = hypothesisTriage({ ...input, parses });
 
     if (triage.verdict !== "EXPRESSIBLE") {
       const outcome: AuthorOutcome = {
@@ -390,6 +426,9 @@ export function authorFromHypotheses(actor = "research-loop", now = new Date()):
         createdAt: now,
       })
       .run();
+  }
+  } finally {
+    await resolver.dispose();
   }
 
   const authored = outcomes.filter((outcome) => outcome.specId !== undefined).length;

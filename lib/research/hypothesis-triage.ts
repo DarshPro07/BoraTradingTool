@@ -1,5 +1,6 @@
 import { POINT_IN_TIME_FEATURES, type Condition } from "@/lib/strategy/dsl";
 import { compileResearchProse, type CompiledStrategy, type ConditionCandidate } from "./semantic-compiler";
+import type { SyntaxParse } from "./syntax/resolver";
 import { DERIVABLE_FEATURES } from "@/lib/backtest/features";
 
 /**
@@ -181,6 +182,25 @@ export interface HypothesisInput {
   title: string;
   statement: string;
   rationale?: string | null;
+  /**
+   * Dependency parses for `triageText(input)`, keyed by clause text (`clauseSlicesOf`).
+   *
+   * Passed as DATA so this function stays pure — no database, no network, no process spawn. The
+   * parse is produced once at the async edge (`authorFromHypotheses`). There is no default: an
+   * absent parse must not silently become positional attachment.
+   */
+  parses: Readonly<Record<string, SyntaxParse>>;
+}
+
+/**
+ * The exact string the parse must cover.
+ *
+ * Exported because the caller has to parse precisely what triage will compile; reconstructing this
+ * concatenation at the call site would let the two drift, and a parse whose offsets are one title
+ * out would attach every operator to the wrong token.
+ */
+export function triageText(input: Pick<HypothesisInput, "title" | "statement" | "rationale">): string {
+  return `${input.title}. ${input.statement} ${input.rationale ?? ""}`;
 }
 
 /** Comparison words, mapped to DSL operators. Longest first so ">=" beats ">". */
@@ -395,7 +415,7 @@ function extractConditions(text: string): ExtractedCondition[] {
  * produce a threshold if allowed to reach the extractor.
  */
 export function hypothesisTriage(input: HypothesisInput): TriageResult {
-  const text = `${input.title}. ${input.statement} ${input.rationale ?? ""}`;
+  const text = triageText(input);
   const lower = text.toLowerCase();
 
   // Meta markers are matched against the title and statement ONLY, never the rationale.
@@ -438,7 +458,7 @@ export function hypothesisTriage(input: HypothesisInput): TriageResult {
   // The SEMANTIC COMPILER owns prose -> conditions. It segments and CLASSIFIES clauses before
   // reading any number, so an observation ("RSI currently 64.1") and an indicator's period
   // ("20-day SMA") can never become trading thresholds, and entry/exit stay in separate scopes.
-  const compiled = compileResearchProse(text);
+  const compiled = compileResearchProse(text, input.parses);
 
   if (compiled.verdict === "CONTRADICTORY" || compiled.verdict === "DIMENSION_ERROR") {
     return {

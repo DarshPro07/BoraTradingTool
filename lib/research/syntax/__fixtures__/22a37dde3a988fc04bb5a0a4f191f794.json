@@ -1,0 +1,125 @@
+{
+  "prose": "While TCS closes above both its 20-day",
+  "parse": {
+    "parser": "spacy",
+    "model": "en_core_web_sm",
+    "modelVersion": "3.8.0",
+    "sentences": [
+      {
+        "start": 0,
+        "end": 38,
+        "text": "While TCS closes above both its 20-day"
+      }
+    ],
+    "tokens": [
+      {
+        "index": 0,
+        "text": "While",
+        "lemma": "while",
+        "pos": "SCONJ",
+        "tag": "IN",
+        "dep": "mark",
+        "headIndex": 2,
+        "start": 0,
+        "end": 5,
+        "isSentStart": true
+      },
+      {
+        "index": 1,
+        "text": "TCS",
+        "lemma": "TCS",
+        "pos": "PROPN",
+        "tag": "NNP",
+        "dep": "nsubj",
+        "headIndex": 2,
+        "start": 6,
+        "end": 9,
+        "isSentStart": false
+      },
+      {
+        "index": 2,
+        "text": "closes",
+        "lemma": "close",
+        "pos": "VERB",
+        "tag": "VBZ",
+        "dep": "ROOT",
+        "headIndex": 2,
+        "start": 10,
+        "end": 16,
+        "isSentStart": false
+      },
+      {
+        "index": 3,
+        "text": "above",
+        "lemma": "above",
+        "pos": "ADP",
+        "tag": "IN",
+        "dep": "prep",
+        "headIndex": 2,
+        "start": 17,
+        "end": 22,
+        "isSentStart": false
+      },
+      {
+        "index": 4,
+        "text": "both",
+        "lemma": "both",
+        "pos": "CCONJ",
+        "tag": "CC",
+        "dep": "preconj",
+        "headIndex": 8,
+        "start": 23,
+        "end": 27,
+        "isSentStart": false
+      },
+      {
+        "index": 5,
+        "text": "its",
+        "lemma": "its",
+        "pos": "PRON",
+        "tag": "PRP$",
+        "dep": "poss",
+        "headIndex": 8,
+        "start": 28,
+        "end": 31,
+        "isSentStart": false
+      },
+      {
+        "index": 6,
+        "text": "20",
+        "lemma": "20",
+        "pos": "NUM",
+        "tag": "CD",
+        "dep": "nummod",
+        "headIndex": 8,
+        "start": 32,
+        "end": 34,
+        "isSentStart": false
+      },
+      {
+        "index": 7,
+        "text": "-",
+        "lemma": "-",
+        "pos": "PUNCT",
+        "tag": "HYPH",
+        "dep": "punct",
+        "headIndex": 8,
+        "start": 34,
+        "end": 35,
+        "isSentStart": false
+      },
+      {
+        "index": 8,
+        "text": "day",
+        "lemma": "day",
+        "pos": "NOUN",
+        "tag": "NN",
+        "dep": "npadvmod",
+        "headIndex": 2,
+        "start": 35,
+        "end": 38,
+        "isSentStart": false
+      }
+    ]
+  }
+}
