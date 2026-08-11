@@ -1,5 +1,33 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 §66 — RESEARCH DEAD-ENDS ON AN UNINGESTED INSTRUMENT (owner hit this live, 2026-08-11 03:47)
+
+`Research this stock` on `IN:XNSE:360ONE` returned:
+
+> NO_STORED_DATA — The canonical store holds 0 daily bars for IN:XNSE:360ONE; 60 are required.
+
+**The refusal is CORRECT and must not be softened.** `lib/research/bridge.ts:96` refuses rather
+than researching an instrument it cannot see — that is the guardrail working, and lowering the bar
+or synthesising history would be exactly the fabrication the product forbids.
+
+**The defect is that the product offers no way out.** The only path to ingest history is two manual
+CLI steps the owner must know about and run outside the app:
+
+1. `quant/nse_history.py` → writes `nse-daily.json`
+2. `npx tsx scripts/import-nse-history.mts [path]` → `persistCandles` + `recordDatasetImport`
+
+There is **no API route** for either (`app/api/market/` has only `instruments` and `quote`). By the
+V7 §4 standard — a capability is not complete if the user must run a CLI, execute a script, or know
+an internal ID — this whole path is `BACKEND_ONLY`.
+
+**Required:** the refusal must carry an ACTION. "Ingest history for this instrument" should be a
+control on the research surface that runs fetch→import server-side, streams progress, and re-enables
+research when the 60-bar floor is met. It must keep the import's existing honest declarations
+(`adjustment: "none"`, `includesDelisted: false`, therefore UNFIT_FOR_VALIDATION) — the point of
+that import is the declaration, not the bars.
+
+Not started. Depends on nothing in the parser work.
+
 ## SYNTAX ATTACHMENT — **PARSER PROVEN 2026-08-11 03:40, NOT YET WIRED IN**
 Full detail and the exact next task: `docs/plans/syntax-attachment/00-status.md`. Checkpoint `f852a31`.
 
