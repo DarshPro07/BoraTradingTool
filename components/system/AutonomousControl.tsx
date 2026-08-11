@@ -91,7 +91,10 @@ export function AutonomousControl({ profile }: { profile: string }) {
     try {
       const response = await fetch(path, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        // Every mutation in this application carries this header; `requireMutationAccess` rejects
+        // the request without it. Omitting it produced a button that clicked, reported nothing, and
+        // did nothing — which is precisely the dead-control class this work exists to eliminate.
+        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify(body),
       });
       if (!response.ok && response.status !== 404) {

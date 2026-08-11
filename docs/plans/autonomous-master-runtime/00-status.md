@@ -2,10 +2,18 @@
 
 Updated 2026-08-11. Read this first on resume.
 
-## Verdict: SLICE 1 COMPLETE, NOT YET VERIFIED IN A BROWSER
+## Verdict: TASK 1 VERIFIED IN A BROWSER (desktop + mobile)
 
-The machine can be started, owned, observed and stopped from inside the product. It has **not** yet
-been driven through Playwright, and the model-selection popup does not exist.
+`e2e/autonomous-master-runtime.spec.ts` — **12/12 passing** on desktop-chromium and mobile-chromium
+against a real `next start` server on an isolated database. Start, idempotent double-start, reload
+persistence, Stop, real console state, and zero console/page errors are all proven by clicking, not
+by claim.
+
+Observed running unattended: `status=DEGRADED` (honestly reporting a paper-capital mismatch),
+`marketMode=MARKET_OPEN` from the real NSE calendar, `succeeded=81` jobs and climbing, `failed=0`.
+DEGRADED-but-progressing is the intended behaviour, not a fault.
+
+The model-selection popup still does not exist.
 
 ## Slice 1 — done, with evidence
 
@@ -40,14 +48,12 @@ Suite: **129 files, 1571 passed, 0 failed**, `tsc` clean.
 
 ## Known gaps — do not mistake these for done
 
-- **The file lease is documented in `03-architecture.md` but NOT implemented.** `startAutonomousRun`
-  relies on the database index alone. That covers two requests in one process; it does **not** cover
-  a second Node process pointed at the same database. Wire `acquireLease`/`releaseLease` into
-  start/stop before claiming property 2.
+- ~~The file lease is documented but NOT implemented.~~ **Done.** Supervisor holds its OWN lease
+  (never the cycle lease — that would deadlock its own cycle), renewed every tick, released when a
+  run is stopped or reconciled to CRASHED.
 - **No model-selection popup.** `/brain` currently passes `RUNTIME_PROFILES[0]`. The routing layer
   already carries `askOnRestart: true`, so the popup has somewhere to write to.
-- **No Playwright test yet.** `autonomous-master-runtime.spec.ts` (the 20-step journey the owner
-  specified) is the next thing to write, and it is the acceptance evidence for this task.
+- ~~No Playwright test yet.~~ **Done and green**, desktop + mobile.
 - **The tick calls `runLearningCycle` wholesale.** The evidence-driven state machine
   (`OBSERVE → LEARN → RESEARCH → …`) is not yet a real state machine; it is one cycle per tick.
 
@@ -72,3 +78,30 @@ depend on this path, so nothing shipped inherits the risk today.
    proving a second holder is refused.
 2. Write `autonomous-master-runtime.spec.ts` and run it against a real server.
 3. Model-selection popup on first load after a restart, writing the chosen `RuntimeProfile`.
+
+
+## What the browser run exposed that unit tests could not
+
+**A dead button of my own making.** `AutonomousControl` sent its POST without the
+`x-marketpulse-csrf` header that every mutation in this application requires. Every unit test
+passed; the button did nothing but display a refusal. This is exactly the defect class the owner
+reported across the product, and no amount of backend testing would have found it — only clicking
+it did.
+
+Two further findings from driving it for real:
+
+- **A stale server served the old bundle.** `TaskStop` did not kill `next start`; the port stayed
+  held by the previous process, so a rebuilt fix appeared not to work. Identified by PID before
+  killing, and the owner's own dev server on :3000 was left untouched. This is the argument for
+  `buildFingerprint` in runtime identity — a test can otherwise pass or fail against a server nobody
+  believes it is talking to.
+- **The spec's own API calls were refused** for missing Origin/CSRF. Playwright's `request` fixture
+  is not a browser fetch. The guard was right; the test had to learn its language.
+
+## Next executable task
+
+1. Model-selection popup on first load after restart, writing the chosen `RuntimeProfile`.
+2. Replace the wholesale `runLearningCycle` tick with the evidence-driven state machine
+   (`OBSERVE → LEARN → RESEARCH → VALIDATE → FORWARD → PAPER → MONITOR → EVOLVE → RETIRE`).
+3. Add `buildFingerprint` + PID/startedAt to the status payload so a stale server is visible.
+4. Then Task 2 — the UI control inventory.
