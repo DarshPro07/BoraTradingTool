@@ -62,7 +62,9 @@
     ".tmp/crash-matrix-dist/types/**/*.ts",
     ".tmp/crash-matrix-dist/dev/types/**/*.ts",
     ".tmp/crash-dist-mst6fuy1/types/**/*.ts",
-    ".tmp/crash-dist-mst6fuy1/dev/types/**/*.ts"
+    ".tmp/crash-dist-mst6fuy1/dev/types/**/*.ts",
+    ".tmp/provider-transports-dist/types/**/*.ts",
+    ".tmp/provider-transports-dist/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
