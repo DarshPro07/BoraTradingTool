@@ -1,5 +1,35 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 CHIEF-OF-STAFF / TEAM OS (rung 3, second leg) — **DONE 2026-08-14, VERIFIED** (docs/plans/team-os/)
+A bounded semantic team on the verified single-agent slice. A `depth:"deep"` (or `team:true`)
+`instrument_research` job escalates DETERMINISTICALLY (`decideTeamExecution`) to a Chief-of-Staff that
+builds one shared evidence packet, persists a `TeamExecutionPlan` BEFORE members run, runs 3 members
+(Researcher / Source Verifier / Critic — same model) in bounded parallel each producing a PERSISTED
+`AgentArtifact` (not chat), then synthesizes deterministically into a `TeamResult` that PRESERVES
+dissent, records a chief AgentRun, emits RESEARCH_COMPLETED once, and lets the durable job complete so
+dependents wake. Four concepts, not a framework: `TeamDefinition` (static/versioned, pinned by a
+`TeamRun`) · `TeamRun` · `TeamExecutionPlan` · `AgentArtifact`. Owner invariants enforced in code:
+the CoS coordinates only (no privileged authority — every role READ+RECOMMEND_ONLY by type; strongest
+output is a recommendation); failures reuse the existing Job OS grammar (no TeamRetryLoop —
+CONTRACT_VIOLATION / provider code / TEAM_BUDGET_EXCEEDED all fall through the generic taxonomy);
+deterministic budget the CoS can't widen; **the single-agent path is byte-for-byte unchanged**
+(`runtime.ts` zero-diff, verifier-confirmed). Additive migration 0021 (`team_runs`, `agent_artifacts`,
+`agent_runs.team_run_id`). Acceptance `lib/agents/team.test.ts` 11/11 (owner's 17 cases + a retry-honesty
+regression); single slice still 7/7. Full suite 1766 passed / 2 skipped, tsc 0, MCP 4/4, next build 0.
+Independent verifier VERIFIED / 0 blockers (read all files, diffed vs HEAD, reproduced all 17,
+mutation-tested dissent itself). Two non-blocking gaps it found were CLOSED + re-verified: a stale
+FAILED member row on retry (→ `recordAgentRun` now `onConflictDoUpdate`, latest outcome wins, proven
+by test [15b]); an unguarded member throw (→ wrapped → clean coded failure). One inherited risk
+DOCUMENTED not fixed: "exactly once across a whole-process crash" — the single-agent path
+(`bridge.ts:556`) shares the identical emit-then-complete pattern; it's a Job-OS-level idempotent-
+completion follow-up, out of this slice's scope.
+**Owner status wording: Agent/Team OS Core — VERIFIED_INTEGRATION.**
+**NEXT (owner-directed): 1-5 model routing (rung 4)** — now with real roles/tasks/team contracts as a
+meaningful destination. Router consumes role requirements + provider health + cost + latency +
+historical AgentRun verification rate → model assignment. Do NOT hard-code if-research→X; learn from
+the AgentRun/TeamRun ledgers. Optional near-term: model-based synthesizer (config swap, version bump);
+checkpoint-resume of completed members on retry; surface TeamRun/artifacts/dissent on /brain.
+
 ## P0 FIRST AGENT SLICE (rung 3) — **DONE 2026-08-14, VERIFIED** (docs/plans/agent-first-slice/)
 The Job-OS → Agent → Model → Ledger → Event → dependent-wake seam, proven end to end. New durable
 kind `instrument_research` runs a **versioned specialist agent** through the existing gateway/bridge

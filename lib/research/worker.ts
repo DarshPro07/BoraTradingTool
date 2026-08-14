@@ -75,6 +75,15 @@ async function runJob(job: ClaimedJob): Promise<Record<string, unknown>> {
       // The Agent Runtime owns semantic execution; the Job OS (here) owns lifecycle. The handler
       // records the AgentRun with agent+job provenance and returns/throws so the queue's failure
       // taxonomy classifies the outcome.
+      //
+      // DETERMINISTIC escalation: a deep/team-marked job is coordinated by the Chief-of-Staff team;
+      // everything else stays the verified single-agent path, byte-for-byte unchanged. The agent
+      // never decides to escalate itself — this decision is the Job OS's, from the payload.
+      const { decideTeamExecution } = await import("@/lib/agents/teams");
+      if (decideTeamExecution(job.payload as Record<string, unknown>) === "REQUIRED_TEAM") {
+        const { runInstrumentResearchTeam } = await import("@/lib/agents/team-runtime");
+        return (await runInstrumentResearchTeam(instrumentId, job.id)) as unknown as Record<string, unknown>;
+      }
       const { runInstrumentResearch } = await import("@/lib/agents/runtime");
       return (await runInstrumentResearch(instrumentId, job.id)) as unknown as Record<string, unknown>;
     }

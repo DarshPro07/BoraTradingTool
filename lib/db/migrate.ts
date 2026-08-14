@@ -56,6 +56,10 @@ const MIGRATIONS = [
   // change never makes historical runs irreproducible) and the durable job that drove it (job_id).
   // Additive nullable columns; browser-triggered runs keep NULL.
   "0020_agent_run_provenance.sql",
+  // Team OS: team_runs + agent_artifacts ledgers and a nullable agent_runs.team_run_id link.
+  // Additive; the single-agent path writes none of them. Chief-of-Staff coordinates bounded teams
+  // that exchange persisted artifacts (not chat) and preserve dissent into the TeamResult.
+  "0021_team_os.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

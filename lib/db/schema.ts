@@ -959,11 +959,70 @@ export const agentRuns = sqliteTable("agent_runs", {
   agentId: text("agent_id"),
   agentVersion: text("agent_version"),
   jobId: integer("job_id"),
+  /** Provenance (0021): the TeamRun this run belongs to, when it was a chief/member of a team. NULL for solo runs. */
+  teamRunId: text("team_run_id"),
   startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
   completedAt: integer("completed_at", { mode: "timestamp" }).notNull(),
 });
 
 export type AgentRunRow = typeof agentRuns.$inferSelect;
+
+/**
+ * The TeamRun ledger (0021) — one row per Chief-of-Staff coordination of a bounded semantic team.
+ *
+ * Distinct from `agentRuns` (one model call) the way `AgentRun` is distinct from `AgentDefinition`:
+ * a TeamRun records what a team DID (members, artifacts, plan, result, dissent) and pins the static
+ * `TeamDefinition` by version, so a later change to the team's roles never rewrites history.
+ */
+export const teamRuns = sqliteTable("team_runs", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").notNull(),
+  teamVersion: text("team_version").notNull(),
+  jobId: integer("job_id"),
+  instrumentId: text("instrument_id"),
+  /** RUNNING | COMPLETED | FAILED. */
+  status: text("status").notNull(),
+  chiefAgentRunId: text("chief_agent_run_id"),
+  /** JSON string[] — the member AgentRun ids, in plan order. */
+  memberAgentRunIds: text("member_agent_run_ids"),
+  /** JSON string[] — the artifacts produced, by id. */
+  artifactIds: text("artifact_ids"),
+  /** JSON TeamExecutionPlan — persisted BEFORE any member runs; not silently rewritten. */
+  plan: text("plan"),
+  /** JSON TeamResult — dissent preserved. */
+  result: text("result"),
+  tokens: integer("tokens"),
+  cost: real("cost"),
+  costCurrency: text("cost_currency"),
+  error: text("error"),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+});
+
+export type TeamRunRow = typeof teamRuns.$inferSelect;
+
+/**
+ * AgentArtifact (0021) — the STRUCTURED, persisted output a team member produces.
+ *
+ * The owner's rule: team members exchange artifacts, not chat transcripts. The Synthesizer consumes
+ * these by id. Persisting them (rather than passing blobs) is what makes a team run reproducible,
+ * token-bounded, crash-recoverable, and inspectable — and lets dissent become knowledge later.
+ */
+export const agentArtifacts = sqliteTable("agent_artifacts", {
+  id: text("id").primaryKey(),
+  teamRunId: text("team_run_id").notNull(),
+  jobId: integer("job_id"),
+  role: text("role").notNull(),
+  /** RESEARCH | VERIFICATION | CRITIQUE | SYNTHESIS. */
+  kind: text("kind").notNull(),
+  /** The member AgentRun that produced this artifact. */
+  agentRunId: text("agent_run_id"),
+  /** JSON structured content — never a chat transcript. */
+  content: text("content").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export type AgentArtifactRow = typeof agentArtifacts.$inferSelect;
 
 /**
  * One row per press of "Start MarketPulse".

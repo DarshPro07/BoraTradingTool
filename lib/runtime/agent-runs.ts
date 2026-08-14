@@ -37,6 +37,8 @@ export interface RecordAgentRunInput {
   agentId?: string | null;
   agentVersion?: string | null;
   jobId?: number | null;
+  /** Provenance (0021): the TeamRun this run was a chief/member of. Null for solo runs. */
+  teamRunId?: string | null;
   startedAt: Date;
   completedAt: Date;
 }
@@ -65,8 +67,40 @@ export function recordAgentRun(input: RecordAgentRunInput): string {
       agentId: input.agentId ?? null,
       agentVersion: input.agentVersion ?? null,
       jobId: input.jobId ?? null,
+      teamRunId: input.teamRunId ?? null,
       startedAt: input.startedAt,
       completedAt: input.completedAt,
+    })
+    // Idempotent by id, LATEST OUTCOME WINS: the durable-job paths use DETERMINISTIC run ids (a team
+    // member's id is sha(teamRunId|role|instrument)), so a Job-OS retry of the same job re-records the
+    // same id. A plain insert would throw on the primary key; a no-op would freeze a stale outcome
+    // (a member that FAILED on attempt 1 then SUCCEEDED on retry would read FAILED forever, lying to
+    // the ledger). Overwriting with the new attempt's outcome keeps exactly one row per logical run
+    // AND keeps it truthful. Unique-id callers (the browser/single-agent paths) never conflict.
+    .onConflictDoUpdate({
+      target: schema.agentRuns.id,
+      set: {
+        capability: input.capability,
+        provider: input.provider,
+        model: input.model,
+        status: input.status,
+        trigger: input.trigger,
+        instrumentId: input.instrumentId,
+        evidenceFingerprint: input.evidenceFingerprint,
+        verificationStatus: input.envelope?.status ?? null,
+        envelope: input.envelope ? JSON.stringify(input.envelope) : null,
+        refusalCode: input.refusalCode,
+        refusalMessage: input.refusalMessage,
+        tokens: input.tokens,
+        cost: input.cost,
+        costCurrency: input.costCurrency,
+        fallbackReason: input.fallbackReason,
+        agentId: input.agentId ?? null,
+        agentVersion: input.agentVersion ?? null,
+        jobId: input.jobId ?? null,
+        teamRunId: input.teamRunId ?? null,
+        completedAt: input.completedAt,
+      },
     })
     .run();
   return input.id;
