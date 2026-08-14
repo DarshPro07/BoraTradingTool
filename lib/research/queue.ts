@@ -87,6 +87,20 @@ export const JOB_KINDS = [
    * returns to the dependency resolver (ingest + dependent research), never a blind retry.
    */
   "instrument_research",
+  /**
+   * Enroll a gauntlet-passed strategy as a forward challenger — the durable link between
+   * `validated` and the paper-forward stage, which previously existed only as a manual owner
+   * route (the ladder's top rungs were unreachable by any recorded path).
+   *
+   * DELIBERATELY NOT AUTONOMOUSLY ENQUEUED, exactly like `validation`: the governance policy
+   * table has no action code for challenger activation, so the cycle only REPORTS enrollable
+   * strategies; the enqueue is an explicit owner/API act and the handler requires
+   * `confirmed: true` (mirroring the activate route's own confirm gate). The handler is
+   * `activateChallenger`, which re-verifies everything it always did — research identity,
+   * recorded gauntlet experiment, priceable economics — and refuses with its own codes.
+   * ALREADY_ACTIVE is SUCCESS: the enrollment goal is satisfied, a retry must not fail it.
+   */
+  "forward_enroll",
 ] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 
@@ -131,7 +145,7 @@ const DEFAULT_LEASE_MS = 5 * 60_000;
 export type FailureClass = "PERMANENT" | "RETRYABLE";
 
 /** Codes that describe a fact about the world, not about the moment. Waiting cannot change them. */
-const PERMANENT_CODES = ["INSTRUMENT_UNKNOWN"] as const;
+const PERMANENT_CODES = ["INSTRUMENT_UNKNOWN", "SPEC_NOT_FOUND"] as const;
 
 /** How long a RETRYABLE corpse cools before its dedupe key stops answering for it. */
 export const REVIVAL_COOLDOWN_MS = 15 * 60_000;

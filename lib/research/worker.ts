@@ -67,6 +67,29 @@ async function runJob(job: ClaimedJob): Promise<Record<string, unknown>> {
       const { runSelfRepair } = await import("@/lib/learning/self-repair");
       return runSelfRepair("incident-repair-job") as unknown as Record<string, unknown>;
     }
+    case "forward_enroll": {
+      // The durable validated→paper_forward link. Double-gated like `validation`: explicit
+      // enqueue only (the cycle reports, never enqueues) and `confirmed: true` in the payload —
+      // activation begins a forward observation record, and the confirm gate keeps that an
+      // intentional act. `activateChallenger` re-verifies identity, gauntlet experiment and
+      // economics itself; its refusals surface as this job's own coded failure.
+      const payload = job.payload as { specId?: unknown; confirmed?: unknown };
+      if (payload.confirmed !== true) {
+        throw new Error("FORWARD_ENROLL_UNCONFIRMED: enrolling a forward challenger requires confirmed:true.");
+      }
+      if (typeof payload.specId !== "string" || payload.specId.length === 0) {
+        throw new Error("SPEC_NOT_FOUND: forward_enroll requires a specId.");
+      }
+      const { activateChallenger } = await import("@/lib/forward/shadow");
+      const outcome = activateChallenger(payload.specId, "autonomous_worker");
+      if (outcome.ok) return outcome as unknown as Record<string, unknown>;
+      // Idempotent by goal: the strategy IS enrolled — a retry, a crash-reclaim or a duplicate
+      // enqueue must report success, not fail a satisfied objective.
+      if (outcome.code === "ALREADY_ACTIVE") {
+        return { ok: true, alreadyActive: true, message: outcome.message };
+      }
+      throw new Error(`${outcome.code}: ${outcome.message}`);
+    }
     case "instrument_research": {
       const instrumentId = (job.payload as { instrumentId?: unknown }).instrumentId;
       if (typeof instrumentId !== "string" || instrumentId.length === 0) {

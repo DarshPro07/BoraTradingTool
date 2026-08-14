@@ -51,6 +51,14 @@ import type { SyntaxAttachmentResolver, SyntaxParse } from "./syntax/resolver";
  */
 
 /** One campaign for everything the research loop forms — they share a dataset and a search. */
+/**
+ * Per-side bid-ask spread assumption for intraday candidates, in basis points. Not measured —
+ * STATED, exactly like `ASSUMED_SLIPPAGE_BPS` in lib/paper/capital.ts: this deployment cannot
+ * observe the book, and the DSL rightly refuses an intraday spec that leaves the figure out.
+ * 5 bps describes NSE large-cap liquidity; every authored spec records it in assumptionsAdded.
+ */
+export const ASSUMED_INTRADAY_SPREAD_BPS = 5;
+
 export const RESEARCH_CAMPAIGN = Object.freeze({
   id: "camp_autonomous_research",
   name: "Autonomous research intake",
@@ -240,10 +248,25 @@ export async function authorFromHypotheses(
     }
 
     const market = hypothesis.market === "US" ? "US" : "NSE";
+    /**
+     * The spec is born on the product the capital basis says it can trade.
+     *
+     * `resolution` was never set here, so the DSL defaulted to "D" — which implies DELIVERY —
+     * while `breedingBasis()` at a small account resolves INTRADAY (the ₹23,000 delivery floor).
+     * The `tradable_at_capital` candidacy guard enforces exactly that implication, so every
+     * autonomously authored strategy was permanently refused a trial by a field the author never
+     * wrote: the live funnel read 10 rehearsed → 0 eligible, forever, with no evidence spent.
+     *
+     * "5m" and not "15m": the canonical store's intraday path (provider windows + the intraday
+     * accumulator) runs on 5-minute bars, so 5m is the resolution with a real data supply. US
+     * hypotheses keep the daily default — the India capital basis does not describe them.
+     */
+    const resolution =
+      market === "NSE" && basis.product === "INTRADAY" ? ("5m" as const) : ("D" as const);
     const candidate = {
       name: specNameFor(hypothesis.title, hypothesis.id),
       description: hypothesis.statement.slice(0, 500),
-      universe: { market, maxPositions: basis.positions },
+      universe: { market, maxPositions: basis.positions, resolution },
       // The ENTRY scope only. Flattening every condition into the entry would put the exit rule
       // inside it — "close above SMA20" AND "close below SMA20" — producing a rule that can never
       // fire, which is precisely the contradiction the compiler exists to prevent. The per-scope
@@ -266,12 +289,19 @@ export async function authorFromHypotheses(
         ...(triage.compiled?.scopes.EXIT ? { condition: triage.compiled.scopes.EXIT } : {}),
       },
       sizing: { maxPositionPct: Math.min(25, Math.floor(100 / basis.positions)) },
-      costs: costsForCapital({
-        capital: basis.capital,
-        positions: basis.positions,
-        market: OWNER_CAPITAL.market,
-        product: "DELIVERY" as const,
-      }),
+      costs: {
+        // The basis's OWN product — hardcoding DELIVERY here priced intraday specs on the wrong
+        // fee schedule and contradicted the resolution chosen above.
+        ...costsForCapital({
+          capital: basis.capital,
+          positions: basis.positions,
+          market: OWNER_CAPITAL.market,
+          product: basis.product,
+        }),
+        // The DSL refuses an intraday spec without a DECLARED spread (it is a claim, never a
+        // default the schema invents). Stated here, and recorded in assumptionsAdded below.
+        ...(resolution === "D" ? {} : { assumedSpreadBps: ASSUMED_INTRADAY_SPREAD_BPS }),
+      },
     };
 
     const parsed = StrategyDslSchema.safeParse(candidate);
@@ -399,7 +429,9 @@ export async function authorFromHypotheses(
             "a stated exit says when the thesis is wrong, not how long capital may sit or how much may be lost"
           : "exit: afterDays 5 with a 2% stop - screen-class default, the hypothesis stated entries only",
         `sizing: max ${Math.min(25, Math.floor(100 / basis.positions))}% per position from the capital basis`,
-        "costs: computed from the owner's capital at delivery rates, not stated in the hypothesis",
+        `resolution: ${resolution} — from the capital basis's product (${basis.product}); the hypothesis did not state a bar size`,
+        `costs: computed from the owner's capital at ${basis.product.toLowerCase()} rates, not stated in the hypothesis` +
+          (resolution === "D" ? "" : `; assumedSpreadBps ${ASSUMED_INTRADAY_SPREAD_BPS} is a stated assumption, not a measurement`),
         "long-only: direction was not stated and buy-side is the conservative reading",
       ],
       // Both sides of a comparison or crossing are required, not just the left one.

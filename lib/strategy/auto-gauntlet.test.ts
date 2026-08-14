@@ -337,3 +337,40 @@ describe("the injected dataset source", () => {
     expect(seen[0]).toMatchObject({ market: expect.any(String), resolution: expect.any(String) });
   });
 });
+
+/**
+ * One unpriceable spec must cost ITSELF, never the pass.
+ *
+ * `costStanding` throws `CostModelError` when no fee schedule is in force for a spec's
+ * market/date. Unguarded (the original call), that single throw escaped `selectTrialCandidates`
+ * and the cycle recorded the WHOLE autonomous-gauntlet pass as impaired — every other candidate
+ * unevaluated because one was unpriceable. Latent today (both markets carry in-force schedules),
+ * detonating exactly when a schedule window lapses — the moment nobody is looking.
+ */
+describe("an unpriceable market blocks one spec, not the selection pass", () => {
+  it("converts CostModelError into that spec's own fail-closed refusal", async () => {
+    const { CostModelError } = await import("@/lib/paper/cost-model");
+    const unpriceable = seed(dailyDsl("unpriceable_probe"), "would_pass");
+    const healthy = seed(dailyDsl("healthy_probe"), "would_pass");
+
+    const throwing = (dslJson: string) => {
+      if (JSON.parse(dslJson).name === "unpriceable_probe") {
+        throw new CostModelError("NO_SCHEDULE_IN_FORCE", "No fee schedule is in force for this market on this date (test).");
+      }
+      return { declaredBps: 12, requiredBps: 10, understated: false, reason: "priced (test)" };
+    };
+
+    // The pass must SURVIVE and judge both specs.
+    const candidates = selectTrialCandidates(new Date(), 1, throwing);
+    const blocked = candidates.find((candidate) => candidate.specId === unpriceable);
+    const alive = candidates.find((candidate) => candidate.specId === healthy);
+
+    expect(blocked).toBeDefined();
+    expect(blocked!.eligible).toBe(false);
+    expect(guard(blocked!, "cost_honest")?.passed).toBe(false);
+    expect(guard(blocked!, "cost_honest")?.detail).toMatch(/cannot be computed/i);
+
+    expect(alive).toBeDefined();
+    expect(guard(alive!, "cost_honest")?.passed).toBe(true);
+  });
+});

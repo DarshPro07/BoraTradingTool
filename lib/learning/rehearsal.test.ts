@@ -245,3 +245,75 @@ describe("running at learning mode", () => {
     expect((await runValidationRehearsal(source(), "learning", at)).ranAt).toBe(at.toISOString());
   });
 });
+
+/**
+ * Rotation: the per-cycle cap must never become permanent starvation.
+ *
+ * The selection was `.filter(draft|validating).slice(0, 10)` with no ordering and no
+ * already-rehearsed exclusion — the same first ten rows by insertion order were re-rehearsed
+ * every cycle forever, and specs 11+ were structurally invisible. The live funnel's
+ * "10 rehearsed" was the cap itself, not a measurement.
+ *
+ * The rotation contract: never-rehearsed specs first (no rehearsal_outcomes row), then the
+ * stalest verdicts. Two capped passes over twelve drafts must therefore reach all twelve —
+ * with the cycle's own upsert (which persists verdicts to rehearsal_outcomes) simulated
+ * between them, because that ledger is what the rotation reads.
+ */
+describe("the rehearsal cap rotates instead of starving", () => {
+  it("reaches every draft across passes once verdicts persist", async () => {
+    const db = getDb();
+    // Eleven more drafts beside the seeded fixture: 12 total, cap is 10.
+    for (let index = 0; index < 11; index += 1) {
+      const dsl = { ...REHEARSAL_DSL, name: `rotation_fixture_${index}` };
+      const compiled = compileStrategy(dsl);
+      if (!compiled.ok) throw new Error(compiled.message);
+      db.insert(schema.strategySpecs)
+        .values({
+          id: `spec_rotation_${index}`,
+          hypothesisId: null,
+          parentId: null,
+          name: dsl.name,
+          version: 1,
+          dsl: JSON.stringify(dsl),
+          dslHash: `${compiled.hash}_${index}`,
+          status: "draft",
+          createdBy: "rehearsal-test",
+          createdAt: new Date(),
+        })
+        .run();
+    }
+
+    const seen = new Set<string>();
+    const persist = (outcomes: { specId: string; verdict: string; reason: string }[], at: Date) => {
+      for (const outcome of outcomes) {
+        seen.add(outcome.specId);
+        db.insert(schema.rehearsalOutcomes)
+          .values({
+            strategySpecId: outcome.specId,
+            verdict: outcome.verdict,
+            reason: outcome.reason,
+            trades: 0,
+            instrumentsEvaluated: 0,
+            rehearsedAt: at,
+          })
+          .onConflictDoUpdate({
+            target: schema.rehearsalOutcomes.strategySpecId,
+            set: { verdict: outcome.verdict, reason: outcome.reason, rehearsedAt: at },
+          })
+          .run();
+      }
+    };
+
+    const first = await runValidationRehearsal(source(), "learning", new Date("2026-08-14T10:00:00Z"));
+    expect(first.evaluated).toBe(10);
+    persist(first.outcomes, new Date("2026-08-14T10:00:00Z"));
+
+    const second = await runValidationRehearsal(source(), "learning", new Date("2026-08-14T11:00:00Z"));
+    persist(second.outcomes, new Date("2026-08-14T11:00:00Z"));
+
+    expect(
+      seen.size,
+      "two capped passes over twelve drafts must reach all twelve — anything less is the cap acting as permanent starvation",
+    ).toBe(12);
+  });
+});

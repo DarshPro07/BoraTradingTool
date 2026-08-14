@@ -133,11 +133,36 @@ export async function runValidationRehearsal(
   if (!replay.allowed) return empty(ranAt, [replay.reason], "Historical replay is not permitted at this mode.");
   if (!simulate.allowed) return empty(ranAt, [simulate.reason], "Simulation is not permitted at this mode.");
 
+  /**
+   * ROTATION, not truncation. This was `.slice(0, MAX_PER_CYCLE)` with no ordering and no
+   * already-rehearsed exclusion — the same first ten rows by insertion order were re-rehearsed
+   * every cycle forever, and specs 11+ were structurally invisible (the live funnel's
+   * "10 rehearsed" was this cap, not a measurement). The durable verdict ledger
+   * (`rehearsal_outcomes`, upserted by the cycle after each pass) is the rotation's memory:
+   * never-rehearsed specs first, then the stalest verdicts, so the cap bounds each PASS while
+   * every draft is reached across passes — and a verdict still refreshes over time.
+   */
+  const rehearsedAt = new Map(
+    getDb()
+      .select({
+        specId: schema.rehearsalOutcomes.strategySpecId,
+        at: schema.rehearsalOutcomes.rehearsedAt,
+      })
+      .from(schema.rehearsalOutcomes)
+      .all()
+      .map((row) => [row.specId, row.at.getTime()]),
+  );
   const specs = getDb()
     .select()
     .from(schema.strategySpecs)
     .all()
     .filter((row) => row.status === "draft" || row.status === "validating")
+    .sort((left, right) => {
+      const leftAt = rehearsedAt.get(left.id) ?? -1;
+      const rightAt = rehearsedAt.get(right.id) ?? -1;
+      // Ties (two never-rehearsed, or equal timestamps) stay deterministic by id.
+      return leftAt - rightAt || left.id.localeCompare(right.id);
+    })
     .slice(0, MAX_PER_CYCLE);
 
   if (specs.length === 0) {

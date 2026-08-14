@@ -69,3 +69,38 @@ describe("durable kinds beyond ingestion", () => {
     expect(typeof result.summary).toBe("string");
   });
 });
+
+/**
+ * forward_enroll — the durable validated→paper_forward link, double-gated like `validation`.
+ *
+ * The refusal paths are the unit truth here (the happy path exercises the full forward
+ * apparatus and is covered by lib/forward's own suites and the forward-evidence e2e): an
+ * unconfirmed enqueue must die stating its gate, and a nonexistent spec must die PERMANENTLY
+ * in one attempt — retrying "this spec id does not exist" is not diligence.
+ */
+describe("forward_enroll is gated and truthful", () => {
+  useTemporaryDatabase();
+
+  it("refuses without confirmed:true, stating the gate", async () => {
+    const { id } = enqueue({ kind: "forward_enroll", payload: { specId: "stg_whatever" }, maxAttempts: 1 });
+    await runWorker("kinds-test", 5);
+
+    const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, id)).get();
+    expect(job?.status).toBe("dead");
+    expect(job?.lastError).toMatch(/FORWARD_ENROLL_UNCONFIRMED/);
+  });
+
+  it("a nonexistent spec dies permanently on the first attempt", async () => {
+    const { id } = enqueue({
+      kind: "forward_enroll",
+      payload: { specId: "stg_never_existed", confirmed: true },
+      maxAttempts: 3,
+    });
+    await runWorker("kinds-test", 5);
+
+    const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, id)).get();
+    expect(job?.status).toBe("dead");
+    expect(job?.attempts, "SPEC_NOT_FOUND is a permanent fact — one attempt, not a retry budget").toBe(1);
+    expect(job?.lastError).toMatch(/SPEC_NOT_FOUND/);
+  });
+});

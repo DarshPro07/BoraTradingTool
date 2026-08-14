@@ -33,7 +33,9 @@ export default async function StrategyLabPage() {
   const strategies = strategyLab();
   // Computed once and indexed, not re-derived per cell — each standing reads the trial ledger and
   // the forward record, and calling it four times per row would make the page O(rows × reads).
-  const byId = new Map(standings().map((standing) => [standing.specId, standing]));
+  // The SAME array feeds the funnel, so the counters and the per-row stages cannot disagree.
+  const all = standings();
+  const byId = new Map(all.map((standing) => [standing.specId, standing]));
   const stageOf = (specId: string) => byId.get(specId);
   const challengers = strategies.filter((strategy) => strategy.status === "paper_challenger");
   const rejected = strategies.filter((strategy) => strategy.status === "rejected");
@@ -90,7 +92,7 @@ export default async function StrategyLabPage() {
       <StarMap />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ValidationFunnel />
+        <ValidationFunnel standings={all} />
         <GraveyardPanel />
         <Panel title="GATES">
           <div className="grid gap-2 text-xs sm:grid-cols-2">
@@ -164,6 +166,14 @@ export default async function StrategyLabPage() {
                       <span className={stageOf(strategy.id)?.stage === "graveyard" ? "text-loss" : "text-amber"}>
                         {(stageOf(strategy.id)?.stage ?? "unknown").replace(/_/g, " ")}
                       </span>
+                      {/* The typed wait — `blockedOn` was computed every cycle and rendered
+                          nowhere, which is how twenty strategies sat stalled with the reason
+                          existing only in memory. */}
+                      {stageOf(strategy.id)?.blockedOn ? (
+                        <span className="ml-1.5 text-[9px] uppercase tracking-wider text-muted-foreground" data-testid="stage-blocked-on">
+                          waiting on {stageOf(strategy.id)!.blockedOn!.replace(/_/g, " ")}
+                        </span>
+                      ) : null}
                       <div className="text-[10px] text-muted-foreground max-w-[26rem] leading-relaxed mt-0.5">
                         {stageOf(strategy.id)?.advance.because}
                       </div>

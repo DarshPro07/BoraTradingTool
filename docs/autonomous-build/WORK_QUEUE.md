@@ -16,7 +16,19 @@ clean runs on virgin DBs; crash-recovery baseline + 1786 units + tsc re-verified
 hardening: the millisecond record→completeJob window on research is at-least-once by design
 (re-spendable call, truthful per-attempt ledger) — documented in the plan, not hidden.
 
-## P0 STRATEGY PIPELINE PROGRESSION — **NEXT (owner order 2026-08-14)** (docs/plans/strategy-progression/)
+## P0 STRATEGY PIPELINE PROGRESSION — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/strategy-progression/)
+All five structural stalls closed or honestly stated (details in the plan): specs born
+5m/INTRADAY on the capital basis (fail-first proven); rehearsal rotates (never-rehearsed first —
+the "10" becomes cumulative truth); candidacy pass survives an unpriceable spec; the funnel
+counts the derived stage machine and the typed `blockedOn` renders per-row + aggregated;
+`forward_enroll` durable kind (double-gated, idempotent-by-goal, SPEC_NOT_FOUND permanent) with
+the cycle REPORTING enrollable survivors. Evidence: 1792/1792 units, tsc clean, e2e 8 passed +
+virgin-DB 2 passed. **NEXT ITEM SPAWNED: sealed-holdout apparatus** — a real holdout dataset
+(sealed segment materialization + query-once evaluator feeding `recordHoldoutOutcome`) so the
+`validated → holdout_cleared` rung becomes crossable; until then it is a stated wait, and
+`forward_enroll` (per its own gate) remains the explicit owner act for gauntlet survivors.
+
+## (original scoping note, kept for provenance)
 Owner requirement: "the system should create a strategy unless no path exists" — every strategy
 either advances, knows its dependency, or terminates with a stated permanent reason. Gate 0
 reconnaissance DONE (see plan dir): the funnel (22 authored → 10 rehearsed → 2 gauntlet → 0

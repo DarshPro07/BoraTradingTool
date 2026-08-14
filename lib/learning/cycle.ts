@@ -548,6 +548,15 @@ async function runCycleBody(
   for (const entry of promotion.advanced) {
     actions.push(`${entry.name} is at ${entry.stage}: ${entry.because}`);
   }
+  // The NAMED next action for gauntlet survivors. Reported, never enqueued: the governance
+  // table has no autonomous action for challenger activation, so the paper stage starts only by
+  // an explicit owner/API enqueue of the durable `forward_enroll` kind (confirmed:true) — this
+  // line is what turns a silent stall into a stated path.
+  for (const entry of promotion.forwardEnrollable) {
+    actions.push(
+      `${entry.name} is enrollable for forward observation — enqueue forward_enroll {specId: "${entry.specId}", confirmed: true} to start the paper stage.`,
+    );
+  }
 
   // Named precisely, because these three states have three different remedies and the loop used
   // to print "unreachable" for all of them. On a machine with no quant core installed that reads

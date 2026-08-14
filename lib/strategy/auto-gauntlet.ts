@@ -4,10 +4,10 @@ import { type LearningMode } from "@/lib/governance/policy";
 import { breedingBasis } from "@/lib/paper/capital";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
 import type { ResearchDatasetSource } from "@/lib/learning/rehearsal";
-import { costStanding } from "./cost-gate";
+import { costStanding, type CostVerdict } from "./cost-gate";
 import { StrategyDslSchema, isIntradayResolution, type StrategyDsl } from "./dsl";
 import { runGauntlet } from "./gauntlet";
-import { currentStage } from "./promotion";
+import { costVerdictOrBlocked, currentStage } from "./promotion";
 import {
   AUTONOMOUS_ACTOR,
   DEFAULT_DAILY_TRIAL_BUDGET,
@@ -96,7 +96,12 @@ function parseDsl(raw: string): StrategyDsl | null {
  * Pure with respect to the gauntlet: it reads, it decides, it spends nothing. Separated from
  * `runAutonomousGauntlet` so the selection can be tested exhaustively without a trial ledger.
  */
-export function selectTrialCandidates(now = new Date(), budget = DEFAULT_DAILY_TRIAL_BUDGET): TrialCandidate[] {
+export function selectTrialCandidates(
+  now = new Date(),
+  budget = DEFAULT_DAILY_TRIAL_BUDGET,
+  /** Injectable like promotion's own wrapper, so the fail-closed branch is directly testable. */
+  standing: (dslJson: string) => CostVerdict = costStanding,
+): TrialCandidate[] {
   const specs = getDb().select().from(schema.strategySpecs).all();
   const basis = breedingBasis();
   const spentToday = trialsSpentToday(now);
@@ -146,7 +151,13 @@ export function selectTrialCandidates(now = new Date(), budget = DEFAULT_DAILY_T
 
     // 3. Its declared cost must describe a market the owner can reach. A trial spent on a
     //    cost-understating spec measures a fictional market at a permanent price.
-    const cost = costStanding(spec.dsl);
+    //
+    //    GUARDED: `costStanding` throws `CostModelError` when no fee schedule is in force for a
+    //    spec's market/date, and unguarded that single spec killed the ENTIRE selection pass into
+    //    the cycle's impairment — every other candidate unevaluated because one was unpriceable.
+    //    The wrapper converts the throw into that one spec's own fail-closed refusal, exactly as
+    //    the promotion ladder already does.
+    const cost = costVerdictOrBlocked(spec.dsl, standing);
     guards.push({
       name: "cost_honest",
       passed: !cost.understated,

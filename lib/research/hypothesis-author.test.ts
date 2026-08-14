@@ -52,3 +52,56 @@ describe("authoring survives two hypotheses that share a title", () => {
     expect(new Set(names).size).toBe(names.length);
   });
 });
+
+/**
+ * The spec is born on the product the capital basis says it can trade.
+ *
+ * `breedingBasis()` at the owner's stated capital resolves the product (INTRADAY at a small
+ * account — the ₹23,000 delivery floor), and `selectTrialCandidates`' `tradable_at_capital`
+ * guard enforces exactly that against the RESOLUTION the spec declares. The author set neither:
+ * `universe.resolution` defaulted to "D", which implies DELIVERY, so every autonomously
+ * authored strategy was permanently refused a trial by a field the author never wrote — the
+ * funnel read 10 rehearsed, 0 eligible, forever.
+ */
+describe("authored specs are tradable at the capital they were bred for", () => {
+  it("declares a resolution whose implied product matches the breeding basis", async () => {
+    const { breedingBasis } = await import("@/lib/paper/capital");
+    const { isIntradayResolution } = await import("@/lib/strategy/dsl");
+    const basis = breedingBasis();
+
+    // The fixture parser knows only its canned clauses — reuse the exact pair the suite already
+    // parses successfully.
+    recordHypothesis({
+      title: "IN:XNSE:NIFTYBEES — LONG SWING",
+      statement: "Enter when rsi_14 is above 55 on the daily close, exiting on a close below sma_20.",
+      market: "NSE",
+      createdBy: "test",
+    });
+
+    const report = await authorFromHypotheses("test", new Date(), fixtureResolver());
+    const authored = report.outcomes.filter((outcome) => outcome.verdict === "EXPRESSIBLE");
+    expect(authored.length).toBeGreaterThanOrEqual(1);
+
+    const specs = getDb().select().from(schema.strategySpecs).all();
+    expect(specs.length).toBeGreaterThanOrEqual(1);
+
+    for (const spec of specs) {
+      const dsl = JSON.parse(spec.dsl) as {
+        universe: { resolution?: string };
+        costs: { assumedSpreadBps?: number };
+      };
+      const intraday = isIntradayResolution(dsl.universe.resolution);
+      if (basis.product === "INTRADAY") {
+        expect(
+          intraday,
+          `basis says INTRADAY but the authored spec resolves "${dsl.universe.resolution ?? "D"}" — ` +
+            "the tradable_at_capital guard will refuse it forever",
+        ).toBe(true);
+        // The schema refuses intraday without a DECLARED spread; the author must state one.
+        expect(dsl.costs.assumedSpreadBps).toBeGreaterThan(0);
+      } else {
+        expect(intraday).toBe(false);
+      }
+    }
+  });
+});

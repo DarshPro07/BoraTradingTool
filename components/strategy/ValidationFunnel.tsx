@@ -1,32 +1,39 @@
 import { getDb, schema } from "@/lib/db";
 import { Panel } from "@/components/system/Panel";
 import { StateBody } from "@/components/system/PanelState";
-import { lastCycleRun } from "@/lib/learning/run-log";
+import type { Standing } from "@/lib/strategy/promotion";
+import type { Stage } from "@/lib/strategy/lifecycle";
 
 /**
- * The validation funnel — how many strategies survive each stage.
+ * The validation funnel — how many strategies stand at or past each rung.
  *
- * From the reel (frame 1440): stages drawn as bars with survivor counts, over a table where
- * strategies that made money on screen still carry a GRAVEYARD badge. That juxtaposition is the
- * system's whole argument, and a list of gate *thresholds* — which is what this screen showed
- * before — states the rules while hiding whether they bite.
- *
- * Counted from the trial ledger, so the funnel cannot drift from the record it describes.
+ * Counted from the DERIVED STAGE MACHINE (`standings()`), not from raw tables. The raw-table
+ * version could not tell the truth: its REHEARSED bar showed the last cycle's evaluation count —
+ * which the rehearsal caps at ten, so the bar read "10" forever on any registry of ten-plus
+ * drafts (the cap, presented as a measurement) — and its stage keys bypassed the one component
+ * that knows WHY a strategy is where it is. One stage source everywhere, or the page argues
+ * with itself.
  */
 
-const STAGES = [
-  { key: "authored", label: "AUTHORED", note: "Compiled and stored" },
-  { key: "rehearsed", label: "REHEARSED", note: "Last cycle; costs no trial" },
-  { key: "validated", label: "GAUNTLET", note: "Spent a trial" },
-  { key: "passed", label: "PASSED", note: "Cleared every gate" },
-  { key: "forward", label: "FORWARD", note: "Accumulating paper evidence" },
-] as const;
+const LADDER: readonly { at: Stage[]; label: string; note: string }[] = [
+  { at: [], label: "AUTHORED", note: "Compiled and stored" },
+  { at: ["rehearsed"], label: "REHEARSED", note: "Replay says worth a trial; costs none" },
+  { at: ["validated"], label: "VALIDATED", note: "Survived the gauntlet's spent trial" },
+  { at: ["holdout_cleared"], label: "HOLDOUT", note: "Cleared the sealed, query-once set" },
+  { at: ["paper_forward", "owner_review"], label: "FORWARD", note: "Accumulating paper evidence" },
+];
 
-export function ValidationFunnel() {
-  const db = getDb();
-  const specs = db.select().from(schema.strategySpecs).all();
+const ORDER: readonly Stage[] = [
+  "draft",
+  "rehearsed",
+  "validated",
+  "holdout_cleared",
+  "paper_forward",
+  "owner_review",
+];
 
-  if (specs.length === 0) {
+export function ValidationFunnel({ standings }: { standings: Standing[] }) {
+  if (standings.length === 0) {
     return (
       <Panel title="VALIDATION FUNNEL">
         <StateBody state="empty" reason="No strategies have been authored, so nothing has entered the funnel." />
@@ -34,46 +41,47 @@ export function ValidationFunnel() {
     );
   }
 
-  const results = db.select().from(schema.validationResults).all();
-  const trials = db.select().from(schema.trials).all();
-  const forward = db.select().from(schema.forwardOutcomes).all();
+  const living = standings.filter((standing) => standing.stage !== "graveyard");
+  const buried = standings.length - living.length;
+  const rankOf = (stage: Stage) => ORDER.indexOf(stage);
 
-  const validatedIds = new Set(results.map((row) => row.strategySpecId));
-  const passedIds = new Set(results.filter((row) => row.passed === 1).map((row) => row.strategySpecId));
-  const forwardIds = new Set(forward.map((row) => row.strategySpecId));
+  // Cumulative at-or-past counts: a strategy at paper_forward IS rehearsed and validated — the
+  // funnel narrows monotonically by construction, which raw per-table counts never guaranteed.
+  const counts = LADDER.map((rung, index) =>
+    index === 0
+      ? living.length
+      : living.filter((standing) => rankOf(standing.stage) >= rankOf(rung.at[0])).length,
+  );
 
-  // Rehearsal comes from the cycle log, not from `trials`.
-  //
-  // My first version counted trial rows here, which made REHEARSED and GAUNTLET the same
-  // number — trials are written *by* the gauntlet. The rehearsal deliberately records nothing
-  // per strategy, so the only honest source is the last cycle's own count, and it is labelled
-  // as such rather than presented as a cumulative total it cannot be.
-  const lastRun = lastCycleRun();
-  const rehearsedLastCycle = lastRun?.rehearsed ?? 0;
-  // Trials exist independently of validation results, so keep them visible.
-  const trialsSpent = new Set(trials.map((row) => row.strategySpecId)).size;
+  // The typed waiting summary — the blockedOn field that was computed every cycle and rendered
+  // nowhere. This line is the funnel's actual answer to "why is it shaped like this".
+  const waiting = new Map<string, number>();
+  for (const standing of living) {
+    if (standing.blockedOn === null) continue;
+    waiting.set(standing.blockedOn, (waiting.get(standing.blockedOn) ?? 0) + 1);
+  }
+  const waitingText = [...waiting.entries()]
+    .map(([what, count]) => `${count} on ${what.replace(/_/g, " ")}`)
+    .join(" · ");
 
-  const counts: Record<string, number> = {
-    authored: specs.length,
-    rehearsed: rehearsedLastCycle,
-    validated: Math.max(validatedIds.size, trialsSpent),
-    passed: passedIds.size,
-    forward: forwardIds.size,
-  };
+  // The trial denominator stays from the ledger it lives in — it is a spend count, not a stage.
+  const trialsSpent = new Set(
+    getDb().select().from(schema.trials).all().map((row) => row.strategySpecId),
+  ).size;
+  const validated = counts[2];
 
-  const widest = Math.max(1, counts.authored);
-  const buried = specs.filter((spec) => spec.status === "rejected" || spec.status === "retired");
+  const widest = Math.max(1, counts[0]);
 
   return (
     <Panel title="VALIDATION FUNNEL">
       <div className="space-y-1.5 mb-3" data-testid="validation-funnel">
-        {STAGES.map((stage) => {
-          const count = counts[stage.key] ?? 0;
+        {LADDER.map((rung, index) => {
+          const count = counts[index];
           const share = count / widest;
           return (
-            <div key={stage.key} className="flex items-center gap-2">
+            <div key={rung.label} className="flex items-center gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-24 shrink-0">
-                {stage.label}
+                {rung.label}
               </span>
               <div className="flex-1 h-4 bg-panel-alt border border-panel relative">
                 <div
@@ -84,21 +92,24 @@ export function ValidationFunnel() {
                   {count}
                 </span>
               </div>
-              <span className="text-[9px] text-muted-foreground w-40 shrink-0">{stage.note}</span>
+              <span className="text-[9px] text-muted-foreground w-40 shrink-0">{rung.note}</span>
             </div>
           );
         })}
       </div>
 
-      {/* The line the reel makes with a table of profitable strategies all marked GRAVEYARD. */}
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        {counts.passed === 0 && counts.validated > 0 ? (
+      <p className="text-[10px] text-muted-foreground leading-relaxed" data-testid="funnel-waiting">
+        {waitingText ? (
           <>
-            <span className="text-amber">{counts.validated} strategies spent a trial and none passed.</span> That is
-            the gauntlet working, not a fault. A strategy can be profitable on screen and still be
-            rejected — most are.
+            <span className="text-amber">Waiting — {waitingText}.</span>{" "}
           </>
-        ) : counts.validated === 0 ? (
+        ) : null}
+        {validated === 0 && trialsSpent > 0 ? (
+          <>
+            {trialsSpent} strateg{trialsSpent === 1 ? "y" : "ies"} spent a trial and none passed. That is the
+            gauntlet working, not a fault — most profitable-on-screen strategies are rejected.
+          </>
+        ) : trialsSpent === 0 ? (
           <>
             Nothing has been through the gauntlet. Rehearsal answers &ldquo;is it worth a
             trial?&rdquo; for free; the gauntlet costs one and permanently raises that
@@ -106,11 +117,11 @@ export function ValidationFunnel() {
           </>
         ) : (
           <>
-            {counts.passed} of {counts.validated} cleared every gate. Passing is a licence to
-            gather forward evidence, not a conclusion.
+            {validated} of {trialsSpent} that spent a trial cleared every gate. Passing is a licence
+            to gather forward evidence, not a conclusion.
           </>
         )}
-        {buried.length > 0 ? ` ${buried.length} buried and kept on record so they cannot be rediscovered.` : ""}
+        {buried > 0 ? ` ${buried} buried and kept on record so they cannot be rediscovered.` : ""}
       </p>
     </Panel>
   );

@@ -202,6 +202,12 @@ export interface PromotionPass {
   buried: { name: string; because: string }[];
   /** What each stalled candidate is waiting for, counted. */
   waiting: Record<string, number>;
+  /**
+   * Gauntlet survivors with a NAMED next action: the durable `forward_enroll` job exists for
+   * exactly these. Reported, never enqueued — the governance table has no autonomous action for
+   * challenger activation, so starting the paper stage stays an explicit owner/API act.
+   */
+  forwardEnrollable: { specId: string; name: string }[];
   summary: string;
 }
 
@@ -232,11 +238,19 @@ export function promotionPass(): PromotionPass {
     .map(([what, count]) => `${count} on ${what.replace(/_/g, " ")}`)
     .join(", ");
 
+  // A `validated` stage IS the gauntlet-passed evidence (the ladder cannot reach it otherwise),
+  // and `holdout_cleared` sits above it — both are enrollable; `activateChallenger` re-verifies
+  // its own requirements at execution time.
+  const forwardEnrollable = all
+    .filter((standing) => standing.stage === "validated" || standing.stage === "holdout_cleared")
+    .map((standing) => ({ specId: standing.specId, name: standing.name }));
+
   return {
     evaluated: all.length,
     advanced,
     buried,
     waiting,
+    forwardEnrollable,
     summary:
       all.length === 0
         ? "No strategy exists to promote."
