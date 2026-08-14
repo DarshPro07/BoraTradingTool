@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { Candle } from "@/lib/providers/types";
 import type { StrategyDsl } from "@/lib/strategy/dsl";
 import { runBacktest, type ExitReason } from "./engine";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+
+// `runBacktest` emits to the durable event ledger; this compute-only suite needs somewhere
+// isolated to write it. See lib/brain/event-bus.atomic.test.ts for why the failure is no longer
+// swallowed.
+useTemporaryDatabase();
 
 /**
  * Phase 3 parity gate.

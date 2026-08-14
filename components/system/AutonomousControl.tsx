@@ -80,6 +80,8 @@ export function AutonomousControl({ profile }: { profile: string }) {
   }, []);
 
   useEffect(() => {
+    // Ensure local session is established before any mutations.
+    void fetch("/api/session", { credentials: "same-origin" }).catch(() => {});
     void refresh();
     const timer = setInterval(() => void refresh(), POLL_MS);
     return () => clearInterval(timer);

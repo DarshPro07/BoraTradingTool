@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * The intraday contract, asserted against the running application.
@@ -26,7 +27,7 @@ function headers(baseURL: string) {
   return {
     "content-type": "application/json",
     origin: baseURL,
-    "x-marketpulse-csrf": "1",
+    "x-marketpulse-mutation": "1",
   };
 }
 
@@ -56,6 +57,9 @@ const unique = (base: string, project: string) =>
   `e2e_${base}_${RUN_STAMP}_${project.replace(/[^a-z0-9]/gi, "_")}`;
 
 test.describe("the intraday authoring contract", () => {
+  test.beforeEach(async ({ request }) => {
+    await ensureLocalSession(request);
+  });
   test("accepts an opening-range strategy and states the square-off it cannot escape", async ({
     request,
     baseURL,
@@ -147,6 +151,9 @@ test.describe("the intraday authoring contract", () => {
 });
 
 test.describe("the guarded gauntlet", () => {
+  test.beforeEach(async ({ request }) => {
+    await ensureLocalSession(request);
+  });
   test("never spends a trial without an explicit confirmation", async ({ request, baseURL }) => {
     // Briefly asserted 423 RESEARCH_FROZEN while the research-identity repair was in flight. The
     // freeze is lifted and the confirmation gate underneath it is load-bearing again: a trial

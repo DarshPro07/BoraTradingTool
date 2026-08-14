@@ -11,6 +11,7 @@ import { listJobs, queueStats } from "@/lib/research/queue";
 import { Panel } from "@/components/system/Panel";
 import { AutonomousControl } from "@/components/system/AutonomousControl";
 import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
+import { getBrainState, type LaneState } from "@/lib/brain/kernel";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +23,10 @@ export const dynamic = "force-dynamic";
  * what FAILED and why, what survives, and what is ready vs missing. No number here is invented,
  * and a gap is a stated gap with the job that fixes it — never a bare "insufficient data".
  */
-export default function BrainPage() {
+export default async function BrainPage() {
   const db = getDb();
   const readiness = systemReadiness();
+  const brain = await getBrainState();
 
   const specs = db.select().from(schema.strategySpecs).all();
   const experiments = db.select().from(schema.experiments).all();
@@ -107,8 +109,8 @@ export default function BrainPage() {
       <Panel title="MARKETPULSE BRAIN — WHAT THE SYSTEM KNOWS, DOES, AND STILL LACKS">
         <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]" data-testid="brain-system">
           <div>
-            <div className="text-muted-foreground text-[10px]">LEARNING MODE</div>
-            <div className="font-bold uppercase">{readiness.learningMode}</div>
+            <div className="text-muted-foreground text-[10px]">MODE</div>
+            <div className="font-bold uppercase">{brain.mode === "RUN" ? "AUTO — RUNNING" : brain.mode}</div>
           </div>
           <div>
             <div className="text-muted-foreground text-[10px]">READINESS</div>
@@ -127,6 +129,22 @@ export default function BrainPage() {
             <div className="text-muted-foreground text-[10px]">STATISTICAL SPEND</div>
             <div>{trials} selection trial(s) recorded, permanently</div>
           </div>
+        </div>
+      </Panel>
+
+      {/* AUTO MODE LANES — concurrent, not mode switching */}
+      <Panel title="AUTO MODE — CONCURRENT LANES">
+        <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]" data-testid="brain-lanes">
+          {Object.entries(brain.lanes).map(([key, lane]) => {
+            const colorClass = lane.state === "ACTIVE" ? "text-gain" : lane.state === "WAITING" ? "text-amber" : lane.state === "BLOCKED" || lane.state === "FAILED" ? "text-loss" : "text-muted-foreground";
+            return (
+              <div key={key} className="border border-panel/60 px-2 py-1">
+                <div className={`font-bold uppercase ${colorClass}`}>{lane.state}</div>
+                <div className="text-[10px]">{lane.name}</div>
+                {lane.lastAction && <div className="text-muted-foreground truncate">{lane.lastAction}</div>}
+              </div>
+            );
+          })}
         </div>
       </Panel>
 

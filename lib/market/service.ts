@@ -46,7 +46,9 @@ function testProvenance(sourceId: string, eventAt = new Date()): Provenance {
     provider: "TEST_FIXTURE",
     sourceEventAt: eventAt.toISOString(),
     ingestedAt: new Date().toISOString(),
-    quality: "LIVE",
+    // NOT "LIVE". These numbers were invented by `fixtureQuote`/`fixtureCandles`; calling them
+    // live is how fabricated prices reached the market dashboard indistinguishable from real ones.
+    quality: "FIXTURE",
     delayedBySeconds: 0,
     sourceId,
   };

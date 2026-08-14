@@ -138,7 +138,7 @@ export function SystemPulse() {
       ? "WORKING"
       : status.learningMode === "off"
         ? "IDLE"
-        : status.learningMode.toUpperCase();
+        : "RUN";
 
   const title = !status
     ? "Contacting the system status endpoint."
@@ -147,8 +147,8 @@ export function SystemPulse() {
       : !core?.reachable
         ? `Quant core unreachable. ${core?.message ?? ""}`.trim()
         : status.learningMode === "off"
-          ? "Autonomy is off. Enable it under System → Learning."
-          : `Autonomy is ${status.learningMode}. Work starts after two minutes idle.${
+          ? "Autonomy is in maintenance. Start RUN from the Brain or system controls."
+          : `AUTO/RUN is active. Work starts after two minutes idle.${
               lastResult ? ` Last cycle: ${lastResult}.` : ""
             }`;
 

@@ -1,4 +1,5 @@
 import type { Candle } from "@/lib/providers/types";
+import { emit } from "@/lib/brain/event-bus";
 import {
   describeExecution,
   executionContextFor,
@@ -207,7 +208,10 @@ export function runBacktest(
   bars: readonly Candle[],
   options: BacktestOptions = {},
 ): BacktestResult {
+  emit({ kind: "BACKTEST_STARTED", specId: "unknown", instrumentId: "unknown" });
+
   if (bars.length < MIN_BARS) {
+    emit({ kind: "BACKTEST_REFUSED", specId: "unknown", instrumentId: "unknown", reason: "INSUFFICIENT_BARS" });
     return {
       ok: false,
       code: "INSUFFICIENT_BARS",
@@ -390,8 +394,8 @@ export function runBacktest(
   const inSampleReturns = trades.slice(0, split).map((trade) => trade.netReturn);
   const outOfSampleReturns = trades.slice(split).map((trade) => trade.netReturn);
 
-  return {
-    ok: true,
+  const result = {
+    ok: true as const,
     trades,
     barsEvaluated,
     warmingUp,
@@ -415,6 +419,10 @@ export function runBacktest(
       datasetFingerprint: options.datasetFingerprint,
     },
   };
+
+  emit({ kind: "BACKTEST_COMPLETED", specId: "unknown", instrumentId: "unknown", trades: trades.length, pnl: trades.reduce((sum, t) => sum + t.netReturn, 0) });
+
+  return result;
 }
 
 function closeTrade(

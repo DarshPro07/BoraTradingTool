@@ -497,6 +497,24 @@ export const trials = sqliteTable("trials", {
 });
 
 /**
+ * Durable trial-budget reservations — the atomic gate for spending a permanent statistical trial.
+ * See `drizzle/0019_trial_reservations.sql`. `id` is the fencing token; the partial unique index on
+ * (tradingDate, budgetSlot) WHERE state IN ('RESERVED','SPENT') is the atomic exclusion.
+ */
+export const trialReservations = sqliteTable("trial_reservations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  tradingDate: text("trading_date").notNull(),
+  budgetSlot: integer("budget_slot").notNull(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  actor: text("actor").notNull(),
+  /** RESERVED → SPENT | RELEASED | ABANDONED. */
+  state: text("state").notNull(),
+  reservedAt: integer("reserved_at", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  finalizedAt: integer("finalized_at", { mode: "timestamp" }),
+});
+
+/**
  * The latest rehearsal verdict per strategy — what the ladder's `draft` rung was always written
  * to read, and never received. See `drizzle/0007_rehearsal_outcomes.sql`.
  */
@@ -856,6 +874,13 @@ export const researchJobEvents = sqliteTable("research_job_events", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
+export const jobDependencies = sqliteTable("job_dependencies", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  jobId: integer("job_id").notNull(),
+  dependsOnId: integer("depends_on_id").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
 export const learningState = sqliteTable("learning_state", {
   id: integer("id").primaryKey(),
   mode: text("mode").notNull().default("off"),
@@ -930,6 +955,10 @@ export const agentRuns = sqliteTable("agent_runs", {
   cost: real("cost"),
   costCurrency: text("cost_currency"),
   fallbackReason: text("fallback_reason"),
+  /** Provenance (0020): which AgentDefinition ran, at which version, for which durable job. NULL for browser-triggered runs. */
+  agentId: text("agent_id"),
+  agentVersion: text("agent_version"),
+  jobId: integer("job_id"),
   startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
   completedAt: integer("completed_at", { mode: "timestamp" }).notNull(),
 });

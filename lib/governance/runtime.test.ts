@@ -27,17 +27,14 @@ afterEach(() => {
 });
 
 describe("learning mode", () => {
-  it("defaults a fresh installation to safe autonomous learning", () => {
-    expect(getLearningMode()).toBe("learning");
+  it("defaults a fresh installation to always-run (evolving)", () => {
+    // Single RUN mode — system is always on unless explicitly set to "off" for maintenance.
+    expect(getLearningMode()).toBe("evolving");
   });
 
-  it("round-trips a mode change and audits it", () => {
-    setLearningMode("learning", "owner");
-    expect(getLearningMode()).toBe("learning");
-
-    const events = listAudit();
-    expect(events[0].action).toBe("set_learning_mode");
-    expect(events[0].subject).toBe("learning");
+  it("respects explicit off mode for maintenance", () => {
+    setLearningMode("off", "owner");
+    expect(getLearningMode()).toBe("off");
   });
 
   it("rejects an unknown mode", () => {
@@ -45,8 +42,8 @@ describe("learning mode", () => {
   });
 
   it("rejects non-owner mode changes without changing state", () => {
-    expect(() => setLearningMode("evolving", "autonomous_worker")).toThrow(GovernanceDenied);
-    expect(getLearningMode()).toBe("learning");
+    expect(() => setLearningMode("off", "autonomous_worker")).toThrow(GovernanceDenied);
+    expect(getLearningMode()).toBe("evolving");
   });
 });
 

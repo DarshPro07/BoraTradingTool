@@ -13,7 +13,7 @@ import {
   triageText,
   type TriageVerdict,
 } from "./hypothesis-triage";
-import { SpaCyDependencyResolver } from "./syntax/resolver";
+import { sharedSyntaxResolver } from "./syntax/resolver";
 import { clauseSlicesOf } from "./semantic-compiler";
 import type { SyntaxAttachmentResolver, SyntaxParse } from "./syntax/resolver";
 
@@ -151,8 +151,14 @@ export async function authorFromHypotheses(
    * Loading `en_core_web_sm` costs seconds, and under a loaded parallel suite it exceeded the 30s
    * test timeout — a green unit suite turning red purely from scheduling. Production still gets
    * the real worker; tests supply a resolver backed by recorded parses of the same model.
+   *
+   * OPTIONAL, not defaulted, and the difference is the whole defect. As a default parameter
+   * (`= SpaCyDependencyResolver.fromEnv()`) this expression ran on EVERY call that omitted it,
+   * building a new worker and reloading the model each request — 17–22s per click, measured. It
+   * also threw *before the function body*, where no `try` can reach it, which is why an unset
+   * `SYNTAX_PARSER_PYTHON` surfaced as a 500 instead of the stated refusal below.
    */
-  resolver: SyntaxAttachmentResolver = SpaCyDependencyResolver.fromEnv(),
+  resolver?: SyntaxAttachmentResolver,
 ): Promise<AuthorReport> {
   const db = getDb();
   const hypotheses = db.select().from(schema.researchHypotheses).all();
@@ -184,14 +190,19 @@ export async function authorFromHypotheses(
   const basis = breedingBasis();
   const outcomes: AuthorOutcome[] = [];
 
-  // ONE worker for the whole batch. The model load is the cost, so it is paid once here rather
-  // than per hypothesis — and it is paid at this boundary precisely so `hypothesisTriage` and
-  // `compileResearchProse` below it stay pure and synchronous.
+  // ONE worker for the whole PROCESS — not, as before, one per call. The model load is the cost,
+  // so it is paid at first use and then never again, and it is paid at this boundary precisely so
+  // `hypothesisTriage` and `compileResearchProse` below it stay pure and synchronous.
   //
   // If the parser is unavailable this THROWS and nothing is authored. That is the intended
   // behaviour: attachment cannot be guessed, so a strategy cannot be written without it. The
-  // learning cycle already records the reason and continues with the rest of the pass.
-  try {
+  // learning cycle catches it and records the reason (`cycle.ts`), and the HTTP route translates it
+  // into a stated 503 rather than letting it escape as a 500.
+  //
+  // NOT disposed here. This worker belongs to the process, and a borrower that shuts down what it
+  // borrowed is how "one worker per process" became "one worker per call".
+  const parser = resolver ?? sharedSyntaxResolver();
+
   for (const hypothesis of hypotheses) {
     // Already authored? The link is the spec's `hypothesisId` — the first non-null values this
     // registry will hold.
@@ -212,7 +223,7 @@ export async function authorFromHypotheses(
     // will look up are exactly the ones recorded here.
     const parses: Record<string, SyntaxParse> = {};
     for (const slice of clauseSlicesOf(triageText(input))) {
-      if (!parses[slice]) parses[slice] = await resolver.parse(slice);
+      if (!parses[slice]) parses[slice] = await parser.parse(slice);
     }
     const triage = hypothesisTriage({ ...input, parses });
 
@@ -426,9 +437,6 @@ export async function authorFromHypotheses(
         createdAt: now,
       })
       .run();
-  }
-  } finally {
-    await resolver.dispose();
   }
 
   const authored = outcomes.filter((outcome) => outcome.specId !== undefined).length;

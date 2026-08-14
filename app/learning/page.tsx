@@ -26,9 +26,9 @@ export default async function LearningPage() {
   return (
     <div className="p-4 space-y-4">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-lg tracking-wider">LEARNING MODE</h1>
+        <h1 className="text-lg tracking-wider">AUTO RUNTIME</h1>
         <span className="text-xs">
-          CURRENT <span className="text-amber">{mode.toUpperCase()}</span>
+          CURRENT <span className="text-amber">{mode === "off" ? "MAINTENANCE" : "RUN"}</span>
         </span>
       </header>
 
@@ -44,7 +44,7 @@ export default async function LearningPage() {
           and the tiles above it are activity — necessary, insufficient. */}
       <LearningProgressPanel />
 
-      <Panel title="MODE">
+      <Panel title="AUTO / RUN">
         <LearningModeControl current={mode} />
 
         {/* Directly under the control, because the question "did that do anything?" arrives
@@ -53,7 +53,7 @@ export default async function LearningPage() {
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="WHAT IS ENABLED NOW">
+        <Panel title="WHAT IS ENABLED IN RUN">
           <ul className="space-y-1 text-xs">
             {AUTONOMOUS_PERMITTED.map((action) => {
               const enabled = MODE_ORDER.indexOf(mode) >= MODE_ORDER.indexOf(action.minimumMode);
@@ -132,7 +132,7 @@ export default async function LearningPage() {
 
       <Panel title="RESEARCH INTAKE">
         <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">
-          What the deterministic worker drains on every <span className="text-amber">learning</span> cycle. Until
+          What the deterministic worker drains on every <span className="text-amber">RUN</span> cycle. Until
           something is queued here the loop has nothing to ingest, and{" "}
           <span className="text-amber">Processed 0 job(s)</span> is an accurate report of an empty queue rather than a
           broken one.

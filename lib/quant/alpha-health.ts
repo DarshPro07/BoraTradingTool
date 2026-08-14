@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import { forwardScorecard } from "@/lib/forward/shadow";
 import { paperScorecard } from "@/lib/forward/paper";
 import { assumptionFingerprint, type AssumptionFingerprint } from "./model-assumptions";
@@ -197,7 +198,7 @@ export function alphaHealthFor(challengerId: string): AlphaHealth | null {
     };
   }
 
-  return computeAlphaHealth({
+  const health = computeAlphaHealth({
     historicalMeanNet: shadow.baseline?.meanNetReturn ?? null,
     historicalTrades: shadow.baseline?.trades ?? 0,
     shadowMeanNet: shadow.meanNetReturn,
@@ -206,4 +207,8 @@ export function alphaHealthFor(challengerId: string): AlphaHealth | null {
     policyMinSignals: shadow.policy.minSignals,
     paper: paperInputs,
   });
+
+  emit({ kind: "ALPHA_HEALTH_UPDATED", challengerId, status: health.status });
+
+  return health;
 }

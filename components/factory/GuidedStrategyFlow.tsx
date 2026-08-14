@@ -6,6 +6,7 @@ import { Panel } from "@/components/system/Panel";
 import { HypothesisComposer, type ComposeResult } from "@/components/research/HypothesisComposer";
 import { RunGauntletButton } from "@/components/strategy/RunGauntletButton";
 import { RunCycleButton } from "@/components/learning/RunCycleButton";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * The Strategy Factory as ONE flow (mission P3).
@@ -111,9 +112,8 @@ export function GuidedStrategyFlow() {
     setBacktestBusy(true);
     setBacktest(null);
     try {
-      const response = await fetch("/api/strategy/trades", {
+      const response = await mutationFetch("/api/strategy/trades", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ specId: authored.specId }),
       });
       const body = (await response.json()) as BacktestReport;

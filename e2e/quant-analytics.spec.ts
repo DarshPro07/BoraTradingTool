@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import Database from "better-sqlite3";
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * Q1b desktop journey: the quant surface must EXPLAIN its numbers — estimator names, policy
@@ -14,7 +15,7 @@ const RUN_STAMP = Date.now().toString(36);
 const SESSION_OPEN_UTC = Date.UTC(2026, 7, 3, 3, 45, 0) / 1000;
 
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 test.describe("quant analytics — metrics that explain themselves", () => {
@@ -60,6 +61,8 @@ test.describe("quant analytics — metrics that explain themselves", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
     test.setTimeout(120_000);
+
+    await ensureLocalSession(request);
 
     // A strategy whose inspection experiment provides the recorded returns.
     const name = `e2e_quant_${RUN_STAMP}`;

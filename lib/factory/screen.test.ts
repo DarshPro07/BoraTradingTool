@@ -3,6 +3,11 @@ import type { Candle } from "@/lib/providers/types";
 import type { StrategyDsl } from "@/lib/strategy/dsl";
 import { expectedMaxSharpe } from "@/lib/strategy/statistics";
 import { screenPopulation, type Candidate } from "./screen";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+
+// Screening runs backtests, and `runBacktest` emits to the durable event ledger; this
+// compute-only suite needs somewhere isolated to write it.
+useTemporaryDatabase();
 
 function lcg(seed: number): () => number {
   let state = seed >>> 0;

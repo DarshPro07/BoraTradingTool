@@ -41,6 +41,7 @@ export default async function AnalyzePage({ params }: { params: Promise<{ ticker
       sourceEventAt: snapshot.quote.provenance.sourceEventAt ? new Date(snapshot.quote.provenance.sourceEventAt) : undefined,
       provider: snapshot.quote.provenance.provider === "TEST_FIXTURE" ? "TEST_FIXTURE" : "YAHOO",
       mock: false,
+      provenance: snapshot.quote.provenance,
     };
 
     void writeStockContext(instrument.id, {

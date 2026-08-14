@@ -13,7 +13,12 @@ import type { Exchange, Instrument } from "@/lib/market/types";
 
 type InstrumentSearchResult = Instrument & { isin?: string; securityId?: string };
 
-export function TopNav() {
+/**
+ * `fixtureData` is threaded from the root layout because this is a client component and a
+ * non-NEXT_PUBLIC_ env var reads as undefined here — the badge would report REAL on a fixture
+ * server, which is precisely the confusion it exists to remove.
+ */
+export function TopNav({ fixtureData = false }: { fixtureData?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,7 +101,7 @@ export function TopNav() {
           <span>MARKETPULSE</span>
         </Link>
         <MarketSelector />
-        <ModeBadge />
+        <ModeBadge fixtureData={fixtureData} />
         <SystemPulse />
 
         <form

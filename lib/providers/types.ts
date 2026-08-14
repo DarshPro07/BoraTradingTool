@@ -13,6 +13,17 @@ export interface Quote {
   sourceEventAt?: Date;
   provider?: "YAHOO" | "FINNHUB" | "TEST_FIXTURE";
   mock?: boolean; // true when this quote is simulated demo data, not a live price
+  /** Full provenance chain — source, quality, freshness. */
+  provenance?: {
+    provider: string;
+    // "FIXTURE" mirrors DataQuality in lib/market/types.ts: invented numbers must never be able to
+    // describe themselves as LIVE, in either type.
+    quality: "LIVE" | "DELAYED" | "STALE" | "CONFLICTED" | "UNAVAILABLE" | "AUTH_REQUIRED" | "FIXTURE";
+    delayedBySeconds: number | null;
+    sourceEventAt: string | null;
+    ingestedAt: string;
+    sourceId: string;
+  };
 }
 
 export interface Candle {

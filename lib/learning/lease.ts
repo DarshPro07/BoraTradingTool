@@ -56,6 +56,27 @@ export function leasePath(databaseFile = databasePath()): string {
   return `${databaseFile}.cycle-lease`;
 }
 
+/**
+ * The RESEARCH lane's lease — a DIFFERENT file, and that is the entire point.
+ *
+ * One lease file means one lane. While every driver shared `leasePath()`, the research worker
+ * could only ever run as a phase inside the learning cycle, because the cycle held the only lease
+ * for its whole duration. That is what made AUTO strictly sequential: not an accident of
+ * scheduling, but a mutex that admitted one lane at a time.
+ *
+ * A separate file lets OBSERVE/LEARN (the cycle) and RESEARCH (the queue worker) hold their own
+ * mutexes and overlap in wall-clock time, while each remains singly-held — so the original defect
+ * this lock was written for (twenty-one cycles racing through one queue) still cannot recur, and
+ * neither can two workers draining the queue twice.
+ *
+ * Concurrency across the two lanes is safe at the storage layer: SQLite runs in WAL mode with a
+ * 5s busy_timeout (lib/db/index.ts), and `claimNextJob` takes each job inside a transaction with
+ * a `lockedUntil` lease, so a job can never be claimed twice.
+ */
+export function researchLeasePath(databaseFile = databasePath()): string {
+  return `${databaseFile}.research-lease`;
+}
+
 function readHolder(file: string): LeaseHolder | null {
   try {
     const parsed: unknown = JSON.parse(fs.readFileSync(file, "utf8"));

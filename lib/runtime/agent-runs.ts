@@ -33,6 +33,10 @@ export interface RecordAgentRunInput {
   cost: number | null;
   costCurrency: string | null;
   fallbackReason: string | null;
+  /** Provenance (0020): the AgentDefinition and durable job behind this run. Null for browser runs. */
+  agentId?: string | null;
+  agentVersion?: string | null;
+  jobId?: number | null;
   startedAt: Date;
   completedAt: Date;
 }
@@ -58,6 +62,9 @@ export function recordAgentRun(input: RecordAgentRunInput): string {
       cost: input.cost,
       costCurrency: input.costCurrency,
       fallbackReason: input.fallbackReason,
+      agentId: input.agentId ?? null,
+      agentVersion: input.agentVersion ?? null,
+      jobId: input.jobId ?? null,
       startedAt: input.startedAt,
       completedAt: input.completedAt,
     })

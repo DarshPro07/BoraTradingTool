@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { emit } from "@/lib/brain/event-bus";
 import {
   PROVIDER_IDS,
   descriptorFor,
@@ -90,6 +91,22 @@ export interface AgentRunSuccess {
   completedAt: string;
   /** Non-null only when the provider that ran is not the one first requested. */
   fallbackReason: string | null;
+  /**
+   * Latency attribution, straight from the provider's own report.
+   *
+   * A research call was measured at 9.5–11 minutes end to end, and nothing recorded WHERE those
+   * minutes went — the CLI payload carries `duration_api_ms` and `num_turns` and both were being
+   * discarded. Without them "the model is slow" and "we are slow around the model" are
+   * indistinguishable, and a trivial `claude -p` call on this machine returns in 5.6s total
+   * (`duration_api_ms` 2980), so the difference is worth attributing rather than assuming.
+   *
+   * `apiDurationMs` is time the provider spent in the API. `wallDurationMs` is what we observed
+   * around the subprocess. The gap between them is OUR overhead: process spawn, stdin write,
+   * stdout drain, JSON parse. `turns` exposes an agent loop that ran more times than expected.
+   */
+  apiDurationMs: number | null;
+  wallDurationMs: number;
+  turns: number | null;
 }
 
 export interface AgentRunFailure {
@@ -189,7 +206,20 @@ export async function runAgent(request: AgentRunRequest): Promise<AgentRunResult
     };
   }
 
-  return runClaudeCode(request, decision.fallbackReason);
+  emit({ kind: "MODEL_SELECTED", provider: decision.resolved, model: CLAUDE_MODEL_ALIAS, capability: request.capability, reason: decision.fallbackReason ?? "primary" });
+  emit({ kind: "AGENT_STARTED", agentId: `agt_${randomUUID().replace(/-/g, "").slice(0, 12)}`, capability: request.capability, provider: decision.resolved });
+
+  const result = await runClaudeCode(request, decision.fallbackReason);
+
+  if (result.ok) {
+    emit({ kind: "AGENT_COMPLETED", agentId: result.runId, result: "success", tokens: result.tokens, cost: result.cost });
+    emit({ kind: "MODEL_CALL_COMPLETED", provider: result.provider, model: result.model, tokens: result.tokens ?? 0, latencyMs: new Date(result.completedAt).getTime() - new Date(result.startedAt).getTime(), cost: result.cost });
+  } else {
+    emit({ kind: "AGENT_FAILED", agentId: "agent_failed", error: result.message });
+    emit({ kind: "MODEL_CALL_FAILED", provider: decision.resolved, model: CLAUDE_MODEL_ALIAS, error: result.message });
+  }
+
+  return result;
 }
 
 async function runClaudeCode(
@@ -197,6 +227,7 @@ async function runClaudeCode(
   fallbackReason: string | null,
 ): Promise<AgentRunResult> {
   const startedAt = new Date().toISOString();
+  const wallStart = Date.now();
 
   const args = [
     "-p",
@@ -256,6 +287,17 @@ async function runClaudeCode(
     };
   }
 
+  const wallDurationMs = Date.now() - wallStart;
+  const apiDurationMs = typeof payload.duration_api_ms === "number" ? payload.duration_api_ms : null;
+
+  // Logged unconditionally: a run nobody timed is a run nobody can make faster. The three numbers
+  // together say whether the provider or this process owns the latency.
+  console.log(
+    `[gateway] claude-code wall=${wallDurationMs}ms api=${apiDurationMs ?? "?"}ms ` +
+      `cli=${payload.duration_ms ?? "?"}ms turns=${payload.num_turns ?? "?"} ` +
+      `tokens=${totalTokens(payload) ?? "?"}`,
+  );
+
   return {
     ok: true,
     provider: "claude-code",
@@ -269,6 +311,9 @@ async function runClaudeCode(
     startedAt,
     completedAt,
     fallbackReason,
+    apiDurationMs,
+    wallDurationMs,
+    turns: typeof payload.num_turns === "number" ? payload.num_turns : null,
   };
 }
 
@@ -279,6 +324,12 @@ interface ClaudeCliResult {
   result?: unknown;
   session_id?: string;
   total_cost_usd?: number;
+  /** Time the provider reports spending in the API. Was discarded; see AgentRunSuccess. */
+  duration_api_ms?: number;
+  /** Total time the CLI reports for the run, including its own orchestration. */
+  duration_ms?: number;
+  /** Agent-loop iterations. More than one on a single-shot research call is a finding. */
+  num_turns?: number;
   usage?: { input_tokens?: number; output_tokens?: number };
   modelUsage?: Record<string, { outputTokens?: number }>;
 }

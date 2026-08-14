@@ -6,7 +6,12 @@ export default defineConfig({
     alias: { "@": path.resolve(__dirname, ".") },
   },
   test: {
-    include: ["lib/**/*.test.ts", "app/**/*.test.ts", "mcp/**/*.test.ts"],
+    // `e2e/lib/**` holds test INFRASTRUCTURE (route derivation, session helpers), not browser
+    // specs, and infrastructure that decides what gets tested must itself be tested — a broken
+    // route walk would silently empty the Playwright matrix. The repo's convention keeps the two
+    // runners apart by extension: Playwright owns `*.spec.ts`, vitest owns `*.test.ts`, so this
+    // glob cannot pick up a browser spec.
+    include: ["lib/**/*.test.ts", "app/**/*.test.ts", "mcp/**/*.test.ts", "e2e/lib/**/*.test.ts"],
     // Process isolation per file. Many suites mutate process.env (MARKETPULSE_DB_PATH,
     // QUANT_CORE_ROOT, MARKETPULSE_TEST_MODE); under the default threads pool env is
     // process-global, so parallel files raced each other's environments — the captured flakes

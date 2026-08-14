@@ -706,8 +706,14 @@ function matchesInstrumentSearch(instrument: SecurityMasterInstrument, query: st
   ];
   if (values.some((value) => value.includes(query))) return true;
 
+  // Compaction ("MCDOWELL-N" -> "MCDOWELLN") must never be applied across the exchange-suffix
+  // boundary: compacting "LIQUIDSBI.NS" yields "LIQUIDSBINS", in which "SBI" + "NS" fabricates
+  // "SBIN" and makes "LIQUIDSBI" a top hit for a "SBIN" search. The symbol field already covers
+  // every compact-symbol query ("MCDOWELL-N" -> symbol "MCDOWELL-N" compacts to "MCDOWELLN"), so
+  // providerSymbol participates in direct matching only.
+  const compactValues = [instrument.id, instrument.symbol, instrument.name.toUpperCase(), instrument.isin];
   const compactQuery = query.replace(/[^A-Z0-9]/g, "");
-  if (compactQuery && values.some((value) => value.replace(/[^A-Z0-9]/g, "").includes(compactQuery))) {
+  if (compactQuery && compactValues.some((value) => value.replace(/[^A-Z0-9]/g, "").includes(compactQuery))) {
     return true;
   }
 

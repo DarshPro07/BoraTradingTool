@@ -43,7 +43,6 @@ a quant-core health block.
 |---|---|---|
 | `MARKETPULSE_DB_PATH` | `marketpulse.db` | Database location |
 | `MARKETPULSE_AGENT_TOKEN` | unset | ≥32-byte token for non-browser mutations |
-| `MARKETPULSE_OWNER_TOKEN` | unset | Distinct ≥32-byte token for owner-only controls |
 | `QUANT_CORE_ROOT` | `E:/Trading_BOT` | Python quant core, read-only |
 | `QUANT_CORE_URL` | `http://127.0.0.1:8787` | Quant-core HTTP; `off` disables |
 | `ANTHROPIC_API_KEY` | unset | Optional, unattended analysis only |
@@ -68,11 +67,12 @@ master is `PARTIAL`, not empty.
 4. Analyse in Claude Code; conclusions appear at `/analyst`
 5. `/audit` — what was attempted and what was denied
 
-## Learning mode
+## AUTO / RUN
 
-Set at `/learning` after unlocking owner controls. The owner token creates a 15-minute HttpOnly,
-same-site session and is never persisted in browser storage. Agent bearer tokens cannot change the
-mode or approve/merge proposals.
+The product has one routine top-level mode: RUN. `/learning` exposes the concurrent Observation,
+Learning, and Evolution lanes and can trigger a cycle without an owner-token unlock. Browser
+mutations still require the invisible local session, loopback origin, and mutation header. Agent
+bearer tokens cannot approve/merge proposals.
 
 | Mode | Runs |
 |---|---|

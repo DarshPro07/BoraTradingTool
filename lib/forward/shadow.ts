@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import { conditionLeaves } from "@/lib/backtest/inspect";
 import { buildFeaturePanel, type FeatureVector } from "@/lib/backtest/features";
 import { executionContextFor } from "@/lib/broker/execution-profile";
@@ -354,6 +355,7 @@ function emitSignals(
       try {
         db.insert(schema.forwardSignals).values(payload).run();
         count += 1;
+        emit({ kind: "FORWARD_SIGNAL_CREATED", signalId: id, instrumentId });
       } catch (caught) {
         // The UNIQUE(challenger, instrument, event_time) fired: this market event already has its
         // one signal, and it keeps it (owner test 4).
@@ -464,6 +466,7 @@ function resolveOutcomes(
         })
         .run();
       resolved += 1;
+      emit({ kind: "FORWARD_SIGNAL_RESOLVED", signalId: signal.id, outcome: exit.reason });
     } catch (caught) {
       // PK collision = another pass already resolved it. Idempotent by construction (owner test 6).
       if (!/UNIQUE constraint failed|PRIMARY KEY/i.test(caught instanceof Error ? caught.message : "")) throw caught;

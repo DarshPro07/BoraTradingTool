@@ -10,18 +10,16 @@ import {
   createProposal,
   getProposal,
 } from "@/lib/learning/evolution";
-import { createOwnerSession } from "@/lib/security/request";
+import { createLocalSession } from "@/lib/security/request";
 import { POST } from "./route";
 
 const AGENT_TOKEN = "a".repeat(64);
-const OWNER_TOKEN = "o".repeat(64);
 let directory: string;
 
 beforeEach(() => {
   directory = fs.mkdtempSync(path.join(os.tmpdir(), "marketpulse-proposal-route-"));
   vi.stubEnv("MARKETPULSE_DB_PATH", path.join(directory, "proposals.db"));
   vi.stubEnv("MARKETPULSE_AGENT_TOKEN", AGENT_TOKEN);
-  vi.stubEnv("MARKETPULSE_OWNER_TOKEN", OWNER_TOKEN);
   closeDbForTests();
   setLearningMode("evolving", "owner");
 });
@@ -43,18 +41,31 @@ function proposal(): string {
 }
 
 function request(body: unknown, headers: Record<string, string>): Request {
+  // Merge cookies: caller can add to the base local session cookie.
+  const baseCookie = `marketpulse_local_session=${localSession}`;
+  const callerCookie = headers.cookie;
+  const mergedCookie = callerCookie ? `${baseCookie}; ${callerCookie}` : baseCookie;
   return new Request("http://127.0.0.1:3000/api/proposals", {
     method: "POST",
-    headers: { "content-type": "application/json", ...headers },
+    headers: {
+      "content-type": "application/json",
+      origin: "http://127.0.0.1:3000",
+      "x-marketpulse-mutation": "1",
+      ...headers,
+      cookie: mergedCookie,
+    },
     body: JSON.stringify(body),
   });
 }
 
+// Pre-create a valid local session for tests.
+const localSession = createLocalSession();
+
 describe("POST /api/proposals", () => {
-  it("records an agent transition as autonomous and cannot approve", async () => {
+  it("records a local transition as autonomous_worker and cannot approve", async () => {
     const id = proposal();
-    const agentHeaders = { authorization: `Bearer ${AGENT_TOKEN}` };
-    const pending = await POST(request({ id, status: "tests_pending", actor: "owner" }, agentHeaders));
+    const localHeaders = { origin: "http://127.0.0.1:3000" };
+    const pending = await POST(request({ id, status: "tests_pending", actor: "owner" }, localHeaders));
     expect(pending.status).toBe(200);
     const event = getDb().select().from(schema.auditEvents).all().find((row) => row.action === "proposal_tests_pending");
     expect(event?.actor).toBe("autonomous_worker");
@@ -63,34 +74,13 @@ describe("POST /api/proposals", () => {
     advanceProposal(id, "tests_passed", "autonomous_worker");
     advanceProposal(id, "reviewed", "owner", { reviewer: "code_reviewer" });
 
-    const approved = await POST(request({ id, status: "approved", actor: "owner" }, agentHeaders));
+    // Autonomous worker cannot approve its own proposals.
+    const approved = await POST(request({ id, status: "approved", actor: "owner" }, localHeaders));
     expect(approved.status).toBe(403);
     expect(getProposal(id)?.status).toBe("reviewed");
   });
 
-  it("allows an owner session to approve", async () => {
-    const id = proposal();
-    advanceProposal(id, "tests_pending", "autonomous_worker");
-    attachEvidence(id, { kind: "test", detail: "vitest run", passed: true }, "owner");
-    advanceProposal(id, "tests_passed", "autonomous_worker");
-    advanceProposal(id, "reviewed", "owner", { reviewer: "code_reviewer" });
-    const session = createOwnerSession(OWNER_TOKEN, process.env)!;
-
-    const response = await POST(
-      request(
-        { id, status: "approved" },
-        {
-          origin: "http://127.0.0.1:3000",
-          "x-marketpulse-csrf": "1",
-          cookie: `marketpulse_owner_session=${session}`,
-        },
-      ),
-    );
-    expect(response.status).toBe(200);
-    expect(getProposal(id)?.status).toBe("approved");
-  });
-
-  it("does not let an unauthenticated local request approve", async () => {
+  it("does not let autonomous worker approve reviewed proposals", async () => {
     const id = proposal();
     advanceProposal(id, "tests_pending", "autonomous_worker");
     attachEvidence(id, { kind: "test", detail: "vitest run", passed: true }, "owner");
@@ -100,26 +90,18 @@ describe("POST /api/proposals", () => {
     const response = await POST(
       request(
         { id, status: "approved" },
-        {
-          origin: "http://127.0.0.1:3000",
-          "x-marketpulse-csrf": "1",
-        },
+        { origin: "http://127.0.0.1:3000" },
       ),
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(403);
     expect(getProposal(id)?.status).toBe("reviewed");
   });
 
   it("rejects malformed evidence at the request boundary", async () => {
-    const session = createOwnerSession(OWNER_TOKEN, process.env)!;
     const response = await POST(
       request(
         { id: proposal(), evidence: { kind: "test", detail: 7, passed: "yes" } },
-        {
-          origin: "http://127.0.0.1:3000",
-          "x-marketpulse-csrf": "1",
-          cookie: `marketpulse_owner_session=${session}`,
-        },
+        { origin: "http://127.0.0.1:3000" },
       ),
     );
     expect(response.status).toBe(400);

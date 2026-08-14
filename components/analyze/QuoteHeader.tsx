@@ -106,7 +106,7 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, instrument
               <span>({isGain ? "+" : ""}{quote.changePct.toFixed(2)}%)</span>
             </div>
 
-            {/* Live / simulated indicator */}
+            {/* Data source provenance indicator */}
             {quote.mock ? (
               <div className="flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-amber/15 border border-amber/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber" />
@@ -122,6 +122,16 @@ export function QuoteHeader({ quote: initial, profile, overallSignal, instrument
                     ? `${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
                     : "RESEARCH DATA"}
                 </span>
+                {/* Show data source quality when not live */}
+                {quote.provenance && quote.provenance.quality !== "LIVE" && (
+                  <span className={`text-xs px-1 py-0.5 rounded ${
+                    quote.provenance.quality === "DELAYED" ? "bg-amber/15 text-amber" :
+                    quote.provenance.quality === "STALE" ? "bg-red/15 text-red" :
+                    "bg-muted/15 text-muted-foreground"
+                  }`}>
+                    {quote.provenance.quality} · {quote.provenance.provider}
+                  </span>
+                )}
               </div>
             )}
           </div>

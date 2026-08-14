@@ -12,6 +12,7 @@ import {
   trialsSpentToday,
   type TrialCandidate,
 } from "./auto-gauntlet";
+import { activeReservationsToday } from "./trial-governor";
 import type { ResearchDatasetSource } from "@/lib/learning/rehearsal";
 
 /**
@@ -199,21 +200,38 @@ describe("the five guards", () => {
 });
 
 describe("the governance boundary", () => {
-  it("spends nothing, because run_gauntlet is not in the policy allowlist", async () => {
-    // Two independent refusals guard this path. The research freeze was the outer one while the
-    // identity repair was in flight; it is lifted, so the governance allowlist is the live gate
-    // again — and it is the permanent one. `AUTONOMOUS_PERMITTED` is denied-by-default and
-    // `lib/governance/policy.ts` is protected, so this module cannot grant itself the permission.
+  it("the autonomous trial lane is OFF by default — an eligible candidate is recommended, never spent", async () => {
+    // The Trial Budget Governor, not a generic allowlist, authorizes a spend, and its lane switch
+    // is off unless the owner sets MARKETPULSE_AUTONOMOUS_TRIALS. The default posture is
+    // recommend-only, whatever the mode.
     seed(eligibleDsl(), "would_pass");
     const report = await runAutonomousGauntlet({ mode: "evolving", researchData: noData });
 
-    expect(report.policyAllowed).toBe(false);
+    expect(report.policyAllowed, "lane off ⇒ no authorization").toBe(false);
     expect(report.spent).toBeNull();
     expect(report.recommended?.name).toBe("orb_probe");
-    expect(report.summary).toMatch(/AUTONOMOUS_PERMITTED/);
   });
 
-  it("asks the policy directly, so the refusal is not an artefact of this module", async () => {
+  it("with the lane ON the governor authorizes, but a data refusal still blocks the spend", async () => {
+    seed(eligibleDsl(), "would_pass");
+    const previous = process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+    process.env.MARKETPULSE_AUTONOMOUS_TRIALS = "1";
+    try {
+      const report = await runAutonomousGauntlet({ mode: "evolving", researchData: noData });
+      expect(report.policyAllowed, "lane on + eligible ⇒ authorized").toBe(true);
+      // Authorized, but the noData source cannot produce a backtest — so still no trial, and a
+      // recommendation instead. The guard is in place before any real spend can occur.
+      expect(report.spent).toBeNull();
+      expect(report.recommended?.name).toBe("orb_probe");
+    } finally {
+      if (previous === undefined) delete process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+      else process.env.MARKETPULSE_AUTONOMOUS_TRIALS = previous;
+    }
+  });
+
+  it("run_gauntlet is NOT in the generic autonomous allowlist — the governor is the sole authority", () => {
+    // Removed by owner decision 2026-08-14. A generic allowlist entry would be reachable by any
+    // autonomous actor and, soon, the Agent/Team layer — too coarse for spending statistical evidence.
     const verdict = evaluateAutonomousAction("run_gauntlet", "autonomous_worker", "evolving");
     expect(verdict.allowed).toBe(false);
   });
@@ -267,18 +285,55 @@ describe("a data outage is not a verdict", () => {
   });
 });
 
+describe("the spend runs under a held reservation", () => {
+  it("holds a RESERVED trial slot across the spend path, then releases it on refusal (guards against moving the spend outside the reservation)", async () => {
+    // Regression guard for the durable-reservation gate: the whole authorize→spend body must run
+    // between reserveTrialSlot and finalize. The dataset source is called on the spend path, AFTER
+    // the reservation — so if the block were ever refactored outside the reservation, this
+    // observation would flip to 0 and fail here rather than silently reopening the budget gap.
+    seed(eligibleDsl(), "would_pass");
+    const previous = process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+    process.env.MARKETPULSE_AUTONOMOUS_TRIALS = "1";
+
+    let heldDuringSpend: number | null = null;
+    const observingSource: ResearchDatasetSource = (market, resolution) => {
+      heldDuringSpend = activeReservationsToday();
+      return noData(market, resolution); // refuse after observing — no trial need be spent to prove the invariant
+    };
+
+    try {
+      await runAutonomousGauntlet({ mode: "evolving", researchData: observingSource });
+    } finally {
+      if (previous === undefined) delete process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+      else process.env.MARKETPULSE_AUTONOMOUS_TRIALS = previous;
+    }
+
+    expect(heldDuringSpend, "the spend path must execute while a slot is RESERVED").toBe(1);
+    // The gauntlet refused (noData) → the reservation is released, so the slot is free again.
+    expect(activeReservationsToday(), "a refused spend releases its slot").toBe(0);
+  });
+});
+
 /** Sanity: the source type is exercised, so a signature drift fails here rather than in production. */
 describe("the injected dataset source", () => {
-  it("is asked for the strategy's own market and resolution — or not at all under refusal", async () => {
+  it("is asked for the strategy's own market and resolution once the governor authorizes", async () => {
     const seen: { market: string; resolution: string }[] = [];
     const spying: ResearchDatasetSource = (market, resolution) => {
       seen.push({ market, resolution });
       return noData(market, resolution);
     };
     seed(eligibleDsl(), "would_pass");
-    await runAutonomousGauntlet({ mode: "evolving", researchData: spying });
-    // Policy refuses before the source is reached today. When it stops refusing, this records what
-    // the source is asked for — and the assertion below is what will change, visibly.
-    expect(seen).toHaveLength(0);
+    const previous = process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+    process.env.MARKETPULSE_AUTONOMOUS_TRIALS = "1";
+    try {
+      await runAutonomousGauntlet({ mode: "evolving", researchData: spying });
+    } finally {
+      if (previous === undefined) delete process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+      else process.env.MARKETPULSE_AUTONOMOUS_TRIALS = previous;
+    }
+    // The governor authorized (lane on + eligible), so the source IS reached — asked for the
+    // strategy's own market and resolution; the noData refusal then prevents a trial being spent.
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]).toMatchObject({ market: expect.any(String), resolution: expect.any(String) });
   });
 });

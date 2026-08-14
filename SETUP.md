@@ -75,10 +75,9 @@ Legacy `/api/trade/*`, Robinhood heartbeat/portfolio, Telegram decision, and fil
 ## 8. Security
 
 - Keep the server bound to `127.0.0.1`; do not expose it through a tunnel or public reverse proxy.
-- Browser mutations require same-origin requests and `x-marketpulse-csrf: 1`.
+- Browser mutations require same-origin requests and `x-marketpulse-mutation: 1`.
 - Agent mutations require a timing-safe bearer token from `MARKETPULSE_AGENT_TOKEN` with at least 32 characters.
-- Owner-only controls require a distinct `MARKETPULSE_OWNER_TOKEN` with at least 32 characters. Enter it on `/learning` to create a 15-minute HttpOnly local session; it is never stored in browser storage.
-- Never configure the owner and agent tokens to the same value; owner authentication fails closed if they match.
+- Routine local product controls do not use an owner token. Constitutional safety is enforced by loopback-only mutations, the local session cookie, domain policy, immutable ledgers, and protected-path checks.
 - `.env*`, SQLite files, backups, generated context, and test artifacts are gitignored.
 - Never commit or paste provider keys, tokens, account identifiers, or database files.
 

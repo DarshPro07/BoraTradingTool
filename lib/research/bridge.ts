@@ -5,6 +5,7 @@ import { atr, rollingStdDev, rsi, sma } from "@/lib/quant/indicator-registry";
 import { recordAgentRun } from "@/lib/runtime/agent-runs";
 import { detectProviders, runAgent } from "@/lib/runtime/gateway";
 import { defaultProfile, type RuntimeProfile } from "@/lib/runtime/routing";
+import { emit as emitEvent } from "@/lib/brain/event-bus";
 import {
   ResearchProposalSchema,
   ResearchProposalEnvelopeSchema,
@@ -40,7 +41,14 @@ import {
 
 /** Bars the model is shown. Enough to see a trend; small enough that the packet stays bounded. */
 const RECENT_BAR_WINDOW = 20;
-const MIN_BARS_FOR_RESEARCH = 60;
+/**
+ * Exported so the ingestion path and the UI share ONE definition of "enough history".
+ *
+ * It was module-private, which meant anything that wanted to answer "is this instrument
+ * researchable yet?" had to restate 60 — and a second copy of a threshold is a second thing that
+ * can drift away from the rule it is supposed to enforce.
+ */
+export const MIN_BARS_FOR_RESEARCH = 60;
 
 export interface EvidencePacket {
   instrumentId: string;
@@ -235,7 +243,8 @@ export function verifyProposalSources(
   };
 }
 
-const SYSTEM_PROMPT = [
+/** Exported so a test can hold it against the schema it must describe. */
+export const SYSTEM_PROMPT = [
   "You are a securities research analyst producing a structured research proposal for a quantitative research platform.",
   "You output ONLY a single JSON object and no other text. No markdown fences, no commentary.",
   "",
@@ -246,6 +255,27 @@ const SYSTEM_PROMPT = [
   "- You MUST list in missingEvidence everything material you could not establish from the packet. An empty missingEvidence array on a packet this bounded is itself a red flag.",
   "- confidence is your MODEL confidence in the reasoning, from 0 to 1. It is never strategy confidence, and the platform will not treat it as one.",
   "- If the evidence does not support a directional view, use direction NEUTRAL. Abstaining is a valid and frequently correct answer.",
+  "",
+  // A contract the producer is never shown is not a contract, it is a trap.
+  //
+  // `ResearchProposalSchema` caps every field, and these limits were never stated to the model.
+  // A complete, well-reasoned 47-second research run was rejected outright — CONTRACT_VIOLATION,
+  // "risks[1]: expected string to have <=300 characters" — because one risk sentence ran to 301
+  // characters. The work and the spend were discarded for a formatting reason the producer had no
+  // way to know, and the failure is non-deterministic: the same prompt succeeds whenever the
+  // model happens to write shorter prose.
+  //
+  // The limits are stated rather than enforced by truncation on our side, deliberately. Silently
+  // shortening a risk the analyst chose to state changes what was said, and the whole point of
+  // this envelope is that the producer's claims survive intact for verification.
+  "Length limits — these are enforced and a violation discards the entire response:",
+  "- thesis: at most 2000 characters. rationale: at most 4000.",
+  "- entryConcept and exitConcept: at most 1000 characters each.",
+  "- catalysts, risks, missingEvidence: at most 10 items, and EACH ITEM AT MOST 300 CHARACTERS.",
+  "- requiredFeatures: at most 20 items, each at most 80 characters.",
+  "- sources: at most 20 items, each at most 500 characters.",
+  "Prefer several short, specific items over one long one. A risk stated in 40 words is worth more",
+  "than the same risk stated in 400 and then rejected.",
 ].join("\n");
 
 function userPrompt(packet: EvidencePacket): string {
@@ -293,7 +323,19 @@ export function extractJson(text: string): unknown {
 
 export type BridgeResult =
   | { ok: true; envelope: ResearchProposalEnvelope; events: ResearchSessionEvent[] }
-  | { ok: false; code: string; message: string; events: ResearchSessionEvent[] };
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      events: ResearchSessionEvent[];
+      /** Provider/model context of the failure, when a model was actually reached — so a caller
+       *  that records the AgentRun (the durable-job path) keeps the provenance the bridge has. */
+      provider?: string;
+      model?: string | null;
+      tokens?: number | null;
+      cost?: number | null;
+      costCurrency?: "USD" | "INR" | null;
+    };
 
 /**
  * Research one instrument end to end: evidence → model → verification → envelope.
@@ -303,8 +345,18 @@ export type BridgeResult =
  */
 export async function researchInstrument(
   instrumentIdRaw: string,
-  options: { profile?: RuntimeProfile; timeoutMs?: number } = {},
+  options: {
+    profile?: RuntimeProfile;
+    timeoutMs?: number;
+    /**
+     * Whether the bridge records the AgentRun itself. True for the browser path (the caller has no
+     * provenance to add). False for the durable-job path, where the job handler records the run
+     * with its AgentDefinition + jobId provenance from the returned result — one recording, not two.
+     */
+    record?: boolean;
+  } = {},
 ): Promise<BridgeResult> {
+  const record = options.record ?? true;
   const events: ResearchSessionEvent[] = [];
   const emit = (state: ResearchSessionState, detail: string) => {
     events.push({ at: new Date().toISOString(), state, detail });
@@ -312,21 +364,43 @@ export async function researchInstrument(
 
   const sessionStartedAt = new Date();
 
-  const built = buildEvidencePacket(instrumentIdRaw);
+  /**
+   * Stage timings, because a 9.5–11 minute research call had no attribution at all.
+   *
+   * Recorded per stage rather than as one total: "research is slow" is not actionable, whereas
+   * "the provider probe costs N seconds and the model call costs M" is. A trivial `claude -p` on
+   * this machine returns in 5.6s, so anything approaching ten minutes has a locatable cause.
+   */
+  const stageTimings: Array<{ stage: string; ms: number }> = [];
+  const timeStage = async <T>(stage: string, work: () => Promise<T> | T): Promise<T> => {
+    const started = Date.now();
+    try {
+      return await work();
+    } finally {
+      stageTimings.push({ stage, ms: Date.now() - started });
+    }
+  };
+
+  const built = await timeStage("evidence-packet", () => buildEvidencePacket(instrumentIdRaw));
   if (!built.ok) {
     emit("FAILED", built.message);
     // Recorded even though no provider ran: "we could not research SBIN because the store is
     // empty" is exactly the kind of thing the owner needs to find in the ledger the next morning.
-    recordRefusal({
-      instrumentId: instrumentIdRaw,
-      provider: "none",
-      code: built.code,
-      message: built.message,
-      startedAt: sessionStartedAt,
-    });
-    return { ok: false, code: built.code, message: built.message, events };
+    if (record) {
+      recordRefusal({
+        instrumentId: instrumentIdRaw,
+        provider: "none",
+        code: built.code,
+        message: built.message,
+        startedAt: sessionStartedAt,
+      });
+    }
+    return { ok: false, code: built.code, message: built.message, events, provider: "none" };
   }
   const { packet, fingerprint } = built;
+
+  emitEvent({ kind: "RESEARCH_STARTED", instrumentId: packet.instrumentId });
+  emitEvent({ kind: "EVIDENCE_PACKET_BUILT", instrumentId: packet.instrumentId, sourceCount: packet.citableSources.length });
 
   emit(
     "RESEARCHING",
@@ -335,30 +409,46 @@ export async function researchInstrument(
   );
 
   const profile = options.profile ?? defaultProfile("SUBSCRIPTION_FIRST", `boot_${Date.now()}`);
-  const detected = await detectProviders();
+  // Timed separately: this spawns a probe subprocess on every research call, before any model
+  // work begins. Cheap in principle, but it is a process spawn on the critical path and nothing
+  // was measuring it.
+  const detected = await timeStage("provider-probe", () => detectProviders());
 
-  const run = await runAgent({
-    capability: "RESEARCH",
-    prompt: userPrompt(packet),
-    systemPrompt: SYSTEM_PROMPT,
-    profile,
-    detected,
-    timeoutMs: options.timeoutMs,
-  });
+  const prompt = userPrompt(packet);
+  const run = await timeStage("model-call", () =>
+    runAgent({
+      capability: "RESEARCH",
+      prompt,
+      systemPrompt: SYSTEM_PROMPT,
+      profile,
+      detected,
+      timeoutMs: options.timeoutMs,
+    }),
+  );
+
+  // Prompt size is part of the latency story: a large prompt is billed and processed per call.
+  console.log(
+    `[research] ${packet.instrumentId} prompt=${prompt.length}ch system=${SYSTEM_PROMPT.length}ch ` +
+      stageTimings.map((entry) => `${entry.stage}=${entry.ms}ms`).join(" "),
+  );
 
   if (!run.ok) {
     const trail = run.attempted.map((entry) => `${entry.provider}: ${entry.reason}`).join(" · ");
     const message = trail ? `${run.message} (${trail})` : run.message;
     emit("FAILED", message);
-    recordRefusal({
-      instrumentId: packet.instrumentId,
-      provider: run.attempted[0]?.provider ?? "none",
-      code: run.code,
-      message,
-      startedAt: sessionStartedAt,
-      evidenceFingerprint: fingerprint,
-    });
-    return { ok: false, code: run.code, message, events };
+    emitEvent({ kind: "RESEARCH_FAILED", instrumentId: packet.instrumentId, reason: message });
+    const failedProvider = run.attempted[0]?.provider ?? "none";
+    if (record) {
+      recordRefusal({
+        instrumentId: packet.instrumentId,
+        provider: failedProvider,
+        code: run.code,
+        message,
+        startedAt: sessionStartedAt,
+        evidenceFingerprint: fingerprint,
+      });
+    }
+    return { ok: false, code: run.code, message, events, provider: failedProvider };
   }
 
   emit(
@@ -381,22 +471,37 @@ export async function researchInstrument(
       caught instanceof Error ? caught.message : String(caught)
     }`;
     emit("FAILED", message);
-    recordRefusal({
-      instrumentId: packet.instrumentId,
-      provider: run.provider,
-      model: run.model,
+    emitEvent({ kind: "RESEARCH_FAILED", instrumentId: packet.instrumentId, reason: "CONTRACT_VIOLATION" });
+    if (record) {
+      recordRefusal({
+        instrumentId: packet.instrumentId,
+        provider: run.provider,
+        model: run.model,
+        code: "CONTRACT_VIOLATION",
+        message,
+        startedAt: sessionStartedAt,
+        evidenceFingerprint: fingerprint,
+        tokens: run.tokens,
+        cost: run.cost,
+        costCurrency: run.costCurrency,
+      });
+    }
+    return {
+      ok: false,
       code: "CONTRACT_VIOLATION",
       message,
-      startedAt: sessionStartedAt,
-      evidenceFingerprint: fingerprint,
+      events,
+      provider: run.provider,
+      model: run.model,
       tokens: run.tokens,
       cost: run.cost,
       costCurrency: run.costCurrency,
-    });
-    return { ok: false, code: "CONTRACT_VIOLATION", message, events };
+    };
   }
 
   const verification = verifyProposalSources(proposal, packet);
+
+  emitEvent({ kind: "CITATIONS_VERIFIED", instrumentId: packet.instrumentId, verified: verification.verifiedSources.length, total: verification.verifiedSources.length + verification.rejectedSources.length });
 
   const envelope = ResearchProposalEnvelopeSchema.parse({
     proposal,
@@ -421,30 +526,34 @@ export async function researchInstrument(
     inputEvidenceFingerprint: fingerprint,
   });
 
-  recordAgentRun({
-    id: run.runId,
-    capability: "RESEARCH",
-    provider: run.provider,
-    model: run.model,
-    status: "COMPLETED",
-    trigger: "USER",
-    instrumentId: packet.instrumentId,
-    evidenceFingerprint: fingerprint,
-    envelope,
-    refusalCode: null,
-    refusalMessage: null,
-    tokens: run.tokens,
-    cost: run.cost,
-    costCurrency: run.costCurrency,
-    fallbackReason: run.fallbackReason,
-    startedAt: sessionStartedAt,
-    completedAt: new Date(),
-  });
+  if (record) {
+    recordAgentRun({
+      id: run.runId,
+      capability: "RESEARCH",
+      provider: run.provider,
+      model: run.model,
+      status: "COMPLETED",
+      trigger: "USER",
+      instrumentId: packet.instrumentId,
+      evidenceFingerprint: fingerprint,
+      envelope,
+      refusalCode: null,
+      refusalMessage: null,
+      tokens: run.tokens,
+      cost: run.cost,
+      costCurrency: run.costCurrency,
+      fallbackReason: run.fallbackReason,
+      startedAt: sessionStartedAt,
+      completedAt: new Date(),
+    });
+  }
 
   emit(
     verification.status === "INSUFFICIENT_EVIDENCE" ? "NEEDS_EVIDENCE" : "PROPOSAL_READY",
     verification.detail,
   );
+
+  emitEvent({ kind: "RESEARCH_COMPLETED", instrumentId: packet.instrumentId, proposalId: envelope.proposal.instrumentId, verdict: verification.status });
 
   return { ok: true, envelope, events };
 }

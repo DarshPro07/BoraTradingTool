@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/system/Panel";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * The quant surface (Q1b): metrics that explain themselves.
@@ -71,9 +72,8 @@ export function QuantAnalyticsPanel({ specs }: { specs: { id: string; name: stri
     setBusy(true);
     setReport(null);
     try {
-      const response = await fetch("/api/quant/analytics", {
+      const response = await mutationFetch("/api/quant/analytics", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ specId }),
       });
       setReport((await response.json()) as AnalyticsResponse);

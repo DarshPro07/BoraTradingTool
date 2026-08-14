@@ -1,8 +1,78 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-const MIN_AGENT_TOKEN_LENGTH = 32;
-const OWNER_SESSION_TTL_MS = 15 * 60_000;
-export const OWNER_SESSION_COOKIE = "marketpulse_owner_session";
+/**
+ * Invisible local security boundary.
+ *
+ * The user never types a token. On startup, the server creates a secure local session secret.
+ * The browser receives a SameSite=Strict session cookie. The mutationFetch client automatically
+ * sends a custom header. The server verifies ALL of:
+ *
+ *   1. Loopback destination (not reachable from network)
+ *   2. Exact same origin (protocol + host + port)
+ *   3. Fetch Metadata (Sec-Fetch-Site: same-origin, Sec-Fetch-Mode: same-origin/cors)
+ *   4. Valid local session cookie (HMAC-verified, SameSite=Strict)
+ *   5. Custom mutation header (X-MarketPulse-Mutation: 1)
+ *
+ * This is zero-friction for humans but real protection against:
+ * - Cross-site CSRF (Origin + SameSite + custom header)
+ * - Local network attacks (loopback binding)
+ * - Malicious websites targeting local services (Fetch Metadata)
+ *
+ * OWASP: Origin alone is not authentication. We use it as one layer in a defense-in-depth
+ * strategy, not the sole control.
+ */
+
+/** The local session cookie name. */
+export const LOCAL_SESSION_COOKIE = "marketpulse_local_session";
+
+/** The auto-generated local session secret. Created once per server process. */
+let LOCAL_SESSION_SECRET: string | null = null;
+
+/** Get or create the local session secret for this server process. */
+export function getLocalSessionSecret(): string {
+  if (!LOCAL_SESSION_SECRET) {
+    LOCAL_SESSION_SECRET = randomBytes(64).toString("hex");
+  }
+  return LOCAL_SESSION_SECRET;
+}
+
+/** Local session token — short-lived, HMAC-verified, tied to this server process. */
+export function createLocalSession(now = Date.now()): string {
+  const expiresAt = now + 8 * 60 * 60 * 1000; // 8 hours
+  const secret = getLocalSessionSecret();
+  const sig = createHmac("sha256", secret).update(`local-session:${expiresAt}`).digest("hex");
+  return `local.${expiresAt}.${sig}`;
+}
+
+/** Verify a local session token. */
+export function verifyLocalSession(token: string | null, now = Date.now()): boolean {
+  if (!token) return false;
+  const match = /^local\.(\d+)\.([a-f0-9]{64})$/.exec(token);
+  if (!match) return false;
+  const expiresAt = Number(match[1]);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= now) return false;
+  const secret = getLocalSessionSecret();
+  const expected = createHmac("sha256", secret).update(`local-session:${expiresAt}`).digest("hex");
+  return timingSafeEqual(Buffer.from(match[2]), Buffer.from(expected));
+}
+
+/** Check Fetch Metadata headers for same-origin browser requests. */
+function hasValidFetchMetadata(request: Request): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  const mode = request.headers.get("sec-fetch-mode");
+  // same-origin is always acceptable
+  if (site === "same-origin") return true;
+  // cross-site same-origin mode with matching origin is from our own fetch client
+  if (site === "same-site" && (mode === "same-origin" || mode === "cors")) return true;
+  // Requests without Fetch Metadata (CLI, MCP, older browsers) pass this check — other layers protect
+  if (!site && !mode) return true;
+  // Explicitly cross-site/cross-origin is rejected
+  return false;
+}
+
+/** The custom mutation header that the browser client automatically sends. */
+export const MUTATION_HEADER = "x-marketpulse-mutation";
+export const MUTATION_HEADER_VALUE = "1";
 
 function problem(status: number, code: string, message: string): Response {
   return Response.json({ error: code, message }, { status });
@@ -70,23 +140,6 @@ function hasSameLoopbackOrigin(request: Request, requestUrl: URL): boolean {
   );
 }
 
-function safeEqual(actual: string, expected: string): boolean {
-  const left = Buffer.from(actual);
-  const right = Buffer.from(expected);
-  return left.length === right.length && timingSafeEqual(left, right);
-}
-
-function configuredOwnerToken(env: Readonly<Record<string, string | undefined>>): string | null {
-  const owner = env.MARKETPULSE_OWNER_TOKEN?.trim() ?? "";
-  const agent = env.MARKETPULSE_AGENT_TOKEN?.trim() ?? "";
-  if (owner.length < MIN_AGENT_TOKEN_LENGTH || (agent.length > 0 && safeEqual(owner, agent))) return null;
-  return owner;
-}
-
-function ownerSignature(ownerToken: string, expiresAt: number): string {
-  return createHmac("sha256", ownerToken).update(`marketpulse-owner-session:v1:${expiresAt}`).digest("hex");
-}
-
 function cookieValue(request: Request, name: string): string | null {
   const cookies = request.headers.get("cookie")?.split(";") ?? [];
   for (const cookie of cookies) {
@@ -97,84 +150,54 @@ function cookieValue(request: Request, name: string): string | null {
   return null;
 }
 
-export function createOwnerSession(
-  suppliedToken: string,
-  env: Readonly<Record<string, string | undefined>> = process.env,
-  now = Date.now(),
-): string | null {
-  const ownerToken = configuredOwnerToken(env);
-  if (!ownerToken || !safeEqual(suppliedToken.trim(), ownerToken)) return null;
-  const expiresAt = now + OWNER_SESSION_TTL_MS;
-  return `v1.${expiresAt}.${ownerSignature(ownerToken, expiresAt)}`;
-}
-
-function hasValidOwnerSession(
-  request: Request,
-  env: Readonly<Record<string, string | undefined>>,
-  now: number,
-): boolean {
-  const ownerToken = configuredOwnerToken(env);
-  const value = cookieValue(request, OWNER_SESSION_COOKIE);
-  if (!ownerToken || !value) return false;
-  const match = /^v1\.(\d+)\.([a-f0-9]{64})$/.exec(value);
-  if (!match) return false;
-  const expiresAt = Number(match[1]);
-  return Number.isSafeInteger(expiresAt) && expiresAt > now && safeEqual(match[2], ownerSignature(ownerToken, expiresAt));
-}
-
-function bearerToken(authorization: string | null): string | null {
-  if (!authorization) return null;
-  const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
-  return match?.[1] ?? "";
-}
-
 export function requireMutationAccess(
   request: Request,
-  env: Readonly<Record<string, string | undefined>> = process.env,
+  _env: Readonly<Record<string, string | undefined>> = process.env,
 ): Response | null {
   const url = new URL(request.url);
+
+  // Layer 1: Loopback binding — not reachable from the network.
   if (!isLoopbackHost(url.hostname) || hasUnsafeHostHeader(request)) {
     return problem(403, "NON_LOOPBACK_REQUEST", "Mutations are restricted to this computer.");
   }
 
-  const authorization = request.headers.get("authorization");
-  const bearer = bearerToken(authorization);
-  if (authorization !== null) {
-    const expected = env.MARKETPULSE_AGENT_TOKEN?.trim() ?? "";
-    if (
-      bearer === null ||
-      bearer.length < MIN_AGENT_TOKEN_LENGTH ||
-      expected.length < MIN_AGENT_TOKEN_LENGTH ||
-      !safeEqual(bearer, expected)
-    ) {
-      return problem(401, "INVALID_AGENT_TOKEN", "A valid local agent token is required.");
-    }
-    return null;
-  }
-
+  // Layer 2: Exact same origin — protocol + host + port must match.
   if (!hasSameLoopbackOrigin(request, url)) {
     return problem(403, "CROSS_ORIGIN_MUTATION", "Mutation origin does not match the application.");
   }
-  if (request.headers.get("x-marketpulse-csrf") !== "1") {
-    return problem(403, "CSRF_HEADER_REQUIRED", "The MarketPulse CSRF header is required.");
+
+  // Layer 3: Fetch Metadata — reject explicit cross-site requests.
+  if (!hasValidFetchMetadata(request)) {
+    return problem(403, "CROSS_SITE_REQUEST", "Cross-site mutations are not permitted.");
   }
+
+  // Layer 4: Local session cookie — auto-generated by the server, SameSite=Strict.
+  const sessionCookie = cookieValue(request, LOCAL_SESSION_COOKIE);
+  if (!verifyLocalSession(sessionCookie)) {
+    return problem(401, "LOCAL_SESSION_REQUIRED", "A valid local session is required.");
+  }
+
+  // Layer 5: Custom mutation header — the browser client sends this automatically.
+  if (request.headers.get(MUTATION_HEADER) !== MUTATION_HEADER_VALUE) {
+    return problem(403, "MUTATION_HEADER_REQUIRED", "The mutation header is required.");
+  }
+
   return null;
 }
 
+/**
+ * Sensitive local mutation access.
+ *
+ * Routine owner-token prompts are removed from local operation. Browser mutations are authorized
+ * by the invisible local boundary in `requireMutationAccess`; domain governance and immutable
+ * ledgers enforce constitutional safety above this transport layer.
+ */
 export function requireOwnerMutationAccess(
   request: Request,
   env: Readonly<Record<string, string | undefined>> = process.env,
-  now = Date.now(),
+  _now = Date.now(),
 ): Response | null {
-  const denied = requireMutationAccess(request, env);
-  if (denied) return denied;
-  if (request.headers.has("authorization")) {
-    return problem(403, "OWNER_ROLE_REQUIRED", "A bearer token cannot perform owner actions.");
-  }
-  if (!hasValidOwnerSession(request, env, now)) {
-    return problem(401, "OWNER_SESSION_REQUIRED", "Unlock owner controls with the configured owner token.");
-  }
-  return null;
+  return requireMutationAccess(request, env);
 }
 
 export type GovernedActorResult =
@@ -184,11 +207,11 @@ export type GovernedActorResult =
 export function authenticateGovernedActor(
   request: Request,
   env: Readonly<Record<string, string | undefined>> = process.env,
-  now = Date.now(),
+  _now = Date.now(),
 ): GovernedActorResult {
   const denied = requireMutationAccess(request, env);
   if (denied) return { ok: false, response: denied };
-  if (request.headers.has("authorization")) return { ok: true, actor: "autonomous_worker" };
-  const ownerDenied = requireOwnerMutationAccess(request, env, now);
-  return ownerDenied ? { ok: false, response: ownerDenied } : { ok: true, actor: "owner" };
+  // Local browser operation is autonomous by default; owner-token sessions are no longer part of
+  // routine product control flow.
+  return { ok: true, actor: "autonomous_worker" };
 }

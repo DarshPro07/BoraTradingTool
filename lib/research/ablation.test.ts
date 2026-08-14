@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { Candle } from "@/lib/providers/types";
 import { StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { MINIMUM_TRADES, ablateStrategy, describeCondition, entryComponents } from "./ablation";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+
+// Ablation scores each variant with a real backtest, and `runBacktest` emits to the durable event
+// ledger; this compute-only suite needs somewhere isolated to write it.
+useTemporaryDatabase();
 
 /**
  * Bars that oscillate, so `sma20` crosses `sma50` often enough to produce a scoreable sample.

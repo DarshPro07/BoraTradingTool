@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * The engines, tested through the screen rather than through their exports.
@@ -44,11 +45,12 @@ import { expect, test, type Page } from "@playwright/test";
  * also means a failure here is a real failure of the authoring path rather than a fixture problem.
  */
 test.beforeAll(async ({ request, baseURL }) => {
+  await ensureLocalSession(request);
   const response = await request.post("/api/strategy/author", {
     headers: {
       "content-type": "application/json",
       origin: baseURL!,
-      "x-marketpulse-csrf": "1",
+      "x-marketpulse-mutation": "1",
     },
     data: {
       dsl: {
@@ -223,6 +225,8 @@ test.describe("the refusals that must never soften", () => {
     // Navigated first: `page.evaluate` on about:blank has no base URL, so a relative fetch throws
     // "Failed to parse URL" — which would read as a passing refusal for the wrong reason.
     await page.goto("/command", { waitUntil: "domcontentloaded" });
+    // Deterministic session cookie before the in-page fetches (same reason as app.spec.ts).
+    await page.evaluate(() => fetch("/api/session"));
 
     // Two layers, asserted separately, because passing the outer one is not evidence about the
     // inner one. Without the CSRF header the request is refused at the security boundary and
@@ -236,7 +240,7 @@ test.describe("the refusals that must never soften", () => {
       });
       const authorised = await fetch("/api/trade/place", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
+        headers: { "content-type": "application/json", "x-marketpulse-mutation": "1" },
         body: JSON.stringify({ instrumentId: "IN:XNSE:RELIANCE", side: "BUY", quantity: 1 }),
       });
       return {
@@ -247,7 +251,7 @@ test.describe("the refusals that must never soften", () => {
 
     // Outer: the security boundary refuses an unheadered mutation.
     expect(result.bare.status).toBeGreaterThanOrEqual(400);
-    expect(result.bare.body).toMatch(/CSRF_HEADER_REQUIRED|CROSS_ORIGIN_MUTATION/);
+    expect(result.bare.body).toMatch(/MUTATION_HEADER_REQUIRED|CROSS_ORIGIN_MUTATION/);
 
     // Inner: even a properly formed request cannot place an order. This is the one that matters.
     expect(result.authorised.status).toBeGreaterThanOrEqual(400);

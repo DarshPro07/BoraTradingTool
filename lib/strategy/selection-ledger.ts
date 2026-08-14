@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import type { StrategyDsl } from "./dsl";
 import {
   configurationFingerprint,
@@ -303,6 +304,8 @@ export function requestHoldoutAccess(request: HoldoutRequest): HoldoutEntitlemen
     }
     throw caught;
   }
+
+  emit({ kind: "HOLDOUT_ACCESSED", specId: request.specId, granted: true });
 
   return { granted: true, accessId };
 }

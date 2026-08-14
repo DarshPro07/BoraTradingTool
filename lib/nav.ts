@@ -82,9 +82,9 @@ export const UTILITY_LINKS: readonly NavChild[] = Object.freeze([
   // one-glance answer to "what is it doing and what is missing", wanted from every page —
   // and RESEARCH is already at its six-view scan limit.
   { href: "/brain", label: "Brain", blurb: "What the system knows, does, and still lacks" },
-  { href: "/learning", label: "Autonomy", blurb: "Mode ladder and what each tier may do" },
+  { href: "/learning", label: "Autonomy", blurb: "RUN lanes and cycle evidence" },
   { href: "/data-quality", label: "Data", blurb: "Freshness and provenance per resource" },
-  { href: "/settings", label: "Settings", blurb: "Providers, keys, owner controls" },
+  { href: "/settings", label: "Settings", blurb: "Providers, keys, and paper policy" },
 ]);
 
 /**

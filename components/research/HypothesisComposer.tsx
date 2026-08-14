@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/system/Panel";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Write a trading idea in prose; the system answers with a strategy or a stated refusal.
@@ -55,9 +56,8 @@ export function HypothesisComposer({ onOutcome }: { onOutcome?: (result: Compose
     setBusy(true);
     setResult(null);
     try {
-      const response = await fetch("/api/research/hypotheses", {
+      const response = await mutationFetch("/api/research/hypotheses", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ title, statement, rationale: rationale || undefined, market: "NSE" }),
       });
       const body = (await response.json()) as ComposeResult;

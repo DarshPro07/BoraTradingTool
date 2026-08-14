@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build && npm run build:mcp",
+    "build": "next build && node esbuild.mcp.mjs",
     "build:mcp": "node esbuild.mcp.mjs",
     "start": "next start --hostname 127.0.0.1",
     "sync:nse": "tsx scripts/sync-nse-security-master.mts",
@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run test && npm run test:mcp && npm run build",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "test:full": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json"
+    "test:full": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json",
+    "test:verified": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json && tsx scripts/verify-test-run.mts .tmp/vitest-run.json --min-files 130"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

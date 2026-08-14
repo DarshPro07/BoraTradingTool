@@ -76,6 +76,7 @@ export function AutonomyStrip() {
     );
   }
 
+  const displayMode = mode === "off" ? "MAINTENANCE" : "RUN";
   const tone: string =
     mode === "off"
       ? "text-muted-foreground"
@@ -86,11 +87,11 @@ export function AutonomyStrip() {
           : "text-amber";
 
   return (
-    <div className="autonomy-strip" data-testid="autonomy-strip" data-mode={mode}>
-      <Link href="/learning" className="autonomy-mode" title="Autonomy mode and what each tier may do">
+    <div className="autonomy-strip" data-testid="autonomy-strip" data-mode={mode === "off" ? "maintenance" : "run"}>
+      <Link href="/learning" className="autonomy-mode" title="AUTO runtime lanes and recent cycle evidence">
         <span className={`autonomy-dot ${mode !== "off" && !pulse.stalled ? "autonomy-dot-live" : ""}`} />
         <span className={tone} data-testid="autonomy-mode">
-          {mode.toUpperCase()}
+          {displayMode}
         </span>
       </Link>
 

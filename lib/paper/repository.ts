@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, lte, ne } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import type { MarketSession } from "@/lib/market/calendar";
 import type { Instrument, NormalizedQuote } from "@/lib/market/types";
 import { PaperOrderConflict, type PaperDecision, type PaperOrderIntent } from "./types";
@@ -41,11 +42,11 @@ export function persistPaperOrder(
   now = new Date(),
 ) {
   const db = getDb();
-  return db.transaction((tx) => {
+  const result = db.transaction((tx) => {
     const existing = tx.select().from(schema.paperOrders).where(eq(schema.paperOrders.idempotencyKey, intent.idempotencyKey)).get();
     if (existing) {
       assertPaperOrderMatchesIntent(existing, intent);
-      return { order: existing, idempotentReplay: true };
+      return { order: existing, idempotentReplay: true as const, orderMeta: null as null };
     }
 
     tx.insert(schema.instruments)
@@ -134,6 +135,7 @@ export function persistPaperOrder(
       simulatedFixture: quote.provenance.provider === "TEST_FIXTURE",
     }).run();
     const orderId = Number(inserted.lastInsertRowid);
+    const capturedMeta = { orderId, status: decision.status, fillPrice: decision.status === "FILLED" ? decision.fillPrice : null };
 
     if (decision.status === "FILLED") {
       if (!account) throw new Error(`Missing ${intent.instrument.currency} paper account.`);
@@ -189,9 +191,19 @@ export function persistPaperOrder(
 
     return {
       order: tx.select().from(schema.paperOrders).where(eq(schema.paperOrders.id, orderId)).get()!,
-      idempotentReplay: false,
+      idempotentReplay: false as const,
+      orderMeta: capturedMeta,
     };
   });
+
+  if (result.orderMeta) {
+    emit({ kind: "PAPER_ORDER_CREATED", orderId: String(result.orderMeta.orderId), instrumentId: intent.instrument.id, side: intent.side });
+    if (result.orderMeta.status === "FILLED" && result.orderMeta.fillPrice !== null) {
+      emit({ kind: "PAPER_ORDER_FILLED", orderId: String(result.orderMeta.orderId), price: result.orderMeta.fillPrice });
+    }
+  }
+
+  return { order: result.order, idempotentReplay: result.idempotentReplay };
 }
 
 export function expireOpenPaperOrders(asOf = new Date()): void {

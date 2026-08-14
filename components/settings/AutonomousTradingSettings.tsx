@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
 import { Bot, Plus, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
 
@@ -27,8 +26,6 @@ export function AutonomousTradingSettings() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [ownerToken, setOwnerToken] = useState("");
-  const [ownerUnlocked, setOwnerUnlocked] = useState(false);
 
   async function load() {
     const [configResponse, strategiesResponse] = await Promise.all([
@@ -57,22 +54,6 @@ export function AutonomousTradingSettings() {
     await load();
     setMessage("Research policy saved");
     window.setTimeout(() => setMessage(""), 2500);
-  }
-
-  async function unlockOwner(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const response = await mutationFetch("/api/owner/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: ownerToken }),
-    });
-    if (!response.ok) {
-      setError((await response.json().catch(() => null))?.message ?? "Unable to unlock owner controls.");
-      return;
-    }
-    setOwnerToken("");
-    setOwnerUnlocked(true);
   }
 
   if (!config) return <section className="terminal-panel p-6 text-xs text-muted-foreground">Loading policy...</section>;
@@ -104,27 +85,12 @@ export function AutonomousTradingSettings() {
         </div>
       </div>
 
-      {!ownerUnlocked ? (
-        <form onSubmit={unlockOwner} className="flex flex-wrap items-end gap-2 border border-border p-3">
-          <label className="min-w-52 flex-1 text-xs text-muted-foreground">
-            Owner token
-            <input
-              type="password"
-              value={ownerToken}
-              onChange={(event) => setOwnerToken(event.target.value)}
-              autoComplete="current-password"
-              minLength={32}
-              required
-              className="terminal-input mt-1"
-            />
-          </label>
-          <button type="submit" className="terminal-action min-h-11 px-4">UNLOCK POLICY</button>
-        </form>
-      ) : (
-        <p className="text-xs text-gain">Owner policy controls unlocked for 15 minutes.</p>
-      )}
+      <div className="border border-border p-3 text-xs text-muted-foreground leading-relaxed">
+        Policy controls use the local security boundary automatically. No owner token unlock is required;
+        broker execution remains disabled and constitutional limits are enforced in domain code.
+      </div>
 
-      <fieldset disabled={!ownerUnlocked} className="space-y-6 disabled:opacity-50">
+      <div className="space-y-6">
       <div className="grid sm:grid-cols-3 gap-4">
         <NumberField
           label="Refresh interval (min)"
@@ -170,7 +136,7 @@ export function AutonomousTradingSettings() {
           onError={setError}
         />
       )}
-      </fieldset>
+      </div>
 
       {error && <p role="alert" className="text-xs text-loss">{error}</p>}
     </section>

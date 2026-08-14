@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { identityFor, placeStrategy } from "@/lib/strategy/research-identity";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import type { Candle } from "@/lib/providers/types";
 import { compileStrategy, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { breedGeneration, logicIdentity } from "./breed";
@@ -185,6 +186,8 @@ export function runFactoryGeneration(options: RunGenerationOptions): GenerationR
       })
       .onConflictDoNothing()
       .run();
+
+    emit({ kind: "STRATEGY_CREATED", specId: id, name: candidate.id });
 
     // Inherit the parent's research family.
     //

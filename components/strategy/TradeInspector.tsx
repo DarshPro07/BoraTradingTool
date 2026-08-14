@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Panel } from "@/components/system/Panel";
 import { TradeChart } from "@/components/strategy/TradeChart";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Per-trade inspection: the audit surface for a backtest.
@@ -82,9 +83,8 @@ export function TradeInspector({ specs }: { specs: { id: string; name: string }[
     setReport(null);
     setOpenTrade(null);
     try {
-      const response = await fetch("/api/strategy/trades", {
+      const response = await mutationFetch("/api/strategy/trades", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ specId }),
       });
       const body = (await response.json()) as Report;

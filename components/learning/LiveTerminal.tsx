@@ -120,7 +120,7 @@ export function LiveTerminal() {
         ) : runs.length === 0 ? (
           <p className="text-amber">
             No cycle has ever run. This is not a stalled loop — it is one that was never started.
-            Set a learning mode, then run a cycle or register the scheduler.
+            Start RUN from Brain, run a cycle, or register the scheduler.
           </p>
         ) : (
           runs.map((run) => (

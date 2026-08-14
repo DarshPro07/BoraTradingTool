@@ -1,5 +1,146 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 FIRST AGENT SLICE (rung 3) — **DONE 2026-08-14, VERIFIED** (docs/plans/agent-first-slice/)
+The Job-OS → Agent → Model → Ledger → Event → dependent-wake seam, proven end to end. New durable
+kind `instrument_research` runs a **versioned specialist agent** through the existing gateway/bridge
+and records ONE AgentRun with provenance. The owner's load-bearing invariant is enforced structurally:
+**AgentDefinition (static, versioned — `lib/agents/definitions.ts`, `RESEARCH_INSTRUMENT_V1`) is
+DISTINCT from AgentRun** — the run pins the definition by `version`, never by copying the prompt, so a
+future prompt change can't make historical runs irreproducible. The agent holds READ + RECOMMEND_ONLY
+only (no trial spend, no order — it recommends, deterministic governance decides). Every failure
+returns to the Job OS / Dependency Resolver: provider-down → FAILED + coded throw (retry); invalid
+output → FAILED (CONTRACT_VIOLATION); INSTRUMENT_UNKNOWN → REFUSED + kill; NO_STORED_DATA → REFUSED +
+auto-enqueued ingestion AND a dependent research job (deferred, resumes when bars land). Handler
+records once (bridge called with `record:false`); provenance columns added via additive nullable
+migration `0020`. Acceptance: `lib/agents/instrument-research.test.ts` 7/7 (5 handler-logic injecting
+a fake core + 2 full-path through `runWorker` with ONLY the gateway mocked — real bridge, real
+citation verification, real event bus); provenance assertions proven to BITE by a revert-checked
+mutation. Full suite 1755 passed / 2 skipped, tsc 0, MCP 4/4, next build 0. Independent verifier
+VERIFIED / 0 blockers (read all files, re-ran everything, traced every assertion to its production
+line, audited fake-completion → 0 across `lib/`); its two non-blocking coverage gaps (success-path
+provider/model assertion; a worker-driven failure integration) were CLOSED and re-verified.
+**Owner status wording: Job OS Core Mechanics — VERIFIED_INTEGRATION (not "complete").**
+**NEXT (deferred to owner steer, in order):** (1) Chief-of-Staff / team coordination — ONE manager,
+domain agents, dynamic workers, artifacts-not-chat, bounded team size, dissent preserved; (2) 1-5
+model routing ABOVE the agent layer, consuming empirical AgentRun history. Optional near-term
+hardening: surface agent identity on /brain's Researching lane (columns exist, unshown); a registry
+lint that forbids editing a shipped AgentDefinition in place (bump, don't edit).
+
+## P0 JOB OS COMPLETION (rungs 1-2) — **DONE 2026-08-14** (docs/plans/job-os-completion/)
+Rung 1: structured warm-up refusals — `warmupBarsFor` + `FEATURE_WARMUP_BARS` (pinned against the
+real feature panel so it can't drift); `SignalSweep.warmups` carries the owner's TWO-CONCEPT split
+`{barsHeld, barsNeeded, timeGated}` — DATA shortage (countable, ingest more) vs TIME gate (enough
+bars, session/opening-range window not closed → market clock resolves). Rung 2: two durable kinds
+wired to REAL deterministic handlers — `paper_reconcile` (runPaperPass, bar-time only, idempotent)
+and `incident_repair` (runSelfRepair, fixes only provably-understated costs, audited, never touches
+code/governance). `forward_resolve` deliberately skipped (redundant with forecast_resolve or
+network-dependent). 148 files / 1752 passed / 0 failed; verifier PASS 0 blockers.
+**NEXT — rung 3 (Agents/Teams):** first slice **DONE + VERIFIED** — see the P0 FIRST AGENT SLICE
+section at the top. Remaining rung-3 legs (Chief-of-Staff team coordination, then 1-5 model routing)
+are deferred to owner steer.
+
+## ✅ GOVERNANCE RESOLVED — Trial Budget Governor (docs/plans/trial-governor/, mode-taxonomy/)
+Owner decided (2026-08-14): removed `run_gauntlet` from the broad `AUTONOMOUS_PERMITTED`; the
+deterministic Trial Budget Governor (`lib/strategy/trial-governor.ts`) is now the SOLE authorizer
+of a trial spend — OFF by default (`MARKETPULSE_AUTONOMOUS_TRIALS=1`, dedicated owner switch,
+never the mode/model). Safe by default again: no autonomous trial unless the owner enables the
+lane. `auto-mode.ts` landmine deleted; stale comments corrected; mode-coercion honesty fixed on
+non-protected surfaces (mode-taxonomy Option A — the protected `getLearningMode` coercion + 4-value
+type — still owner-to-apply). Verifier PASS 0 blockers, 7/7 incl. sole-path.
+**Trial-budget durability — DONE 2026-08-14** (docs/plans/trial-reservation/): the file-lease
+budget fix was replaced by a **durable trial reservation** (drizzle/0019) — a `UNIQUE(trading_date,
+budget_slot)` atomic exclusion, `id` as a fencing token (zombie finalize rejected), an explicit
+state machine (RESERVED→SPENT/RELEASED/ABANDONED), stale reclaim, and restart reconstruction.
+`withAuthorizedTrial` finalizes on LEDGER TRUTH (consume iff a selection_trial landed), closing a
+latent budget undercount the verifier found. All 7 owner adversarial scenarios pinned; atomic
+exclusion empirically proven (SQLITE_BUSY + SQLITE_CONSTRAINT_UNIQUE). 147 files / 1735 passed / 0
+failed; verifier PASS 0 blockers. The autonomous trial lane (`MARKETPULSE_AUTONOMOUS_TRIALS=1`) is
+now fully safe to enable. Still open: the uncommitted single-RUN/ownerless-auth refactor awaits the
+owner's commit decision + the mode-taxonomy protected-file edit (Option A).
+
+## P0 CONTINUOUS CHAIN (rung 3) — **DONE 2026-08-14 ~02:00** (docs/plans/continuous-chain/)
+WakeInstant split (epochMs schedules, display presents — the lexical-bug class closed) ·
+event-driven job wake (JOB_CREATED/JOB_COMPLETED → drain; 5s timer kept as reconciliation) ·
+auth boundary adversarially proven (16 forged-request attacks rejected, happy path allowed —
+the owner's gate before autonomy expansion) · durable `backtest` kind (real specId event) +
+double-gated `validation` kind (nothing autonomous enqueues it) · **continuous-chain proof**:
+backtest → BACKTEST_COMPLETED → dependent wakes waiting_dependency→queued→succeeded in one sweep,
+no owner; unconfirmed validation dies with 0 trials. 146 files / 1712 passed / 0 failed; verifier
+PASS 0 blockers. **NEXT:** structured warm-up refusals (panel barsHeld/barsNeeded) · durable-kind
+ladder (forward_resolve/paper_reconcile/incident_repair, each WITH its handler) · Agents/Teams as
+job workers · then 1-5 model routing.
+
+## P0 PROTECTED-PATH PROVENANCE — **RESOLVED 2026-08-14 00:42** (docs/plans/protected-path-provenance/)
+Owner-gating item before further schema work. `drizzle/0014_autonomy_default.sql` (applied
+migration, edited in place by an earlier session) **restored to canonical** after proving the
+edit dead three ways: the runner executes a TS twin (`migrate.ts:200`), applied migrations never
+re-run, and runtime coerces the stored mode anyway (`runtime.ts` + `auto-mode.ts` — the
+single-RUN refactor). **No data migration needed**; optional one-line 0019 recorded, not taken.
+The wider single-RUN/ownerless-auth refactor (governance/policy +4 allowlisted actions incl.
+run_gauntlet, security/request local-session rewrite, owner route deleted) stays as inherited
+test-green owner-directed WIP — NOT committed, auth surfaces NOT e2e-verified yet (named risk).
+
+## P0 DEPENDENCY GRAMMAR v2 — **DONE 2026-08-14 ~00:50** (docs/plans/dependency-grammar/)
+The owner's one-grammar directive: 9 prerequisite kinds (DATA/TIME/MARKET_STATE/FUTURE_EVENT/
+PROVIDER/JOB/CAPABILITY/EXTERNAL_AUTH/PERMANENT_FACT) → 6-way BlockedClass (RESOLVABLE_NOW/
+LATER/ON_EVENT/VIA_ALTERNATIVE/EXTERNAL_REQUIRED/IMPOSSIBLE) with dominance + `nextCheckAt`
+(min-wake, never a fabricated ETA). **Two-concept warm-up rule pinned by test**: TIME satisfied +
+market open + DATA missing → NOT ready; the same composition becomes ready through the durable
+queue with no owner. Job OS grew its first non-ingestion kinds WITH real handlers:
+`forecast_resolve`, `memory_validate` (ladder documented in queue.ts — no decorative enum
+entries). CycleReason gained dependencyType/retryClass/instrument/jobId.
+**NEXT in this lane:** structured warm-up refusals (panel `ready()` → barsHeld/barsNeeded) ·
+event-driven queue wake beyond the 5s lane · durable kinds ladder (backtest → validation →
+forward_resolve → paper_reconcile → incident_repair), each WITH its handler · then Agents/Teams
+as workers on those jobs · then multi-model routing above.
+
+## P0 DEPENDENCY ENGINE — **DONE 2026-08-13 (late)** (docs/plans/dependency-engine/)
+The owner's feedback chain on Resolver v1, all five rungs: failure taxonomy (PERMANENT dies on
+attempt 1; dead RETRYABLE **revives after 15m cooldown** — a corpse's dedupe key no longer blocks
+remediation of a transient outage forever) · generic resolver (`lib/brain/dependency-resolver.ts`,
+six truthful states; cycle delegates; **self-resolution loop test passes** — blocked → job
+auto-created → worker → SATISFIED, no owner) · typed reasons (`CycleReason` w/ severity;
+**configured-but-unreachable quant core now degrades the run**, proven fail-first; warm-up stays
+INFO) · forecast resolver (DATA_INGESTED → store-only grading the moment bars land, no cycle) ·
+eligibility clock (waiting reasons carry `resumeAt` from `getMarketPhase`).
+Suite 142 files / 1675 / 0 failed; tsc 0. **NEXT in this lane:** event-driven wake for queue jobs
+beyond the 5s research lane; per-strategy warm-up bar arithmetic; DataRequirement
+timeframe/session dimensions when an intraday consumer exists.
+
+## P0 §9 RUNTIME IDENTITY — **DONE 2026-08-11, VERIFIED** (docs/plans/runtime-identity-control-audit/)
+`GET /api/system/identity` (build/commit+dirty-hash · pid · start · schema · database fingerprint,
+never the path) + a Playwright `identity` setup project both browser projects depend on. Proven in
+four states: correct → pass · wrong database → **150 tests did not run** · foreign server → named
+diagnosis · stale server → names the pid to kill. It caught its own defect mid-session: a
+"restarted" server reported the same pid because the old process still held the port and the new one
+died of EADDRINUSE — nine minutes of e2e had already run against the wrong configuration. Hence
+`MARKETPULSE_E2E_EXPECT_STARTED_AFTER`, since build/schema/database were identical and only the
+ENVIRONMENT differed.
+**NEXT in this lane:** the 15-route control inventory, now that its answers can name their server.
+
+## P0 — spaCy resolver rebuilt per request — **FIXED + VERIFIED 2026-08-11** (docs/plans/parser-worker-lifetime/)
+`hypothesis-author.ts:155` built the resolver in a DEFAULT PARAMETER, re-evaluated every call.
+**Interpretation 20,000ms → ~530ms steady state, measured on a real server.** Shared per-process
+worker; borrower no longer disposes it; route returns a stated 503 not a 500; readiness has a
+non-spawning "Syntax parser" row (warm/pid/model); supervisor warms it on Start. Regression test
+proven by failing first. The 20s was NOT the model: `import spacy` 14.5s + `spacy.load` 20.7s
+because **torch and transformers load for a model needing neither** — environment, reported not
+fixed (removing them would take boot ~35s → ~1s).
+
+## P0 NOW TOP OF THE RESEARCH PATH — AMBIGUOUS_ATTACHMENT (exposed once the latency was removed)
+The parser fix cleared **no** e2e failure; it removed the mask. The dominant failure is now a
+compiler verdict, fast instead of slow: `UNCLEAR — No entry rule could be read. 2 clause(s) named a
+feature but stated no usable threshold: AMBIGUOUS_ATTACHMENT, AMBIGUOUS_ATTACHMENT` where specs
+expect EXPRESSIBLE. Hits strategy-factory:22, golden-journey:257, dataset-ledger:143. This is the
+already-queued "wire resolveAttachment into compileResearchProse" task. Engine lane.
+Also still open and NOT parser-related: `golden-journey:71` exceeds 300s (undiagnosed), NSE search
+navigation (2 specs).
+
+## P1 DATA IDENTITY — NSE/BSE collapse (found 2026-08-11, owner-observed)
+`lib/strategy/dsl.ts:12` maps both `"NSE"` and `"BSE"` to `"IN"`, so an NSE-only universe cannot be
+enforced; `lib/market/catalog.ts:59-68` hardcodes ten XBOM instruments under `"IN"` — the `.BO`
+candidates seen under `orb_nse_5m`. See FINDINGS. Needs its own gates.
+
 ## P0 §66 — RESEARCH DEAD-ENDS ON AN UNINGESTED INSTRUMENT (owner hit this live, 2026-08-11 03:47)
 
 `Research this stock` on `IN:XNSE:360ONE` returned:

@@ -76,6 +76,10 @@ export default async function DashboardPage({
   const losers = sorted.slice(-5).reverse().map(toMover);
   const sectors = sectorBreadth(view, quotes);
   const status = getMarketSession(primaryMarket);
+  // Provenance is a property of each quote, so "is this screen showing invented numbers?" is a
+  // question the page can answer rather than one the reader has to guess at.
+  const fixtureQuotes = quotes.filter((quote) => quote.provenance?.quality === "FIXTURE");
+  const sourceSummary = summariseSources(quotes);
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,6 +113,24 @@ export default async function DashboardPage({
           ))}
         </div>
 
+        {/* Fabricated data must announce itself, at the top, before any number is read.
+            In MARKETPULSE_TEST_MODE every instrument outside a three-entry price table is served
+            at ₹1,000 with changePct 0.5 and volume 1,500,000 — which is why the owner saw a wall
+            of near-identical prices and sector tiles all showing the same figure. The numbers were
+            never wrong for what they are; nothing said what they were. */}
+        {fixtureQuotes.length > 0 && (
+          <div className="inline-notice inline-notice-warning" data-testid="dashboard-fixture-banner">
+            <Database className="w-4 h-4" />
+            <span>
+              <strong>DEMO DATA — NOT MARKET TRUTH.</strong>{" "}
+              {fixtureQuotes.length} of {quotes.length} quotes come from the deterministic test
+              fixture (MARKETPULSE_TEST_MODE=1), not from a market source. Prices, changes, volumes
+              and every figure derived from them — sectors, movers — are invented. Set
+              MARKETPULSE_TEST_MODE=0 and restart to see real data.
+            </span>
+          </div>
+        )}
+
         {!quotes.length && (
           <div className="inline-notice inline-notice-warning">
             <Database className="w-4 h-4" /> No eligible quotes are available from the configured research source.
@@ -140,12 +162,56 @@ export default async function DashboardPage({
 
         <MarketNewsFeed news={news} />
 
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        {/* Provenance belongs on the screen showing the numbers, not on "detailed evidence
+            screens" somewhere else. Deferring it is what let fixture data pass as market data. */}
+        <div
+          className="flex items-center gap-2 text-[11px] text-muted-foreground"
+          data-testid="dashboard-source-summary"
+        >
           <Globe2 className="w-3.5 h-3.5" />
-          Yahoo-derived research data may be delayed. Source quality is shown on detailed evidence screens.
+          {sourceSummary}
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * State what actually produced the numbers on this page.
+ *
+ * The previous line was a fixed sentence — "Yahoo-derived research data may be delayed. Source
+ * quality is shown on detailed evidence screens." It was true when Yahoo served the page and
+ * equally reassuring when a test fixture did, which is precisely the failure: a constant cannot
+ * describe a varying thing. This counts the real providers and qualities behind the rendered
+ * quotes and says so.
+ */
+function summariseSources(quotes: readonly NormalizedQuote[]): string {
+  if (quotes.length === 0) return "No quotes were served, so there is no source to report.";
+
+  const providers = new Map<string, number>();
+  const qualities = new Map<string, number>();
+  for (const quote of quotes) {
+    const provider = quote.provenance?.provider ?? "UNKNOWN";
+    const quality = quote.provenance?.quality ?? "UNKNOWN";
+    providers.set(provider, (providers.get(provider) ?? 0) + 1);
+    qualities.set(quality, (qualities.get(quality) ?? 0) + 1);
+  }
+
+  const describe = (counts: Map<string, number>) =>
+    [...counts.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .map(([name, count]) => `${name} ${count}`)
+      .join(" · ");
+
+  const freshest = quotes
+    .map((quote) => quote.provenance?.ingestedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
+
+  return (
+    `${quotes.length} quotes — source: ${describe(providers)} · quality: ${describe(qualities)}` +
+    (freshest ? ` · newest ${new Date(freshest).toLocaleTimeString()}` : "")
   );
 }
 

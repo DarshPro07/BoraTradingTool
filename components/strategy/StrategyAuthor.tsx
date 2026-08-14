@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Plus } from "lucide-react";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Author a strategy.
@@ -131,9 +132,8 @@ export function StrategyAuthor() {
         return;
       }
 
-      const response = await fetch("/api/strategy/author", {
+      const response = await mutationFetch("/api/strategy/author", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ dsl, createdBy: "owner" }),
       });
       const body = (await response.json()) as Result;

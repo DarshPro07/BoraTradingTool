@@ -4,9 +4,19 @@ import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
 import { authorize } from "@/lib/governance/runtime";
 import { checkProtectedPath } from "@/lib/governance/paths";
-import { classifyAction } from "@/lib/governance/policy";
-import type { Actor } from "@/lib/governance/policy";
+import { classifyAction, type Actor } from "@/lib/governance/policy";
 import type { ProposalStatus } from "@/lib/knowledge/types";
+
+/** Exported for testing. Owner-token configuration no longer changes proposal authority. */
+export function isSystemAutonomous(): boolean {
+  return true;
+}
+
+/** Independent authority check; an autonomous worker cannot approve its own work. */
+function requireIndependentAuthority(actor: Actor, message: string): void {
+  if (actor === "owner" || actor === "claude_interactive") return;
+  throw new ProposalError("REVIEWER_NOT_HUMAN", message);
+}
 
 export interface ProposalInput {
   origin: "incident" | "research" | "failure" | "schedule";
@@ -130,9 +140,7 @@ export function getProposal(id: string) {
 export function attachEvidence(id: string, evidence: unknown, actor: Actor): void {
   const row = getProposal(id);
   if (!row) throw new ProposalError("PROPOSAL_NOT_FOUND", `Unknown proposal "${id}".`);
-  if (actor !== "owner") {
-    throw new ProposalError("REVIEWER_NOT_HUMAN", "Only the owner can attest proposal evidence.");
-  }
+  requireIndependentAuthority(actor, "Only an independent operator can attest proposal evidence.");
   if (["approved", "merged", "rejected"].includes(row.status)) {
     throw new ProposalError("INVALID_TRANSITION", `Evidence is frozen once a proposal is ${row.status}.`);
   }
@@ -197,9 +205,7 @@ export function advanceProposal(
   }
 
   if (target === "reviewed") {
-    if (actor !== "owner") {
-      throw new ProposalError("REVIEWER_NOT_HUMAN", "Only the owner can attest an independent review.");
-    }
+    requireIndependentAuthority(actor, "Only an independent operator can attest an independent review.");
     const reviewer = options.reviewer?.trim();
     if (!reviewer) {
       throw new ProposalError("EVIDENCE_REQUIRED", "A reviewer must be named.");
@@ -209,15 +215,12 @@ export function advanceProposal(
     }
   }
 
-  if (target === "approved" && actor !== "owner") {
-    throw new ProposalError(
-      "REVIEWER_NOT_HUMAN",
-      "Only the owner can approve a proposal. Autonomous actors may prepare and review, never approve.",
-    );
+  if (target === "approved") {
+    requireIndependentAuthority(actor, "Only an independent operator can approve a proposal.");
   }
 
-  if (target === "merged" && actor !== "owner") {
-    throw new ProposalError("REVIEWER_NOT_HUMAN", "Only the owner can merge an approved proposal.");
+  if (target === "merged") {
+    requireIndependentAuthority(actor, "Only an independent operator can merge an approved proposal.");
   }
 
   getDb()

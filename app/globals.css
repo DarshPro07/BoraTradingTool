@@ -352,6 +352,14 @@ select {
 .market-switch button:hover { color: var(--foreground); background: var(--accent); }
 .market-switch .market-switch-active { color: #0a0b0c; background: var(--terminal); }
 
+/* The demo variant is amber rather than green on purpose: the badge sits in the chrome of every
+   page, and "these prices are invented" must not be reassuring at a glance. */
+.mode-badge-warning {
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  color: var(--amber, #f59e0b) !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+
 .mode-badge {
   min-height: 30px;
   padding: 0 9px;

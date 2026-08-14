@@ -77,10 +77,24 @@ function operandOf(
   operator: ParsedToken,
 ): { operand: ParsedToken | null; conjuncts: ParsedToken[]; quantifier: ParsedToken | null } {
   // A symbolic operator takes its quantity as a `nummod` CHILD rather than a prepositional object:
-  // "relative volume >= 2" hangs the 2 off the `=`.
+  // "relative volume >= 2" hangs the 2 off the `=`. spaCy further SPLITS ">=" into ">" and "="
+  // and scatters the halves: the "=" can be a child of the ">", the object of the verb, or even
+  // the subject of the clause's root verb. The one thing every split has in common is that the
+  // "=" half is the token IMMEDIATELY AFTER the ">" — a tokenizer cannot put a gap inside a
+  // character run — and the value is that half's `nummod`, wherever the model attached it.
   const direct =
     childrenOf(tokens, operator).find((child) => child.dep === "pobj") ??
-    childrenOf(tokens, operator).find((child) => child.dep === "nummod" || child.pos === "NUM");
+    childrenOf(tokens, operator).find((child) => child.dep === "nummod" || child.pos === "NUM") ??
+    (() => {
+      const half = tokens[operator.index + 1];
+      if (!half || half.text !== "=" || operator.text !== ">") return null;
+      return (
+        childrenOf(tokens, half).find(
+          (grandchild) => grandchild.dep === "nummod" || grandchild.pos === "NUM",
+        ) ?? null
+      );
+    })() ??
+    null;
   // In the QUANTIFIER structure the operator hangs off its own object, so the object is the head.
   const head = headOf(tokens, operator);
 
@@ -92,8 +106,10 @@ function operandOf(
    * under the same head, not a child of it. Reading only `pobj` reported NO_OPERAND and threw away
    * both thresholds of the one hypothesis in this repository that is actually expressible.
    *
-   * Siblings are ranked by relation, never by distance: a bare number first, then an apposed
-   * nominal (the "%" in "3%") whose own `nummod` carries the value.
+   * Siblings are ranked by relation, never by distance: a bare number first, then a nominal
+   * (the "%" in "3%") whose own `nummod` carries the value. The "%" arrives as an `npadvmod` of
+   * the governing verb as often as an `appos` — "gapping with gap >= 3%" hangs a NOUN "%" off
+   * the sentence verb with the 3 as its `nummod`.
    */
   const sibling = (() => {
     if (direct || head === null) return null;
@@ -108,7 +124,9 @@ function operandOf(
     );
     return (
       siblings.find((child) => child.pos === "NUM") ??
-      siblings.find((child) => child.dep === "appos" || child.dep === "attr" || child.dep === "dobj") ??
+      siblings.find(
+        (child) => child.dep === "appos" || child.dep === "attr" || child.dep === "dobj" || child.dep === "npadvmod",
+      ) ??
       null
     );
   })();
@@ -217,9 +235,23 @@ export function resolveAttachment(
   // (1) COPULA — the governing verb's subject, or its domain-noun-as-adjective stand-in.
   if (node.pos === "VERB" || node.pos === "AUX") {
     const children = childrenOf(tokens, node);
+    // The operator can also hang off the verb as a loose `dep` while the quantity it governs is
+    // the OBJECT of one of the verb's prepositional phrases: "NSE liquid names GAPPING WITH gap
+    // >= 3% ON relative volume >= 1.5" makes both ">" children of `gapping` and parks gap and
+    // volume under `with` and `on`. Each prep phrase is one comparison, so the candidates are
+    // the objects of preps that START BEFORE the operator (the "--gap >= 3%" comparison cannot
+    // govern a phrase that begins after it). Among those, the LAST one before the operator is
+    // its own phrase; an earlier phrase belongs to an earlier comparator. Every candidate is
+    // still feature-checked, and a true subject outranks every prep object.
+    const prepObjects = children
+      .filter((child) => child.dep === "prep" && child.index < operator.index)
+      .reverse()
+      .map((preposition) => childrenOf(tokens, preposition).find((child) => child.dep === "pobj") ?? null)
+      .filter((child): child is ParsedToken => child !== null);
     const candidates = [
       ...children.filter((child) => SUBJECT_DEPS.has(child.dep)),
       ...children.filter((child) => SUBJECT_LIKE_DEPS.has(child.dep) && child.index < operator.index),
+      ...prepObjects,
       node,
     ];
     const chosen = candidates.find(isFeature) ?? null;

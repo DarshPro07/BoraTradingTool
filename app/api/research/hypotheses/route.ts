@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { recordHypothesis } from "@/lib/knowledge/repository";
 import { authorFromHypotheses } from "@/lib/research/hypothesis-author";
+import { SyntaxParserUnavailable } from "@/lib/research/syntax/resolver";
 import { requireMutationAccess } from "@/lib/security/request";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +71,32 @@ export async function POST(request: Request) {
 
   // The same engine the learning cycle runs — one triage implementation, nowhere to drift. It
   // sweeps every unauthored hypothesis (idempotent), and we report this one's outcome.
-  const report = await authorFromHypotheses("owner:studio");
+  //
+  // An unconfigured parser is a DEPLOYMENT state, not a bad request and not a crash. It reached the
+  // owner as a bare 500 — the interpretation control simply failed with no reason on screen — which
+  // is precisely the "the button does nothing" complaint. The hypothesis above is already recorded
+  // by this point, so the answer says what was kept and what could not run.
+  let report: Awaited<ReturnType<typeof authorFromHypotheses>>;
+  try {
+    report = await authorFromHypotheses("owner:studio");
+  } catch (caught) {
+    if (caught instanceof SyntaxParserUnavailable) {
+      return NextResponse.json(
+        {
+          error: caught.code,
+          message:
+            `Your hypothesis was recorded (${hypothesisId}) but could not be interpreted: ` +
+            `${caught.message.replace(/^SYNTAX_PARSER_UNAVAILABLE: /, "")} ` +
+            `Nothing was authored. Attachment cannot be guessed, so a strategy written without the ` +
+            `parser would be a rule nobody stated.`,
+          hypothesisId,
+          alreadyExisted,
+        },
+        { status: 503 },
+      );
+    }
+    throw caught;
+  }
   const outcome = report.outcomes.find((entry) => entry.hypothesisId === hypothesisId);
 
   // Authored on an earlier pass: the outcome list skips it, so the spec is looked up directly.

@@ -3,6 +3,12 @@ import type { Candle } from "@/lib/providers/types";
 import { compileStrategy, type StrategyDsl } from "@/lib/strategy/dsl";
 import { evaluate, runBacktest } from "./engine";
 import { buildFeaturePanel } from "./features";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+
+// `runBacktest` emits a BACKTEST_COMPLETED event, and the event bus writes it to the durable
+// ledger — so this compute-only suite still needs a database to write into. It never used to,
+// because the bus swallowed the failure; the isolation guard was firing and being discarded.
+useTemporaryDatabase();
 
 function bar(index: number, price: number): Candle {
   return {

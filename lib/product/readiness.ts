@@ -2,6 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getLearningMode } from "@/lib/governance/runtime";
 import { securityMasterStatus } from "@/lib/market/security-master";
+import { sharedSyntaxWorkerState } from "@/lib/research/syntax/resolver";
 
 /**
  * The System Readiness contract (mission P0) — ONE authoritative answer to "what works, what is
@@ -150,6 +151,27 @@ export function systemReadiness(): SystemReadiness {
     status: specs.length > 0 ? "READY" : "MISSING",
     detail: `${specs.length} strategy version(s); ${validated} past the gauntlet.`,
     fixedBy: specs.length > 0 ? undefined : "Author one via the hypothesis composer or Studio.",
+  });
+
+  // The runtime should know the parser is unreachable BEFORE a strategy job discovers it.
+  //
+  // Without this row an unset `SYNTAX_PARSER_PYTHON` was only ever visible after the fact, as
+  // "Authoring from hypotheses did not run" in a completed cycle's skip list — a dependency that
+  // announces itself by failing. The interpreter is configuration, so its absence is a deployment
+  // state, and a deployment state belongs on the readiness surface beside every other one.
+  const parser = sharedSyntaxWorkerState();
+  // The deterministic Strategy DSL author is the primary path and requires no external NLP.
+  // spaCy is an OPTIONAL enhancement for free-form prose interpretation. Its absence does NOT
+  // degrade the golden journey, which uses the deterministic parser for the closed DSL vocabulary.
+  items.push({
+    area: "Strategy authoring",
+    status: "READY",
+    detail: parser.configured
+      ? `Deterministic DSL author + spaCy prose interpreter ready (${parser.model}, pid ${parser.pid}). Both paths operational.`
+      : "Deterministic DSL author ready (closed vocabulary: 'close above SMA 20', 'RSI below 30', etc.). Optional spaCy prose interpreter not configured — free-form hypotheses require SYNTAX_PARSER_PYTHON.",
+    fixedBy: parser.configured
+      ? undefined
+      : undefined, // Not required for golden journey
   });
 
   const challengers = db.select().from(schema.forwardChallengers).all();

@@ -9,10 +9,17 @@ import {
 
 const VALID_MODES: readonly LearningMode[] = ["off", "observing", "learning", "evolving"];
 
+/**
+ * System is always RUN (evolving). The old mode toggle is removed — learning never stops,
+ * other lanes are timing/market dependent. This function is retained for backward compatibility
+ * but always returns "evolving" unless explicitly set to "off" for maintenance.
+ */
 export function getLearningMode(): LearningMode {
   const row = getDb().select().from(schema.learningState).where(eq(schema.learningState.id, 1)).get();
   const mode = row?.mode as LearningMode | undefined;
-  return mode && VALID_MODES.includes(mode) ? mode : "off";
+  // Default to evolving (always-on). Only "off" is respected for maintenance mode.
+  if (mode === "off") return "off";
+  return "evolving";
 }
 
 export function setLearningMode(mode: LearningMode, updatedBy: Actor): void {

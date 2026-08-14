@@ -1,24 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   authenticateGovernedActor,
-  createOwnerSession,
+  createLocalSession,
   isLoopbackHost,
   requireMutationAccess,
   requireOwnerMutationAccess,
 } from "./request";
 
 const TOKEN = "a".repeat(64);
-const OWNER_TOKEN = "o".repeat(64);
 
 function request(url: string, headers: Record<string, string> = {}): Request {
   return new Request(url, { method: "POST", headers });
-}
-
-function browserRequest(url = "http://127.0.0.1:3000/api/test"): Request {
-  return request(url, {
-    origin: new URL(url).origin,
-    "x-marketpulse-csrf": "1",
-  });
 }
 
 describe("isLoopbackHost", () => {
@@ -34,133 +26,114 @@ describe("isLoopbackHost", () => {
 });
 
 describe("requireMutationAccess", () => {
-  it("allows a same-origin browser mutation with the CSRF header", () => {
-    expect(requireMutationAccess(browserRequest())).toBeNull();
+  // Helper: a fully valid local mutation request (loopback + origin + session + header).
+  function validMutationRequest(url = "http://127.0.0.1:3000/api/test"): Request {
+    const origin = new URL(url).origin;
+    return request(url, {
+      origin,
+      "x-marketpulse-mutation": "1",
+      cookie: `marketpulse_local_session=${createLocalSession()}`,
+    });
+  }
+
+  it("allows a valid local mutation (loopback + origin + session + header)", () => {
+    expect(requireMutationAccess(validMutationRequest())).toBeNull();
   });
 
-  it("allows IPv6 loopback browser mutations", () => {
-    expect(requireMutationAccess(browserRequest("http://[::1]:3000/api/test"))).toBeNull();
-  });
-
-  it("allows equivalent loopback aliases when protocol and effective port match", () => {
-    expect(
-      requireMutationAccess(
-        request("http://localhost:3000/api/test", {
-          host: "127.0.0.1:3100",
-          origin: "http://127.0.0.1:3100",
-          "x-marketpulse-csrf": "1",
-        }),
-      ),
-    ).toBeNull();
+  it("allows IPv6 loopback mutations with valid session", () => {
+    expect(requireMutationAccess(validMutationRequest("http://[::1]:3000/api/test"))).toBeNull();
   });
 
   it("rejects non-loopback URLs and forwarded hosts", () => {
-    expect(requireMutationAccess(browserRequest("http://192.168.1.20:3000/api/test"))?.status).toBe(403);
+    expect(requireMutationAccess(validMutationRequest("http://192.168.1.20:3000/api/test"))?.status).toBe(403);
     expect(
       requireMutationAccess(
         request("http://127.0.0.1:3000/api/test", {
           origin: "http://127.0.0.1:3000",
-          "x-marketpulse-csrf": "1",
           "x-forwarded-host": "public.example",
+          "x-marketpulse-mutation": "1",
+          cookie: `marketpulse_local_session=${createLocalSession()}`,
         }),
       )?.status,
     ).toBe(403);
   });
 
-  it("rejects cross-origin and missing-CSRF browser requests", () => {
+  it("rejects missing session cookie", () => {
+    expect(
+      requireMutationAccess(
+        request("http://127.0.0.1:3000/api/test", {
+          origin: "http://127.0.0.1:3000",
+          "x-marketpulse-mutation": "1",
+        }),
+      )?.status,
+    ).toBe(401);
+  });
+
+  it("rejects missing mutation header", () => {
+    expect(
+      requireMutationAccess(
+        request("http://127.0.0.1:3000/api/test", {
+          origin: "http://127.0.0.1:3000",
+          cookie: `marketpulse_local_session=${createLocalSession()}`,
+        }),
+      )?.status,
+    ).toBe(403);
+  });
+
+  it("rejects cross-origin browser requests", () => {
     expect(
       requireMutationAccess(
         request("http://127.0.0.1:3000/api/test", {
           origin: "https://evil.example",
-          "x-marketpulse-csrf": "1",
-        }),
-      )?.status,
-    ).toBe(403);
-    expect(
-      requireMutationAccess(
-        request("http://127.0.0.1:3000/api/test", { origin: "http://127.0.0.1:3000" }),
-      )?.status,
-    ).toBe(403);
-    expect(
-      requireMutationAccess(
-        request("http://localhost:3000/api/test", {
-          host: "127.0.0.1:3100",
-          origin: "http://127.0.0.1:3101",
-          "x-marketpulse-csrf": "1",
+          "x-marketpulse-mutation": "1",
+          cookie: `marketpulse_local_session=${createLocalSession()}`,
         }),
       )?.status,
     ).toBe(403);
   });
 
-  it("accepts a valid bearer capability token", () => {
+  it("allows same-origin loopback mutations without a HUMAN-TYPED token", () => {
+    // No human-typed token — the server auto-generates the session.
     expect(
       requireMutationAccess(
-        request("http://127.0.0.1:3000/api/test", { authorization: `Bearer ${TOKEN}` }),
-        { MARKETPULSE_AGENT_TOKEN: TOKEN },
+        request("http://127.0.0.1:3000/api/test", {
+          origin: "http://127.0.0.1:3000",
+          "x-marketpulse-mutation": "1",
+          cookie: `marketpulse_local_session=${createLocalSession()}`,
+        }),
       ),
     ).toBeNull();
-  });
-
-  it("rejects missing, short, malformed, and unequal bearer tokens", () => {
-    const env = { MARKETPULSE_AGENT_TOKEN: TOKEN };
-    expect(requireMutationAccess(request("http://127.0.0.1:3000/api/test"), env)?.status).toBe(403);
-    expect(
-      requireMutationAccess(
-        request("http://127.0.0.1:3000/api/test", { authorization: "Basic abc" }),
-        env,
-      )?.status,
-    ).toBe(401);
-    expect(
-      requireMutationAccess(
-        request("http://127.0.0.1:3000/api/test", { authorization: "Bearer short" }),
-        env,
-      )?.status,
-    ).toBe(401);
-    expect(
-      requireMutationAccess(
-        request("http://127.0.0.1:3000/api/test", { authorization: `Bearer ${"b".repeat(64)}` }),
-        env,
-      )?.status,
-    ).toBe(401);
   });
 });
 
 describe("owner mutation access", () => {
-  const env = {
-    MARKETPULSE_AGENT_TOKEN: TOKEN,
-    MARKETPULSE_OWNER_TOKEN: OWNER_TOKEN,
-  };
+  const env = { MARKETPULSE_AGENT_TOKEN: TOKEN };
   const now = Date.parse("2026-08-06T12:00:00Z");
 
-  function ownerRequest(cookie: string): Request {
+  function ownerRequest(): Request {
     return request("http://127.0.0.1:3000/api/learning", {
       origin: "http://127.0.0.1:3000",
-      "x-marketpulse-csrf": "1",
-      cookie: `marketpulse_owner_session=${cookie}`,
+      "x-marketpulse-mutation": "1",
+      cookie: `marketpulse_local_session=${createLocalSession()}`,
     });
   }
 
   it("rejects an agent token as owner authority", () => {
+    // Bearer token is no longer valid — local session is the auth.
+    // Without a local session cookie → 401 (first layer to fail).
     const denied = requireOwnerMutationAccess(
-      request("http://127.0.0.1:3000/api/learning", { authorization: `Bearer ${TOKEN}` }),
+      request("http://127.0.0.1:3000/api/learning", {
+        origin: "http://127.0.0.1:3000",
+        "x-marketpulse-mutation": "1",
+      }),
       env,
       now,
     );
-    expect(denied?.status).toBe(403);
+    expect(denied?.status).toBe(401);
   });
 
-  it("requires a valid owner session from the browser", () => {
-    expect(requireOwnerMutationAccess(browserRequest(), env, now)?.status).toBe(401);
-
-    const session = createOwnerSession(OWNER_TOKEN, env, now);
-    expect(session).not.toBeNull();
-    expect(requireOwnerMutationAccess(ownerRequest(session!), env, now)).toBeNull();
-  });
-
-  it("expires owner authority after fifteen minutes", () => {
-    const session = createOwnerSession(OWNER_TOKEN, env, now)!;
-    expect(requireOwnerMutationAccess(ownerRequest(session), env, now + 15 * 60_000 - 1)).toBeNull();
-    expect(requireOwnerMutationAccess(ownerRequest(session), env, now + 15 * 60_000)?.status).toBe(401);
+  it("does not require a typed owner token when the local boundary is valid", () => {
+    expect(requireOwnerMutationAccess(ownerRequest(), env, now)).toBeNull();
   });
 
   it("still refuses a mutation that is not loopback-bound", () => {
@@ -168,26 +141,32 @@ describe("owner mutation access", () => {
     // anything reachable from off this machine.
     const remote = request("http://192.168.1.50:3000/api/learning", {
       origin: "http://192.168.1.50:3000",
-      "x-marketpulse-csrf": "1",
+      "x-marketpulse-mutation": "1",
+      cookie: `marketpulse_local_session=${createLocalSession()}`,
     });
     expect(requireOwnerMutationAccess(remote, env, now)).not.toBeNull();
   });
 
-  it("fails closed when owner and agent capabilities are identical", () => {
-    const unsafeEnv = { MARKETPULSE_AGENT_TOKEN: TOKEN, MARKETPULSE_OWNER_TOKEN: TOKEN };
-    expect(createOwnerSession(TOKEN, unsafeEnv, now)).toBeNull();
+  it("authenticates local requests as autonomous_worker regardless of owner-token configuration", () => {
+    // The owner removed the token ceremony. A stale MARKETPULSE_OWNER_TOKEN left in someone's
+    // .env.local must not silently re-arm a gate the product no longer exposes any way to satisfy
+    // — that is exactly how every control on /learning and /settings became dead again.
+    for (const candidate of [env, { ...env, MARKETPULSE_OWNER_TOKEN: "o".repeat(64) }]) {
+      const local = authenticateGovernedActor(
+        request("http://127.0.0.1:3000/api/proposals", {
+          origin: "http://127.0.0.1:3000",
+          "x-marketpulse-mutation": "1",
+          cookie: `marketpulse_local_session=${createLocalSession()}`,
+        }),
+        candidate,
+        now,
+      );
+      expect(local.ok && local.actor).toBe("autonomous_worker");
+    }
   });
 
-  it("preserves the authenticated actor instead of trusting request data", () => {
-    const agent = authenticateGovernedActor(
-      request("http://127.0.0.1:3000/api/proposals", { authorization: `Bearer ${TOKEN}` }),
-      env,
-      now,
-    );
-    expect(agent.ok && agent.actor).toBe("autonomous_worker");
-
-    const session = createOwnerSession(OWNER_TOKEN, env, now)!;
-    const owner = authenticateGovernedActor(ownerRequest(session), env, now);
-    expect(owner.ok && owner.actor).toBe("owner");
+  it("does not let a configured owner token re-arm the removed unlock gate", () => {
+    const withToken = { ...env, MARKETPULSE_OWNER_TOKEN: "o".repeat(64) };
+    expect(requireOwnerMutationAccess(ownerRequest(), withToken, now)).toBeNull();
   });
 });

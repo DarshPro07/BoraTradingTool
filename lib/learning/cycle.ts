@@ -25,11 +25,13 @@ import { fetchInstrumentBars, fetchMarketSample, marketCandleLoader, type Candle
 import { recordCycleRun } from "./run-log";
 import { runSelfRepair } from "./self-repair";
 import { withCycleLease, type LeaseHolder } from "./lease";
+import { emit } from "@/lib/brain/event-bus";
 import { promotionPass } from "@/lib/strategy/promotion";
 import { runAutonomousGauntlet } from "@/lib/strategy/auto-gauntlet";
 import { isIntradayResolution } from "@/lib/strategy/dsl";
 import { authorFromHypotheses } from "@/lib/research/hypothesis-author";
 import { learningMetrics, type LearningMetrics } from "./metrics";
+import { nextBarWake, type CycleReason } from "./reasons";
 import { runForwardDriver } from "@/lib/strategy/forward-driver";
 import { boardSummary, buildTradeBoard } from "@/lib/execution/board";
 
@@ -77,6 +79,33 @@ export interface CycleReport {
   metrics: LearningMetrics | null;
   actions: string[];
   skipped: string[];
+  /**
+   * The subset of `skipped` that is INFRASTRUCTURE IMPAIRMENT — a step that crashed, a store
+   * write that failed, a subsystem that threw — as opposed to a workflow that is merely waiting
+   * or ineligible.
+   *
+   * The distinction exists because the supervisor used to derive run health from
+   * `skipped.length > 0`, and `skipped` mixes both kinds: "No strategy exists to consider" and
+   * "Quant core is switched off (QUANT_CORE_URL=off)" sat beside "Rehearsal verdicts could not
+   * be recorded: <db error>". The owner's machine therefore reported DEGRADED on every single
+   * tick of a perfectly healthy install, which teaches the operator to ignore DEGRADED — the
+   * one state that must never become background noise.
+   *
+   * Membership is mechanical, not editorial: a reason recorded from a `catch` block is
+   * impairment; a reason recorded on a normal code path is eligibility. That rule needs no
+   * judgement calls about wording and cannot drift as messages are reworded.
+   */
+  impaired: string[];
+  /**
+   * Typed reasons — the classification made where the knowledge is.
+   *
+   * The mechanical catch-rule above is blind to impairments that do not throw: a quant core that
+   * answers a structured "not reachable", a provider that returns 200 with nothing in it. Those
+   * sites now record a typed reason carrying category and severity, and the supervisor derives
+   * health from THIS list (plus `impaired`, which every catch block also mirrors here). The
+   * string lists stay — they feed the UI and the run log — reasons ride beside them.
+   */
+  reasons: CycleReason[];
   /**
    * Set when another driver already held the cycle lease, so this call did nothing.
    *
@@ -132,6 +161,7 @@ export async function runLearningCycle(
       // A failure to write the log must not fail the cycle. The work already happened; losing the
       // record of it is worse than not doing the work only if it silently loses the work too.
     }
+    emit({ kind: "LEARNING_CYCLE_COMPLETED", cycleId: `lc_${Date.now()}`, actions: report.actions.length, skipped: report.skipped.length });
     return report;
   });
 
@@ -276,6 +306,8 @@ function emptyReport(mode: string): CycleReport {
     metrics: null,
     actions: [],
     skipped: [],
+    impaired: [],
+    reasons: [],
     blockedBy: null,
   };
 }
@@ -289,6 +321,19 @@ async function runCycleBody(
   const mode = getLearningMode();
   const actions: string[] = [];
   const skipped: string[] = [];
+  const impaired: string[] = [];
+  const reasons: CycleReason[] = [];
+  /** A typed note: the reason list gets the classification, `skipped` gets the sentence. */
+  const note = (reason: CycleReason) => {
+    reasons.push(reason);
+    skipped.push(reason.message);
+  };
+  /** For catch blocks only: the reason lands in every ledger — a note AND an impairment. */
+  const impair = (reason: string, code = "STEP_FAILED") => {
+    skipped.push(reason);
+    impaired.push(reason);
+    reasons.push({ code, category: "INFRASTRUCTURE", severity: "DEGRADED", message: reason });
+  };
 
   // Refreshed before the status is read, so a cycle reports the artifacts it just produced rather
   // than the previous pass's. Gated at `learning` because generation writes files, and `observing`
@@ -326,10 +371,24 @@ async function runCycleBody(
       if (omissions.length > 5) {
         skipped.push(`Quant core: ${omissions.length - 5} further refusal(s) not listed here.`);
       }
+      // Warm-up is a WAITING state with a knowable wake time, not a fault: nothing changes until
+      // the market can produce new bars, and the Market Clock knows when that is.
+      const warmups = omissions.filter((omission) => /warm-?up/i.test(omission.reason)).length;
+      if (warmups > 0) {
+        const wake = nextBarWake(OWNER_CAPITAL.market);
+        reasons.push({
+          code: "STRATEGY_WARMUP",
+          category: "ELIGIBILITY",
+          severity: "INFO",
+          message: `${warmups} strategy×instrument pair(s) inside their warm-up window.`,
+          resumeAt: wake?.display,
+          resumeAtMs: wake?.epochMs,
+        });
+      }
     } catch (caught) {
       // Generation failing must not fail the cycle. The reader then finds last pass's artifacts,
       // which are stale and will be badged as such — strictly better than no cycle at all.
-      skipped.push(
+      impair(
         `Quant-core artifacts could not be regenerated: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
       );
     }
@@ -359,6 +418,8 @@ async function runCycleBody(
     metrics: null,
     actions,
     skipped,
+    impaired,
+    reasons,
   };
 
   if (mode === "off") {
@@ -378,7 +439,7 @@ async function runCycleBody(
         actions.push(`Seeded ${bank.quizzesWritten} graded quiz question(s) into the study bank.`);
       }
     } catch (caught) {
-      skipped.push(
+      impair(
         `The quiz bank could not be seeded: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
       );
     }
@@ -445,7 +506,7 @@ async function runCycleBody(
       if (accumulated.inserted > 0) actions.push(accumulated.summary);
       else skipped.push(accumulated.summary);
     } catch (caught) {
-      skipped.push(
+      impair(
         `Intraday accumulation did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
       );
     }
@@ -467,7 +528,7 @@ async function runCycleBody(
         else skipped.push(`Self-repair · ${item.subject}: ${item.detail}`);
       }
     } catch (caught) {
-      skipped.push(
+      impair(
         `Self-repair did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
       );
     }
@@ -494,13 +555,30 @@ async function runCycleBody(
   // separate Python service, owned by a different agent, and this system is fully functional
   // without it. It contributes candidate review — one optional input, not the loop itself.
   if (quantCore.disabled) {
-    skipped.push("Quant core is switched off (QUANT_CORE_URL=off). Candidate review is not part of this install.");
+    note({
+      code: "QUANT_CORE_DISABLED",
+      category: "ELIGIBILITY",
+      severity: "INFO",
+      message: "Quant core is switched off (QUANT_CORE_URL=off). Candidate review is not part of this install.",
+    });
   } else if (!quantCore.reachable) {
-    skipped.push(
-      `Quant core did not answer, so candidate review was skipped rather than guessed. ${quantCore.message ?? ""}`.trim(),
-    );
+    // A structured "did not answer" is an impairment that never throws — the exact class the
+    // catch-block rule is blind to. A CONFIGURED quant core that is not answering degrades the
+    // run; a deliberately disabled one (above) is eligibility.
+    note({
+      code: "QUANT_CORE_UNREACHABLE",
+      category: "INFRASTRUCTURE",
+      severity: "DEGRADED",
+      message:
+        `Quant core did not answer, so candidate review was skipped rather than guessed. ${quantCore.message ?? ""}`.trim(),
+    });
   } else if (quantCore.stale) {
-    skipped.push("Quant core data is stale; treat candidates as historical.");
+    note({
+      code: "QUANT_CORE_STALE",
+      category: "INFRASTRUCTURE",
+      severity: "WARNING",
+      message: "Quant core data is stale; treat candidates as historical.",
+    });
   }
 
   if (mode === "observing") {
@@ -522,7 +600,7 @@ async function runCycleBody(
   } catch (caught) {
     // Belt and braces: `produceResearchJobs` refuses rather than throwing, but a cycle must not
     // be brought down by its own intake either way.
-    skipped.push(
+    impair(
       `Research intake did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -543,10 +621,21 @@ async function runCycleBody(
         `Forecast validation: graded ${scoring.scored}, ${scoring.pending} still awaiting bars. ${scoring.reason}`,
       );
     } else if (scoring.pending > 0) {
-      skipped.push(`Forecast validation: ${scoring.pending} prediction(s) awaiting bars. ${scoring.reason}`);
+      // Awaiting FUTURE bars is the healthiest state a forecast can be in — the prediction was
+      // written before its outcome existed, which is the whole evidential point. The reason
+      // carries when the next bar can arrive, so waiting names its wake time.
+      const wake = nextBarWake(OWNER_CAPITAL.market);
+      note({
+        code: "FORECAST_AWAITING_BARS",
+        category: "ELIGIBILITY",
+        severity: "INFO",
+        message: `Forecast validation: ${scoring.pending} prediction(s) awaiting bars. ${scoring.reason}`,
+        resumeAt: wake?.display,
+        resumeAtMs: wake?.epochMs,
+      });
     }
   } catch (caught) {
-    skipped.push(
+    impair(
       `Forecast validation did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -569,7 +658,7 @@ async function runCycleBody(
     const authored = await authorFromHypotheses(workerId);
     if (authored.considered > 0) actions.push(`Hypotheses: ${authored.summary}`);
   } catch (caught) {
-    skipped.push(
+    impair(
       `Authoring from hypotheses did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -651,21 +740,70 @@ async function runCycleBody(
         .run();
     }
     if (outageSkipped > 0) {
-      skipped.push(
-        `${outageSkipped} candidate(s) could not be rehearsed because the canonical store holds no bars for their ` +
-          "universe. Their previous verdicts stand, and the gap is an ingestion task — never a mid-evaluation fetch.",
-      );
+      /**
+       * Dependency resolution, not a dead-end warning.
+       *
+       * This branch used to push one sentence — "the gap is an ingestion task" — and stop. The
+       * sentence was true and nothing owned the task it named, so the same warning reappeared
+       * every cycle forever: missing bars → DEGRADED → nothing happens → same warning. Naming a
+       * prerequisite without creating it is the difference between a dashboard and an autonomous
+       * system.
+       *
+       * The blocked workflow now enqueues the work that unblocks it: one durable `ingest_history`
+       * job per acceptance-universe instrument still short of the research floor. Everything
+       * about the loop-prevention lives in the machinery, not in hope:
+       *
+       *   - dedupe key `ingest-history-<id>` — re-entering this branch next cycle reuses the
+       *     existing job instead of stacking a second one;
+       *   - `ingestInstrumentHistory` answers ALREADY_READY once the floor is met, so even a
+       *     re-run job cannot double-write;
+       *   - a source refusal FAILS the job into the queue's retry/dead machinery, where it is
+       *     visible on /jobs, rather than being silently re-attempted forever;
+       *   - bounded to the market's canonical listing, never "everything the catalog has heard
+       *     of".
+       *
+       * Rehearsal still refuses this cycle — remediation is intentionally asynchronous, and the
+       * NEXT pass finds the bars. Mid-evaluation fetches remain forbidden for the reason the old
+       * comment gave: a verdict must be pinned to a recorded snapshot, not to whatever the
+       * network returned mid-judgement.
+       */
+      let gapSummary = "Ingestion jobs for the gap are already queued or running.";
+      try {
+        // The generic resolver, not bespoke enqueueing: the same call any blocked surface makes.
+        // It answers with durable truth — queued, revived after cooldown, already active, cooling
+        // down, or permanently unresolvable — so this branch can no longer dedupe against a
+        // corpse and report it as work in flight.
+        const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
+        const gaps = await resolveUniverseDataGaps({ quota: 30 });
+        gapSummary = gaps.summary;
+      } catch (caught) {
+        impair(
+          `Ingestion remediation could not be enqueued: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+        );
+      }
+      note({
+        code: "DATA_HISTORY_MISSING",
+        category: "DEPENDENCY",
+        severity: "WARNING",
+        dependency: "ingest_history",
+        dependencyType: "DATA",
+        message:
+          `${outageSkipped} candidate(s) could not be rehearsed because the canonical store holds no bars for their ` +
+          `universe. Their previous verdicts stand. ${gapSummary}`,
+      });
     }
   } catch (caught) {
-    skipped.push(
+    impair(
       `Rehearsal verdicts could not be recorded: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
 
-  // The guarded trial. Five conditions must all hold before a trial is spent without being asked,
-  // and `run_gauntlet` is not in the policy allowlist today — so in practice this reports a fully
-  // checked recommendation and spends nothing. See `lib/strategy/auto-gauntlet.ts` for why it is
-  // built to activate on an owner's one-line edit rather than to ask each time.
+  // The guarded trial. Five selection guards must all hold, and then the deterministic Trial
+  // Budget Governor (`lib/strategy/trial-governor.ts`) must authorize the spend — its dedicated
+  // lane switch (MARKETPULSE_AUTONOMOUS_TRIALS) is OFF by default, so in practice this reports a
+  // fully checked recommendation and spends nothing. `run_gauntlet` is deliberately NOT in the
+  // generic autonomous allowlist; the governor is the sole authority so a future Agent/Team layer
+  // cannot spend statistical evidence through a coarse permission.
   //
   // Placed after the rehearsal, deliberately: the first guard reads the verdict the rehearsal has
   // just written, and running it earlier would judge every candidate on the previous pass's
@@ -681,7 +819,7 @@ async function runCycleBody(
     };
     (auto.spent !== null ? actions : skipped).push(`Guarded gauntlet: ${auto.summary}`);
   } catch (caught) {
-    skipped.push(
+    impair(
       `The guarded gauntlet did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -699,7 +837,7 @@ async function runCycleBody(
       skipped.push(`Forward shadow did not run: ${replayPermission.reason}`);
     }
   } catch (caught) {
-    skipped.push(
+    impair(
       `Forward shadow pass failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -747,7 +885,7 @@ async function runCycleBody(
     );
     actions.push(forward.summary);
   } catch (caught) {
-    skipped.push(
+    impair(
       `The trade board could not be built: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -821,7 +959,7 @@ async function runCycleBody(
       }
     }
   } catch (caught) {
-    skipped.push(
+    impair(
       `The strategy factory did not run: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }
@@ -831,7 +969,7 @@ async function runCycleBody(
     report.metrics = learningMetrics();
     actions.push(`Learning: ${report.metrics.verdict}`);
   } catch (caught) {
-    skipped.push(
+    impair(
       `Learning metrics could not be computed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
     );
   }

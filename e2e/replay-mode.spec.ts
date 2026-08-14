@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * P2 — LIVE / REPLAY validation surface (mission P2; desktop only).
@@ -11,7 +12,7 @@ import { expect, test } from "@playwright/test";
  */
 
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 test.describe("LIVE / REPLAY — the mode is explicit and every result is labelled", () => {
@@ -54,6 +55,8 @@ test.describe("LIVE / REPLAY — the mode is explicit and every result is labell
 
   test("the API itself attests the mode and the instant that ran", async ({ request, baseURL }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
+
+    await ensureLocalSession(request);
 
     const asOf = "2026-08-03T04:30:00.000Z";
     const replayed = await request.post("/api/forward/run", { headers: headers(baseURL!), data: { asOf } });

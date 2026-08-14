@@ -22,7 +22,10 @@ export const EvidenceItemSchema = z.object({
   id: z.string().trim().min(1).max(120),
   label: z.string().trim().min(1).max(300),
   value: z.unknown(),
-  quality: z.enum(["LIVE", "DELAYED", "STALE", "CONFLICTED", "UNAVAILABLE", "AUTH_REQUIRED", "CALCULATED"]),
+  // FIXTURE mirrors DataQuality: evidence assembled from deterministic test data must be able to
+  // say so. Omitting it did not keep fixtures out — it made the schema reject them outright, so
+  // an evidence package built in test mode failed validation instead of being labelled.
+  quality: z.enum(["LIVE", "DELAYED", "STALE", "CONFLICTED", "UNAVAILABLE", "AUTH_REQUIRED", "CALCULATED", "FIXTURE"]),
   sourceId: z.string().trim().min(1).max(300),
 }).strict();
 

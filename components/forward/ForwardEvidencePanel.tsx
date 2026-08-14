@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/system/Panel";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Forward evidence, on screen (workstream 1).
@@ -81,9 +82,8 @@ export function ForwardEvidencePanel() {
     setBusy(true);
     setNote(null);
     try {
-      const response = await fetch(path, {
+      const response = await mutationFetch(path, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify(payload),
       });
       const body = (await response.json()) as {

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * Task 1 acceptance: the one button, driven as a person drives it.
@@ -22,11 +23,12 @@ import { expect, test } from "@playwright/test";
  */
 const ORIGIN = process.env.MARKETPULSE_E2E_BASE_URL?.trim() || "http://127.0.0.1:3100";
 const MUTATION = {
-  headers: { "x-marketpulse-csrf": "1", "content-type": "application/json", origin: ORIGIN },
+  headers: { "x-marketpulse-mutation": "1", "content-type": "application/json", origin: ORIGIN },
 };
 
 test.describe("autonomous master runtime", () => {
   test.beforeEach(async ({ request }) => {
+    await ensureLocalSession(request);
     // Start from a stopped machine so "already running" from an earlier spec cannot make this pass.
     await request.post("/api/system/stop", { ...MUTATION, data: { reason: "test setup" } }).catch(() => undefined);
   });

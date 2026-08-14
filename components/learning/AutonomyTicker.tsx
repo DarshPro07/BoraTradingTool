@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Fires an autonomous cycle on a timer while the app is open.
@@ -34,10 +35,7 @@ export function AutonomyTicker({
       if (running.current || document.hidden) return;
       running.current = true;
       try {
-        const res = await fetch("/api/learning/cycle", {
-          method: "POST",
-          headers: { "x-marketpulse-csrf": "1" },
-        });
+        const res = await mutationFetch("/api/learning/cycle", { method: "POST" });
         if (res.ok) router.refresh();
       } catch {
         // A failed tick is not worth surfacing — the strip already shows the age of the last

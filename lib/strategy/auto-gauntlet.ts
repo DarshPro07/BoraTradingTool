@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import { evaluateAutonomousAction, type LearningMode } from "@/lib/governance/policy";
+import { type LearningMode } from "@/lib/governance/policy";
 import { breedingBasis } from "@/lib/paper/capital";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
 import type { ResearchDatasetSource } from "@/lib/learning/rehearsal";
@@ -8,7 +8,16 @@ import { costStanding } from "./cost-gate";
 import { StrategyDslSchema, isIntradayResolution, type StrategyDsl } from "./dsl";
 import { runGauntlet } from "./gauntlet";
 import { currentStage } from "./promotion";
-import { freezeStanding } from "./research-freeze";
+import {
+  AUTONOMOUS_ACTOR,
+  DEFAULT_DAILY_TRIAL_BUDGET,
+  trialsSpentToday,
+  withAuthorizedTrial,
+} from "./trial-governor";
+
+// Re-exported from their new home in the governor so existing importers (tests, the learning
+// cycle) keep their import path. The trial-ledger primitives belong WITH the sole authorizer.
+export { AUTONOMOUS_ACTOR, DEFAULT_DAILY_TRIAL_BUDGET, trialsSpentToday };
 
 /**
  * Spending a validation trial without being asked — and the five things that must all be true first.
@@ -25,24 +34,21 @@ import { freezeStanding } from "./research-freeze";
  * when all five guards hold, and every guard is reported whether it passed or not — a candidate
  * that was skipped is as interesting as one that ran.
  *
- * ## The governance boundary, and why this module is built anyway
+ * ## The governance boundary — the Trial Budget Governor, not the generic allowlist
  *
- * `run_gauntlet` is **not** in `AUTONOMOUS_PERMITTED` (`lib/governance/policy.ts`), and that
- * allowlist is denied-by-default. No autonomous actor may spend a trial today. That file is
- * protected — *"The governance policy cannot amend itself"* — so this module cannot grant itself
- * the permission, and must not route around the check by calling `runGauntlet` directly.
+ * Authorization to spend a trial does NOT come from `AUTONOMOUS_PERMITTED`. `run_gauntlet` was
+ * deliberately removed from that generic allowlist (owner decision 2026-08-14): a line there is
+ * reachable by any autonomous actor, and soon by an Agent/Team layer, which is too coarse an
+ * authority for spending statistical evidence. The sole authorizer is the deterministic
+ * `authorizeTrial` governor (`lib/strategy/trial-governor.ts`), OFF by default and enabled only
+ * by a dedicated owner-set switch (`MARKETPULSE_AUTONOMOUS_TRIALS=1`) — never a model, never the
+ * learning mode.
  *
- * It therefore asks the policy first, every time. Denied, it evaluates every guard anyway and
- * persists a recommendation naming the candidate it *would* have spent a trial on. The day the
- * owner adds one line to the allowlist, the same code begins spending trials at the configured
- * budget with every other guard already in force. Nothing else changes, and both paths are tested.
+ * This module asks the governor, every time. Refused (the default), it evaluates every selection
+ * guard anyway and persists a recommendation naming the candidate it *would* have spent a trial
+ * on. With the lane switched on and every deterministic gate holding, the same code spends exactly
+ * one trial at the configured budget — no per-trial human click. Both paths are tested.
  */
-
-/** Trials the loop may spend per day. One is slow enough that a systematic error surfaces first. */
-export const DEFAULT_DAILY_TRIAL_BUDGET = 1;
-
-/** The actor recorded against an automatically spent trial. Never `owner`. */
-export const AUTONOMOUS_ACTOR = "autonomous_worker";
 
 export interface TrialGuard {
   name: string;
@@ -82,28 +88,6 @@ function parseDsl(raw: string): StrategyDsl | null {
   } catch {
     return null;
   }
-}
-
-/** Trials this actor has started since local midnight. */
-export function trialsSpentToday(now: Date, actor = AUTONOMOUS_ACTOR): number {
-  const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0);
-  const since = Math.floor(midnight.getTime() / 1000);
-
-  return getDb()
-    .select()
-    .from(schema.trials)
-    .where(eq(schema.trials.actor, actor))
-    .all()
-    .filter((row) => {
-      // `started_at` is stored as epoch seconds by the gauntlet and as a Date by the ORM layer in
-      // some paths. Normalised here rather than trusted, because a millisecond value compared
-      // against a second boundary would count every historical trial as "today" and permanently
-      // exhaust the budget.
-      const raw = row.startedAt as unknown;
-      const seconds = raw instanceof Date ? Math.floor(raw.getTime() / 1000) : Number(raw) > 1e11 ? Number(raw) / 1000 : Number(raw);
-      return Number.isFinite(seconds) && seconds >= since;
-    }).length;
 }
 
 /**
@@ -230,113 +214,102 @@ export async function runAutonomousGauntlet(options: AutoGauntletOptions): Promi
   const budget = options.budget ?? DEFAULT_DAILY_TRIAL_BUDGET;
   const ranAt = now.toISOString();
 
-  // Two independent refusals, checked separately because they mean different things and are
-  // lifted by different people. The policy allowlist says *no autonomous actor may ever do this*;
-  // the freeze says *nobody may do this right now, while the accounting is broken*. Collapsing
-  // them into one boolean would let lifting either one look like lifting both.
-  const freeze = freezeStanding("gauntlet_trial");
-  const permission = evaluateAutonomousAction("run_gauntlet", "autonomous_worker", options.mode);
+  // The Trial Budget Governor is the single authority. It folds the lane switch, the freeze and
+  // the daily budget into one deterministic decision, checked against the candidate that cleared
+  // the selection guards. A denial is not an error and not a failure: it is the governor answering
+  // the question it exists to answer, and the report says which gate refused.
+  //
+  // `withAuthorizedTrial` serializes the whole authorize→spend section under a single mutex, so
+  // the budget check is ATOMIC with the eventual ledger write — a second concurrent authorizer
+  // cannot slip past a budget that this run is about to consume.
   const candidates = selectTrialCandidates(now, budget);
-  const spentToday = trialsSpentToday(now);
   const eligible = candidates.find((candidate) => candidate.eligible) ?? null;
 
-  const base = {
-    ranAt,
-    policyAllowed: permission.allowed,
-    policyReason: permission.allowed
-      ? "An autonomous actor may run the gauntlet at this mode."
-      : permission.reason,
-    budget: { perDay: budget, spentToday, remaining: Math.max(0, budget - spentToday) },
-    candidates,
-  };
+  return withAuthorizedTrial({ candidate: eligible, now, budget }, (authorization): AutoGauntletReport => {
+    const base = {
+      ranAt,
+      policyAllowed: authorization.approved,
+      policyReason: authorization.reason,
+      budget: authorization.budget,
+      candidates,
+    };
 
-  if (eligible === null) {
+    if (eligible === null) {
+      return {
+        ...base,
+        spent: null,
+        recommended: null,
+        summary:
+          candidates.length === 0
+            ? "No strategy exists to consider."
+            : `${candidates.length} candidate(s) considered, none eligible. No trial was spent, and none was wasted finding that out.`,
+      };
+    }
+
+    if (!authorization.approved) {
+      return {
+        ...base,
+        spent: null,
+        recommended: { specId: eligible.specId, name: eligible.name },
+        summary:
+          `${eligible.name} clears every selection guard, but the Trial Budget Governor did not authorize a spend ` +
+          `(${authorization.code}): ${authorization.reason} Recorded as a recommendation; no trial was spent.`,
+      };
+    }
+
+    const spec = getDb().select().from(schema.strategySpecs).all().find((row) => row.id === eligible.specId);
+    const dsl = spec ? parseDsl(spec.dsl) : null;
+    if (!spec || !dsl) {
+      return { ...base, spent: null, recommended: null, summary: "The selected candidate vanished between selection and execution." };
+    }
+
+    // Evidence from a real replay over a RECORDED snapshot (13b). A gauntlet fed anything else
+    // grades whatever it was handed — and a provider window cannot even name what it was.
+    const snapshot = options.researchData(dsl.universe.market, dsl.universe.resolution);
+    if (!snapshot.ok) {
+      return {
+        ...base,
+        spent: null,
+        recommended: { specId: eligible.specId, name: eligible.name },
+        summary:
+          `${eligible.name} is eligible but the canonical store cannot serve its universe. ` +
+          `${snapshot.message} No trial was spent — missing stored history is an ingestion task, not a verdict.`,
+      };
+    }
+
+    const backtest = runPortfolioBacktest(dsl, snapshot.dataset, {
+      datasetFingerprint: snapshot.fingerprint,
+      datasetSnapshotId: snapshot.snapshotId,
+    });
+    if (!backtest.ok) {
+      return {
+        ...base,
+        spent: null,
+        recommended: { specId: eligible.specId, name: eligible.name },
+        summary: `${eligible.name} could not be replayed (${backtest.code}), so no trial was spent. ${backtest.message}`,
+      };
+    }
+
+    const report = runGauntlet(
+      spec.id,
+      dsl,
+      { ...backtest.evidence, executionProfileId: backtest.execution?.profileId ?? null },
+      AUTONOMOUS_ACTOR,
+    );
+
     return {
       ...base,
-      spent: null,
+      spent: {
+        specId: spec.id,
+        name: spec.name,
+        passed: report.passed,
+        trialsCounted: report.trialsCounted,
+        summary: report.summary,
+      },
       recommended: null,
       summary:
-        candidates.length === 0
-          ? "No strategy exists to consider."
-          : `${candidates.length} candidate(s) considered, none eligible. No trial was spent, and none was wasted finding that out.`,
+        `Spent one trial on ${spec.name}: ${report.passed ? "passed" : "failed"}. ${report.summary} ` +
+        "That trial is permanent and has raised the bar for every future candidate in this family.",
     };
-  }
-
-  if (!freeze.allowed) {
-    return {
-      ...base,
-      spent: null,
-      recommended: { specId: eligible.specId, name: eligible.name },
-      summary:
-        `${eligible.name} clears every guard, but research spending is frozen. ${freeze.reason} ` +
-        "Recorded as a recommendation; no trial was spent.",
-    };
-  }
-
-  if (!permission.allowed) {
-    return {
-      ...base,
-      spent: null,
-      recommended: { specId: eligible.specId, name: eligible.name },
-      summary:
-        `${eligible.name} clears every guard, but policy does not permit an autonomous actor to spend a trial: ` +
-        `${permission.reason} Recorded as a recommendation. Adding "run_gauntlet" to AUTONOMOUS_PERMITTED — an ` +
-        "owner-only edit — is all that stands between this and an automatic trial.",
-    };
-  }
-
-  const spec = getDb().select().from(schema.strategySpecs).all().find((row) => row.id === eligible.specId);
-  const dsl = spec ? parseDsl(spec.dsl) : null;
-  if (!spec || !dsl) {
-    return { ...base, spent: null, recommended: null, summary: "The selected candidate vanished between selection and execution." };
-  }
-
-  // Evidence from a real replay over a RECORDED snapshot (13b). A gauntlet fed anything else
-  // grades whatever it was handed — and a provider window cannot even name what it was.
-  const snapshot = options.researchData(dsl.universe.market, dsl.universe.resolution);
-  if (!snapshot.ok) {
-    return {
-      ...base,
-      spent: null,
-      recommended: { specId: eligible.specId, name: eligible.name },
-      summary:
-        `${eligible.name} is eligible but the canonical store cannot serve its universe. ` +
-        `${snapshot.message} No trial was spent — missing stored history is an ingestion task, not a verdict.`,
-    };
-  }
-
-  const backtest = runPortfolioBacktest(dsl, snapshot.dataset, {
-    datasetFingerprint: snapshot.fingerprint,
-    datasetSnapshotId: snapshot.snapshotId,
   });
-  if (!backtest.ok) {
-    return {
-      ...base,
-      spent: null,
-      recommended: { specId: eligible.specId, name: eligible.name },
-      summary: `${eligible.name} could not be replayed (${backtest.code}), so no trial was spent. ${backtest.message}`,
-    };
-  }
-
-  const report = runGauntlet(
-    spec.id,
-    dsl,
-    { ...backtest.evidence, executionProfileId: backtest.execution?.profileId ?? null },
-    AUTONOMOUS_ACTOR,
-  );
-
-  return {
-    ...base,
-    spent: {
-      specId: spec.id,
-      name: spec.name,
-      passed: report.passed,
-      trialsCounted: report.trialsCounted,
-      summary: report.summary,
-    },
-    recommended: null,
-    summary:
-      `Spent one trial on ${spec.name}: ${report.passed ? "passed" : "failed"}. ${report.summary} ` +
-      "That trial is permanent and has raised the bar for every future candidate in this family.",
-  };
 }

@@ -25,4 +25,9 @@ export const MCP_TOOL_CAPABILITIES: Readonly<Record<string, CapabilityClass>> = 
   marketpulse_record_failure: "WRITE_LOCAL",
   marketpulse_enqueue_research: "WRITE_LOCAL",
   marketpulse_research_queue: "READ",
+  marketpulse_runtime_status: "READ",
+  marketpulse_system_identity: "READ",
+  marketpulse_readiness: "READ",
+  marketpulse_jobs_list: "READ",
+  marketpulse_jobs_get: "READ",
 });

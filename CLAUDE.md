@@ -131,10 +131,17 @@ use the external CI/test runner for execution rather than bypassing the write bo
 
 ## Learning mode
 
-`off` → `observing` → `learning` → `evolving`. Set at `/learning`. Higher modes enable more
-autonomous work, but eleven actions are prohibited in **every** mode — including modifying the
-risk kernel, deleting a trial, re-querying the locked holdout, and placing an order. Those are
-enforced by `lib/governance/policy.ts`, by database triggers, and by tests that fail the build.
+**Single AUTO.** The machine has one top-level state — RUN (`evolving`) or OFF — set at
+`/learning`. Observe, Learn and Evolve are concurrent LANES under RUN, not tiers to switch
+between. (The legacy four-value `LearningMode` type still exists in protected code and coerces
+every non-`off` value to `evolving`; collapsing it to two values is the tracked Option A in
+`docs/plans/mode-taxonomy/`.) Eleven actions are prohibited in **every** state — including
+modifying the risk kernel, deleting a trial, re-querying the locked holdout, and placing an
+order — enforced by `lib/governance/policy.ts`, database triggers, and build-failing tests.
+
+Spending a permanent statistical **trial** is authorized by the deterministic **Trial Budget
+Governor** (`lib/strategy/trial-governor.ts`), never the generic autonomous allowlist. It is OFF
+by default and enabled only by the dedicated owner switch `MARKETPULSE_AUTONOMOUS_TRIALS=1`.
 
 Only an authenticated owner session can change learning mode or approve or merge an evolution
 proposal. `MARKETPULSE_AGENT_TOKEN` identifies an autonomous worker and never grants owner authority.

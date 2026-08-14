@@ -1,5 +1,7 @@
 import { collectFeatures, evaluate } from "@/lib/backtest/engine";
-import { buildFeaturePanel, isDerivable } from "@/lib/backtest/features";
+import { buildFeaturePanel, isDerivable, warmupBarsFor } from "@/lib/backtest/features";
+import { getAllCapabilities, updateCapabilityHealth } from "@/lib/brain/capability-registry";
+import { emit } from "@/lib/brain/event-bus";
 import type { Candle } from "@/lib/providers/types";
 import { marketOf, type StrategyDsl } from "@/lib/strategy/dsl";
 import type { QuantCandidate } from "./contract";
@@ -51,10 +53,32 @@ export interface FiredSignal {
   at: number;
 }
 
+/**
+ * A warm-up refusal as a COUNTABLE data condition, not an opaque string.
+ *
+ * `barsHeld < barsNeeded` says exactly how much history is missing, so the dependency resolver can
+ * treat it as a DATA prerequisite (ingest more bars) with a knowable resume, and compose it with a
+ * strategy's market-state/time conditions rather than sniffing a sentence.
+ */
+export interface WarmupRefusal {
+  instrumentId: string;
+  specName: string;
+  barsHeld: number;
+  barsNeeded: number;
+  /**
+   * True when the gap is TIME, not DATA: enough bars are held, but a session-gated feature (an
+   * opening range whose window has not yet closed) is still forming. The market clock resolves
+   * this, not more history — the owner's two-concept warm-up (DATA bar-count vs TIME session).
+   */
+  timeGated: boolean;
+}
+
 export interface SignalSweep {
   fired: FiredSignal[];
   evaluated: number;
   refusals: string[];
+  /** Structured warm-up refusals, beside the human-readable `refusals` strings. */
+  warmups: WarmupRefusal[];
 }
 
 /**
@@ -100,6 +124,7 @@ export function firedSignals(
 ): SignalSweep {
   const fired: FiredSignal[] = [];
   const refusals = new Set<string>();
+  const warmups: WarmupRefusal[] = [];
   let evaluated = 0;
 
   const instruments = Object.entries(dataset);
@@ -120,7 +145,13 @@ export function firedSignals(
       continue;
     }
 
+    const targetPrefix = spec.dsl.universe.market === "NSE" ? "IN:XNSE:" : spec.dsl.universe.market === "BSE" ? "IN:XBOM:" : "US:";
     for (const [instrumentId, bars] of instruments) {
+      // Exchange gate: NSE strategies scan NSE instruments only, BSE strategies scan BSE only.
+      // This prevents BSE (.BO) instruments from leaking into NSE candidate paths and vice versa.
+      if (!instrumentId.startsWith(targetPrefix)) {
+        continue;
+      }
       // Two bars minimum: crossover and crossunder are events *between* consecutive bars and are
       // unknowable from one.
       if (bars.length < 2) {
@@ -139,7 +170,23 @@ export function firedSignals(
       evaluated += 1;
 
       if (!panel.ready(last, required)) {
-        refusals.add(`${symbolFor(instrumentId)}: ${spec.name} is still inside its warm-up window.`);
+        // Warm-up, split into the two concepts. If fewer bars are held than the required features
+        // need, it is a DATA condition — resolvable by ingesting more history, with a countable
+        // gap. If enough bars are held but a feature is still not ready, the remaining gate is
+        // TIME: a session-gated feature (an opening range whose window has not yet closed), which
+        // the market clock resolves, not more bars. Reporting a bar count for that case would be a
+        // fabricated number.
+        const barsHeld = bars.length;
+        const barsNeeded = warmupBarsFor(required);
+        const timeGated = barsHeld >= barsNeeded;
+        warmups.push({ instrumentId, specName: spec.name, barsHeld, barsNeeded, timeGated });
+        refusals.add(
+          timeGated
+            ? `${symbolFor(instrumentId)}: ${spec.name} has its history but is waiting on a session ` +
+                `window (e.g. the opening range) to close.`
+            : `${symbolFor(instrumentId)}: ${spec.name} is still inside its warm-up window ` +
+                `(${barsHeld}/${barsNeeded} bars).`,
+        );
         continue;
       }
 
@@ -162,7 +209,52 @@ export function firedSignals(
     );
   }
 
-  return { fired, evaluated, refusals: [...refusals] };
+  // The capability graph watches the same sweeps every consumer renders from. The board's own
+  // scan path never reported anything, so `scanner.run` stayed "UNKNOWN — Requires quant core
+  // data" forever; this is the one choke point both the board and the candidate generator walk
+  // through, so the graph updates exactly once per real scan, honestly: READY when pairs were
+  // assessed, DEGRADED when data existed but nothing was evaluable (warm-up/refusals), and left
+  // untouched when the dataset is empty. A health change is an event — the same ledger the Brain
+  // renders lanes from.
+  recordScanCapabilityHealth(evaluated, Object.keys(dataset).length);
+
+  return { fired, evaluated, refusals: [...refusals], warmups };
+}
+
+/**
+ * Reflect the outcome of a real scan in the capability graph, emitting CAPABILITY_HEALTH_CHANGED
+ * only when the health actually changed. An empty dataset is "no evidence yet" — the capability
+ * keeps whatever standing it had (UNKNOWN at startup), never a fabricated verdict.
+ */
+function recordScanCapabilityHealth(evaluatedPairs: number, instrumentCount: number): void {
+  const capability = getAllCapabilities().find((c) => c.capabilityId === "scanner.run");
+  if (!capability) return;
+  const before = capability.health;
+
+  if (instrumentCount > 0 && evaluatedPairs > 0) {
+    updateCapabilityHealth(
+      "scanner.run",
+      "READY",
+      `Quant core evaluated ${evaluatedPairs} strategy × instrument pair(s).`,
+    );
+  } else if (instrumentCount > 0) {
+    updateCapabilityHealth(
+      "scanner.run",
+      "DEGRADED",
+      "No strategy × instrument pair evaluable — warm-up windows or feature refusals.",
+    );
+  }
+
+  const after = getAllCapabilities().find((c) => c.capabilityId === "scanner.run");
+  if (after && after.health !== before) {
+    emit({
+      kind: "CAPABILITY_HEALTH_CHANGED",
+      capabilityId: "scanner.run",
+      health: after.health,
+      reason: after.healthReason,
+      at: new Date().toISOString(),
+    });
+  }
 }
 
 export function scanForSignals(
@@ -194,6 +286,8 @@ export function scanForSignals(
   candidates.sort(
     (a, b) => rank[a.verdict] - rank[b.verdict] || a.symbol.localeCompare(b.symbol) || a.setup!.localeCompare(b.setup!),
   );
+
+  emit({ kind: "SCANNER_COMPLETED", instrumentsScanned: Object.keys(dataset).length, signals: candidates.length });
 
   return { candidates, evaluated: sweep.evaluated, refusals: sweep.refusals };
 }

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { recordClaim, recordHypothesis, recordSource } from "@/lib/knowledge/repository";
+import { emit } from "@/lib/brain/event-bus";
 import type { SourceKind } from "@/lib/knowledge/types";
 import type { JobKind } from "./queue";
 
@@ -124,6 +125,8 @@ export function ingestSource(jobKind: JobKind, payload: IngestPayload, createdBy
   if (!payload.claims?.length) {
     notes.push("No claims supplied. The source is archived but has produced no extracted knowledge yet.");
   }
+
+  emit({ kind: "DATA_INGESTED", instrumentId: "knowledge-source", bars: claimIds.length, source: kind });
 
   return {
     sourceId: source.id,

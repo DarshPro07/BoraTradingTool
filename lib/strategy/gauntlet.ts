@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import { specsInFamily, validationStanding } from "./research-identity";
 import { recordSelectionTrial, requestHoldoutAccess, selectionTrialCount } from "./selection-ledger";
 import { recordFailure, recordTrial, setSpecStatus } from "@/lib/knowledge/repository";
@@ -450,6 +451,8 @@ export function runGauntlet(
         evaluatedAt: new Date(),
       })
       .run();
+
+    emit({ kind: "VALIDATION_COMPLETED", specId, verdict: passed ? "PASSED" : "FAILED" });
 
     if (passed) {
       setSpecStatus(specId, "paper_challenger");

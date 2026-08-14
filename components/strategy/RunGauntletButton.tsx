@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FlaskConical, Loader2 } from "lucide-react";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Spend a trial on one strategy.
@@ -45,9 +46,8 @@ export function RunGauntletButton({ specId, name }: { specId: string; name: stri
     setState("running");
     setError(null);
     try {
-      const response = await fetch("/api/strategy/gauntlet", {
+      const response = await mutationFetch("/api/strategy/gauntlet", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ specId, confirm: true }),
       });
       const body = await response.json().catch(() => null);

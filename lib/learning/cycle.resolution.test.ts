@@ -182,8 +182,10 @@ describe("the rehearsal reads recorded snapshots at the declared resolution (13b
 });
 
 describe("the guarded gauntlet reaches the cycle report", () => {
-  it("reports the policy refusal rather than falling silent", async () => {
-    setLearningMode("learning", "owner");
+  it("the Trial Budget Governor lane is off by default, so the guarded gauntlet spends nothing", async () => {
+    // The autonomous trial lane (MARKETPULSE_AUTONOMOUS_TRIALS) is off unless the owner sets it,
+    // so the deterministic governor does not authorize a spend and the cycle reports a
+    // recommendation, not a trial. This is the safe default posture.
     const intraday = spec("orb_probe", "5m");
     recordStrategySpec({ name: intraday.name, dsl: intraday, createdBy: "test" });
 
@@ -195,10 +197,10 @@ describe("the guarded gauntlet reaches the cycle report", () => {
     );
 
     expect(report.autoGauntlet).not.toBeNull();
+    // Lane off ⇒ the governor did not authorize ⇒ nothing spent.
     expect(report.autoGauntlet?.policyAllowed).toBe(false);
     expect(report.autoGauntlet?.spent).toBe(false);
-    // A refusal is reported as a skip, not an action: nothing happened, and the loop must not
-    // count a refusal among the things it did.
+    // The refusal is reported as a skip.
     expect(report.skipped.join(" ")).toMatch(/Guarded gauntlet/);
   });
 });

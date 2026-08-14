@@ -51,6 +51,54 @@ export function isDerivable(feature: string): feature is DerivableFeature {
 /** A bar's features, or null where the warm-up window has not been satisfied. */
 export type FeatureVector = Partial<Record<DerivableFeature, number>>;
 
+/**
+ * How many bars each derivable feature needs before it leaves its warm-up window.
+ *
+ * This makes warm-up a COUNTABLE data condition — barsHeld vs barsNeeded — rather than an opaque
+ * "still warming up" string, so a refusal can be resolved (ingest more history) with a knowable
+ * resume, and composed with the market-state/time prerequisites for a strategy like ORB.
+ *
+ * Each value is the index at which the feature first becomes defined, plus one (see
+ * `buildFeaturePanel`: `sma20` needs 20 bars, `rsi14`/`atr14` are defined at index 14 → 15 bars,
+ * `rvol`/`momentum_20d`/`adv_20d` need index ≥ 20 → 21, `gap_pct` needs a prior bar → 2). Pinned
+ * against the real panel by `features.warmup.test.ts`, so it cannot drift from the computation.
+ *
+ * Raw OHLCV, the 52-week-distance features, and `minutes_since_open` are known from the first bar
+ * (or the first session stamp), so they warm up in one bar. The opening-range features
+ * (`opening_range_high/low`) are TIME-gated: their window closes a fixed number of minutes after
+ * the open, which is more than one bar at sub-15-minute resolution. They are deliberately absent
+ * here — a bar count would misrepresent a session-clock gate. Callers detect that case as
+ * "enough bars held but not ready" and treat it as a TIME condition (see `WarmupRefusal.timeGated`).
+ */
+export const FEATURE_WARMUP_BARS: Partial<Record<DerivableFeature, number>> = Object.freeze({
+  sma20: 20,
+  sma50: 50,
+  sma200: 200,
+  ema12: 12,
+  ema26: 26,
+  rsi14: 15,
+  atr14: 15,
+  rvol: 21,
+  gap_pct: 2,
+  momentum_20d: 21,
+  momentum_60d: 61,
+  adv_20d: 21,
+});
+
+/**
+ * The bars a strategy needs before every required feature is out of warm-up — the max over its
+ * required derivable features. Session-gated and raw features contribute 1 (they warm up in a
+ * bar); an unknown feature is treated conservatively as 1. Returns at least 1.
+ */
+export function warmupBarsFor(required: readonly string[]): number {
+  let needed = 1;
+  for (const feature of required) {
+    const featureNeed = (FEATURE_WARMUP_BARS as Record<string, number | undefined>)[feature] ?? 1;
+    if (featureNeed > needed) needed = featureNeed;
+  }
+  return needed;
+}
+
 export interface FeaturePanel {
   readonly length: number;
   /** Features knowable at the close of bar `index`. */

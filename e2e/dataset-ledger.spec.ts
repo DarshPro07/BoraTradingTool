@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import Database from "better-sqlite3";
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * The historical-research data contract, proven through the running server (item 13).
@@ -63,7 +64,7 @@ function seedCanonicalStore(): void {
 }
 
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 const DSL = {
@@ -94,6 +95,7 @@ test.describe("the experiment ledger — same question, same answer, forever", (
   });
 
   test("a completed experiment reopens from its ledger, identically", async ({ request, baseURL }, testInfo) => {
+    await ensureLocalSession(request);
     const name = `e2e_ledger_api_${RUN_STAMP}_${testInfo.project.name.replace(/[^a-z0-9]/gi, "_")}`;
     const authored = await request.post("/api/strategy/author", {
       headers: headers(baseURL!),
@@ -141,6 +143,7 @@ test.describe("the experiment ledger — same question, same answer, forever", (
   });
 
   test("a gauntlet verdict is pinned to its snapshot, in the response AND the trial ledger", async ({ request, baseURL }, testInfo) => {
+    await ensureLocalSession(request);
     // The professor path mints the family; the gauntlet then runs on a recorded snapshot and the
     // response, the selection trial and the experiment manifest must all name the same dataset.
     const title = `Ledger gap screen ${RUN_STAMP} ${testInfo.project.name}`;
@@ -189,6 +192,7 @@ test.describe("the experiment ledger — same question, same answer, forever", (
 
   test("the rehearsal ledger shows each verdict with the dataset it was judged on", async ({ page, baseURL }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "one browser is proof");
+    await ensureLocalSession(page.request);
     // The cycle writes these rows in production; seeding one directly tests the display contract.
     const specName = `e2e_rehearsal_row_${RUN_STAMP}`;
     const authored = await page.request.post("/api/strategy/author", {
@@ -214,6 +218,7 @@ test.describe("the experiment ledger — same question, same answer, forever", (
 
   test("the inspector UI serves ledger evidence without any live candle request", async ({ page, baseURL }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "one browser is proof; the mobile layout is covered elsewhere");
+    await ensureLocalSession(page.request);
 
     const name = `e2e_ledger_ui_${RUN_STAMP}_${testInfo.project.name.replace(/[^a-z0-9]/gi, "_")}`;
     const authored = await page.request.post("/api/strategy/author", {

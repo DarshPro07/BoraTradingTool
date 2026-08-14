@@ -45,7 +45,16 @@ export async function GET(request: Request) {
   }
 
   let instruments = searchInstruments(query, exchange);
-  if (securityMaster.state === "UNAVAILABLE" && instruments.length === 0) {
+  // A non-empty unscoped search (global navigation) must be ISIN-backed. The static catalog can
+  // answer symbol hits without the master, but those rows carry no security identity (ISIN/series);
+  // serving them silently would hide a master outage. An empty query is a pure listing of the
+  // pinned snapshot and stays available offline — it must not trigger a network bootstrap.
+  // A STALE master still serves ISIN provenance (its rows are real security identities, just not
+  // freshly observed); only an UNAVAILABLE master forces a live bootstrap. Blocking a page load
+  // on a live exchange download for a STALE-but-usable master was a real regression: it timed out
+  // analyze-page renders in the acceptance matrix.
+  const requiresMaster = query.length > 0 && securityMaster.state === "UNAVAILABLE";
+  if (requiresMaster) {
     const readiness = await ensureNseSecurityMasterReady();
     securityMaster = readiness.securityMaster;
     if (!readiness.ok) {

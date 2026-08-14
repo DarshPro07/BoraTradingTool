@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import { recordAudit } from "@/lib/knowledge/repository";
 import { ASSUMED_SLIPPAGE_BPS, OWNER_CAPITAL } from "@/lib/paper/capital";
 import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
@@ -61,6 +62,12 @@ export function runSelfRepair(actor = "self-repair"): SelfRepairReport {
     ...repairUnderstatedCosts(actor),
     ...reportCapitalDrift(),
   ];
+
+  for (const repair of repairs) {
+    if (repair.outcome === "repaired" || repair.outcome === "reported") {
+      emit({ kind: "INCIDENT_CREATED", incidentId: `incident_${repair.subject.replace(/\s+/g, "_")}`, severity: repair.outcome === "repaired" ? "low" : "medium", description: `${repair.defect}: ${repair.detail}` });
+    }
+  }
 
   const count = (outcome: RepairOutcome) => repairs.filter((repair) => repair.outcome === outcome).length;
   const repaired = count("repaired");
@@ -139,6 +146,7 @@ function repairUnderstatedCosts(actor: string): Repair[] {
         detail,
       });
 
+      emit({ kind: "REPAIR_COMPLETED", incidentId: `repair_${spec.id}`, action: "cost_understated_fixed" });
       repairs.push({ defect: "cost_understated", subject: spec.name, outcome: "repaired", detail });
     } catch (caught) {
       repairs.push({

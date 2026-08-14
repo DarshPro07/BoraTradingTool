@@ -367,6 +367,26 @@ describe("bounded current search", () => {
     expect(searchCurrentNseInstruments("mrs bector food").items[0]?.symbol).toBe("BECTORFOOD");
   });
 
+  it("never fabricates a symbol match across the .NS exchange-suffix boundary", () => {
+    // "LIQUIDSBI.NS" compacts to "LIQUIDSBINS": compacting the provider symbol lets "SBI" + "NS"
+    // spell "SBIN" and makes LIQUIDSBI a top hit for a SBIN search. The suffix must participate
+    // in direct matching only; compaction may apply to symbol/name/id/ISIN alone.
+    const LIQUIDSBI = {
+      symbol: "LIQUIDSBI",
+      name: "SBIAMC-LIQUIDSBI",
+      isin: "INF200KA13Z8",
+    };
+    expect(syncAt("2026-08-01T00:00:00Z", [
+      LIQUIDSBI,
+      { symbol: "SBIN", name: "State Bank of India", isin: "INE062A01020" },
+    ]).ok).toBe(true);
+
+    const matches = searchCurrentNseInstruments("SBIN").items.map((row) => row.symbol);
+    expect(matches).toEqual(["SBIN"]);
+    // Compaction still works on the symbol itself ("BECTORFOOD" must find the compact security).
+    expect(searchCurrentNseInstruments("SBINMID").items).toEqual([]);
+  });
+
   it("keeps duplicate company names searchable without treating the name as a unique identity", () => {
     const duplicateName = "Example Holdings Limited";
     expect(syncAt("2026-08-01T00:00:00Z", [

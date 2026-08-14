@@ -49,13 +49,21 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects: [
+    // Runs before anything touches a page, and blocks both browser projects when it fails. A suite
+    // that cannot say which build it exercised cannot support any claim about that build.
+    {
+      name: "identity",
+      testMatch: /identity\.setup\.ts/,
+    },
     {
       name: "desktop-chromium",
       use: { ...devices["Desktop Chrome"], viewport: desktopViewport },
+      dependencies: ["identity"],
     },
     {
       name: "mobile-chromium",
       use: { ...devices["Pixel 7"] },
+      dependencies: ["identity"],
     },
   ],
   // Omitted entirely when an external server is supplied — Playwright must not try to spawn one

@@ -1,5 +1,58 @@
 # Findings (root causes and load-bearing discoveries; evidence-labelled)
 
+- **OPEN (P1, data identity) 2026-08-11 — `marketOf` collapses NSE and BSE into one market.**
+  `lib/strategy/dsl.ts:12-13`: `return universeMarket === "US" ? "US" : "IN"`. The DSL's universe
+  offers `"US" | "NSE" | "BSE"` and the ONLY function converting it discards the distinction, so a
+  strategy declaring `market: "NSE"` is indistinguishable downstream from one declaring `"BSE"`.
+  `lib/market/catalog.ts:59-68` hardcodes ten XBOM (BSE) instruments under market `"IN"` —
+  500325 Reliance, 500209 Infosys, 500112 SBI among them — and those are exactly the
+  `.BO` tickers the owner OBSERVED as candidates under `orb_nse_5m`, whose spec declares
+  `universe: { market: "NSE" }` (`scripts/author-intraday-strategies.mts:50,54,60`). Provider
+  suffixing is NOT the bug: `.BO` for XBOM is the correct Yahoo convention
+  (`lib/market/instruments.ts:32`). The bug is that an NSE-only declaration cannot be enforced,
+  because the enforcement point throws the exchange away. Matters because the two exchanges have
+  different order books, liquidity and prices for the same company, so evidence gathered on one is
+  not evidence about the other. Label: STATICALLY_CONFIRMED (chain read end to end) + OBSERVED
+  (owner saw the candidates on /brain). NOT FIXED — it touches the DSL/backtest seam and needs its
+  own gates.
+
+- **FIXED (P0) 2026-08-11 — "persistent" spaCy worker was rebuilt on every request.**
+  `docs/plans/parser-worker-lifetime/`. Steady-state interpretation **20,000ms → ~530ms**, measured
+  on a real server. `sharedSyntaxResolver()` memoises per process; `authorFromHypotheses` borrows it
+  and no longer disposes what it borrows; the route translates `SYNTAX_PARSER_UNAVAILABLE` into a
+  stated 503 instead of a bare 500; readiness gained a non-spawning "Syntax parser" row (warm, pid,
+  model); the supervisor warms it on runtime start. Regression test proven by failing first
+  (2 spawns vs 1). **Root cause of the 20s was NOT the model**: `import spacy` 14.5s +
+  `spacy.load` 20.7s because `torch` and `transformers` are pulled in for a model that needs
+  neither — an environment property, reported not fixed. It cleared no e2e failure; it removed the
+  latency that was masking `AMBIGUOUS_ATTACHMENT` as the real cause.
+
+- **SUPERSEDED (was OPEN P0) 2026-08-11 — "persistent" spaCy worker is rebuilt on every request.** MEASURED:
+  `POST /api/research/hypotheses` costs **17–22s per call and never warms up** — three consecutive
+  calls timed against a running prod server; calls 2 and 3 author nothing ("Nothing was
+  re-authored") and still cost 20s. Root cause is one line,
+  `lib/research/hypothesis-author.ts:155`:
+  `resolver: SyntaxAttachmentResolver = SpaCyDependencyResolver.fromEnv()`. **A default parameter
+  expression re-evaluates on every call that omits the argument**, so each request spawns Python and
+  reloads `en_core_web_sm`. The worker IS persistent; the place it is constructed makes persistence
+  unreachable — the comment two lines above even records that the model load "costs seconds", and
+  the injection point designed for tests became production's hot path. Signature failure class:
+  individually correct code over a wrong model of reality. **Product impact:** the primary
+  "interpret my idea" control looks dead for 20 seconds on every click. **Test impact:** it is the
+  direct cause of `dataset-ledger:143` (45s timeout, POST still in flight), `forward-evidence:71`
+  (55s) and `golden-journey:71` (5.2m). Secondary: with `SYNTAX_PARSER_PYTHON` unset the route
+  returns **500**, not a stated refusal. Full evidence:
+  `docs/plans/runtime-identity-control-audit/07-final.md`.
+
+- **FIXED 2026-08-11 — the working tree did not compile, and the unit suite was green anyway.**
+  Six `tsc` errors across four components from a mechanical `mutationFetch` migration: three
+  duplicate imports, and `QuantAnalyticsPanel` had its import rewritten to
+  `import { reaction } from "react"` — a symbol that does not exist in a module that does not export
+  it. Four of the five would have reached a browser as a blank screen. The suite never imports these
+  components, so it said nothing. Now guarded: `lib/client/mutation-fetch.test.ts` fails when any
+  component mutates via bare `fetch` (proven by reverting a control and watching it name
+  `components/learning/RunCycleButton.tsx:24`).
+
 - **FIXED (P0) 2026-08-11 02:50 — the research's own EXIT rule was computed and thrown away.**
   The compiler produced `scopes.EXIT` and the author substituted a time-and-stop default, so a
   surface could show *"INTERPRETED: exit when close < SMA20"* over a spec that actually backtested

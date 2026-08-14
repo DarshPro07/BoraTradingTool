@@ -49,10 +49,14 @@ describe("paper repository", () => {
     });
 
     expect(us.order.status).toBe("FILLED");
+    // `quoteQuality` was "LIVE" here, which meant a paper fill recorded against an invented price
+    // described that price as live in its own ledger. `simulatedFixture: true` sat right beside it
+    // saying the opposite — the two disagreed, and only one of them was checked by anything.
+    // FIXTURE makes the fill's provenance agree with itself.
     expect(us.order).toMatchObject({
       simulatedFixture: true,
       quoteProvider: "TEST_FIXTURE",
-      quoteQuality: "LIVE",
+      quoteQuality: "FIXTURE",
     });
     expect(india.order.status).toBe("FILLED");
     expect(replay.idempotentReplay).toBe(true);

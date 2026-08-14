@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Panel } from "@/components/system/Panel";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 import type {
   ResearchProposalEnvelope,
   ResearchSessionEvent,
@@ -72,6 +73,19 @@ function hypothesisFrom(envelope: ResearchProposalEnvelope) {
   return { title, statement, rationale, market: proposal.instrumentId.startsWith("US:") ? "US" : "NSE" };
 }
 
+/**
+ * The shape `/api/market/ingest` answers with. Only the fields this surface renders are declared —
+ * the route returns more (inserted/skipped/rejected/source) for the ledger and the API consumer.
+ */
+interface IngestOutcome {
+  ok: boolean;
+  code: string;
+  message: string;
+  storedAfter: number;
+  required: number;
+  ready: boolean;
+}
+
 export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
   const [state, setState] = useState<ResearchSessionState>("IDLE");
   const [timeline, setTimeline] = useState<ResearchSessionEvent[]>([]);
@@ -80,6 +94,8 @@ export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
   const [restored, setRestored] = useState<string | null>(null);
   const [handoff, setHandoff] = useState<HandoffResult | null>(null);
   const [handingOff, setHandingOff] = useState(false);
+  const [ingesting, setIngesting] = useState(false);
+  const [ingestResult, setIngestResult] = useState<IngestOutcome | null>(null);
   const running = useRef(false);
 
   // Evidence survives a reload. A research run costs real quota and real minutes; a surface that
@@ -108,6 +124,58 @@ export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
     };
   }, [instrumentId]);
 
+  /**
+   * Ingest history for this instrument, then let the owner research it.
+   *
+   * `NO_STORED_DATA` is a CORRECT refusal — the bridge will not research an instrument it cannot
+   * see, and softening that would be the fabrication the product forbids. But a correct refusal
+   * with no way out is still a dead end: the only route to history used to be two CLI steps run
+   * outside the application, which meant a fresh database could never become researchable through
+   * the product at all. The refusal now carries an action.
+   *
+   * The outcome is rendered verbatim, including the unfit-for-validation declaration. Ingested
+   * bars are unadjusted and exclude delisted names; the whole point of the import is that
+   * declaration travelling with the data, not the bars themselves.
+   */
+  async function ingestHistory() {
+    if (ingesting) return;
+    setIngesting(true);
+    setIngestResult(null);
+    try {
+      const response = await mutationFetch("/api/market/ingest", {
+        method: "POST",
+        body: JSON.stringify({ instrumentId }),
+      });
+      const payload = (await response.json()) as IngestOutcome | { error: string; message: string };
+      if (!("ok" in payload)) {
+        setIngestResult({
+          ok: false,
+          code: payload.error,
+          message: payload.message,
+          storedAfter: 0,
+          required: 0,
+          ready: false,
+        });
+        return;
+      }
+      setIngestResult(payload);
+      // Ready means the refusal that prompted this no longer applies. Clear it so the surface
+      // stops showing a stale reason the user has just resolved.
+      if (payload.ready) setRefusal(null);
+    } catch (caught) {
+      setIngestResult({
+        ok: false,
+        code: "REQUEST_FAILED",
+        message: caught instanceof Error ? caught.message : String(caught),
+        storedAfter: 0,
+        required: 0,
+        ready: false,
+      });
+    } finally {
+      setIngesting(false);
+    }
+  }
+
   async function run() {
     if (running.current) return;
     running.current = true;
@@ -124,9 +192,8 @@ export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
     ]);
 
     try {
-      const response = await fetch("/api/research/stock", {
+      const response = await mutationFetch("/api/research/stock", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify({ instrumentId }),
       });
       const payload = (await response.json()) as BridgeResponse | { error: string; message: string };
@@ -161,9 +228,8 @@ export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
     if (!envelope || envelope.status !== "SOURCE_VERIFIED" || handingOff) return;
     setHandingOff(true);
     try {
-      const response = await fetch("/api/research/hypotheses", {
+      const response = await mutationFetch("/api/research/hypotheses", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
         body: JSON.stringify(hypothesisFrom(envelope)),
       });
       const payload = (await response.json()) as
@@ -232,6 +298,37 @@ export function ResearchThisStock({ instrumentId }: { instrumentId: string }) {
         {refusal ? (
           <div className="border border-loss bg-loss/10 px-2 py-1.5 text-[10px] text-loss" data-testid="research-stock-refusal">
             <span className="uppercase tracking-widest">{refusal.code}</span> — {refusal.message}
+          </div>
+        ) : null}
+
+        {/* A missing-history refusal carries its remedy. Only NO_STORED_DATA — every other refusal
+            has a different cause, and offering an ingest button for them would be noise. */}
+        {refusal?.code === "NO_STORED_DATA" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={ingestHistory}
+              disabled={ingesting}
+              className="border border-amber text-amber px-2 py-1 text-[10px] uppercase tracking-wider hover:bg-amber/10 disabled:opacity-50"
+              data-testid="research-stock-ingest"
+            >
+              {ingesting ? "Ingesting history…" : "Ingest history for this instrument"}
+            </button>
+            <span className="text-[10px] text-muted-foreground">
+              Fetches daily bars into the canonical store. The sample is unadjusted and excludes
+              delisted names, so it is usable for exploring an idea, never for promoting one.
+            </span>
+          </div>
+        ) : null}
+
+        {ingestResult ? (
+          <div
+            className={`border px-2 py-1.5 text-[10px] ${
+              ingestResult.ready ? "border-gain bg-gain/10 text-gain" : "border-amber bg-amber/10 text-amber"
+            }`}
+            data-testid="research-stock-ingest-result"
+          >
+            <span className="uppercase tracking-widest">{ingestResult.code}</span> — {ingestResult.message}
           </div>
         ) : null}
 

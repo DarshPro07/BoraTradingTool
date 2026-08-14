@@ -11,7 +11,21 @@ export type DataQuality =
   | "STALE"
   | "CONFLICTED"
   | "UNAVAILABLE"
-  | "AUTH_REQUIRED";
+  | "AUTH_REQUIRED"
+  /**
+   * Deterministic test data. NOT a market observation of any kind.
+   *
+   * This exists because `fixtureQuote` used to stamp itself `quality: "LIVE"`. In
+   * `MARKETPULSE_TEST_MODE=1` every NSE instrument outside a three-entry price table was served at
+   * ₹1,000 with `changePct: 0.5` and `volume: 1_500_000` — and the dashboard rendered those
+   * fabricated numbers with no indication they were fabricated, because "LIVE" is exactly what
+   * real data says. That is the owner-reported defect: many stocks near ₹1,000 with identical
+   * changes, and sector tiles all showing the same figure because they were averaged from them.
+   *
+   * A value that was invented must never be able to describe itself as live. Anything rendering a
+   * quote can now ask one question — is this FIXTURE — and say so.
+   */
+  | "FIXTURE";
 
 export interface Instrument {
   id: string;

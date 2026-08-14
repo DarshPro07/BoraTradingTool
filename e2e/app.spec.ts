@@ -90,10 +90,13 @@ test("paper order stays in the simulated ledger", async ({ page }) => {
   test.skip(Boolean(fixtureOnly), String(fixtureOnly));
   await page.goto("/paper");
   await expect(page.getByRole("heading", { name: "Paper Portfolio" })).toBeVisible();
+  // Deterministic session: the SessionInitializer sets the cookie during hydration; the
+  // mutation below must not race it, so fetch the session explicitly first.
+  await page.evaluate(() => fetch("/api/session"));
   const watchlist = await page.evaluate(async () => {
     const response = await fetch("/api/watchlist", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
+      headers: { "content-type": "application/json", "x-marketpulse-mutation": "1" },
       body: JSON.stringify({ ticker: "AAPL" }),
     });
     return response.status;
@@ -107,10 +110,12 @@ test("paper order stays in the simulated ledger", async ({ page }) => {
 
 test("legacy live-order endpoint remains fail-closed", async ({ page }) => {
   await page.goto("/settings");
+  // Same session-cookie determinism as the paper-order test above.
+  await page.evaluate(() => fetch("/api/session"));
   const response = await page.evaluate(async () => {
     const result = await fetch("/api/trade/place", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-marketpulse-csrf": "1" },
+      headers: { "content-type": "application/json", "x-marketpulse-mutation": "1" },
       body: JSON.stringify({ ticker: "AAPL", side: "buy", quantity: 1 }),
     });
     return { status: result.status, body: await result.json() };

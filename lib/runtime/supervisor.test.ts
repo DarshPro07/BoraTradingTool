@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { acquireLease, currentLease, leasePath } from "@/lib/learning/lease";
 import { getDb, schema } from "@/lib/db";
 import {
   liveRun,
   lastRun,
+  recoverInterruptedRun,
   reconcileStaleRuns,
   startAutonomousRun,
   stopAutonomousRun,
@@ -179,5 +181,119 @@ describe("singleton ownership across processes", () => {
 
     expect(supervisorLeasePath()).not.toBe(leasePath());
     expect(currentLease(leasePath()), "the cycle lease must remain free").toBeNull();
+  });
+});
+
+describe("crash recovery", () => {
+  it("recovers a CRASHED run and reports interrupted jobs", () => {
+    const started = startAutonomousRun("claude-code", "test", new Date(), noTick);
+
+    // Age the heartbeat past the stale threshold.
+    getDb()
+      .update(schema.autonomousRuns)
+      .set({ heartbeatAt: new Date(Date.now() - STALE_MS - 1_000) })
+      .run();
+
+    // Reconcile marks it CRASHED.
+    reconcileStaleRuns();
+    expect(lastRun()?.status).toBe("CRASHED");
+
+    // Recovery should pick it up.
+    const recovered = recoverInterruptedRun("test", new Date(), noTick);
+    expect(recovered).not.toBeNull();
+    expect(recovered?.run.status).toBe("DEGRADED");
+    expect(recovered?.run.id).toBe(started.run.id);
+    expect(recovered?.summary).toMatch(/recovered/i);
+
+    // The run is now live again.
+    expect(liveRun()).not.toBeNull();
+  });
+
+  it("returns null when there is nothing to recover (deliberate-start path)", () => {
+    // No runs at all.
+    expect(recoverInterruptedRun("test", new Date(), noTick)).toBeNull();
+
+    // A STOPPED run should NOT be resumed.
+    startAutonomousRun("claude-code", "test", new Date(), noTick);
+    stopAutonomousRun("done", "test");
+    expect(recoverInterruptedRun("test", new Date(), noTick)).toBeNull();
+  });
+
+  it("does not resume a healthy RUNNING run", () => {
+    startAutonomousRun("claude-code", "test", new Date(), noTick);
+    // Run is still healthy — no CRASHED run exists.
+    expect(recoverInterruptedRun("test", new Date(), noTick)).toBeNull();
+  });
+
+  /**
+   * A live run AND an older corpse — the combination that broke boot recovery in production.
+   *
+   * The test above only covers "healthy run, nothing crashed", which passes trivially because the
+   * CRASHED lookup finds nothing. The real database had both: a freshly-heartbeating RUNNING row
+   * that `reconcileStaleRuns` correctly leaves alone, plus a CRASHED row from an earlier session.
+   * Recovery then promoted the corpse to DEGRADED, producing two live rows, and
+   * `autonomous_runs_one_live` (drizzle/0017) rejected the write. The whole function threw and
+   * `instrumentation.ts` swallowed it:
+   *
+   *     [runtime] boot recovery skipped: UNIQUE constraint failed: index 'autonomous_runs_one_live'
+   *
+   * On the owner's development database that fired on EVERY boot, so the recovery path was never
+   * actually running there. This fails against the unfixed supervisor — with a throw, not an
+   * assertion failure, which is exactly how it presented.
+   */
+  it("returns null instead of throwing when a live run coexists with a CRASHED one", () => {
+    // The corpse first: inserted directly, because a CRASHED row cannot be produced while another
+    // run is live without tripping the very constraint under test.
+    const now = new Date();
+    getDb()
+      .insert(schema.autonomousRuns)
+      .values({
+        id: "arun_corpse_from_an_earlier_session",
+        status: "CRASHED",
+        startedAt: new Date(now.getTime() - 86_400_000),
+        heartbeatAt: new Date(now.getTime() - 86_400_000),
+        host: "old-host",
+        pid: 1,
+        runtimeProfile: "claude-code",
+        governanceCeiling: "off",
+        marketMode: "OFF_HOURS",
+      })
+      .run();
+
+    // Now a genuinely live, healthy run.
+    const live = startAutonomousRun("claude-code", "test", now, noTick);
+    expect(live.run.status).toMatch(/STARTING|RUNNING|DEGRADED/);
+
+    // Must not throw, and must not resurrect the corpse.
+    expect(() => recoverInterruptedRun("test", now, noTick)).not.toThrow();
+    expect(recoverInterruptedRun("test", now, noTick)).toBeNull();
+
+    // The live run is untouched and still the only live one.
+    expect(liveRun(now)?.id).toBe(live.run.id);
+    const stillCrashed = getDb()
+      .select()
+      .from(schema.autonomousRuns)
+      .where(eq(schema.autonomousRuns.id, "arun_corpse_from_an_earlier_session"))
+      .get();
+    expect(stillCrashed?.status, "the corpse must stay buried").toBe("CRASHED");
+  });
+
+  it("reconciles stale run then recovers in correct order", () => {
+    const started = startAutonomousRun("claude-code", "test", new Date(), noTick);
+
+    // Make it stale.
+    getDb()
+      .update(schema.autonomousRuns)
+      .set({ heartbeatAt: new Date(Date.now() - STALE_MS - 1_000) })
+      .run();
+
+    // recoverInterruptedRun calls reconcileStaleRuns internally.
+    const recovered = recoverInterruptedRun("test", new Date(), noTick);
+    expect(recovered).not.toBeNull();
+    expect(recovered?.run.id).toBe(started.run.id);
+
+    // The old CRASHED row should now be DEGRADED.
+    const row = getDb().select().from(schema.autonomousRuns).where(eq(schema.autonomousRuns.id, started.run.id)).get();
+    expect(row?.status).toBe("DEGRADED");
   });
 });

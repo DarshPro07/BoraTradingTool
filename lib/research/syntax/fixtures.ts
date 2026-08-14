@@ -163,6 +163,9 @@ export function fixtureResolver(): SyntaxAttachmentResolver {
       model: process.env.SYNTAX_PARSER_MODEL?.trim() || "en_core_web_sm",
       modelVersion: "recorded",
       python: "recorded",
+      // No process exists, and saying so is the point — a fabricated pid would make a fixture look
+      // like a running worker on the readiness surface.
+      pid: null,
     }),
     dispose: async () => {},
   };

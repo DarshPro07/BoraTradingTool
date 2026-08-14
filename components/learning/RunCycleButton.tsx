@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Play, Loader2 } from "lucide-react";
+import { mutationFetch } from "@/lib/client/mutation-fetch";
 
 /**
  * Run one autonomous cycle now.
@@ -20,10 +21,7 @@ export function RunCycleButton() {
     setRunning(true);
     setError(null);
     try {
-      const res = await fetch("/api/learning/cycle", {
-        method: "POST",
-        headers: { "x-marketpulse-csrf": "1" },
-      });
+      const res = await mutationFetch("/api/learning/cycle", { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         // A refusal is information: mode off, wrong origin, missing token. Show which.

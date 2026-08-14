@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * The Golden Journey: one owner, one strategy, end to end through the real product.
@@ -27,7 +28,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** The mutation boundary: loopback, same origin, and the explicit CSRF header. */
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 /**
@@ -70,6 +71,7 @@ function collectErrors(page: Page): string[] {
 test.describe("golden journey — author, rehearse, refuse", () => {
   test("the owner's complete path through the running product", async ({ page, request, baseURL }, testInfo) => {
     test.setTimeout(300_000);
+    await ensureLocalSession(request);
     const errors = collectErrors(page);
     const name = unique("orb", testInfo.project.name);
 
@@ -260,6 +262,7 @@ test.describe("the professor path — prose in, strategy or refusal out", () => 
     baseURL,
   }, testInfo) => {
     test.setTimeout(120_000);
+    await ensureLocalSession(request);
     const stamp = `${testInfo.project.name.replace(/[^a-z0-9]/gi, "_")}_${Date.now().toString(36)}`;
 
     await test.step("an expressible hypothesis, through the real form", async () => {
@@ -292,7 +295,7 @@ test.describe("the professor path — prose in, strategy or refusal out", () => 
 
     await test.step("a hypothesis about the system is refused as not-a-trading-rule", async () => {
       const response = await request.post("/api/research/hypotheses", {
-        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-csrf": "1" },
+        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-mutation": "1" },
         data: {
           title: `Our gauntlet blind spot ${stamp}`,
           statement:
@@ -309,7 +312,7 @@ test.describe("the professor path — prose in, strategy or refusal out", () => 
 
     await test.step("a hypothesis needing absent data is refused naming the quantity", async () => {
       const response = await request.post("/api/research/hypotheses", {
-        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-csrf": "1" },
+        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-mutation": "1" },
         data: {
           title: `Model disagreement filter ${stamp}`,
           statement:
@@ -326,7 +329,7 @@ test.describe("the professor path — prose in, strategy or refusal out", () => 
 
     await test.step("re-submitting the same idea duplicates nothing", async () => {
       const response = await request.post("/api/research/hypotheses", {
-        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-csrf": "1" },
+        headers: { "content-type": "application/json", origin: baseURL!, "x-marketpulse-mutation": "1" },
         data: {
           title: `Gap and volume screen ${stamp}`,
           statement:

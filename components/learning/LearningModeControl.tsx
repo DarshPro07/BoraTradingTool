@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { mutationFetch } from "@/lib/client/mutation-fetch";
 
-const MODES = [
-  { id: "off", label: "OFF", detail: "Nothing runs autonomously." },
-  { id: "observing", label: "OBSERVING", detail: "Reads state and surfaces what is due. Changes nothing." },
-  { id: "learning", label: "LEARNING", detail: "Also drains the research queue and extracts knowledge." },
-  { id: "evolving", label: "EVOLVING", detail: "Also prepares code and strategy proposals for your review." },
+const LANES = [
+  { id: "observation", label: "Observation", activeInRun: true },
+  { id: "learning", label: "Learning", activeInRun: true },
+  { id: "evolution", label: "Evolution", activeInRun: true },
+  { id: "research", label: "Research", activeInRun: false },
+  { id: "scanner", label: "Scanner", activeInRun: false },
+  { id: "strategy", label: "Strategy", activeInRun: false },
+  { id: "validation", label: "Validation", activeInRun: false },
+  { id: "forward", label: "Forward", activeInRun: false },
+  { id: "paper", label: "Paper", activeInRun: false },
+  { id: "self-development", label: "SelfDevelopment", activeInRun: false },
 ] as const;
 
 export function LearningModeControl({ current }: { current: string }) {
@@ -17,52 +22,7 @@ export function LearningModeControl({ current }: { current: string }) {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState<string | null>(null);
-  const [ownerToken, setOwnerToken] = useState("");
-  const [ownerUnlocked, setOwnerUnlocked] = useState(false);
-
-  async function unlockOwner(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending("unlock");
-    setError(null);
-    try {
-      const response = await mutationFetch("/api/owner/session", {
-        method: "POST",
-        body: JSON.stringify({ token: ownerToken }),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { message?: string };
-        setError(body.message ?? "Unable to unlock owner controls.");
-        return;
-      }
-      setOwnerToken("");
-      setOwnerUnlocked(true);
-    } catch {
-      setError("Could not reach the application.");
-    } finally {
-      setPending(null);
-    }
-  }
-
-  async function setMode(mode: string) {
-    setPending(mode);
-    setError(null);
-    try {
-      const response = await mutationFetch("/api/learning", {
-        method: "PATCH",
-        body: JSON.stringify({ mode }),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { message?: string };
-        setError(body.message ?? `Could not switch mode (${response.status}).`);
-        return;
-      }
-      router.refresh();
-    } catch {
-      setError("Could not reach the application.");
-    } finally {
-      setPending(null);
-    }
-  }
+  const runActive = current !== "off";
 
   async function runCycle() {
     setPending("cycle");
@@ -96,50 +56,32 @@ export function LearningModeControl({ current }: { current: string }) {
 
   return (
     <div className="space-y-3">
-      {!ownerUnlocked ? (
-        <form onSubmit={unlockOwner} className="flex flex-wrap items-end gap-2 border border-panel p-3">
-          <label className="min-w-52 flex-1 text-xs text-muted-foreground">
-            Owner token
-            <input
-              type="password"
-              value={ownerToken}
-              onChange={(event) => setOwnerToken(event.target.value)}
-              autoComplete="current-password"
-              minLength={32}
-              required
-              className="terminal-input mt-1"
-            />
-          </label>
-          <button type="submit" disabled={pending !== null} className="terminal-action min-h-11 px-4 disabled:opacity-50">
-            {pending === "unlock" ? "UNLOCKING..." : "UNLOCK OWNER CONTROLS"}
-          </button>
-        </form>
-      ) : (
-        <p className="text-xs text-gain">Owner controls unlocked for 15 minutes.</p>
-      )}
+      <div className="border border-panel p-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="text-xs tracking-wider">AUTO — {runActive ? "RUNNING" : "MAINTENANCE"}</span>
+          <span className={runActive ? "text-xs text-gain" : "text-xs text-amber"}>{runActive ? "RUN" : "OFF"}</span>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+          No owner token is required for routine local operation. Mutations remain restricted to loopback,
+          same-origin requests with the local session cookie and mutation header.
+        </p>
+      </div>
 
-      <fieldset disabled={!ownerUnlocked} className="space-y-3 disabled:opacity-50">
-      <div className="grid gap-2 sm:grid-cols-2">
-        {MODES.map((mode) => (
-          <button
-            key={mode.id}
-            type="button"
-            onClick={() => setMode(mode.id)}
-            disabled={pending !== null}
-            aria-pressed={current === mode.id}
-            className={`border px-3 py-2 text-left text-xs transition-colors disabled:opacity-50 ${
-              current === mode.id ? "border-[var(--amber)] text-amber" : "border-panel hover:border-[var(--amber)]"
-            }`}
-          >
-            <span className="block tracking-wider">{mode.label}</span>
-            <span className="block text-[10px] text-muted-foreground mt-0.5">{mode.detail}</span>
-          </button>
-        ))}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {LANES.map((lane) => {
+          const state = !runActive ? "IDLE" : lane.activeInRun ? "ACTIVE" : "WAITING";
+          return (
+            <div key={lane.id} className="border border-panel px-3 py-2 text-xs">
+              <span className="block tracking-wider">{lane.label}</span>
+              <span className={state === "ACTIVE" ? "text-gain" : "text-muted-foreground"}>{state}</span>
+            </div>
+          );
+        })}
       </div>
 
       <p className="text-[10px] text-muted-foreground leading-relaxed border border-panel p-2">
-        Owner controls require a short-lived HttpOnly session. Mutations remain restricted to
-        loopback with a CSRF header, and an autonomous-worker bearer token is always refused.
+        RUN is a single top-level mode. Observation, Learning and Evolution are concurrent lanes;
+        market-priority lanes activate when there is queued work, data, or a scheduled cycle.
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -152,10 +94,9 @@ export function LearningModeControl({ current }: { current: string }) {
           {pending === "cycle" ? "RUNNING…" : "RUN ONE CYCLE"}
         </button>
         <span className="text-[10px] text-muted-foreground">
-          Proposals always require your approval, in every mode.
+          Proposal approval still requires independent authority; token prompts are not the safety boundary.
         </span>
       </div>
-      </fieldset>
 
       {error ? <p className="text-xs text-loss">{error}</p> : null}
       {cycle ? <p className="text-xs text-muted-foreground leading-relaxed">{cycle}</p> : null}

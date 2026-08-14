@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
 import { searchInstruments } from "@/lib/market/catalog";
@@ -26,8 +27,11 @@ import {
   traceForward,
 } from "@/lib/knowledge/repository";
 import { EPISTEMIC_STATUSES, LESSON_LEVELS, PLANES, SOURCE_KINDS } from "@/lib/knowledge/types";
-import { JOB_KINDS, JOB_STATUSES, enqueue, listJobs, queueStats } from "@/lib/research/queue";
+import { JOB_KINDS, JOB_STATUSES, enqueue, listJobs, queueStats, pendingDependencies } from "@/lib/research/queue";
 import { getLearningMode } from "@/lib/governance/runtime";
+import { liveRun, lastRun, marketModeNow, STALE_MS } from "@/lib/runtime/supervisor";
+import { systemIdentity } from "@/lib/system/identity";
+import { systemReadiness } from "@/lib/product/readiness";
 
 const readOnlyAnnotations = {
   readOnlyHint: true,
@@ -506,6 +510,123 @@ export function createMarketPulseMcpServer(): McpServer {
           lastError: job.lastError,
         })),
       }),
+  );
+
+  // ── Runtime tools: the same durable state Brain shows ──────────────────────────
+
+  server.registerTool(
+    "marketpulse_runtime_status",
+    {
+      description:
+        "What MarketPulse is doing right now: the live autonomous run, market mode, queue stats, " +
+        "and system identity. Read-only. This is the same state shown on /brain.",
+      inputSchema: z.object({}).strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async () => {
+      const run = liveRun();
+      const previous = run ? null : lastRun();
+      return result({
+        running: run !== null,
+        run,
+        last: previous,
+        marketMode: marketModeNow(),
+        queue: queueStats(),
+        staleAfterMs: STALE_MS,
+      });
+    },
+  );
+
+  server.registerTool(
+    "marketpulse_system_identity",
+    {
+      description:
+        "Which build, process, schema and database is serving this request. Read-only. " +
+        "Use this to prove you are talking to the expected server before running mutations.",
+      inputSchema: z.object({}).strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async () => result(systemIdentity()),
+  );
+
+  server.registerTool(
+    "marketpulse_readiness",
+    {
+      description:
+        "What data and capabilities are READY vs MISSING. Read-only. " +
+        "Each MISSING item includes the job that fixes it.",
+      inputSchema: z.object({}).strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async () => result(systemReadiness()),
+  );
+
+  server.registerTool(
+    "marketpulse_jobs_list",
+    {
+      description:
+        "List recent jobs with their status, attempts, and dependency info. Read-only. " +
+        "Shows the same job ledger the supervisor drains.",
+      inputSchema: z
+        .object({
+          status: z.enum(JOB_STATUSES).optional(),
+          limit: z.number().int().min(1).max(100).default(20),
+          includeDependencies: z.boolean().default(false),
+        })
+        .strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async ({ status, limit, includeDependencies }) => {
+      const jobs = listJobs(status, limit).map((job) => ({
+        id: job.id,
+        kind: job.kind,
+        status: job.status,
+        attempts: job.attempts,
+        maxAttempts: job.maxAttempts,
+        lastError: job.lastError,
+        lockedBy: job.lockedBy,
+        lockedUntil: job.lockedUntil,
+        availableAt: job.availableAt,
+        createdAt: job.createdAt,
+        ...(includeDependencies ? { pendingDependencies: pendingDependencies(job.id) } : {}),
+      }));
+      return result({ stats: queueStats(), jobs });
+    },
+  );
+
+  server.registerTool(
+    "marketpulse_jobs_get",
+    {
+      description:
+        "Get one job's full history: status, attempts, result, events, and dependency chain. Read-only.",
+      inputSchema: z.object({ jobId: z.number().int().min(1) }).strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async ({ jobId }) => {
+      const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, jobId)).get();
+      if (!job) return result({ error: "NOT_FOUND", jobId });
+      const events = getDb()
+        .select()
+        .from(schema.researchJobEvents)
+        .where(eq(schema.researchJobEvents.jobId, jobId))
+        .all();
+      return result({
+        id: job.id,
+        kind: job.kind,
+        status: job.status,
+        attempts: job.attempts,
+        maxAttempts: job.maxAttempts,
+        lastError: job.lastError,
+        result: job.result ? JSON.parse(job.result) : null,
+        lockedBy: job.lockedBy,
+        lockedUntil: job.lockedUntil,
+        availableAt: job.availableAt,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        pendingDependencies: pendingDependencies(job.id),
+        events: events.map((e) => ({ event: e.event, detail: e.detail, createdAt: e.createdAt })),
+      });
+    },
   );
 
   return server;

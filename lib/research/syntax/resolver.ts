@@ -47,6 +47,15 @@ export interface ParserIdentity {
   model: string;
   modelVersion: string;
   python: string;
+  /**
+   * The worker's OS process id, or null when the parse came from recorded fixtures.
+   *
+   * It is here so "is the worker warm?" is answerable rather than assumed: two requests that report
+   * the same pid demonstrably shared a worker, and a changing pid says the model is being reloaded.
+   * That distinction was invisible while a fresh worker was built per request, which is exactly how
+   * a 20-second control went unnoticed.
+   */
+  pid: number | null;
 }
 
 export interface SyntaxAttachmentResolver {
@@ -168,6 +177,7 @@ export class SpaCyDependencyResolver implements SyntaxAttachmentResolver {
             model: String(message.model),
             modelVersion: String(message.modelVersion),
             python: String(message.python),
+            pid: child.pid ?? null,
           };
           resolve(this.identity);
           return;
@@ -230,6 +240,18 @@ export class SpaCyDependencyResolver implements SyntaxAttachmentResolver {
     return this.identity;
   }
 
+  /**
+   * What the worker IS right now, without making it exist.
+   *
+   * `health()` starts the parser as a side effect, which is right for a caller about to parse and
+   * catastrophic for a status poll: readiness is read on a timer, so a health-based row would spawn
+   * an interpreter and load a model every few seconds. Null means "not started", which is a normal
+   * state on a fresh server and not a fault.
+   */
+  currentIdentity(): ParserIdentity | null {
+    return this.identity;
+  }
+
   async parse(text: string): Promise<SyntaxParse> {
     const identity = await this.health();
     const response = await this.send({ text });
@@ -258,4 +280,110 @@ export class SpaCyDependencyResolver implements SyntaxAttachmentResolver {
     }
     child.kill();
   }
+}
+
+let shared: { key: string; resolver: SpaCyDependencyResolver } | null = null;
+
+/**
+ * The one parser worker this process uses.
+ *
+ * ## Why this function has to exist
+ *
+ * `SpaCyDependencyResolver` was already written to hold a long-lived child — `start()` memoises per
+ * instance, and the comment above it says the model load "is paid once at startup rather than per
+ * clause". That was true of the class and false of the application, because the only production
+ * caller obtained its resolver from a DEFAULT PARAMETER:
+ *
+ *     resolver: SyntaxAttachmentResolver = SpaCyDependencyResolver.fromEnv()
+ *
+ * A default parameter expression is evaluated on every call that omits the argument, so every
+ * request built a new instance, spawned a new interpreter and reloaded `en_core_web_sm`. MEASURED
+ * on 2026-08-11: 17–22 seconds per `POST /api/research/hypotheses`, with no warm-up across three
+ * consecutive calls — including calls that authored nothing at all.
+ *
+ * The class was correct. The lifetime was one call. Nothing about "persistent worker" was
+ * reachable from where it was constructed.
+ *
+ * ## Ownership
+ *
+ * Whoever creates a resolver disposes it. This one belongs to the process and is disposed only by
+ * `disposeSharedSyntaxResolver`. Callers must NOT dispose it — `authorFromHypotheses` used to, in a
+ * `finally`, which is correct for a resolver it created and fatal for one it merely borrowed.
+ *
+ * ## Concurrency
+ *
+ * The check-then-assign below cannot interleave: it is synchronous, and JavaScript will not run
+ * another turn in the middle of it. Two simultaneous requests therefore get the same instance, and
+ * the second one's `parse` simply queues on the first one's `start()` promise.
+ *
+ * A worker that dies is not a permanent outage: the class's `close` handler clears `starting`, so
+ * the next call through this same instance respawns.
+ *
+ * `SYNTAX_PARSER_PYTHON` stays mandatory. `parserConfig` throws when it is unset, and nothing here
+ * falls back to an ambient `python` — on this machine the first `python` on PATH is a virtualenv
+ * with no spaCy, so discovery would silently select the wrong interpreter.
+ */
+export function sharedSyntaxResolver(env: NodeJS.ProcessEnv = process.env): SpaCyDependencyResolver {
+  const { python, model } = parserConfig(env);
+  const key = `${python} ${model}`;
+  if (shared && shared.key === key) return shared.resolver;
+  // Configuration changed. Serving the old worker would answer with a model nobody asked for.
+  void shared?.resolver.dispose();
+  shared = { key, resolver: new SpaCyDependencyResolver(python, model) };
+  return shared.resolver;
+}
+
+/** For shutdown and for tests that must not leave an interpreter running. */
+export async function disposeSharedSyntaxResolver(): Promise<void> {
+  const current = shared;
+  shared = null;
+  await current?.resolver.dispose();
+}
+
+export interface SharedWorkerState {
+  /** Whether `SYNTAX_PARSER_PYTHON` is set. Never a guess at an interpreter. */
+  configured: boolean;
+  /** Why it is unusable, when it is. */
+  reason: string | null;
+  model: string | null;
+  /** A worker is running and has answered its readiness banner. */
+  warm: boolean;
+  pid: number | null;
+  parserVersion: string | null;
+  modelVersion: string | null;
+}
+
+/**
+ * The parser's state for a status surface. Cheap, synchronous, and it NEVER starts anything.
+ *
+ * The interpreter path is deliberately not returned. It is a local filesystem path, and the same
+ * rule that keeps the database path out of `/api/system/identity` applies here: proving a
+ * dependency is configured must not require publishing where it lives.
+ */
+export function sharedSyntaxWorkerState(env: NodeJS.ProcessEnv = process.env): SharedWorkerState {
+  let model: string | null = null;
+  try {
+    model = parserConfig(env).model;
+  } catch (caught) {
+    return {
+      configured: false,
+      reason: caught instanceof Error ? caught.message.replace(/^SYNTAX_PARSER_UNAVAILABLE: /, "") : String(caught),
+      model: null,
+      warm: false,
+      pid: null,
+      parserVersion: null,
+      modelVersion: null,
+    };
+  }
+
+  const identity = shared?.resolver.currentIdentity() ?? null;
+  return {
+    configured: true,
+    reason: null,
+    model,
+    warm: identity !== null,
+    pid: identity?.pid ?? null,
+    parserVersion: identity?.parserVersion ?? null,
+    modelVersion: identity?.modelVersion ?? null,
+  };
 }

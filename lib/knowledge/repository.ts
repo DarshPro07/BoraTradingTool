@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { emit } from "@/lib/brain/event-bus";
 import { stableStringify } from "@/lib/util/stable-json";
 import {
   KnowledgeError,
@@ -159,6 +160,7 @@ export function recordHypothesis(input: HypothesisInput): string {
     })
     .onConflictDoNothing()
     .run();
+  emit({ kind: "HYPOTHESIS_CREATED", hypothesisId: id, instrumentId: input.market ?? "unknown" });
   return id;
 }
 

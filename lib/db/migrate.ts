@@ -44,6 +44,18 @@ const MIGRATIONS = [
   "0015_agent_runs.sql",
   "0016_autonomous_runs.sql",
   "0017_autonomous_runs_single_live.sql",
+  // Job dependencies: let one job wait for another to finish before it becomes claimable.
+  // This is the missing operating-system behavior for the autonomous job chain.
+  "0018_job_dependencies.sql",
+  // Durable trial-budget reservations — the atomic, fenced, crash-safe gate for spending a
+  // permanent statistical trial. Replaces the filesystem-lease serialization with a
+  // UNIQUE(trading_date, budget_slot) reservation so concurrency, stalls and crashes cannot
+  // manufacture free trials. Plain CREATE TABLE + partial unique index; applied as raw SQL.
+  "0019_trial_reservations.sql",
+  // Agent-run provenance: link a run to its AgentDefinition (agent_id + version, so a prompt
+  // change never makes historical runs irreproducible) and the durable job that drove it (job_id).
+  // Additive nullable columns; browser-triggered runs keep NULL.
+  "0020_agent_run_provenance.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

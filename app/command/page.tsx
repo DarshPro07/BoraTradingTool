@@ -114,7 +114,7 @@ export default async function CommandCenterPage() {
                   </thead>
                   <tbody>
                     {board.data.candidates.slice(0, 8).map((candidate) => (
-                      <tr key={candidate.symbol} className="border-t border-panel">
+                      <tr key={`${candidate.symbol}-${candidate.setup}`} className="border-t border-panel">
                         <td className="py-1">{candidate.symbol}</td>
                         <td className="py-1 text-muted-foreground">{candidate.setup ?? "—"}</td>
                         <td className={`py-1 ${candidate.verdict === "PAPER_CANDIDATE" ? "text-gain" : "text-amber"}`}>

@@ -59,6 +59,31 @@ export const AUTONOMOUS_PERMITTED: readonly AutonomousAction[] = Object.freeze([
   { id: "improve_dashboard_page", capability: "WRITE_LOCAL", summary: "Improve a dashboard page", minimumMode: "evolving" },
   { id: "update_verified_memory", capability: "WRITE_LOCAL", summary: "Write a verified finding to durable memory", minimumMode: "learning" },
   { id: "retire_degraded_strategy", capability: "WRITE_LOCAL", summary: "Retire a strategy whose edge has decayed", minimumMode: "evolving" },
+  // `run_gauntlet` is DELIBERATELY ABSENT from this generic allowlist (owner decision 2026-08-14).
+  // Spending a permanent statistical trial is treated like spending money: the trial ledger
+  // carries the multiple-testing denominator that every future candidate in a family is measured
+  // against, so a broad allowlist entry — reachable by any autonomous actor, and soon by an
+  // Agent/Team layer — is too coarse an authority for it. The SOLE authorizer of a trial is the
+  // deterministic Trial Budget Governor (`lib/strategy/trial-governor.ts`): off by default,
+  // enabled only through a dedicated owner-set switch, and never influenced by an LLM.
+  {
+    id: "research_instrument",
+    capability: "READ",
+    summary: "Research an NSE instrument: evidence packet, LLM proposal, source verification",
+    minimumMode: "learning",
+  },
+  {
+    id: "author_strategy",
+    capability: "WRITE_LOCAL",
+    summary: "Author a strategy DSL from a research hypothesis",
+    minimumMode: "learning",
+  },
+  {
+    id: "run_backtest",
+    capability: "READ",
+    summary: "Run a backtest for a strategy against canonical store data",
+    minimumMode: "learning",
+  },
 ]);
 
 /**

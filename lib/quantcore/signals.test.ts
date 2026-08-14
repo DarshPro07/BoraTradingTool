@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Candle } from "@/lib/providers/types";
 import { StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
-import { scanForSignals, type ScannableSpec } from "./signals";
+import { getCapability, registerCapability, type CapabilityDescriptor } from "@/lib/brain/capability-registry";
+import { subscribe } from "@/lib/brain/event-bus";
+import { firedSignals, scanForSignals, type ScannableSpec } from "./signals";
+import { useTemporaryDatabase } from "@/lib/db/testing";
+
+// Signal scanning emits to the durable event ledger; this suite needs somewhere isolated to
+// write it. (It already subscribes to the bus in-memory — that half never needed a database.)
+useTemporaryDatabase();
 
 /**
  * The board's candidate scan. The properties that matter are all about refusal:
@@ -117,6 +124,24 @@ describe("refusals are never reported as absence of signal", () => {
     expect(scan.refusals.join(" ")).toMatch(/warm-up/);
   });
 
+  it("reports warm-up as a COUNTABLE data condition — barsHeld vs barsNeeded", () => {
+    // sma200 on a 50-bar instrument: 50 held, 200 needed. The structured refusal makes the gap
+    // resolvable (ingest ~150 more bars) rather than an opaque sentence.
+    const sweep = firedSignals(
+      [spec("draft", { entry: { feature: "sma200", op: "gt", value: 0 } })],
+      { "US:XNAS:AAPL": bars(50) },
+    );
+    expect(sweep.warmups).toHaveLength(1);
+    expect(sweep.warmups[0]).toMatchObject({
+      instrumentId: "US:XNAS:AAPL",
+      barsHeld: 50,
+      barsNeeded: 200,
+      timeGated: false, // a genuine DATA shortage — more history resolves it
+    });
+    // The human string carries the same numbers.
+    expect(sweep.refusals.join(" ")).toContain("50/200 bars");
+  });
+
   it("refuses a single bar, because a crossover needs two", () => {
     const scan = scanForSignals([spec("draft")], { "US:XNAS:AAPL": bars(1) });
     expect(scan.refusals.join(" ")).toMatch(/fewer than two bars/);
@@ -159,5 +184,106 @@ describe("what a candidate may claim", () => {
     // Same ordering whatever order the strategies arrived in, so two boards can be diffed without
     // churn that means nothing.
     expect(twice.candidates).toEqual(once.candidates);
+  });
+});
+
+describe("the scanner is wired into the capability graph and the event bus", () => {
+  beforeEach(() => {
+    // Every test starts from the honest startup state: scanner.run registered but UNKNOWN.
+    registerCapability({
+      capabilityId: "scanner.run",
+      name: "Market Scanner",
+      domain: "scanner",
+      description: "Signal scanner over universe",
+      implementation: "lib/quantcore/signals.ts",
+      health: "UNKNOWN",
+      healthReason: "Requires quant core data",
+      deterministic: true,
+      requiresLLM: false,
+      requiresMarketData: true,
+      lastSuccessfulRun: null,
+      lastFailure: null,
+      metrics: { totalRuns: 0, successfulRuns: 0, failedRuns: 0 },
+    } satisfies CapabilityDescriptor);
+  });
+
+  /** Health-change events only, narrowed out of the bus's full event union. */
+  function collectHealthEvents(): { events: Array<{ capabilityId: string; health: string }>; stop: () => void } {
+    const events: Array<{ capabilityId: string; health: string }> = [];
+    const stop = subscribe("CAPABILITY_HEALTH_CHANGED", (event) => {
+      if (event.kind !== "CAPABILITY_HEALTH_CHANGED") return;
+      events.push({ capabilityId: event.capabilityId, health: event.health });
+    });
+    return { events, stop };
+  }
+
+  it("a real sweep flips scanner.run READY, records metrics, and emits CAPABILITY_HEALTH_CHANGED once", () => {
+    const { events, stop } = collectHealthEvents();
+
+    const scan = scanForSignals([spec("paper_challenger")], dataset);
+    expect(scan.evaluated).toBeGreaterThan(0);
+
+    const capability = getCapability("scanner.run")!;
+    expect(capability.health).toBe("READY");
+    expect(capability.healthReason).toMatch(/evaluated \d+ strategy × instrument pair/);
+    expect(capability.metrics).toEqual({ totalRuns: 1, successfulRuns: 1, failedRuns: 0 });
+    expect(capability.lastSuccessfulRun).not.toBeNull();
+    expect(events).toEqual([{ capabilityId: "scanner.run", health: "READY" }]);
+    stop();
+  });
+
+  it("an empty dataset changes nothing — no evidence is not a verdict", () => {
+    const { events, stop } = collectHealthEvents();
+
+    const scan = scanForSignals([spec("paper_challenger")], {});
+    expect(scan.evaluated).toBe(0);
+
+    // UNKNOWN is preserved deliberately: an unasked question is not a negative answer, and a
+    // scanner that never had data must not be reported as broken.
+    const capability = getCapability("scanner.run")!;
+    expect(capability.health).toBe("UNKNOWN");
+    expect(capability.metrics.totalRuns).toBe(0);
+    expect(events).toEqual([]);
+    stop();
+  });
+
+  it("data with nothing evaluable is DEGRADED, not silently healthy", () => {
+    const { events, stop } = collectHealthEvents();
+
+    // One bar: a crossover needs two, so the pair is refused and nothing is evaluated.
+    const sweep = firedSignals([spec("paper_challenger")], { "US:XNAS:AAPL": bars(1) });
+    expect(sweep.evaluated).toBe(0);
+    expect(sweep.refusals.join(" ")).toMatch(/fewer than two bars/);
+
+    const capability = getCapability("scanner.run")!;
+    expect(capability.health).toBe("DEGRADED");
+    expect(capability.healthReason).toMatch(/No strategy × instrument pair evaluable/);
+    expect(capability.metrics.failedRuns).toBe(1);
+    expect(events).toEqual([{ capabilityId: "scanner.run", health: "DEGRADED" }]);
+    stop();
+  });
+
+  it("the board's own scan path records the same sweep (it never reported anything before)", () => {
+    // lib/execution/board.ts calls firedSignals directly, bypassing scanForSignals — the path
+    // that left the capability graph blind to every board scan the product ever ran.
+    const sweep = firedSignals([spec("paper_challenger")], dataset);
+    expect(sweep.evaluated).toBeGreaterThan(0);
+
+    const capability = getCapability("scanner.run")!;
+    expect(capability.health).toBe("READY");
+    expect(capability.metrics.successfulRuns).toBe(1);
+  });
+
+  it("a repeated healthy sweep records the run but does not spam the event ledger", () => {
+    scanForSignals([spec("paper_challenger")], dataset); // UNKNOWN → READY (emits)
+    const { events, stop } = collectHealthEvents(); // subscribe AFTER the flip
+
+    scanForSignals([spec("paper_challenger")], dataset);
+
+    const capability = getCapability("scanner.run")!;
+    expect(capability.health).toBe("READY");
+    expect(capability.metrics.totalRuns).toBe(2); // the run is counted
+    expect(events).toEqual([]); // the unchanged health is not an event
+    stop();
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * The held-hypothesis inbox (master item 15).
@@ -9,7 +10,7 @@ import { expect, test } from "@playwright/test";
  */
 
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 const RUN_STAMP = Date.now().toString(36);
@@ -19,6 +20,10 @@ test("a held hypothesis appears in the inbox with its held status, not silently 
   baseURL,
 }, testInfo) => {
   const title = `Inbox held probe ${RUN_STAMP} ${testInfo.project.name}`;
+
+  // The POST precedes any page load, so the browser has no session cookie yet — ask for one
+  // through the same door the app's SessionInitializer uses; it lands in the page cookie jar.
+  await ensureLocalSession(page.request);
 
   // A real refusal path: sentiment/market-cap features are not derivable from price bars, so the
   // triage holds this rather than authoring a strategy that silently drops the condition.

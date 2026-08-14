@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import Database from "better-sqlite3";
 import { expect, test } from "@playwright/test";
+import { ensureLocalSession } from "./lib/session";
 
 /**
  * Forward evidence, end to end on DESKTOP (owner test 18; the mission's Playwright policy is
@@ -17,7 +18,7 @@ const RUN_STAMP = Date.now().toString(36);
 const SESSION_OPEN_UTC = Date.UTC(2026, 7, 3, 3, 45, 0) / 1000;
 
 function headers(baseURL: string) {
-  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-csrf": "1" };
+  return { "content-type": "application/json", origin: baseURL, "x-marketpulse-mutation": "1" };
 }
 
 test.describe("forward evidence — the shadow stage through the running app", () => {
@@ -75,6 +76,8 @@ test.describe("forward evidence — the shadow stage through the running app", (
   }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
     test.setTimeout(120_000);
+
+    await ensureLocalSession(request);
 
     // A family-bearing strategy through the professor path, then its gauntlet baseline.
     const title = `Forward gap screen ${RUN_STAMP}`;

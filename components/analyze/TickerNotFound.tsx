@@ -5,7 +5,10 @@ const SUGGESTIONS = ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "TSLA", "PLTR", "A
 
 export function TickerNotFound({ ticker }: { ticker: string }) {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
+    // The testid is what lets the 30-stock acceptance matrix tell "this instrument resolved" from
+    // "this page rendered". This surface returns HTTP 200, so a status check alone cannot: an
+    // unknown symbol produced a 200 with a body, and the matrix counted it as a pass.
+    <div className="min-h-[60vh] flex items-center justify-center px-4" data-testid="ticker-not-found">
       <div className="max-w-md w-full text-center space-y-6">
         <div className="w-12 h-12 rounded-full bg-accent border border-border flex items-center justify-center mx-auto">
           <Search className="w-5 h-5 text-muted-foreground" />
