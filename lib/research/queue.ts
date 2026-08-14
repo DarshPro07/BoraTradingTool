@@ -346,7 +346,11 @@ export function completeJob(id: number, result: Record<string, unknown>): void {
   getDb().transaction(() => {
     getDb()
       .update(schema.researchJobs)
-      .set({ status: "succeeded", result: JSON.stringify(result), lockedBy: null, lockedUntil: null, updatedAt: now })
+      // lastError: null — the error of the CURRENT terminal state, which for a success is none.
+      // A stale failure from an earlier attempt displayed beside "succeeded" is a contradiction
+      // (seen live on /jobs: SOURCE_UNAVAILABLE text on a succeeded ingest). History stays in
+      // job_events; this field is the row's present truth.
+      .set({ status: "succeeded", result: JSON.stringify(result), lastError: null, lockedBy: null, lockedUntil: null, updatedAt: now })
       .where(eq(schema.researchJobs.id, id))
       .run();
     emit({ kind: "JOB_COMPLETED", jobId: id, result: "succeeded" });
