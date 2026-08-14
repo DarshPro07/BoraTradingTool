@@ -1,0 +1,392 @@
+{
+  "RELIANCE": {
+    "symbol": "RELIANCE",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "TCS": {
+    "symbol": "TCS",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "HDFCBANK": {
+    "symbol": "HDFCBANK",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "INFY": {
+    "symbol": "INFY",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "ICICIBANK": {
+    "symbol": "ICICIBANK",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "HINDUNILVR": {
+    "symbol": "HINDUNILVR",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "SBIN": {
+    "symbol": "SBIN",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "BHARTIARTL": {
+    "symbol": "BHARTIARTL",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "ITC": {
+    "symbol": "ITC",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "LT": {
+    "symbol": "LT",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "TATAMOTORS": {
+    "symbol": "TATAMOTORS",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "SUNPHARMA": {
+    "symbol": "SUNPHARMA",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "TATASTEEL": {
+    "symbol": "TATASTEEL",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "WIPRO": {
+    "symbol": "WIPRO",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "ASIANPAINT": {
+    "symbol": "ASIANPAINT",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "MARUTI": {
+    "symbol": "MARUTI",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "TITAN": {
+    "symbol": "TITAN",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "BAJFINANCE": {
+    "symbol": "BAJFINANCE",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "HCLTECH": {
+    "symbol": "HCLTECH",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "POWERGRID": {
+    "symbol": "POWERGRID",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "BECTORFOOD": {
+    "symbol": "BECTORFOOD",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "JYOTHYLAB": {
+    "symbol": "JYOTHYLAB",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "CHAMBLFERT": {
+    "symbol": "CHAMBLFERT",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "GAIL": {
+    "symbol": "GAIL",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "SIEMENS": {
+    "symbol": "SIEMENS",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "AMBUJACEM": {
+    "symbol": "AMBUJACEM",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "BERGEPAINT": {
+    "symbol": "BERGEPAINT",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "DABUR": {
+    "symbol": "DABUR",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "COLPAL": {
+    "symbol": "COLPAL",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  },
+  "MCDOWELL-N": {
+    "symbol": "MCDOWELL-N",
+    "ingestion": {
+      "code": "INGESTED",
+      "ready": true,
+      "storedAfter": 260
+    },
+    "research": {
+      "terminal": "PROPOSAL READY",
+      "refusal": null
+    },
+    "problems": []
+  }
+}

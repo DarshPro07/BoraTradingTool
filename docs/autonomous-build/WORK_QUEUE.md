@@ -1,5 +1,30 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 NSE 30-STOCK BREADTH (masterclass A75/C33) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/nse-30-breadth/)
+The full two-stage breadth acceptance on ONE fresh DB against a production build (`next start`,
+isolated dist dir, :3100, identity-gated). **Stage 1 (fresh DB): 34/34** — all 30 stratified
+stocks (10 large / 10 mid / 10 smaller incl. MCDOWELL-N, BECTORFOOD) resolve through the real UI,
+run research via the real control, and reach the truthful `FAILED :: NO_STORED_DATA` refusal;
+catalog ≥30 canonical XNSE, no BSE contamination, search→canonical identity; zero console/network
+problems. **Defect found by the program and FIXED** (C35 bug-finder rule): the TEST_MODE fixture
+master seeded only 5 securities → first sweep honestly FAILED at 3/30 researchable
+(INSTRUMENT_UNKNOWN ×27); `lib/db/index.ts seedTestSecurityMaster` now carries the full pinned
+30-symbol acceptance universe (synthetic, TEST_FIXTURE-provenanced identities; computed sync
+counts; TEST_MODE + empty-DB gated). **Stage 2 (after product-path ingestion): 38/38** — ingestion
+sweep 30/30 INGESTED (260 bars each via `POST /api/market/ingest`, the UI button's own route);
+research 30/30 → **PROPOSAL READY** through the real UI with REAL model runs (claude-code CLI) and
+citation verification **SOURCE_VERIFIED on every one**; matrix gate
+`{"total":30,"researchable":30,"terminals":{"PROPOSAL READY":30}}`, problems 0. **Persistence:**
+agent_runs = 30 COMPLETED/SOURCE_VERIFIED + 30 REFUSED (Stage 1's refusals, recorded with equal
+weight); price_candles = 30 tickers × 260 = 7,800 bars. Artifact:
+docs/plans/nse-30-breadth/matrix-2026-08-14.json. New spec `e2e/nse-30-stock-stage2.spec.ts`
+(sweep with MIN_READY≥25 anti-vacuous floor + 30 research tests + completeness gate). STATED
+limitation: market DATA fixture-served (deterministic, declared unfit-for-validation); model runs
+real; a live-master variant exists via MARKETPULSE_E2E_REAL_BOOTSTRAP=1.
+**NEXT (masterclass order): C34-36 Master Golden Journey Playwright program** (deep lifecycle on
+6-10 diverse equities: research→hypothesis→strategy→backtest→validation→forward→paper→memory→brain,
+every handoff real) · C39 crash acceptance · additional provider adapters.
+
 ## P0 REAL ROSTER + EXECUTION BINDING (masterclass A6) — **DONE 2026-08-14, VERIFIED** (docs/plans/real-roster-binding/)
 Closes the two production gaps the model-routing leg named. **A6.1:** `lib/runtime/roster.ts`
 `buildDetectedRoster(detectProviders())` is now the PRODUCTION default roster (worker path confirmed

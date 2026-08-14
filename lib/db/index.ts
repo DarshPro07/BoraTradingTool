@@ -115,22 +115,59 @@ function seedTestSecurityMaster(sqlite: Database.Database, now: number): void {
   const successId = `nse_test_success_${now}`;
   const failedId = `nse_test_failed_${now}`;
   const observedAt = now - 3_600;
+
+  /**
+   * The 30-security ACCEPTANCE UNIVERSE (e2e/nse-30-stock-matrix + -stage2), plus two synthetic
+   * series/availability rows. The first three ISINs are the real ones this fixture always carried;
+   * the rest are SYNTHETIC fixture identities (deterministic INE9nnT01xxx range, same convention as
+   * SMALLSME below) — this whole master is TEST_MODE-gated, seeded only into an EMPTY database, and
+   * every row carries TEST_FIXTURE/playwright-fixture provenance, so nothing here can masquerade as
+   * exchange truth. Without the full universe, Stage-2 breadth ingestion capped out at 3 of 30
+   * (INSTRUMENT_UNKNOWN for the rest), which turned the acceptance matrix into a refusal sweep.
+   */
+  const acceptanceSymbols = [
+    ["HDFCBANK", "HDFC Bank Limited"], ["INFY", "Infosys Limited"],
+    ["ICICIBANK", "ICICI Bank Limited"], ["HINDUNILVR", "Hindustan Unilever Limited"],
+    ["SBIN", "State Bank of India"], ["BHARTIARTL", "Bharti Airtel Limited"],
+    ["ITC", "ITC Limited"], ["LT", "Larsen & Toubro Limited"],
+    ["TATAMOTORS", "Tata Motors Limited"], ["SUNPHARMA", "Sun Pharmaceutical Industries Limited"],
+    ["TATASTEEL", "Tata Steel Limited"], ["WIPRO", "Wipro Limited"],
+    ["ASIANPAINT", "Asian Paints Limited"], ["MARUTI", "Maruti Suzuki India Limited"],
+    ["TITAN", "Titan Company Limited"], ["BAJFINANCE", "Bajaj Finance Limited"],
+    ["HCLTECH", "HCL Technologies Limited"], ["POWERGRID", "Power Grid Corporation of India Limited"],
+    ["JYOTHYLAB", "Jyothy Labs Limited"], ["CHAMBLFERT", "Chambal Fertilisers and Chemicals Limited"],
+    ["GAIL", "GAIL (India) Limited"], ["SIEMENS", "Siemens Limited"],
+    ["AMBUJACEM", "Ambuja Cements Limited"], ["BERGEPAINT", "Berger Paints India Limited"],
+    ["DABUR", "Dabur India Limited"], ["COLPAL", "Colgate Palmolive (India) Limited"],
+    ["MCDOWELL-N", "United Spirits Limited"],
+  ] as const;
+  const listings = [
+    ["INE002A01018", "RELIANCE", "Reliance Industries Limited", "EQ", "AVAILABLE"],
+    ["INE467B01029", "TCS", "Tata Consultancy Services Limited", "EQ", "AVAILABLE"],
+    ["INE495P01020", "BECTORFOOD", "Mrs. Bectors Food Specialities Limited", "EQ", "AVAILABLE"],
+    ...acceptanceSymbols.map(([symbol, name], index): readonly [string, string, string, string, string] => [
+      `INE9${String(index + 100)}T01018`, symbol, `${name} (fixture identity)`, "EQ", "AVAILABLE",
+    ]),
+    ["INE040A01034", "BANKBE", "Bank Surveillance Fixture Limited", "BE", "AVAILABLE"],
+    ["INE999Z01012", "SMALLSME", "Small SME Fixture Limited", "SM", "UNAVAILABLE"],
+  ] as const;
+
+  // Row counts are COMPUTED from the fixture, so extending the universe cannot desynchronize the
+  // sync record from the rows it claims to describe. SM-series rows are the SME count.
+  const smeRows = listings.filter(([, , , series]) => series === "SM").length;
   sqlite
     .prepare(`
       INSERT INTO security_master_syncs
         (id, observed_at, started_at, completed_at, status, source_manifest,
          main_row_count, sme_row_count, total_rows, actor)
-      VALUES (?, ?, ?, ?, 'SUCCEEDED', ?, 4, 1, 5, 'playwright-fixture')
+      VALUES (?, ?, ?, ?, 'SUCCEEDED', ?, ?, ?, ?, 'playwright-fixture')
     `)
-    .run(successId, observedAt, observedAt, observedAt, JSON.stringify([{ kind: "TEST_FIXTURE" }]));
+    .run(
+      successId, observedAt, observedAt, observedAt,
+      JSON.stringify([{ kind: "TEST_FIXTURE" }]),
+      listings.length - smeRows, smeRows, listings.length,
+    );
 
-  const listings = [
-    ["INE002A01018", "RELIANCE", "Reliance Industries Limited", "EQ", "AVAILABLE"],
-    ["INE467B01029", "TCS", "Tata Consultancy Services Limited", "EQ", "AVAILABLE"],
-    ["INE495P01020", "BECTORFOOD", "Mrs. Bectors Food Specialities Limited", "EQ", "AVAILABLE"],
-    ["INE040A01034", "BANKBE", "Bank Surveillance Fixture Limited", "BE", "AVAILABLE"],
-    ["INE999Z01012", "SMALLSME", "Small SME Fixture Limited", "SM", "UNAVAILABLE"],
-  ] as const;
   const insertSecurity = sqlite.prepare(
     "INSERT INTO nse_securities (isin, first_observed_at, last_observed_at) VALUES (?, ?, ?)",
   );
