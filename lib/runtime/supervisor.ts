@@ -6,7 +6,7 @@ import { getMarketPhase } from "@/lib/market/phases";
 import { getLearningMode } from "@/lib/governance/runtime";
 import { queueStats } from "@/lib/research/queue";
 import { runLearningCycle } from "@/lib/learning/cycle";
-import { acquireLease, currentLease, releaseLease, researchLeasePath, withCycleLease } from "@/lib/learning/lease";
+import { acquireLease, currentLease, leasePath, releaseLease, researchLeasePath, withCycleLease } from "@/lib/learning/lease";
 import { runWorker } from "@/lib/research/worker";
 import { sharedSyntaxResolver } from "@/lib/research/syntax/resolver";
 import { databasePath } from "@/lib/db";
@@ -490,6 +490,21 @@ export function recoverInterruptedRun(
   const held = currentLease(supervisorLeasePath(), 0, Number.MAX_SAFE_INTEGER);
   if (held?.holder === crashed.id) releaseLease(held.holder, held.acquiredAt, supervisorLeasePath());
   acquireLease(crashed.id, supervisorLeasePath(), now.getTime(), LEASE_TTL_MS);
+
+  // The dead process could not release its LANE leases either, and acquireLease has no
+  // same-holder re-entry — so whichever lane was mid-drain at the crash stays dead for its
+  // lease's full TTL while the OTHER lane masks it at its own cadence (the crash matrix caught
+  // a recovered machine completing every job on 60-second cycle ticks behind a stranded
+  // research-lane lease). The stale heartbeat is what proved this holder dead, so its lane
+  // leases are released with the same authority as its supervisor lease above — scoped by
+  // exact holder string, so a lease held by anything else is untouched.
+  for (const [file, holder] of [
+    [researchLeasePath(), `research-${crashed.id}`],
+    [leasePath(), `supervisor-${crashed.id}`],
+  ] as const) {
+    const lane = currentLease(file, 0, Number.MAX_SAFE_INTEGER);
+    if (lane?.holder === holder) releaseLease(lane.holder, lane.acquiredAt, file);
+  }
 
   audit("autonomous_run_recover", crashed.id, `interrupted_jobs=${interrupted.length}`, actor, now);
   startTicking(crashed.id);

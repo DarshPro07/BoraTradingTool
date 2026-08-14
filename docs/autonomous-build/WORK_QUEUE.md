@@ -1,6 +1,35 @@
 # Work queue (ordered; every item carries its dependency)
 
-## P0 MASTER GOLDEN JOURNEY (masterclass A76/C34-36 + C50) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/master-golden-journey/)
+## P0 EXTENDED CRASH MATRIX (masterclass C39) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/crash-matrix/)
+`e2e/crash-matrix.spec.ts`: kill the server MID-REAL-MODEL-CALL with the whole durable-job family
+in the lane (backtest on a real authored spec, confirmed validation, paper_reconcile,
+forecast_resolve, memory_validate) → restart → recovery → **exactly-once at every ledger**
+(COMPLETED AgentRuns for the killed job == 1; zero trials through crash + restart + three governor
+refusals; no invented forward signals/paper orders; completed work's attempts FROZEN through
+recovery; dedupe keys still answer). Found + fixed a real recovery defect (fail-first proven):
+**stranded lane leases** — `acquireLease` has no same-holder re-entry, so a killed mid-drain
+server left its research/cycle lane DEAD for the lease's full 10-minute TTL after recovery while
+the other lane masked it at its own cadence (run 1 completed entirely on 60s cycle ticks — a
+false-green shape now guarded by mechanism assertions). `recoverInterruptedRun` releases the
+crashed run's lane leases; post-recovery all-terminals latency 121.7s → 36.4s. Two consecutive
+clean runs on virgin DBs; crash-recovery baseline + 1786 units + tsc re-verified. NOTE for later
+hardening: the millisecond record→completeJob window on research is at-least-once by design
+(re-spendable call, truthful per-attempt ledger) — documented in the plan, not hidden.
+
+## P0 STRATEGY PIPELINE PROGRESSION — **NEXT (owner order 2026-08-14)** (docs/plans/strategy-progression/)
+Owner requirement: "the system should create a strategy unless no path exists" — every strategy
+either advances, knows its dependency, or terminates with a stated permanent reason. Gate 0
+reconnaissance DONE (see plan dir): the funnel (22 authored → 10 rehearsed → 2 gauntlet → 0
+passed → 0 forward) is explained by five structural defects — (1) autonomously authored specs
+never set `universe.resolution`, DSL defaults to "D"/DELIVERY, and the `tradable_at_capital`
+guard at ₹1,000 intraday-only capital refuses EVERY one, permanently, on a field the author never
+wrote; (2) `recordHoldoutOutcome` has NO production caller — validated is a dead end, the top
+three ladder rungs unreachable; (3) rehearsal hard-caps at `.slice(0,10)` with no ordering and no
+already-rehearsed exclusion — specs 11+ are invisible forever and the funnel's "10" is the cap
+itself; (4) forward enrollment is a manual owner API only; (5) the stall reasons that exist
+(`blockedOn`, selection-guard refusals, `promotionPass().waiting`) are computed every cycle and
+thrown away — no UI renders them, nothing persists them, and the funnel panel reads raw table
+counts that structurally cannot say WHY anything is stuck. (masterclass A76/C34-36 + C50) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/master-golden-journey/)
 The complete-product acceptance program, TWO consecutive clean runs (C50). `npm run test:master-golden`
 is the single entry point (C34); the deep journey was rebuilt to the masterclass shape — the FULL
 12-rung chain per stock across **8 diverse equities** (2 large / 2 mid / 4 smaller): identity → REAL

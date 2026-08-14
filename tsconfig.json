@@ -58,7 +58,11 @@
     ".tmp/next-playwright-29480/types/**/*.ts",
     ".tmp/next-playwright-29480/dev/types/**/*.ts",
     ".tmp/next-e2e-30stock/types/**/*.ts",
-    ".tmp/next-e2e-30stock/dev/types/**/*.ts"
+    ".tmp/next-e2e-30stock/dev/types/**/*.ts",
+    ".tmp/crash-matrix-dist/types/**/*.ts",
+    ".tmp/crash-matrix-dist/dev/types/**/*.ts",
+    ".tmp/crash-dist-mst6fuy1/types/**/*.ts",
+    ".tmp/crash-dist-mst6fuy1/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
