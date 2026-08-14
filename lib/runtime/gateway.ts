@@ -9,9 +9,14 @@ import {
   descriptorFor,
   type CatalogModel,
   type DetectedProvider,
+  type ProviderDescriptor,
   type ProviderId,
 } from "./providers";
 import { DETERMINISTIC_ENGINE, route, type Capability, type RuntimeProfile } from "./routing";
+import type { HttpProviderConfig, ListModelsResult, TransportChatResult } from "./transports/contract";
+import * as openaiWire from "./transports/openai-compatible";
+import * as anthropicWire from "./transports/anthropic-native";
+import * as geminiWire from "./transports/gemini-native";
 
 /**
  * The Agent Gateway (owner architecture 2026-08-10 21:55; DECISIONS 22:00).
@@ -101,6 +106,13 @@ export interface AgentRunSuccess {
   /** Non-null only when the provider that ran is not the one first requested. */
   fallbackReason: string | null;
   /**
+   * How the `model` claim is known (owner binding rule): RESPONSE_REPORTED — the wire named its
+   * model in the response; USAGE_REPORTED — discovered from the run's own usage telemetry
+   * (claude-code); REQUEST_BOUND_ONLY — the wire said nothing, and the only claim is that the
+   * request carried exactly this id. Stored, never dressed up as independent verification.
+   */
+  modelVerification: "RESPONSE_REPORTED" | "USAGE_REPORTED" | "REQUEST_BOUND_ONLY";
+  /**
    * Latency attribution, straight from the provider's own report.
    *
    * A research call was measured at 9.5–11 minutes end to end, and nothing recorded WHERE those
@@ -136,24 +148,115 @@ export type AgentRunResult = AgentRunSuccess | AgentRunFailure;
 /**
  * Probe what this machine can actually serve right now.
  *
- * Only claude-code is probed for real, because it is the only adapter that exists. Every other
- * provider reports NOT_DETECTED with the reason — an unimplemented adapter must never look like
- * an unavailable one, and neither may quietly disappear from the list.
+ * Detection is WIRE-DRIVEN: every provider with a runnable wire is probed through its family's
+ * transport contract; a provider with `wire: NONE` reports NOT_DETECTED with the reason — an
+ * unimplemented adapter must never look like an unavailable one, and neither may quietly
+ * disappear from the list. Costs nothing for unconfigured providers: an API-key provider with
+ * no key short-circuits to UNAUTHENTICATED (the stated auth-required state, with the fix in the
+ * reason) without any network traffic.
  */
 export async function detectProviders(now = new Date()): Promise<DetectedProvider[]> {
   const detectedAt = now.toISOString();
-  const claude = await probeClaudeCode(detectedAt);
+  return Promise.all(PROVIDER_IDS.map((id) => probeProvider(id, detectedAt)));
+}
 
-  const others = PROVIDER_IDS.filter((id) => id !== "claude-code").map<DetectedProvider>((id) => ({
-    id,
-    status: "NOT_DETECTED",
-    reason: `No adapter is implemented for ${descriptorFor(id).displayName} yet. ${descriptorFor(id).enableHint}`,
-    models: [],
-    quota: null,
-    detectedAt,
+async function probeProvider(id: ProviderId, detectedAt: string): Promise<DetectedProvider> {
+  const descriptor = descriptorFor(id);
+  if (descriptor.wire === "CLI_CLAUDE") return probeClaudeCode(detectedAt);
+  if (descriptor.wire === "NONE") {
+    return {
+      id,
+      status: "NOT_DETECTED",
+      reason: `No adapter is implemented for ${descriptor.displayName} yet. ${descriptor.enableHint}`,
+      models: [],
+      quota: null,
+      detectedAt,
+    };
+  }
+  return probeHttpProvider(descriptor, detectedAt);
+}
+
+/** The wire module for an HTTP family. CLI/NONE never reach this. */
+function wireModule(descriptor: ProviderDescriptor): {
+  health: (config: HttpProviderConfig, timeoutMs?: number) => Promise<ListModelsResult>;
+  chat: (config: HttpProviderConfig, request: { model: string; systemPrompt: string; prompt: string; timeoutMs: number }) => Promise<TransportChatResult>;
+} {
+  if (descriptor.wire === "ANTHROPIC_MESSAGES") return anthropicWire;
+  if (descriptor.wire === "GEMINI_GENERATE") return geminiWire;
+  return openaiWire;
+}
+
+/** Resolve the wire config from the registry + environment. Null when a required key is absent. */
+function httpConfigFor(descriptor: ProviderDescriptor): { config: HttpProviderConfig } | { missingKey: true } {
+  const baseOverride = descriptor.baseUrlEnv ? process.env[descriptor.baseUrlEnv]?.trim() : undefined;
+  const baseUrl = (baseOverride || descriptor.defaultBaseUrl || "").replace(/\/+$/, "");
+  const apiKey = descriptor.apiKeyEnv ? process.env[descriptor.apiKeyEnv]?.trim() || null : null;
+  if (descriptor.auth === "API_KEY" && !apiKey) return { missingKey: true };
+  return { config: { providerId: descriptor.id, baseUrl, apiKey } };
+}
+
+async function probeHttpProvider(descriptor: ProviderDescriptor, detectedAt: string): Promise<DetectedProvider> {
+  const resolved = httpConfigFor(descriptor);
+  if ("missingKey" in resolved) {
+    return {
+      id: descriptor.id,
+      status: "UNAUTHENTICATED",
+      reason: `No credential is configured. ${descriptor.enableHint}`,
+      models: [],
+      quota: null,
+      detectedAt,
+    };
+  }
+
+  const listed = await wireModule(descriptor).health(resolved.config, 3_500);
+  if (!listed.ok) {
+    if (listed.code === "UNAUTHENTICATED") {
+      return { id: descriptor.id, status: "UNAUTHENTICATED", reason: listed.message, models: [], quota: null, detectedAt };
+    }
+    if (listed.code === "QUOTA_EXHAUSTED") {
+      return {
+        id: descriptor.id,
+        status: "QUOTA_EXHAUSTED",
+        reason: listed.message,
+        models: [],
+        quota: { resetsAt: null, detail: listed.message },
+        detectedAt,
+      };
+    }
+    // A LOCAL provider that does not answer is not running — the CONFIGURED-vs-RUNNING ladder;
+    // a remote API that does not answer is UNAVAILABLE. Both carry the wire's own words.
+    if (descriptor.costClass === "LOCAL") {
+      return {
+        id: descriptor.id,
+        status: "NOT_DETECTED",
+        reason: `Not running: ${listed.message} ${descriptor.enableHint}`,
+        models: [],
+        quota: null,
+        detectedAt,
+      };
+    }
+    return { id: descriptor.id, status: "UNAVAILABLE", reason: listed.message, models: [], quota: null, detectedAt };
+  }
+
+  // Discovered models carry NEUTRAL priors (BASIC quality, MEDIUM cost) — deliberately not
+  // flattering guesses. The ModelRouter replaces priors with MEASURED stats from the AgentRun
+  // ledger; fabricating benchmark claims here is exactly what the registry forbids.
+  const models: CatalogModel[] = listed.modelIds.map((modelId) => ({
+    provider: descriptor.id,
+    modelId,
+    relativeQuality: "BASIC",
+    relativeCost: "MEDIUM",
+    supportsThinking: false,
   }));
 
-  return [claude, ...others];
+  return {
+    id: descriptor.id,
+    status: "READY",
+    reason: `${descriptor.displayName} answered with ${models.length} model(s) at ${resolved.config.baseUrl}.`,
+    models,
+    quota: null,
+    detectedAt,
+  };
 }
 
 async function probeClaudeCode(detectedAt: string): Promise<DetectedProvider> {
@@ -206,7 +309,8 @@ export async function runAgent(request: AgentRunRequest): Promise<AgentRunResult
       attempted: [],
     };
   }
-  if (decision.resolved !== "claude-code") {
+  const wire = descriptorFor(decision.resolved).wire;
+  if (wire === "NONE") {
     return {
       ok: false,
       code: "ADAPTER_MISSING",
@@ -220,7 +324,10 @@ export async function runAgent(request: AgentRunRequest): Promise<AgentRunResult
   emit({ kind: "MODEL_SELECTED", provider: decision.resolved, model: request.model ?? CLAUDE_MODEL_ALIAS, capability: request.capability, reason: decision.fallbackReason ?? "primary" });
   emit({ kind: "AGENT_STARTED", agentId: `agt_${randomUUID().replace(/-/g, "").slice(0, 12)}`, capability: request.capability, provider: decision.resolved });
 
-  const result = await runClaudeCode(request, decision.fallbackReason);
+  const result =
+    wire === "CLI_CLAUDE"
+      ? await runClaudeCode(request, decision.fallbackReason)
+      : await runHttpWire(request, decision.resolved, decision.fallbackReason);
 
   if (result.ok) {
     emit({ kind: "AGENT_COMPLETED", agentId: result.runId, result: "success", tokens: result.tokens, cost: result.cost });
@@ -231,6 +338,94 @@ export async function runAgent(request: AgentRunRequest): Promise<AgentRunResult
   }
 
   return result;
+}
+
+/**
+ * Execute over an HTTP wire family. The transport is dumb (one call, no retries, normalized
+ * errors); this function owns the mapping into the gateway's result vocabulary and the binding
+ * provenance. HTTP wires REQUIRE a concrete bound model — there is no alias to fall back to,
+ * and inventing one here is exactly the fabrication the registry forbids.
+ */
+async function runHttpWire(
+  request: AgentRunRequest,
+  providerId: ProviderId,
+  fallbackReason: string | null,
+): Promise<AgentRunResult> {
+  const descriptor = descriptorFor(providerId);
+  const resolved = httpConfigFor(descriptor);
+  if ("missingKey" in resolved) {
+    return {
+      ok: false,
+      code: "PROVIDER_UNAVAILABLE",
+      message: `UNAUTHENTICATED: no credential is configured for ${descriptor.displayName}. ${descriptor.enableHint}`,
+      attempted: [{ provider: providerId, reason: "no credential configured" }],
+    };
+  }
+  if (!request.model) {
+    return {
+      ok: false,
+      code: "AGENT_FAILED",
+      message:
+        `${descriptor.displayName} requires a concrete bound model (the router assigns one from the ` +
+        "detected roster). Running an HTTP wire without a model id would mean inventing one.",
+      attempted: [{ provider: providerId, reason: "no bound model" }],
+    };
+  }
+
+  const startedAt = new Date().toISOString();
+  const wallStart = Date.now();
+  const outcome = await wireModule(descriptor).chat(resolved.config, {
+    model: request.model,
+    systemPrompt: request.systemPrompt,
+    prompt: request.prompt,
+    timeoutMs: request.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  });
+  const completedAt = new Date().toISOString();
+  const wallDurationMs = Date.now() - wallStart;
+
+  if (!outcome.ok) {
+    const code =
+      outcome.code === "TIMEOUT"
+        ? "AGENT_TIMEOUT"
+        : outcome.code === "BAD_RESPONSE"
+          ? "UNPARSEABLE_RESULT"
+          : "PROVIDER_UNAVAILABLE";
+    return {
+      ok: false,
+      code,
+      message: `${outcome.code}: ${outcome.message}`,
+      attempted: [{ provider: providerId, reason: outcome.message }],
+    };
+  }
+
+  console.log(
+    `[gateway] ${providerId} wall=${wallDurationMs}ms model=${outcome.executedModel ?? request.model} ` +
+      `verification=${outcome.verification} tokens=${(outcome.usage.inputTokens ?? 0) + (outcome.usage.outputTokens ?? 0)}`,
+  );
+
+  return {
+    ok: true,
+    provider: providerId,
+    model: outcome.executedModel ?? request.model,
+    modelVerification: outcome.verification,
+    text: outcome.text,
+    runId: `agr_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+    sessionId: null,
+    tokens:
+      outcome.usage.inputTokens === null && outcome.usage.outputTokens === null
+        ? null
+        : (outcome.usage.inputTokens ?? 0) + (outcome.usage.outputTokens ?? 0),
+    // The chat wires report tokens, not money. Cost stays null rather than a fabricated
+    // conversion; the catalog's effective-dated pricing metadata is the place for economics.
+    cost: null,
+    costCurrency: null,
+    startedAt,
+    completedAt,
+    fallbackReason,
+    apiDurationMs: null,
+    wallDurationMs,
+    turns: null,
+  };
 }
 
 async function runClaudeCode(
@@ -315,6 +510,9 @@ async function runClaudeCode(
     ok: true,
     provider: "claude-code",
     model: pickModelId(payload),
+    // The CLI's model claim comes from its own usage report — discovered, not echoed. An empty
+    // usage report leaves only our bound request as the claim.
+    modelVerification: Object.keys(payload.modelUsage ?? {}).length > 0 ? "USAGE_REPORTED" : "REQUEST_BOUND_ONLY",
     text: payload.result,
     runId: `agr_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
     sessionId: payload.session_id ?? null,

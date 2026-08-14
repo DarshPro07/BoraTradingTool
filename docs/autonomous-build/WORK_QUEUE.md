@@ -1,5 +1,27 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 PROVIDER TRANSPORT FAMILIES — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/provider-transports/)
+The owner's milestone as stated: ONE scalable architecture, not 75 adapter files. Three HTTP wire
+transports under one tested contract (OpenAI-compatible / Anthropic-native / Gemini-native) +
+the proven CLI path; 16 registry providers (12 LLMs) where the next family member is a REGISTRY
+ENTRY; wire-driven detection ladder (UNAUTHENTICATED-with-the-fix / rejected-key / not-running /
+READY-with-DISCOVERED-models under neutral priors); gateway dispatch by wire with binding
+provenance STORED (modelVerification → envelope modelBinding; claude-code honestly
+USAGE_REPORTED); one-model/five-model roster acceptance with capability gating. Evidence: 1820
+units / 158 files, e2e local-family-through-the-product ×2 clean runs, wire binding asserted at
+the wire. Deferred honestly: live-provider claims (no keys on this machine), effective-dated
+pricing metadata, owner-triggered capability probes. **NEXT (owner order):** TeamRun/artifact/
+dissent/model-assignment truth on /brain → then STOP ADDING INFRASTRUCTURE and shift to quant
+quality: which strategy families survive gauntlet → sealed holdout → forward → paper after
+realistic costs on genuinely independent NSE data.
+
+## TECH DEBT (owner-flagged 2026-08-14, deliberately NOT now): derived purge/embargo
+The holdout's purge (14d/7d daily, 2d/1d intraday) is stated policy, not derived. Eventually:
+purge = max information overlap of the labels/features under evaluation; embargo = f(prediction
+horizon, feature lookback, label horizon, session structure) — persisted INTO the seal as its
+derivation. Do not destabilize the verified apparatus for this; revisit when label horizons
+diversify (TimeSeriesSplit exposes `gap` as a parameter for the same reason).
+
 ## P0 SEALED HOLDOUT APPARATUS — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/sealed-holdout/)
 The owner's six pieces, real: immutable HoldoutDefinition (window + purge/embargo + pinned
 decision rule + fingerprinted sealed-window snapshot), seal state machine (SEALED → AUTHORIZED →

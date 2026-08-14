@@ -22,11 +22,27 @@ export const PROVIDER_IDS = [
   "scout",
   "kronos",
   "local-model",
+  "gemini",
+  "openrouter",
+  "nvidia-nim",
+  "mistral",
+  "kimi",
+  "glm",
+  "vllm-local",
+  "lmstudio",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 /** How MarketPulse reaches it. Determines who owns the credential. */
 export type ProviderTransport = "CLI" | "AGENT_SDK" | "API" | "LOCAL_MODEL" | "HTTP_SERVICE";
+
+/**
+ * The WIRE FAMILY — which tested transport contract speaks to this provider. This is the owner's
+ * scalability rule made concrete: supporting the next provider of an existing family is a
+ * REGISTRY ENTRY (base URL + credential source), never new transport code. `NONE` = no runnable
+ * adapter yet; detection states that instead of pretending.
+ */
+export type WireFamily = "OPENAI_CHAT" | "ANTHROPIC_MESSAGES" | "GEMINI_GENERATE" | "CLI_CLAUDE" | "NONE";
 
 export type ProviderAuth = "SUBSCRIPTION" | "API_KEY" | "OAUTH" | "LOCAL" | "NONE";
 
@@ -57,6 +73,14 @@ export interface ProviderDescriptor {
   supportsStructuredOutput: boolean;
   /** How a human enables it when detection says it is missing. Shown verbatim in the UI. */
   enableHint: string;
+  /** Which transport contract speaks this provider's wire. NONE = no runnable adapter yet. */
+  wire: WireFamily;
+  /** Environment variable holding the credential; absent for LOCAL/subscription providers. */
+  apiKeyEnv?: string;
+  /** Environment variable that OVERRIDES the base URL (self-hosted/local deployments). */
+  baseUrlEnv?: string;
+  /** The wire's documented default endpoint. Env override wins. */
+  defaultBaseUrl?: string;
 }
 
 /**
@@ -65,6 +89,7 @@ export interface ProviderDescriptor {
  */
 export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>> = Object.freeze({
   "claude-code": {
+    wire: "CLI_CLAUDE",
     id: "claude-code",
     displayName: "Claude Code",
     kind: "LLM",
@@ -78,6 +103,7 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Sign in to Claude Code on this machine (the CLI owns its own credential).",
   },
   codex: {
+    wire: "NONE",
     id: "codex",
     displayName: "Codex (ChatGPT)",
     kind: "LLM",
@@ -91,6 +117,9 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Run the provider's ChatGPT OAuth login; no API key is used.",
   },
   "anthropic-api": {
+    wire: "ANTHROPIC_MESSAGES",
+    apiKeyEnv: "ANTHROPIC_API_KEY",
+    defaultBaseUrl: "https://api.anthropic.com/v1",
     id: "anthropic-api",
     displayName: "Anthropic API",
     kind: "LLM",
@@ -104,6 +133,9 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Set ANTHROPIC_API_KEY in the local environment — never in the browser or chat.",
   },
   "openai-api": {
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "OPENAI_API_KEY",
+    defaultBaseUrl: "https://api.openai.com/v1",
     id: "openai-api",
     displayName: "OpenAI API",
     kind: "LLM",
@@ -117,6 +149,9 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Set OPENAI_API_KEY in the local environment.",
   },
   deepseek: {
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "DEEPSEEK_API_KEY",
+    defaultBaseUrl: "https://api.deepseek.com/v1",
     id: "deepseek",
     displayName: "DeepSeek API",
     kind: "LLM",
@@ -130,6 +165,7 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Set DEEPSEEK_API_KEY. Model ids are discovered, never hardcoded — they change.",
   },
   scout: {
+    wire: "NONE",
     id: "scout",
     displayName: "Scout (research service)",
     kind: "RESEARCH_SERVICE",
@@ -143,6 +179,7 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Start the Scout service; it carries its own LLM provider underneath.",
   },
   kronos: {
+    wire: "NONE",
     id: "kronos",
     displayName: "Kronos (financial time-series)",
     kind: "FINANCIAL_MODEL",
@@ -156,6 +193,9 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     enableHint: "Place the checkpoint where the forecast runner expects it.",
   },
   "local-model": {
+    wire: "OPENAI_CHAT",
+    baseUrlEnv: "MARKETPULSE_OLLAMA_BASE_URL",
+    defaultBaseUrl: "http://127.0.0.1:11434/v1",
     id: "local-model",
     displayName: "Local model (Ollama)",
     kind: "LLM",
@@ -167,6 +207,136 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderDescriptor>>
     supportsMcp: false,
     supportsStructuredOutput: false,
     enableHint: "Install Ollama and pull a model; it serves on 127.0.0.1:11434.",
+  },
+
+  gemini: {
+    id: "gemini",
+    displayName: "Google Gemini API",
+    kind: "LLM",
+    wire: "GEMINI_GENERATE",
+    apiKeyEnv: "GEMINI_API_KEY",
+    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set GEMINI_API_KEY in the local environment.",
+  },
+  openrouter: {
+    id: "openrouter",
+    displayName: "OpenRouter",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "OPENROUTER_API_KEY",
+    defaultBaseUrl: "https://openrouter.ai/api/v1",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set OPENROUTER_API_KEY. One key fronts many hosted models; ids are discovered.",
+  },
+  "nvidia-nim": {
+    id: "nvidia-nim",
+    displayName: "NVIDIA NIM",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "NVIDIA_API_KEY",
+    baseUrlEnv: "MARKETPULSE_NIM_BASE_URL",
+    defaultBaseUrl: "https://integrate.api.nvidia.com/v1",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set NVIDIA_API_KEY (cloud) or MARKETPULSE_NIM_BASE_URL for a local NIM container.",
+  },
+  mistral: {
+    id: "mistral",
+    displayName: "Mistral API",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "MISTRAL_API_KEY",
+    defaultBaseUrl: "https://api.mistral.ai/v1",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set MISTRAL_API_KEY in the local environment.",
+  },
+  kimi: {
+    id: "kimi",
+    displayName: "Kimi (Moonshot)",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "MOONSHOT_API_KEY",
+    defaultBaseUrl: "https://api.moonshot.ai/v1",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set MOONSHOT_API_KEY in the local environment.",
+  },
+  glm: {
+    id: "glm",
+    displayName: "GLM (Zhipu)",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    apiKeyEnv: "ZHIPU_API_KEY",
+    defaultBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    transport: "API",
+    auth: "API_KEY",
+    costClass: "API",
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsMcp: false,
+    supportsStructuredOutput: true,
+    enableHint: "Set ZHIPU_API_KEY in the local environment.",
+  },
+  "vllm-local": {
+    id: "vllm-local",
+    displayName: "vLLM (local)",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    baseUrlEnv: "MARKETPULSE_VLLM_BASE_URL",
+    defaultBaseUrl: "http://127.0.0.1:8000/v1",
+    transport: "LOCAL_MODEL",
+    auth: "LOCAL",
+    costClass: "LOCAL",
+    supportsStreaming: true,
+    supportsTools: false,
+    supportsMcp: false,
+    supportsStructuredOutput: false,
+    enableHint: "Start a vLLM server (default 127.0.0.1:8000) or set MARKETPULSE_VLLM_BASE_URL.",
+  },
+  lmstudio: {
+    id: "lmstudio",
+    displayName: "LM Studio (local)",
+    kind: "LLM",
+    wire: "OPENAI_CHAT",
+    baseUrlEnv: "MARKETPULSE_LMSTUDIO_BASE_URL",
+    defaultBaseUrl: "http://127.0.0.1:1234/v1",
+    transport: "LOCAL_MODEL",
+    auth: "LOCAL",
+    costClass: "LOCAL",
+    supportsStreaming: true,
+    supportsTools: false,
+    supportsMcp: false,
+    supportsStructuredOutput: false,
+    enableHint: "Start the LM Studio local server (default 127.0.0.1:1234) or set MARKETPULSE_LMSTUDIO_BASE_URL.",
   },
 });
 

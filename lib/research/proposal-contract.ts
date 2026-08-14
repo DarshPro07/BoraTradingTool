@@ -67,6 +67,12 @@ export const ResearchProposalEnvelopeSchema = z
         provider: Text(60),
         model: Text(120),
         modelVersion: Text(120).optional(),
+        /**
+         * How the model claim is known (owner binding rule 2026-08-14): RESPONSE_REPORTED /
+         * USAGE_REPORTED / REQUEST_BOUND_ONLY. Optional for rows written before the field
+         * existed; absent means "unrecorded", never "verified".
+         */
+        modelBinding: Text(40).optional(),
         startedAt: z.string().datetime(),
         completedAt: z.string().datetime(),
         tokens: z.number().int().min(0).nullable(),

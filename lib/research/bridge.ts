@@ -508,6 +508,7 @@ export async function researchInstrument(
     researchRun: {
       provider: run.provider,
       model: run.model,
+      modelBinding: run.modelVerification,
       startedAt: run.startedAt,
       completedAt: run.completedAt,
       tokens: run.tokens,
