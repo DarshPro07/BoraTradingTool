@@ -229,7 +229,10 @@ test.describe("NSE 30-stock breadth matrix", () => {
       // The log records WHY, not just WHAT. A run of 30 identical terminal states is a product
       // signal (one shared cause), and a bare "FAILED ×30" cannot tell that from 30 independent
       // refusals — so the reason travels with the outcome into the run log.
-      const reason = (await page.getByTestId("research-stock-refusal").textContent().catch(() => null))
+      // BOUNDED read — on a PROPOSAL READY outcome no refusal element exists, and an unbounded
+      // `.textContent()` waits until the TEST timeout (the ingestion-unlock spec lost 18 minutes
+      // to this exact line). Two seconds is ample for an element that is already on screen.
+      const reason = (await page.getByTestId("research-stock-refusal").textContent({ timeout: 2_000 }).catch(() => null))
         ?.trim()
         .replace(/\s+/g, " ");
       console.log(`[matrix] ${stock.symbol} → ${finalState}${reason ? ` :: ${reason}` : ""}`);

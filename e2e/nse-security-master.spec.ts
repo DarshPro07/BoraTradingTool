@@ -73,7 +73,11 @@ test("7 returns bounded deterministic API pages", async ({ page }) => {
   });
   expect(result.status).toBe(200);
   expect(result.body.instruments).toHaveLength(2);
-  expect(result.body.pagination).toMatchObject({ limit: 2, offset: 1, total: 5 });
+  // The exact total tracks the disposable fixture master, which now carries the 30-security
+  // acceptance universe — pin the PAGINATION semantics (limit/offset echoed, total covers the
+  // fixture), not a row count that changes every time the fixture universe evolves.
+  expect(result.body.pagination).toMatchObject({ limit: 2, offset: 1 });
+  expect(result.body.pagination.total).toBeGreaterThanOrEqual(30);
 });
 
 test("8 AI selection does not render a giant datalist", async ({ page }) => {

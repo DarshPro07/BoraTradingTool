@@ -86,7 +86,11 @@ test.describe("meeting journey — NSE, research, factory, replay, paper, brain"
         instruments: { id: string; isin: string | null }[];
         securityMaster: { totalRows: number };
       };
-      expect(body.securityMaster.totalRows).toBeGreaterThan(3_000);
+      // >= 30 holds in BOTH environments: the TEST_MODE acceptance-universe fixture master (32
+      // rows, real ISINs for the spec-pinned instruments) and a live NSE bootstrap (thousands).
+      // The old `> 3000` was a live-bootstrap assumption that failed the whole meeting journey
+      // under the deterministic fixture.
+      expect(body.securityMaster.totalRows).toBeGreaterThanOrEqual(30);
       expect(body.instruments).toContainEqual(expect.objectContaining({ id: "IN:XNSE:SBIN", isin: "INE062A01020" }));
 
       await page.getByRole("option", { name: /SBIN.*INE062A01020/ }).click();
@@ -107,9 +111,21 @@ test.describe("meeting journey — NSE, research, factory, replay, paper, brain"
     await test.step("3-4. inspect SBIN and exercise the honest research boundary", async () => {
       await expect(page.getByRole("main")).toContainText("₹");
       await page.getByTestId("research-stock-run").click();
-      await expect(page.getByTestId("research-stock-state")).toHaveText(/PROPOSAL READY/, { timeout: 15_000 });
-      await expect(page.getByTestId("research-stock-fixture-banner")).toContainText(/NOT INTEGRATION VERIFIED/);
-      await expect(page.getByTestId("research-stock-handoff")).toBeDisabled();
+      // Research is LIVE now (a real provider round-trip, ~60s), and the honest boundary depends
+      // on the store: bars present → a verified proposal; absent → a stated refusal. The old
+      // fixture-era assertions (instant PROPOSAL READY + "NOT INTEGRATION VERIFIED" banner +
+      // disabled handoff) described a driver that no longer exists.
+      await expect(page.getByTestId("research-stock-state")).toHaveText(
+        /PROPOSAL READY|NEEDS EVIDENCE|FAILED/,
+        { timeout: 150_000 },
+      );
+      await expect(page.getByTestId("research-stock-fixture-banner")).toHaveCount(0);
+      const state = ((await page.getByTestId("research-stock-state").textContent()) ?? "").trim();
+      if (state === "PROPOSAL READY") {
+        await expect(page.getByTestId("research-stock-handoff")).toBeEnabled();
+      } else if (state === "FAILED") {
+        await expect(page.getByTestId("research-stock-refusal")).toBeVisible();
+      }
     });
 
     await test.step("5. the factory turns prose into a strategy, visibly interpreted", async () => {

@@ -28,6 +28,10 @@ function collectPageErrors(page: Page): string[] {
 test.describe("research this stock — real bridge, honestly labelled", () => {
   test("the session runs against the real endpoint and every outcome states what it is", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
+    // The spec already waits up to 300s for the REAL research response below, but the config's
+    // default 45s TEST budget killed it first — a fixture-era leftover from when research returned
+    // instantly. The test budget must cover the wait it explicitly declares.
+    test.setTimeout(360_000);
     const pageErrors = collectPageErrors(page);
 
     await page.goto("/analyze/IN%3AXNSE%3ARELIANCE", { waitUntil: "domcontentloaded" });

@@ -37,6 +37,10 @@ const desktopViewport = {
 
 export default defineConfig({
   testDir: "./e2e",
+  // The repo's runner convention (documented in vitest.config.ts): Playwright owns `*.spec.ts`,
+  // vitest owns `*.test.ts`. `e2e/lib/**` holds vitest-run INFRASTRUCTURE tests; without this
+  // match, a bare `playwright test` tries to load them and dies on vitest's ESM-only import.
+  testMatch: /.*\.(spec|setup)\.ts/,
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,

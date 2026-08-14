@@ -128,7 +128,8 @@ function seedTestSecurityMaster(sqlite: Database.Database, now: number): void {
   const acceptanceSymbols = [
     ["HDFCBANK", "HDFC Bank Limited"], ["INFY", "Infosys Limited"],
     ["ICICIBANK", "ICICI Bank Limited"], ["HINDUNILVR", "Hindustan Unilever Limited"],
-    ["SBIN", "State Bank of India"], ["BHARTIARTL", "Bharti Airtel Limited"],
+    // SBIN carries its REAL ISIN below (repo-recorded in meeting-journey.spec.ts), not a synthetic.
+    ["BHARTIARTL", "Bharti Airtel Limited"],
     ["ITC", "ITC Limited"], ["LT", "Larsen & Toubro Limited"],
     ["TATAMOTORS", "Tata Motors Limited"], ["SUNPHARMA", "Sun Pharmaceutical Industries Limited"],
     ["TATASTEEL", "Tata Steel Limited"], ["WIPRO", "Wipro Limited"],
@@ -144,6 +145,7 @@ function seedTestSecurityMaster(sqlite: Database.Database, now: number): void {
   const listings = [
     ["INE002A01018", "RELIANCE", "Reliance Industries Limited", "EQ", "AVAILABLE"],
     ["INE467B01029", "TCS", "Tata Consultancy Services Limited", "EQ", "AVAILABLE"],
+    ["INE062A01020", "SBIN", "State Bank of India", "EQ", "AVAILABLE"],
     ["INE495P01020", "BECTORFOOD", "Mrs. Bectors Food Specialities Limited", "EQ", "AVAILABLE"],
     ...acceptanceSymbols.map(([symbol, name], index): readonly [string, string, string, string, string] => [
       `INE9${String(index + 100)}T01018`, symbol, `${name} (fixture identity)`, "EQ", "AVAILABLE",

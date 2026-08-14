@@ -31,10 +31,19 @@ const TICKER = "IN:XNSE:RELIANCE";
 function seedCanonicalStore(): void {
   const db = new Database(DB_PATH!);
   try {
-    const already = db
+    // Guard EACH resolution separately: on a shared acceptance database another spec may already
+    // have supplied the DAILY history (ingestion sweep / journey seeding) while the 5-minute bars
+    // are still missing — a single 5-minute guard then blind-inserted daily rows into a store that
+    // already had them and died on the primary key.
+    const already5 = db
       .prepare("SELECT COUNT(*) AS n FROM price_candles WHERE ticker = ? AND resolution = '5'")
       .get(TICKER) as { n: number };
-    if (already.n >= BARS_PER_SESSION * SESSIONS) return; // second project run: store already seeded
+    const alreadyDaily = db
+      .prepare("SELECT COUNT(*) AS n FROM price_candles WHERE ticker = ? AND resolution = 'D'")
+      .get(TICKER) as { n: number };
+    const need5 = already5.n < BARS_PER_SESSION * SESSIONS;
+    const needDaily = alreadyDaily.n < 120;
+    if (!need5 && !needDaily) return; // second project run: store already seeded
 
     const insert = db.prepare(
       "INSERT INTO price_candles (ticker, resolution, time, open, high, low, close, volume) VALUES (?, '5', ?, ?, ?, ?, ?, 1000)",
@@ -43,18 +52,22 @@ function seedCanonicalStore(): void {
       "INSERT INTO price_candles (ticker, resolution, time, open, high, low, close, volume) VALUES (?, 'D', ?, ?, ?, ?, ?, 1000)",
     );
     const all = db.transaction(() => {
-      let price = 100;
-      for (let session = 0; session < SESSIONS; session += 1) {
-        const open = SESSION_OPEN_UTC + session * 86_400;
-        for (let bar = 0; bar < BARS_PER_SESSION; bar += 1) {
-          price += 0.4;
-          insert.run(TICKER, open + bar * 300, price - 0.2, price + 0.6, price - 0.6, price);
+      if (need5) {
+        let price = 100;
+        for (let session = 0; session < SESSIONS; session += 1) {
+          const open = SESSION_OPEN_UTC + session * 86_400;
+          for (let bar = 0; bar < BARS_PER_SESSION; bar += 1) {
+            price += 0.4;
+            insert.run(TICKER, open + bar * 300, price - 0.2, price + 0.6, price - 0.6, price);
+          }
         }
       }
       // Daily history as well: the gauntlet provenance test authors a daily strategy, and its
       // snapshot must come from the same canonical store.
-      for (let day = 0; day < 120; day += 1) {
-        daily.run(TICKER, SESSION_OPEN_UTC - 200 * 86_400 + day * 86_400, 100, 102, 98, 100 + (day % 7));
+      if (needDaily) {
+        for (let day = 0; day < 120; day += 1) {
+          daily.run(TICKER, SESSION_OPEN_UTC - 200 * 86_400 + day * 86_400, 100, 102, 98, 100 + (day % 7));
+        }
       }
     });
     all();

@@ -1,5 +1,31 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 MASTER GOLDEN JOURNEY (masterclass A76/C34-36 + C50) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/master-golden-journey/)
+The complete-product acceptance program, TWO consecutive clean runs (C50). `npm run test:master-golden`
+is the single entry point (C34); the deep journey was rebuilt to the masterclass shape — the FULL
+12-rung chain per stock across **8 diverse equities** (2 large / 2 mid / 4 smaller): identity → REAL
+research (no fixture banner; handoff ENABLED on SOURCE_VERIFIED and CLICKED once, per A76) →
+hypothesis → strategy → snapshot-pinned backtest → double-gated gauntlet → holdout untouched →
+confirm-gated forward (signals before outcomes) → paper invariants → alpha health durable → memory/
+learning → brain counts grew by ≥8. **Run 3 (restart + VIRGIN DB): every chunk green FIRST-TRY, 221
+passed, 0 failures**, incl. the third independent fresh-DB 30/30 PROPOSAL READY research sweep of
+the day. THIRTEEN defects found by the program and root-caused (C35 bug-finder rule; full log in the
+plan doc) — the headline ones: the crash-recovery spec had NEVER exercised recovery on Windows
+(absolute distDir + ISO-string heartbeat + port-reuse race + missing session/fetch-metadata — the
+checkpoint's named "auth surfaces not e2e-verified" risk is NOW VERIFIED); an unbounded
+`textContent()` on the absent-on-success refusal element ate 18 minutes AFTER research succeeded —
+fixing it closed BOTH the root-cause doc's "unexplained +1249.6s" tail and the "9.5-minute research"
+performance mystery (the chunk collapsed 23.7m → 2.1m); the hang-diagnostic itself had a
+measurement defect (paired one call's wire-finish with another call's DOM terminal) — corrected, it
+now proves the UI reflects a real research within **0.5s** (`responseFinished=+56.8s →
+domTerminal=+57.3s`). **THE RESEARCH-HANG INVESTIGATION IS CLOSED.** Product fixes shipped: /brain
+now shows BOTH paper ledgers (forward orders were invisible); acceptance specs modernized to the
+product's current, more honest behavior (DEMO-DATA badge, FIXTURE quote quality, MODE strip,
+live-research budgets, shared-DB delta assertions, per-resolution seed guards, symbol-free rule
+prose). **NEXT (masterclass order):** C39 extended crash acceptance (kill during model call /
+backtest / paper) · provider adapters (auto-expand the real roster) · surface TeamRun/artifacts/
+dissent + model assignments on /brain.
+
 ## P0 NSE 30-STOCK BREADTH (masterclass A75/C33) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/nse-30-breadth/)
 The full two-stage breadth acceptance on ONE fresh DB against a production build (`next start`,
 isolated dist dir, :3100, identity-gated). **Stage 1 (fresh DB): 34/34** — all 30 stratified

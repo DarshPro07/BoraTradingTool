@@ -15,7 +15,8 @@
     "check": "npm run typecheck && npm run test && npm run test:mcp && npm run build",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "test:full": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json",
-    "test:verified": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json && tsx scripts/verify-test-run.mts .tmp/vitest-run.json --min-files 130"
+    "test:verified": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json && tsx scripts/verify-test-run.mts .tmp/vitest-run.json --min-files 130",
+    "test:master-golden": "playwright test --project=desktop-chromium"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

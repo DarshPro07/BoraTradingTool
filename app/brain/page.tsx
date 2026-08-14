@@ -42,6 +42,10 @@ export default async function BrainPage() {
   const challengers = db.select().from(schema.forwardChallengers).all();
   const paperAccounts = db.select().from(schema.paperForwardAccounts).all();
   const paperOrders = db.select().from(schema.paperOrders).all().length;
+  // The forward-driven paper desk is a DELIBERATELY separate ledger from the manual paper tickets.
+  // Counting accounts from one ledger and orders from the other read as "8 accounts, 0 orders"
+  // after eight full journeys — a truthful cockpit shows each ledger's own count.
+  const forwardPaperOrders = db.select().from(schema.paperForwardOrders).all().length;
   const trials = db.select().from(schema.selectionTrials).all().length;
 
   // Current autonomous work: the newest audit trail entries, humanized lightly.
@@ -159,6 +163,7 @@ export default async function BrainPage() {
           <div>Forward challengers: {challengers.length}</div>
           <div>Paper accounts: {paperAccounts.length}</div>
           <div>Paper orders: {paperOrders}</div>
+          <div>Forward paper orders: {forwardPaperOrders}</div>
         </div>
       </Panel>
 

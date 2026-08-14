@@ -44,7 +44,12 @@ test("all primary screens render without runtime errors", async ({ page }) => {
     const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response?.status(), route).toBeLessThan(400);
     await expect(page.locator("body"), route).not.toContainText("Application error");
-    await expect(page.getByText("PAPER", { exact: true }).first(), route).toBeVisible();
+    // The intent: the application CHROME rendered on every route. The mode badge is the element
+    // that exists on every page in BOTH environments — it deliberately reads "DEMO DATA" on a
+    // TEST_MODE server and "PAPER" on a real-data one, so an exact-text "PAPER" match was an
+    // environment assumption, not a chrome check: it failed honestly on /command under fixtures
+    // and only ever passed elsewhere by matching unrelated "PAPER" text.
+    await expect(page.getByTestId("mode-badge").first(), route).toBeVisible();
     await expectNoPageOverflow(page);
   }
 

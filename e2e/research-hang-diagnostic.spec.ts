@@ -48,6 +48,13 @@ const CANDIDATES = [
   "IN:XNSE:SBIN",
   "IN:XNSE:ITC",
   "IN:XNSE:WIPRO",
+  // Reserve candidates: after the breadth suites ingest the whole 30-security acceptance
+  // universe, no real name has an empty store — but the boundary-attribution scenario needs one,
+  // and the canonical store is deliberately append-only. These two SYNTHETIC fixture-master rows
+  // (TEST_MODE only, TEST_FIXTURE-provenanced) are master-known, fixture-servable, and traded by
+  // no other spec — so at least one stays empty on a shared acceptance database.
+  "IN:XNSE:BANKBE",
+  "IN:XNSE:SMALLSME",
 ];
 
 const RESEARCH_URL = "/api/research/stock";
@@ -177,10 +184,14 @@ test.describe("research hang — boundary attribution", () => {
         stamp(`DOM reached terminal (${value})`);
       }
 
-      // Has the research response actually completed on the wire?
-      if (responseFinishedAt === null) {
-        for (const mark of marks.values()) {
-          if (mark.url.includes(RESEARCH_URL) && mark.method === "POST" && mark.finishedAt !== null) {
+      // Has the research response actually completed on the wire? Track the LATEST research POST:
+      // the refusal→ingest→research flow makes TWO calls, and the DOM terminal this loop accepts
+      // (non-FAILED) belongs to the SECOND. Latching the first (the instant refusal) paired one
+      // call's wire-finish with the OTHER call's DOM settle, and the "UI gap" silently absorbed
+      // the entire legitimate ~50s second model call — a measurement defect reporting a UI defect.
+      for (const mark of marks.values()) {
+        if (mark.url.includes(RESEARCH_URL) && mark.method === "POST" && mark.finishedAt !== null) {
+          if (responseFinishedAt === null || mark.finishedAt > responseFinishedAt) {
             responseFinishedAt = mark.finishedAt;
             stamp(
               `research POST finished on the wire: status=${mark.status} ` +

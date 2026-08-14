@@ -26,8 +26,11 @@ test.describe("the brain — visible, honest system state", () => {
     await page.goto("/brain", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("brain-page")).toBeVisible();
 
-    // System strip: learning mode and the readiness summary render.
-    await expect(page.getByTestId("brain-system")).toContainText(/LEARNING MODE/);
+    // System strip: the single AUTO mode and the readiness summary render. (The four-value
+    // "LEARNING MODE" label predates the mode-taxonomy collapse — the strip now truthfully reads
+    // MODE with the machine state, RUNNING or STOPPED.)
+    await expect(page.getByTestId("brain-system")).toContainText(/MODE/);
+    await expect(page.getByTestId("brain-system")).toContainText(/RUNNING|STOPPED|EVOLVING/);
     await expect(page.getByTestId("brain-system")).toContainText(/ready/);
     await expect(page.getByTestId("brain-system")).toContainText(/PAPER ONLY/);
 

@@ -202,8 +202,12 @@ test.describe("in-product ingestion unlocks research", () => {
     // ── 3. Research is no longer refused for lack of history ─────────────────────────────────
     await page.getByTestId("research-stock-run").click();
     const secondState = await waitForTerminalResearchState(page);
+    // BOUNDED read: on a SUCCESSFUL second research no refusal element exists, and an unbounded
+    // `.textContent()` waits for it until the TEST timeout — the `.catch` never fires because the
+    // locator doesn't reject, it waits. This exact line ate 18 minutes AFTER the whole workflow
+    // had visibly succeeded (PROPOSAL READY, 3/3 citations) and turned a pass into a timeout.
     const secondRefusal =
-      (await page.getByTestId("research-stock-refusal").textContent().catch(() => null))?.trim() ?? "";
+      (await page.getByTestId("research-stock-refusal").textContent({ timeout: 2_000 }).catch(() => null))?.trim() ?? "";
     phase(`research#2 terminal: ${secondState}`);
 
     // The decisive assertion. A provider may be unavailable on this machine — that is an honest
