@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles } from "@/lib/market/candle-store";
+import { activeSealFor } from "./holdout-seal";
 import type { Candle } from "@/lib/providers/types";
 
 /**
@@ -66,6 +67,62 @@ export function snapshotFromStore(
   resolution: string,
   actor = "research",
 ): SnapshotResult | SnapshotRefusal {
+  /**
+   * DEVELOPMENT EXCLUSION (sealed holdout): while a seal is live for this universe, research
+   * snapshots must not contain the sealed region — [start − purgeGap, end + embargo] — or the
+   * holdout is development data and its one evaluation is biased before it happens. The purge
+   * keeps development labels (which span forward in time) from overlapping INTO the window; the
+   * embargo keeps the window's serial correlation from leaking OUT of it. A consumed or
+   * invalidated seal frees the region, and the unsealed fingerprint returns byte-identically.
+   */
+  const seal = activeSealFor(market, resolution);
+  if (!seal) {
+    return buildSnapshot(market, resolution, actor, `${market}|${resolution}|`, () => true, null);
+  }
+  const lo = seal.startTime - seal.purgeGapSeconds;
+  const hi = seal.endTime + seal.embargoSeconds;
+  return buildSnapshot(
+    market,
+    resolution,
+    actor,
+    `${market}|${resolution}|`,
+    (time) => time < lo || time > hi,
+    `excludes sealed holdout ${seal.id} region [${lo}, ${hi}] (window + purge + embargo)`,
+  );
+}
+
+/**
+ * A snapshot of ONLY the bars inside [startTime, endTime] — the sealed-holdout window builder.
+ *
+ * Its hash seed carries the window, so a window snapshot can never collide with (or be mistaken
+ * for) the full-store snapshot of identical content, and the same window over the same bars is
+ * the same fingerprint forever — which is what seal-integrity verification recomputes.
+ */
+export function snapshotWindow(
+  market: "US" | "NSE" | "BSE",
+  resolution: string,
+  startTime: number,
+  endTime: number,
+  actor = "holdout",
+): SnapshotResult | SnapshotRefusal {
+  return buildSnapshot(
+    market,
+    resolution,
+    actor,
+    `${market}|${resolution}|window:${startTime}:${endTime}|`,
+    (time) => time >= startTime && time <= endTime,
+    `sealed window [${startTime}, ${endTime}]`,
+  );
+}
+
+function buildSnapshot(
+  market: "US" | "NSE" | "BSE",
+  resolution: string,
+  actor: string,
+  hashSeed: string,
+  includeBar: (time: number) => boolean,
+  lineageNote: string | null,
+): SnapshotResult | SnapshotRefusal {
   const storeResolution = STORE_RESOLUTION[resolution];
   if (!storeResolution) {
     return {
@@ -81,7 +138,7 @@ export function snapshotFromStore(
   let barCount = 0;
 
   const hash = createHash("sha256");
-  hash.update(`${market}|${resolution}|`, "utf8");
+  hash.update(hashSeed, "utf8");
 
   // Enumerate the store, not today's security master. A delisted security with retained bars is
   // historical evidence and must remain eligible for a historical dataset snapshot.
@@ -95,14 +152,16 @@ export function snapshotFromStore(
     .sort();
 
   for (const instrumentId of instrumentIds) {
-    const bars = loadStoredCandles(instrumentId, storeResolution).map((bar) => ({
-      time: bar.time,
-      open: bar.open,
-      high: bar.high,
-      low: bar.low,
-      close: bar.close,
-      volume: bar.volume ?? 0,
-    }));
+    const bars = loadStoredCandles(instrumentId, storeResolution)
+      .filter((bar) => includeBar(bar.time))
+      .map((bar) => ({
+        time: bar.time,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+        volume: bar.volume ?? 0,
+      }));
     if (bars.length === 0) continue;
 
     dataset[instrumentId] = bars;
@@ -163,7 +222,9 @@ export function snapshotFromStore(
       lastTime,
       barCount,
       fingerprint,
-      sourceLineage: "canonical candle store (accumulator + verified imports); see audit_events dataset_import rows",
+      sourceLineage:
+        "canonical candle store (accumulator + verified imports); see audit_events dataset_import rows" +
+        (lineageNote ? `; ${lineageNote}` : ""),
       normalizationVersion: "utc-clock-repair-2026-08-09",
       createdAt: new Date(),
       createdBy: actor,

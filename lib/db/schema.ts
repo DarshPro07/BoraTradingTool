@@ -691,6 +691,61 @@ export const failureMemory = sqliteTable("failure_memory", {
   recordedAt: integer("recorded_at", { mode: "timestamp" }).notNull(),
 });
 
+/**
+ * Sealed holdout definitions — see `drizzle/0022_sealed_holdout.sql`.
+ *
+ * The window, chronology (purge/embargo), sealed-window snapshot, fingerprint and DECISION RULE
+ * are pinned at seal time as copies: a later change to gates, data or code must never move a
+ * sealed bar. State machine: SEALED → AUTHORIZED_FOR_EVALUATION → CONSUMED, or → INVALIDATED
+ * (fingerprint drift). One ACTIVE seal per (market, resolution) by partial unique index.
+ */
+export const holdoutDefinitions = sqliteTable("holdout_definitions", {
+  id: text("id").primaryKey(),
+  generation: integer("generation").notNull(),
+  market: text("market").notNull(),
+  resolution: text("resolution").notNull(),
+  startTime: integer("start_time").notNull(),
+  endTime: integer("end_time").notNull(),
+  purgeGapSeconds: integer("purge_gap_seconds").notNull(),
+  embargoSeconds: integer("embargo_seconds").notNull(),
+  datasetSnapshotId: text("dataset_snapshot_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  barCount: integer("bar_count").notNull(),
+  decisionRule: text("decision_rule").notNull(),
+  state: text("state").notNull(),
+  stateReason: text("state_reason"),
+  sealedAt: integer("sealed_at", { mode: "timestamp" }).notNull(),
+  sealedBy: text("sealed_by").notNull(),
+  authorizedAt: integer("authorized_at", { mode: "timestamp" }),
+  authorizedBy: text("authorized_by"),
+  consumedAt: integer("consumed_at", { mode: "timestamp" }),
+  invalidatedAt: integer("invalidated_at", { mode: "timestamp" }),
+});
+
+/** One evaluation's full economics + verdict; UNIQUE (holdout, family) — the ledger refuses a second look. */
+export const holdoutResults = sqliteTable("holdout_results", {
+  id: text("id").primaryKey(),
+  holdoutId: text("holdout_id").notNull(),
+  strategySpecId: text("strategy_spec_id").notNull(),
+  strategyFamilyId: text("strategy_family_id").notNull(),
+  datasetSnapshotId: text("dataset_snapshot_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  tradeCount: integer("trade_count").notNull(),
+  netProfitFactor: real("net_profit_factor"),
+  grossPnl: real("gross_pnl"),
+  fees: real("fees"),
+  netPnl: real("net_pnl"),
+  winRate: real("win_rate"),
+  maxDrawdown: real("max_drawdown"),
+  validationOosPf: real("validation_oos_pf"),
+  degradationRatio: real("degradation_ratio"),
+  passed: integer("passed").notNull(),
+  reasonCodes: text("reason_codes").notNull(),
+  detail: text("detail"),
+  evaluatedAt: integer("evaluated_at", { mode: "timestamp" }).notNull(),
+  evaluatedBy: text("evaluated_by").notNull(),
+});
+
 export const holdoutLedger = sqliteTable("holdout_ledger", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   holdoutId: text("holdout_id").notNull(),

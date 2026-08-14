@@ -90,6 +90,21 @@ async function runJob(job: ClaimedJob): Promise<Record<string, unknown>> {
       }
       throw new Error(`${outcome.code}: ${outcome.message}`);
     }
+    case "holdout_decision": {
+      // The query-once final gate. Double-gated here (explicit enqueue + confirmed:true) and
+      // again inside the evaluator (owner-authorized seal, contamination, family budget).
+      const payload = job.payload as { specId?: unknown; confirmed?: unknown };
+      if (payload.confirmed !== true) {
+        throw new Error("HOLDOUT_UNCONFIRMED: a holdout evaluation is a one-time statistical spend and requires confirmed:true.");
+      }
+      if (typeof payload.specId !== "string" || payload.specId.length === 0) {
+        throw new Error("SPEC_NOT_FOUND: holdout_decision requires a specId.");
+      }
+      const { evaluateHoldout } = await import("@/lib/strategy/holdout-evaluator");
+      const outcome = await evaluateHoldout(payload.specId, "autonomous_worker");
+      if (outcome.ok) return outcome as unknown as Record<string, unknown>;
+      throw new Error(`${outcome.code}: ${outcome.message}`);
+    }
     case "instrument_research": {
       const instrumentId = (job.payload as { instrumentId?: unknown }).instrumentId;
       if (typeof instrumentId !== "string" || instrumentId.length === 0) {

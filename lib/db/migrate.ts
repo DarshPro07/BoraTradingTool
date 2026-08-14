@@ -60,6 +60,12 @@ const MIGRATIONS = [
   // Additive; the single-agent path writes none of them. Chief-of-Staff coordinates bounded teams
   // that exchange persisted artifacts (not chat) and preserve dissent into the TeamResult.
   "0021_team_os.sql",
+  // Sealed holdout apparatus (owner architecture instruction, 2026-08-14): holdout_definitions
+  // (immutable window + purge/embargo + sealed-window snapshot + PINNED decision rule + state
+  // machine) and holdout_results (full economics + degradation + coded reasons; UNIQUE per
+  // holdout×family). Additive only; the existing holdout_access / holdout_ledger enforcement
+  // and every prior table are untouched.
+  "0022_sealed_holdout.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

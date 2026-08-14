@@ -1,5 +1,21 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 SEALED HOLDOUT APPARATUS — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/sealed-holdout/)
+The owner's six pieces, real: immutable HoldoutDefinition (window + purge/embargo + pinned
+decision rule + fingerprinted sealed-window snapshot), seal state machine (SEALED → AUTHORIZED →
+CONSUMED / INVALIDATED-on-drift, one active per universe, generations), DEVELOPMENT EXCLUSION in
+`snapshotFromStore` (fail-first: 94 bars leaked pre-fix; byte-identical fingerprint restored
+after consumption), deterministic HoldoutEvaluator (gate order authorized→integrity→
+validated-stage→uncontaminated→family/campaign budget→same engine→pinned rule) writing full
+economics + degradation to `holdout_results` and the `sealed_holdout` trial the ladder reads
+(pass → holdout_cleared, fail → graveyard), `holdout_decision` durable kind (confirmed-gated,
+never auto-enqueued), seal/authorize APIs behind the house 428 confirm, HoldoutPanel +
+per-rung funnel breakdown. Evidence: 154 files / 1801 units, tsc clean, e2e 9 passed + virgin-DB
+3 passed. Constraints stated: pre-seal validated strategies are CONTAMINATED_DEVELOPMENT until
+re-validated post-seal; one look per generation per campaign. **NEXT (owner order):** provider
+transport-family expansion → TeamRun/artifact/dissent/model-assignment truth on /brain → then
+quant quality and forward/paper evidence over plumbing.
+
 ## P0 EXTENDED CRASH MATRIX (masterclass C39) — **DONE 2026-08-14, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/crash-matrix/)
 `e2e/crash-matrix.spec.ts`: kill the server MID-REAL-MODEL-CALL with the whole durable-job family
 in the lane (backtest on a real authored spec, confirmed validation, paper_reconcile,

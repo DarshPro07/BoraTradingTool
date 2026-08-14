@@ -64,6 +64,19 @@ export function ValidationFunnel({ standings }: { standings: Standing[] }) {
     .map(([what, count]) => `${count} on ${what.replace(/_/g, " ")}`)
     .join(" · ");
 
+  // Per-rung breakdown (owner cockpit ask): under each bar, how many stand EXACTLY there and
+  // what they wait on — the transition's own explanation, not just the totals.
+  const atStage = (stage: Stage) => living.filter((standing) => standing.stage === stage);
+  const breakdownFor = (stages: Stage[]): string => {
+    const rows = stages.flatMap((stage) => atStage(stage));
+    const byWait = new Map<string, number>();
+    for (const standing of rows) {
+      if (standing.blockedOn === null) continue;
+      byWait.set(standing.blockedOn, (byWait.get(standing.blockedOn) ?? 0) + 1);
+    }
+    return [...byWait.entries()].map(([what, count]) => `${count} waiting on ${what.replace(/_/g, " ")}`).join(" · ");
+  };
+
   // The trial denominator stays from the ledger it lives in — it is a spend count, not a stage.
   const trialsSpent = new Set(
     getDb().select().from(schema.trials).all().map((row) => row.strategySpecId),
@@ -78,21 +91,29 @@ export function ValidationFunnel({ standings }: { standings: Standing[] }) {
         {LADDER.map((rung, index) => {
           const count = counts[index];
           const share = count / widest;
+          // "Exactly here" stages: the rung's own states (AUTHORED = draft; FORWARD spans both).
+          const exact: Stage[] = index === 0 ? ["draft"] : rung.at;
+          const breakdown = breakdownFor(exact);
           return (
-            <div key={rung.label} className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-24 shrink-0">
-                {rung.label}
-              </span>
-              <div className="flex-1 h-4 bg-panel-alt border border-panel relative">
-                <div
-                  className={`h-full ${count === 0 ? "bg-transparent" : "bg-terminal/30"}`}
-                  style={{ width: `${Math.max(share * 100, count > 0 ? 3 : 0)}%` }}
-                />
-                <span className="absolute inset-y-0 left-1.5 flex items-center text-[10px] tabular-nums">
-                  {count}
+            <div key={rung.label}>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-24 shrink-0">
+                  {rung.label}
                 </span>
+                <div className="flex-1 h-4 bg-panel-alt border border-panel relative">
+                  <div
+                    className={`h-full ${count === 0 ? "bg-transparent" : "bg-terminal/30"}`}
+                    style={{ width: `${Math.max(share * 100, count > 0 ? 3 : 0)}%` }}
+                  />
+                  <span className="absolute inset-y-0 left-1.5 flex items-center text-[10px] tabular-nums">
+                    {count}
+                  </span>
+                </div>
+                <span className="text-[9px] text-muted-foreground w-40 shrink-0">{rung.note}</span>
               </div>
-              <span className="text-[9px] text-muted-foreground w-40 shrink-0">{rung.note}</span>
+              {breakdown ? (
+                <div className="text-[9px] text-muted-foreground pl-[6.5rem] leading-relaxed">{breakdown}</div>
+              ) : null}
             </div>
           );
         })}

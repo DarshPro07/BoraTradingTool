@@ -101,6 +101,17 @@ export const JOB_KINDS = [
    * ALREADY_ACTIVE is SUCCESS: the enrollment goal is satisfied, a retry must not fail it.
    */
   "forward_enroll",
+  /**
+   * Evaluate one validated strategy against the SEALED HOLDOUT — the query-once final research
+   * gate. The handler is the deterministic evaluator (`evaluateHoldout`), whose own gate order
+   * is the enforcement: seal AUTHORIZED by the owner, fingerprint intact, strategy at
+   * `validated` (after DSR/PBO — never instead of them), development uncontaminated
+   * (qualifying gauntlet experiment postdates the seal), family/campaign budget unspent. Like
+   * `validation` and `forward_enroll`: NEVER autonomously enqueued, `confirmed: true` required
+   * — a holdout look is irreversible in the statistical sense, and the machine only ever
+   * REPORTS that one is available.
+   */
+  "holdout_decision",
 ] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 

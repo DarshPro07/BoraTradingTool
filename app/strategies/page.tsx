@@ -13,6 +13,7 @@ import { QuantAnalyticsPanel } from "@/components/quant/QuantAnalyticsPanel";
 import { HypothesisInbox } from "@/components/research/HypothesisInbox";
 import { StarMap } from "@/components/strategy/StarMap";
 import { ValidationFunnel } from "@/components/strategy/ValidationFunnel";
+import { HoldoutPanel } from "@/components/strategy/HoldoutPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,7 @@ export default async function StrategyLabPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ValidationFunnel standings={all} />
+        <HoldoutPanel />
         <GraveyardPanel />
         <Panel title="GATES">
           <div className="grid gap-2 text-xs sm:grid-cols-2">

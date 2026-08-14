@@ -104,3 +104,40 @@ describe("forward_enroll is gated and truthful", () => {
     expect(job?.lastError).toMatch(/SPEC_NOT_FOUND/);
   });
 });
+
+/**
+ * holdout_decision — the query-once final gate as durable work. Refusal paths only (the full
+ * happy path is lib/strategy/holdout-evaluator.test.ts): the confirm gate must die stating
+ * itself, and an unconfirmed universe (no seal) must surface the evaluator's own coded reason.
+ */
+describe("holdout_decision is gated and truthful", () => {
+  useTemporaryDatabase();
+
+  it("refuses without confirmed:true, stating the gate", async () => {
+    const { id } = enqueue({ kind: "holdout_decision", payload: { specId: "stg_x" }, maxAttempts: 1 });
+    await runWorker("kinds-test", 5);
+    const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, id)).get();
+    expect(job?.status).toBe("dead");
+    expect(job?.lastError).toMatch(/HOLDOUT_UNCONFIRMED/);
+  });
+
+  it("a confirmed evaluation with no live seal dies stating NO_ACTIVE_SEAL (via the evaluator)", async () => {
+    const { recordStrategySpec } = await import("@/lib/knowledge/repository");
+    const { StrategyDslSchema } = await import("@/lib/strategy/dsl");
+    const dsl = StrategyDslSchema.parse({
+      name: "no_seal_probe",
+      universe: { market: "NSE", maxPositions: 4, resolution: "D" },
+      entry: { feature: "close", op: "gt", value: 0 },
+      exit: { afterDays: 3, stopLossPct: 5 },
+      sizing: { maxPositionPct: 25 },
+      costs: { commissionBps: 5, slippageBps: 7 },
+    });
+    const specId = recordStrategySpec({ name: dsl.name, dsl, createdBy: "test" });
+
+    const { id } = enqueue({ kind: "holdout_decision", payload: { specId, confirmed: true }, maxAttempts: 1 });
+    await runWorker("kinds-test", 5);
+    const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, id)).get();
+    expect(job?.status).toBe("dead");
+    expect(job?.lastError).toMatch(/NO_ACTIVE_SEAL/);
+  });
+});

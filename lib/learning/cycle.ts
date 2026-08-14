@@ -557,6 +557,28 @@ async function runCycleBody(
       `${entry.name} is enrollable for forward observation — enqueue forward_enroll {specId: "${entry.specId}", confirmed: true} to start the paper stage.`,
     );
   }
+  // The sealed-holdout path, STATED per universe whenever validated strategies are waiting on it.
+  // Reported, never enqueued — sealing and authorizing are owner acts, and the machine's job is
+  // to make the next one obvious rather than to take it.
+  if (promotion.advanced.some((entry) => entry.stage === "validated")) {
+    const { listSeals } = await import("@/lib/research-data/holdout-seal");
+    const seals = listSeals();
+    const live = seals.filter((seal) => seal.state === "SEALED" || seal.state === "AUTHORIZED_FOR_EVALUATION");
+    if (live.length === 0) {
+      actions.push(
+        "Validated strategies await the sealed holdout, and no live seal exists — POST /api/strategy/holdout to seal a window (generation " +
+          `${1 + seals.reduce((max, seal) => Math.max(max, seal.generation), 0)}).`,
+      );
+    } else {
+      for (const seal of live) {
+        actions.push(
+          seal.state === "SEALED"
+            ? `Holdout ${seal.id} (${seal.market}/${seal.resolution}, gen ${seal.generation}) is SEALED — authorize it (confirm) to permit its one evaluation.`
+            : `Holdout ${seal.id} (${seal.market}/${seal.resolution}, gen ${seal.generation}) is AUTHORIZED — enqueue holdout_decision {specId, confirmed: true} for the chosen validated strategy.`,
+        );
+      }
+    }
+  }
 
   // Named precisely, because these three states have three different remedies and the loop used
   // to print "unreachable" for all of them. On a machine with no quant core installed that reads

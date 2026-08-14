@@ -58,3 +58,66 @@ test.describe("strategy progression states its path", () => {
     await expect(row.getByTestId("stage-blocked-on")).toContainText(/waiting on rehearsal/i);
   });
 });
+
+/**
+ * The sealed-holdout surface: seal a real window over ingested history, watch the confirm gate
+ * refuse a bare authorization, authorize, and see the panel state the whole story. The
+ * EVALUATION itself is deliberately not driven here — it spends a family's one look and is
+ * proven by lib/strategy/holdout-evaluator.test.ts; this journey proves the owner-facing
+ * apparatus: definition, states, confirm gate, and the panel's truth.
+ */
+test.describe("sealed holdout — the apparatus is visible and gated", () => {
+  test("seal → 428 without confirm → authorize → panel states it", async ({ page, request, baseURL }, testInfo) => {
+    test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
+    await ensureLocalSession(request);
+
+    // Real history to seal (fixture master serves 260 daily bars per instrument in TEST_MODE).
+    // Two instruments: one alone leaves the default trailing window ~52 bars, below the 60-bar
+    // daily floor — and the seal REFUSED it (WINDOW_TOO_THIN), which is the apparatus working.
+    for (const instrumentId of ["IN:XNSE:RELIANCE", "IN:XNSE:TCS"]) {
+      const ingest = await request.post("/api/market/ingest", {
+        headers: headers(baseURL!),
+        data: { instrumentId },
+      });
+      expect(ingest.ok()).toBe(true);
+    }
+
+    const sealed = await request.post("/api/strategy/holdout", {
+      headers: headers(baseURL!),
+      data: { market: "NSE", resolution: "D" },
+    });
+    // 201 on the first project pass; 409 ACTIVE_SEAL_EXISTS if a prior pass on this shared DB
+    // already sealed — both are the apparatus telling the truth. Recover the live seal either way.
+    expect([201, 409]).toContain(sealed.status());
+    const listing = await request.get("/api/strategy/holdout");
+    expect(listing.ok()).toBe(true);
+    const seals = ((await listing.json()) as { seals: { id: string; state: string; barCount: number }[] }).seals;
+    const live = seals.find((seal) => seal.state === "SEALED" || seal.state === "AUTHORIZED_FOR_EVALUATION");
+    expect(live, "a live seal must exist after sealing").toBeDefined();
+    expect(live!.barCount).toBeGreaterThan(0);
+
+    // The confirm gate: a bare authorization is refused with 428 and the seal is untouched.
+    if (live!.state === "SEALED") {
+      const bare = await request.post("/api/strategy/holdout/authorize", {
+        headers: headers(baseURL!),
+        data: { holdoutId: live!.id },
+      });
+      expect(bare.status()).toBe(428);
+
+      const confirmed = await request.post("/api/strategy/holdout/authorize", {
+        headers: headers(baseURL!),
+        data: { holdoutId: live!.id, confirm: true },
+      });
+      expect(confirmed.ok()).toBe(true);
+      expect(((await confirmed.json()) as { seal: { state: string } }).seal.state).toBe("AUTHORIZED_FOR_EVALUATION");
+    }
+
+    // The panel states the seal and its one next act.
+    await page.goto("/strategies", { waitUntil: "domcontentloaded" });
+    const panel = page.getByTestId("holdout-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel.getByTestId("holdout-seal-state").first()).toContainText(/AUTHORIZED FOR EVALUATION|SEALED/);
+    await expect(panel).toContainText(/pinned rule/i);
+    await expect(panel).toContainText(/holdout_decision \{specId, confirmed:true\}|Authorize \(confirm\)/);
+  });
+});
