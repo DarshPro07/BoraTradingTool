@@ -28,6 +28,19 @@ export interface TeamExecutionPlan {
     maxCost: number | null;
     maxDurationMs: number;
   };
+  /**
+   * The ModelRouter's per-role decision (rung 4), recorded so "which model, and why" is observable.
+   * Omitted when no roster is wired yet (a one-model machine, or the roster not yet connected) — the
+   * routing POLICY exists regardless; this is where its decisions land once a roster is present.
+   */
+  modelAssignments?: {
+    role: string;
+    providerId: string | null;
+    modelId: string | null;
+    /** EMPIRICAL (earned on measured history) · PRIOR (unproven, judged on priors) · REFUSED. */
+    source: string;
+    reason: string;
+  }[];
 }
 
 /** The synthesized outcome. Dissent is a first-class field — it is never discarded into a consensus. */

@@ -1,5 +1,32 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 MODEL ROUTING (rung 4) — **DONE 2026-08-14, VERIFIED** (docs/plans/model-routing/)
+Learned, role-based model selection — the layer ABOVE the unchanged capability→provider `route()`.
+`routeRoleModel(req, roster, stats, capability)` (`lib/runtime/model-router.ts`) picks the model that
+EARNED a role, scoring on each model's verification-rate/latency HISTORY from the AgentRun ledger
+(`computeModelStats`, `lib/runtime/model-stats.ts`) — no hard-coded `if research → X`. Roster-agnostic
+(owner's choice): pure policy over a `ModelEntry[]` roster (reused from the existing catalog), fixture
+roster for tests, real detected-roster wiring deferred. Verification LEADS the score; unproven models
+are TRIED on a prior (never rejected for lacking history); the verification floor bites only for
+proven models; a refusal is EXPLICIT with the attempt trail (NO_MODEL_AVAILABLE vs
+NO_MODEL_MEETS_REQUIREMENTS) — never a silent downgrade, matching route()'s doctrine. The team records
+the router's per-role decision in `TeamExecutionPlan.modelAssignments` when a roster is present (honest
+empty default otherwise). `route()` is BYTE-FOR-BYTE unchanged (verifier-confirmed); the invariants
+(arithmetic never an LLM, forecast never a chatbot, fallback never silent) are untouched. Router/stats
+`model-router.test.ts` 11/11 + team integration 2 (the better-ledger model wins from SECOND in the
+roster, proving the LEDGER drives it, not order; ledger-learning proven to bite by a revert-checked
+mutation). Full suite 1779 passed / 2 skipped, tsc 0, MCP 4/4, next build 0. Independent verifier
+VERIFIED / 0 blockers (read all files, hand-traced the scoring math, confirmed route() zero-diff +
+strictly-additive lib/agents diff, root-caused the one full-suite mcp anomaly as environmental
+parallelism flake). Its one actionable gap (refusal code classified by re-parsing prose) CLOSED —
+now a structural `sawCapableButCapped` flag.
+**Owner status wording: Model Router (policy + learned signal) — VERIFIED_INTEGRATION.**
+**NEXT (the explicit deferred wiring, owner to steer scope):** build the real detected roster
+(`detectProviders()` + a populated model catalog with priors) and BIND execution to the assigned model
+(the gateway selecting a specific model), so learned routing drives real runs — today it is exercised
+by tests and observable in the plan, but the production caller passes no roster yet. Also: surface
+TeamRun/artifacts/dissent + model assignments on /brain; a CI mutation-testing step on the router.
+
 ## P0 CHIEF-OF-STAFF / TEAM OS (rung 3, second leg) — **DONE 2026-08-14, VERIFIED** (docs/plans/team-os/)
 A bounded semantic team on the verified single-agent slice. A `depth:"deep"` (or `team:true`)
 `instrument_research` job escalates DETERMINISTICALLY (`decideTeamExecution`) to a Chief-of-Staff that

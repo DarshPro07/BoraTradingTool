@@ -1,3 +1,4 @@
+import type { ModelCapabilities } from "@/lib/runtime/model-catalog";
 import type { ArtifactKind } from "./artifacts";
 import {
   CHIEF_OF_STAFF_V1,
@@ -37,6 +38,8 @@ export interface TeamMemberSpec {
   systemPrompt: string;
   /** Fields that MUST be present in the parsed output, or the member's output is a CONTRACT_VIOLATION. */
   requiredFields: string[];
+  /** What this role needs from a model — the hard capability filter the ModelRouter (rung 4) applies. */
+  modelNeeds: (keyof ModelCapabilities)[];
 }
 
 export interface TeamDefinition {
@@ -62,6 +65,7 @@ const RESEARCHER: TeamMemberSpec = {
   definition: RESEARCHER_V1,
   artifactKind: "RESEARCH",
   requiredFields: ["thesis", "direction", "rationale", "sources", "confidence"],
+  modelNeeds: ["research"],
   systemPrompt: [
     "You are a securities researcher on a bounded research team.",
     PACKET_BOUND,
@@ -79,6 +83,7 @@ const SOURCE_VERIFIER: TeamMemberSpec = {
   definition: SOURCE_VERIFIER_V1,
   artifactKind: "VERIFICATION",
   requiredFields: ["assessment", "concern"],
+  modelNeeds: ["research"],
   systemPrompt: [
     "You are a source and evidence verifier on a bounded research team.",
     PACKET_BOUND,
@@ -95,6 +100,7 @@ const CRITIC: TeamMemberSpec = {
   definition: CRITIC_V1,
   artifactKind: "CRITIQUE",
   requiredFields: ["concern"],
+  modelNeeds: ["reasoning"],
   systemPrompt: [
     "You are a skeptical critic on a bounded research team.",
     PACKET_BOUND,

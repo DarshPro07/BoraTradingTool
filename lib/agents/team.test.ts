@@ -5,6 +5,7 @@ import { useTemporaryDatabase } from "@/lib/db/testing";
 import { subscribeAll, type MarketPulseEvent } from "@/lib/brain/event-bus";
 import { persistCandles } from "@/lib/market/candle-store";
 import type { ImportedCandle } from "@/lib/market/dataset-import";
+import type { ModelEntry } from "@/lib/runtime/model-catalog";
 import { enqueue, enqueueDependent, getJob } from "@/lib/research/queue";
 import { runWorker } from "@/lib/research/worker";
 import { runInstrumentResearchTeam, type RunMember } from "./team-runtime";
@@ -77,6 +78,35 @@ function seedDailyCandles(count = 70): void {
 const agentRuns = () => getDb().select().from(schema.agentRuns).all();
 const teamRuns = () => getDb().select().from(schema.teamRuns).all();
 const artifacts = () => getDb().select().from(schema.agentArtifacts).all();
+
+/** A research+reasoning-capable model for the router's fixture roster. */
+function fixtureModel(modelId: string): ModelEntry {
+  return {
+    modelId,
+    providerId: "claude-code",
+    capabilities: { reasoning: true, coding: false, research: true, toolUse: false, structuredOutput: true, vision: false, longContext: true, financialTimeseries: false },
+    costClass: "SUBSCRIPTION",
+    latencyClass: "MEDIUM",
+    contextWindow: 200_000,
+    available: true,
+    health: "READY",
+  };
+}
+
+/** Seed one RESEARCH run into the ledger so computeModelStats has history to learn from. */
+function seedRun(model: string, verificationStatus: string, i: number): void {
+  getDb()
+    .insert(schema.agentRuns)
+    .values({
+      id: `seed_${model}_${i}`, capability: "RESEARCH", provider: "claude-code", model,
+      status: "COMPLETED", trigger: "LEARNING", instrumentId: null, evidenceFingerprint: null,
+      verificationStatus, envelope: null, refusalCode: null, refusalMessage: null,
+      tokens: 100, cost: null, costCurrency: null, fallbackReason: null,
+      agentId: null, agentVersion: null, jobId: null, teamRunId: null,
+      startedAt: new Date("2026-08-01T00:00:00Z"), completedAt: new Date("2026-08-01T00:00:10Z"),
+    })
+    .run();
+}
 
 describe("Team OS — orchestration (injected member runner)", () => {
   useTemporaryDatabase();
@@ -209,6 +239,37 @@ describe("Team OS — orchestration (injected member runner)", () => {
     expect(criticRows, "exactly one critic run — no duplication").toHaveLength(1);
     expect(criticRows[0].status, "the retry's success overwrote the earlier FAILED row").toBe("COMPLETED");
     expect(teamRuns()[0].status).toBe("COMPLETED");
+  });
+
+  it("[rung4] the ModelRouter assigns each role a model from the roster, LEARNED from the ledger", async () => {
+    seedDailyCandles();
+    // m-good verifies reliably; m-meh mostly gets contested — the router should learn this.
+    for (let i = 0; i < 5; i += 1) seedRun("m-good", "SOURCE_VERIFIED", i);
+    seedRun("m-meh", "SOURCE_VERIFIED", 0);
+    for (let i = 1; i < 5; i += 1) seedRun("m-meh", "CONFLICTED", i);
+
+    // The better-ledger model is SECOND, so picking array order would choose wrong — the assertion
+    // that m-good wins proves the LEDGER drives the choice, not roster position.
+    const roster = [fixtureModel("m-meh"), fixtureModel("m-good")];
+    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 77, { runMember: okRunMember, roster });
+    expect(outcome.ok).toBe(true);
+
+    const plan = getTeamRun(outcome.teamRunId!)!.plan!;
+    expect(plan.modelAssignments, "the router recorded a per-role assignment in the plan").toBeDefined();
+    const assignments = plan.modelAssignments!;
+    expect(assignments.map((a) => a.role).sort()).toEqual(["critic", "researcher", "source_verifier"]);
+    // Every role routed to the model that EARNED it on the ledger — not a hard-coded pick.
+    for (const a of assignments) {
+      expect(a.modelId, `${a.role} → learned pick`).toBe("m-good");
+      expect(a.source).toBe("EMPIRICAL");
+    }
+  });
+
+  it("[rung4] with no roster wired, the plan records no model assignments (honest single-model default)", async () => {
+    seedDailyCandles();
+    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 78, { runMember: okRunMember });
+    expect(outcome.ok).toBe(true);
+    expect(getTeamRun(outcome.teamRunId!)!.plan!.modelAssignments).toBeUndefined();
   });
 });
 

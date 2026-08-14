@@ -3,6 +3,9 @@ import { emit } from "@/lib/brain/event-bus";
 import { recordAgentRun } from "@/lib/runtime/agent-runs";
 import type { EvidencePacket, PacketResult } from "@/lib/research/bridge";
 import type { Capability } from "@/lib/runtime/routing";
+import type { ModelEntry } from "@/lib/runtime/model-catalog";
+import { routeRoleModel } from "@/lib/runtime/model-router";
+import { computeModelStats } from "@/lib/runtime/model-stats";
 import { recordArtifact } from "./artifacts";
 import {
   completeTeamRun,
@@ -48,6 +51,12 @@ export interface TeamDeps {
   team?: TeamDefinition;
   buildPacket?: BuildPacket;
   runMember?: RunMember;
+  /**
+   * The available models (rung 4, roster-agnostic). When present, the ModelRouter assigns a model per
+   * role from LEDGER history and records the decision in the plan. Default empty — the real detected
+   * roster is a separate wiring step; the routing POLICY exists and is exercised whenever a roster is.
+   */
+  roster?: readonly ModelEntry[];
 }
 
 export interface TeamResearchOutcome {
@@ -85,7 +94,11 @@ async function mapWithLimit<T, R>(items: readonly T[], limit: number, fn: (item:
   return results;
 }
 
-function buildExecutionPlan(team: TeamDefinition, instrumentId: string): TeamExecutionPlan {
+function buildExecutionPlan(
+  team: TeamDefinition,
+  instrumentId: string,
+  modelAssignments?: TeamExecutionPlan["modelAssignments"],
+): TeamExecutionPlan {
   return {
     objective: `Deep research on ${instrumentId}: propose, independently verify the evidence, critique, then synthesize with dissent preserved.`,
     roles: team.members.map((m) => m.role),
@@ -99,7 +112,31 @@ function buildExecutionPlan(team: TeamDefinition, instrumentId: string): TeamExe
       "budget exceeded → TEAM_BUDGET_EXCEEDED",
     ],
     budget: team.budget,
+    modelAssignments,
   };
+}
+
+/**
+ * Ask the ModelRouter (rung 4) to assign a model to each role from the roster, LEARNING from the
+ * ledger. Roster-agnostic: a one-model roster routes everyone there honestly; a richer roster
+ * differentiates by each role's needs and each model's earned verification rate.
+ */
+function assignModels(
+  team: TeamDefinition,
+  roster: readonly ModelEntry[],
+): NonNullable<TeamExecutionPlan["modelAssignments"]> {
+  const stats = computeModelStats();
+  return team.members.map((member) => {
+    const decision = routeRoleModel(
+      { role: member.role, needs: member.modelNeeds },
+      roster,
+      stats,
+      member.definition.gatewayCapability as Capability,
+    );
+    return decision.ok
+      ? { role: member.role, providerId: decision.providerId, modelId: decision.modelId, source: decision.source, reason: decision.reason }
+      : { role: member.role, providerId: null, modelId: null, source: "REFUSED", reason: decision.message };
+  });
 }
 
 /** The default gateway-backed member runner: same capability → same model for every role. */
@@ -244,7 +281,10 @@ export async function runInstrumentResearchTeam(
 
   // Deterministic TeamRun id (idempotent across a crash/retry of the same job).
   const teamRunId = `tmr_${sha(`${jobId ?? "nojob"}|${team.teamId}|${team.version}|${instrumentId}`)}`;
-  const plan = buildExecutionPlan(team, instrumentId);
+  // Rung 4: assign a model per role from the roster's learned history, when a roster is present.
+  const roster = deps.roster ?? [];
+  const modelAssignments = roster.length > 0 ? assignModels(team, roster) : undefined;
+  const plan = buildExecutionPlan(team, instrumentId, modelAssignments);
   // The plan of record is written BEFORE any member runs; a re-run reuses the row (onConflictDoNothing).
   createTeamRun({ id: teamRunId, teamId: team.teamId, teamVersion: team.version, jobId, instrumentId, plan });
 
