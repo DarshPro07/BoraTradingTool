@@ -73,6 +73,15 @@ export interface AgentRunRequest {
   profile: RuntimeProfile;
   detected: readonly DetectedProvider[];
   timeoutMs?: number;
+  /**
+   * A CONCRETE model the router assigned (A6.2 execution binding). When set, an adapter that
+   * supports model selection requests exactly this model; when null/absent, the provider serves its
+   * configured default and the run's binding is truthfully PROVIDER_DEFAULT. Never a fabricated id —
+   * callers pass ids from the detected roster, and the `<provider>:default` sentinel is passed as
+   * null (asking the provider's default IS the sentinel's meaning). The executed model is still
+   * discovered from run telemetry, so assigned-vs-executed stays verifiable rather than assumed.
+   */
+  model?: string | null;
 }
 
 export interface AgentRunSuccess {
@@ -206,7 +215,9 @@ export async function runAgent(request: AgentRunRequest): Promise<AgentRunResult
     };
   }
 
-  emit({ kind: "MODEL_SELECTED", provider: decision.resolved, model: CLAUDE_MODEL_ALIAS, capability: request.capability, reason: decision.fallbackReason ?? "primary" });
+  // The event reports what will actually be requested — the router's bound model when one is
+  // assigned (A6.2), else the configured alias. A static alias here misreported bound runs.
+  emit({ kind: "MODEL_SELECTED", provider: decision.resolved, model: request.model ?? CLAUDE_MODEL_ALIAS, capability: request.capability, reason: decision.fallbackReason ?? "primary" });
   emit({ kind: "AGENT_STARTED", agentId: `agt_${randomUUID().replace(/-/g, "").slice(0, 12)}`, capability: request.capability, provider: decision.resolved });
 
   const result = await runClaudeCode(request, decision.fallbackReason);
@@ -234,7 +245,9 @@ async function runClaudeCode(
     "--output-format",
     "json",
     "--model",
-    CLAUDE_MODEL_ALIAS,
+    // A6.2 execution binding: the router's concrete assignment wins; otherwise the configured
+    // alias — the CLI honors --model, so for this adapter assigned == requested is supported.
+    request.model ?? CLAUDE_MODEL_ALIAS,
     // The four flags below strip this call back to a plain model call: no project settings, no
     // CLAUDE.md, no skills, no MCP servers, no tools. Measured 2026-08-10: context overhead falls
     // from ~70k to ~24k cached tokens ($0.42 → $0.15 per call). It is also a correctness control —

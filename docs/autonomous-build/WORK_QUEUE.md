@@ -1,5 +1,27 @@
 # Work queue (ordered; every item carries its dependency)
 
+## P0 REAL ROSTER + EXECUTION BINDING (masterclass A6) — **DONE 2026-08-14, VERIFIED** (docs/plans/real-roster-binding/)
+Closes the two production gaps the model-routing leg named. **A6.1:** `lib/runtime/roster.ts`
+`buildDetectedRoster(detectProviders())` is now the PRODUCTION default roster (worker path confirmed
+by the verifier at the real call site) — discovered `CatalogModel`s become entries with the
+catalog's own relative cost and registry-declared capabilities (no fabricated names/benchmarks;
+`contextWindow 0` = unreported); a READY non-enumerating LLM (claude-code today) gets ONE truthful
+`<provider>:default` sentinel; non-LLM/non-READY excluded; explicit `[]` stays an honest
+no-assignments. **A6.2:** `AgentRunRequest.model` → the claude adapter's `--model` (binding IS
+supported); the team threads each role's assignment through (sentinel → null → provider default);
+the plan records `binding: REQUESTED | PROVIDER_DEFAULT` — the limitation REPRESENTED, never
+hidden; executed model still discovered from telemetry, so assigned==executed==recorded is
+verifiable. MODEL_SELECTED event now reports the bound model. Tests: roster 5/5 + team [A6.2]
+assigned==executed proof + production-default assertions; single path zero-diff (7/7); route()
+zero-diff. Binding thread-through MUTATION-PROVEN. Full suite (verifier's fresh run) **152 files /
+1789 passed / 2 skipped**, tsc 0. Independent verifier VERIFIED / 0 blockers; its one actionable
+residual (event misreport) closed + re-verified. STATED coverage shape: only claude-code has a real
+adapter, so the live roster is the one-provider sentinel today — multi-provider enumeration is
+proven at unit/fixture level and activates as adapters land.
+**NEXT (owner-steered):** owner-facing 1-5 ACTIVE-model selection surface consuming
+`buildDetectedRoster` · additional provider adapters (each new READY provider auto-expands the
+roster) · surface TeamRun/artifacts/dissent + assignments/binding on /brain.
+
 ## P0 MODEL ROUTING (rung 4) — **DONE 2026-08-14, VERIFIED** (docs/plans/model-routing/)
 Learned, role-based model selection — the layer ABOVE the unchanged capability→provider `route()`.
 `routeRoleModel(req, roster, stats, capability)` (`lib/runtime/model-router.ts`) picks the model that

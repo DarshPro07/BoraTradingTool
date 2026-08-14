@@ -262,14 +262,38 @@ describe("Team OS — orchestration (injected member runner)", () => {
     for (const a of assignments) {
       expect(a.modelId, `${a.role} → learned pick`).toBe("m-good");
       expect(a.source).toBe("EMPIRICAL");
+      // A6.2: a concrete enumerated id is REQUESTED from the adapter, not left to the provider.
+      expect(a.binding).toBe("REQUESTED");
     }
   });
 
-  it("[rung4] with no roster wired, the plan records no model assignments (honest single-model default)", async () => {
+  it("[rung4] an explicitly EMPTY roster (nothing available) records no assignments — honest, not fabricated", async () => {
     seedDailyCandles();
-    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 78, { runMember: okRunMember });
+    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 78, { runMember: okRunMember, roster: [] });
     expect(outcome.ok).toBe(true);
     expect(getTeamRun(outcome.teamRunId!)!.plan!.modelAssignments).toBeUndefined();
+  });
+
+  it("[A6.2] an assigned concrete model is REQUESTED from the gateway and the EXECUTED model equals it", async () => {
+    seedDailyCandles();
+    gw.calls = 0;
+    gw.requestedModels = [];
+    gw.mode = "ok";
+
+    // No runMember injection: the REAL gateway-backed member runner runs against the mocked
+    // gateway, which echoes the requested model as the executed one (the CLI honors --model).
+    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 91, { roster: [fixtureModel("m-good")] });
+    expect(outcome.ok).toBe(true);
+
+    expect(gw.requestedModels, "every member call asked for the assigned model").toEqual(["m-good", "m-good", "m-good"]);
+    const memberRuns = agentRuns().filter((r) => r.teamRunId === outcome.teamRunId && r.provider !== "deterministic");
+    expect(memberRuns).toHaveLength(3);
+    for (const run of memberRuns) {
+      expect(run.model, "assigned == executed == recorded (A6.2)").toBe("m-good");
+    }
+    for (const a of getTeamRun(outcome.teamRunId!)!.plan!.modelAssignments!) {
+      expect(a.binding).toBe("REQUESTED");
+    }
   });
 });
 
@@ -284,14 +308,22 @@ describe("Team OS — no member holds privileged authority [17]", () => {
 });
 
 // ── Full path: real Chief-of-Staff runtime through the worker, only the gateway mocked ──────────
-const gw = vi.hoisted(() => ({ calls: 0, mode: "ok" as "ok" | "critic_fail" | "critic_badjson" }));
+const gw = vi.hoisted(() => ({
+  calls: 0,
+  mode: "ok" as "ok" | "critic_fail" | "critic_badjson",
+  /** The `model` field of each runAgent request — proves A6.2 threading, not assumes it. */
+  requestedModels: [] as (string | null)[],
+}));
 
 vi.mock("@/lib/runtime/gateway", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/runtime/gateway")>();
+  // Echo the requested model as the executed model (the CLI honors --model), so an
+  // assigned==executed assertion tests the real thread-through rather than a constant.
+  let currentRequestedModel: string | null = null;
   const success = (obj: unknown, runId: string) => ({
     ok: true as const,
     provider: "claude-code" as const,
-    model: "test-model",
+    model: currentRequestedModel ?? "test-model",
     text: JSON.stringify(obj),
     runId,
     sessionId: null,
@@ -320,8 +352,10 @@ vi.mock("@/lib/runtime/gateway", async (importOriginal) => {
   return {
     ...actual,
     detectProviders: async () => [{ id: "claude-code", status: "READY", models: ["test-model"], reason: null }],
-    runAgent: async (request: { systemPrompt?: string }) => {
+    runAgent: async (request: { systemPrompt?: string; model?: string | null }) => {
       gw.calls += 1;
+      gw.requestedModels.push(request.model ?? null);
+      currentRequestedModel = request.model ?? null;
       const sp = request.systemPrompt ?? "";
       if (sp.includes("securities researcher on a bounded research team")) return success(RESEARCHER_OUT, `run_${gw.calls}`);
       if (sp.includes("source and evidence verifier")) return success(VERIFIER_OUT, `run_${gw.calls}`);
@@ -374,6 +408,7 @@ describe("Team OS — full durable-job path (gateway mocked, real runtime)", () 
     gw.calls = 0;
     gw.mode = "ok";
 
+    gw.requestedModels = [];
     const seen: MarketPulseEvent[] = [];
     const unsubscribe = subscribeAll((event) => seen.push(event));
 
@@ -397,6 +432,17 @@ describe("Team OS — full durable-job path (gateway mocked, real runtime)", () 
 
     const linked = agentRuns().filter((r) => r.teamRunId === teams[0].id);
     expect(linked, "3 members + chief, all linked to the TeamRun").toHaveLength(4);
+
+    // A6.1/A6.2 on the PRODUCTION path (no deps injected): the roster is built from real detection.
+    // claude-code is READY but non-enumerating → the truthful sentinel is assigned, the binding is
+    // stated as PROVIDER_DEFAULT, and the gateway is asked for NO specific model (provider default).
+    const assignments = getTeamRun(teams[0].id)!.plan!.modelAssignments!;
+    expect(assignments, "the production default records real-detection assignments").toHaveLength(3);
+    for (const a of assignments) {
+      expect(a.modelId).toBe("claude-code:default");
+      expect(a.binding).toBe("PROVIDER_DEFAULT");
+    }
+    expect(gw.requestedModels.every((m) => m === null), "sentinel → no concrete model requested").toBe(true);
   });
 
   it("[14] an invalid member output is a CONTRACT_VIOLATION that fails the team and the job", async () => {

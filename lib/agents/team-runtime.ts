@@ -6,6 +6,7 @@ import type { Capability } from "@/lib/runtime/routing";
 import type { ModelEntry } from "@/lib/runtime/model-catalog";
 import { routeRoleModel } from "@/lib/runtime/model-router";
 import { computeModelStats } from "@/lib/runtime/model-stats";
+import { isProviderDefaultModel } from "@/lib/runtime/roster";
 import { recordArtifact } from "./artifacts";
 import {
   completeTeamRun,
@@ -43,8 +44,16 @@ export interface MemberRun {
   message?: string;
 }
 
-/** The gateway seam, injectable for tests. Default calls the real gateway once per member. */
-export type RunMember = (member: TeamMemberSpec, packet: EvidencePacket) => Promise<MemberRun>;
+/**
+ * The gateway seam, injectable for tests. Default calls the real gateway once per member.
+ * `assignedModel` is the router's pick for this role (A6.2): a concrete id is REQUESTED from the
+ * adapter; the `<provider>:default` sentinel (or null) lets the provider serve its configured model.
+ */
+export type RunMember = (
+  member: TeamMemberSpec,
+  packet: EvidencePacket,
+  assignedModel?: string | null,
+) => Promise<MemberRun>;
 export type BuildPacket = (instrumentId: string) => PacketResult;
 
 export interface TeamDeps {
@@ -133,9 +142,19 @@ function assignModels(
       stats,
       member.definition.gatewayCapability as Capability,
     );
-    return decision.ok
-      ? { role: member.role, providerId: decision.providerId, modelId: decision.modelId, source: decision.source, reason: decision.reason }
-      : { role: member.role, providerId: null, modelId: null, source: "REFUSED", reason: decision.message };
+    if (!decision.ok) {
+      return { role: member.role, providerId: null, modelId: null, source: "REFUSED", reason: decision.message };
+    }
+    return {
+      role: member.role,
+      providerId: decision.providerId,
+      modelId: decision.modelId,
+      source: decision.source,
+      reason: decision.reason,
+      // A6.2 truth: a sentinel entry means the provider chooses its own model — say so, don't
+      // pretend a specific model was requested.
+      binding: isProviderDefaultModel(decision.modelId) ? ("PROVIDER_DEFAULT" as const) : ("REQUESTED" as const),
+    };
   });
 }
 
@@ -146,15 +165,20 @@ async function makeGatewayRunMember(): Promise<RunMember> {
   const { defaultProfile } = await import("@/lib/runtime/routing");
   const detected = await detectProviders();
 
-  return async (member, packet) => {
+  return async (member, packet, assignedModel) => {
     const profile = defaultProfile("SUBSCRIPTION_FIRST", `team_${member.role}`);
     const userPrompt = `Evidence packet (this is everything you have):\n${JSON.stringify(packet, null, 2)}`;
+    // A6.2: a concrete assigned id is REQUESTED from the adapter; the sentinel/null means the
+    // provider serves its configured default (a stated limitation, recorded as PROVIDER_DEFAULT).
+    const concreteModel =
+      assignedModel && !isProviderDefaultModel(assignedModel) ? assignedModel : null;
     const run = await runAgent({
       capability: member.definition.gatewayCapability as Capability,
       prompt: userPrompt,
       systemPrompt: member.systemPrompt,
       profile,
       detected,
+      model: concreteModel,
     });
     if (!run.ok) {
       return {
@@ -281,8 +305,17 @@ export async function runInstrumentResearchTeam(
 
   // Deterministic TeamRun id (idempotent across a crash/retry of the same job).
   const teamRunId = `tmr_${sha(`${jobId ?? "nojob"}|${team.teamId}|${team.version}|${instrumentId}`)}`;
-  // Rung 4: assign a model per role from the roster's learned history, when a roster is present.
-  const roster = deps.roster ?? [];
+  // A6.1: the PRODUCTION default roster is built from what detection actually found — never a
+  // fixture. An explicit deps.roster (tests, future owner selection of 1-5 active models) overrides;
+  // an explicit [] is an honest "nothing available" and records no assignments.
+  let roster: readonly ModelEntry[];
+  if (deps.roster !== undefined) {
+    roster = deps.roster;
+  } else {
+    const { detectProviders } = await import("@/lib/runtime/gateway");
+    const { buildDetectedRoster } = await import("@/lib/runtime/roster");
+    roster = buildDetectedRoster(await detectProviders());
+  }
   const modelAssignments = roster.length > 0 ? assignModels(team, roster) : undefined;
   const plan = buildExecutionPlan(team, instrumentId, modelAssignments);
   // The plan of record is written BEFORE any member runs; a re-run reuses the row (onConflictDoNothing).
@@ -293,6 +326,7 @@ export async function runInstrumentResearchTeam(
   const startedAt = new Date();
   // Members run in bounded parallel; each records its AgentRun (COMPLETED or FAILED) and, on success,
   // its structured artifact. Deterministic ids make a crash-retry reuse the same rows (idempotency).
+  const assignmentByRole = new Map((modelAssignments ?? []).map((a) => [a.role, a.modelId]));
   const outcomes: MemberOutcome[] = await mapWithLimit(team.members, team.budget.maxParallel, async (member) => {
     const runId = `agr_${sha(`${teamRunId}|${member.role}|${instrumentId}`)}`;
     // The RunMember contract is "returns a coded failure, never throws" — enforced here so a member
@@ -300,7 +334,7 @@ export async function runInstrumentResearchTeam(
     // Otherwise the throw would escape mapWithLimit and leave the TeamRun stuck at RUNNING forever.
     let result: MemberRun;
     try {
-      result = await runMember(member, packet);
+      result = await runMember(member, packet, assignmentByRole.get(member.role) ?? null);
     } catch (caught) {
       result = {
         ok: false,

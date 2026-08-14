@@ -40,6 +40,13 @@ export interface TeamExecutionPlan {
     /** EMPIRICAL (earned on measured history) · PRIOR (unproven, judged on priors) · REFUSED. */
     source: string;
     reason: string;
+    /**
+     * A6.2 execution-binding truth: REQUESTED = a concrete model id is passed to the adapter
+     * (assigned == requested, verified against the executed model from telemetry);
+     * PROVIDER_DEFAULT = the roster entry is the `<provider>:default` sentinel, so the provider
+     * serves its own configured model — a stated limitation, never a hidden one.
+     */
+    binding?: "REQUESTED" | "PROVIDER_DEFAULT";
   }[];
 }
 
