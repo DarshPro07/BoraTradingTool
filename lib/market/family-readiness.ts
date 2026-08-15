@@ -60,18 +60,36 @@ export interface FamilyReadinessRow {
  *
  * The rate discipline is deliberately UNCHANGED: the accumulator still visits a small fixed
  * number of instruments per session (the past rate-limiting incident recorded at its call site
- * is why). This changes WHICH instruments those are, not how many — the cheapest possible way to
- * grow the family-ready pool, since one repaired fetch now returns ~40 sessions.
+ * is why). This changes WHICH instruments those are, not how many.
  *
- * Ordered by how close each instrument is to clearing the bar (most sessions first): finishing
- * an instrument that needs five more sessions converts a family-ready candidate sooner than
- * starting one at zero.
+ * ## REPRESENTATIVENESS FIRST (owner correction, 2026-08-16 04:00)
+ *
+ * Closest-to-ready alone was not sufficient: the first live gate evaluation found all six
+ * ORB-ready instruments sitting in the HIGH liquidity bucket, and a queue ordered purely by
+ * proximity would have kept feeding that bias — producing a large sample that measures
+ * large-cap liquidity rather than the hypothesis. So the ordering now prefers instruments from
+ * UNDER-REPRESENTED strata (liquidity bucket first, then sector once classification exists),
+ * and only then by proximity.
+ *
+ * This does NOT modify the statistical gate. It improves the data ACQUISITION planner so the
+ * sampling requirement the gate already pins can actually be satisfied. It is deterministic and
+ * tested — never a model's choice.
  */
+export interface IntradayQueueStrata {
+  /** Current ready-set counts per liquidity bucket, so deficits can be preferred. */
+  liquidityByInstrument?: Map<string, string>;
+  readyLiquidityCounts?: Map<string, number>;
+  /** Same for sectors, once classification is ingested. */
+  sectorByInstrument?: Map<string, string>;
+  readySectorCounts?: Map<string, number>;
+}
+
 export function intradayBackfillQueue(
   families: readonly { dataRequirement: FamilyDataRequirement }[],
   report: UniverseCoverageReport = universeCoverage(),
   limit = 12,
-): { instrumentId: string; dailyBars: number; fiveMinuteSessions: number; needed: number }[] {
+  strata: IntradayQueueStrata = {},
+): { instrumentId: string; dailyBars: number; fiveMinuteSessions: number; needed: number; stratum: string }[] {
   const sessionsNeeded = families
     .map((family) => family.dataRequirement.minIntradaySessions)
     .filter((sessions): sessions is number => sessions !== null);
@@ -85,23 +103,47 @@ export function intradayBackfillQueue(
       .map((family) => family.dataRequirement.minDailyBars),
   );
 
-  return report.securities
-    .filter(
-      (security) =>
-        security.tier === "MAIN_BOARD" &&
-        security.dailyBars >= minDaily &&
-        security.completeFiveMinuteSessions < target,
-    )
+  const candidates = report.securities.filter(
+    (security) =>
+      security.tier === "MAIN_BOARD" &&
+      security.dailyBars >= minDaily &&
+      security.completeFiveMinuteSessions < target,
+  );
+
+  // Deficit = how under-represented a candidate's stratum currently is in the ready set. A
+  // candidate from a stratum with NOTHING in it outranks one from a crowded stratum, however
+  // close the crowded one is to the bar.
+  const liquidityCounts = strata.readyLiquidityCounts ?? new Map<string, number>();
+  const sectorCounts = strata.readySectorCounts ?? new Map<string, number>();
+  const deficitOf = (security: (typeof candidates)[number]): { score: number; label: string } => {
+    const bucket = strata.liquidityByInstrument?.get(security.instrumentId);
+    const sector = strata.sectorByInstrument?.get(security.instrumentId);
+    // Lower count = larger deficit = better. Unknown stratum sorts last among known ones, since
+    // a candidate whose stratum cannot be determined cannot be shown to reduce a deficit.
+    const liquidityDeficit = bucket === undefined ? Number.MAX_SAFE_INTEGER : (liquidityCounts.get(bucket) ?? 0);
+    const sectorDeficit = sector === undefined ? Number.MAX_SAFE_INTEGER : (sectorCounts.get(sector) ?? 0);
+    const parts = [bucket ?? "liquidity:unknown", sector ?? "sector:unclassified"];
+    return { score: liquidityDeficit * 1_000_000 + sectorDeficit, label: parts.join(" · ") };
+  };
+
+  return candidates
+    .map((security) => ({ security, deficit: deficitOf(security) }))
     .sort(
       (a, b) =>
-        b.completeFiveMinuteSessions - a.completeFiveMinuteSessions || a.symbol.localeCompare(b.symbol),
+        // 1. the most under-represented stratum first (liquidity dominates, then sector);
+        a.deficit.score - b.deficit.score ||
+        // 2. then closest to clearing the bar;
+        b.security.completeFiveMinuteSessions - a.security.completeFiveMinuteSessions ||
+        // 3. then a stable, deterministic tiebreak.
+        a.security.symbol.localeCompare(b.security.symbol),
     )
     .slice(0, Math.max(0, limit))
-    .map((security) => ({
+    .map(({ security, deficit }) => ({
       instrumentId: security.instrumentId,
       dailyBars: security.dailyBars,
       fiveMinuteSessions: security.completeFiveMinuteSessions,
       needed: target - security.completeFiveMinuteSessions,
+      stratum: deficit.label,
     }));
 }
 

@@ -161,6 +161,41 @@ describe("family-specific data readiness", () => {
     expect(intradayBackfillQueue(NSE_QC_001.families, universeCoverage(), 1)).toHaveLength(1);
   });
 
+  it("prefers an UNDER-REPRESENTED stratum over proximity — the HIGH-bucket bias fix", () => {
+    // CLOSE is nearly ready but sits in the already-crowded HIGH bucket; FAR has no sessions at
+    // all but is the only candidate from an empty bucket. Proximity alone would pick CLOSE and
+    // deepen exactly the bias the first gate evaluation found.
+    seedListing("CLOSEHIGH");
+    seedBars("CLOSEHIGH", "D", 100, 86_400);
+    seedSessions("CLOSEHIGH", 30);
+    seedListing("FARLOW");
+    seedBars("FARLOW", "D", 100, 86_400);
+
+    const report = universeCoverage();
+    const proximityOnly = intradayBackfillQueue(NSE_QC_001.families, report, 2);
+    expect(proximityOnly[0].instrumentId, "without strata, proximity wins").toBe("IN:XNSE:CLOSEHIGH");
+
+    const withStrata = intradayBackfillQueue(NSE_QC_001.families, report, 2, {
+      liquidityByInstrument: new Map([
+        ["IN:XNSE:CLOSEHIGH", "HIGH"],
+        ["IN:XNSE:FARLOW", "LOW"],
+      ]),
+      // HIGH already has six ready instruments; LOW has none — the live situation exactly.
+      readyLiquidityCounts: new Map([["HIGH", 6]]),
+    });
+    expect(withStrata[0].instrumentId, "the empty bucket is served first").toBe("IN:XNSE:FARLOW");
+    expect(withStrata[0].stratum).toContain("LOW");
+    expect(withStrata[1].instrumentId).toBe("IN:XNSE:CLOSEHIGH");
+    // Determinism: the same inputs give the same order, every time.
+    expect(intradayBackfillQueue(NSE_QC_001.families, report, 2, {
+      liquidityByInstrument: new Map([
+        ["IN:XNSE:CLOSEHIGH", "HIGH"],
+        ["IN:XNSE:FARLOW", "LOW"],
+      ]),
+      readyLiquidityCounts: new Map([["HIGH", 6]]),
+    })).toEqual(withStrata);
+  });
+
   it("meetsRequirement is the single rule both the count and any planner consult", () => {
     const security = {
       isin: "X",

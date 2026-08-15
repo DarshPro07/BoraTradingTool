@@ -74,3 +74,54 @@ ladder cost nothing here while guaranteeing that future half-empty days cannot i
 Units **171 files / 1887 passed / 2 skipped / 0 failed**; tsc silent; live e2e green on a fresh
 DB and a production copy; the pinned hash asserted literally. `MARKETPULSE_AUTONOMOUS_TRIALS`
 remains 0.
+
+## Addendum 2026-08-16 04:50 — sector became measurable, and the planner stopped reinforcing the bias
+
+**Sector ingestion (the one code gap the gate exposed).** NSE's index constituent CSVs carry an
+`Industry` column beside the ISIN — probed and recorded in
+`docs/external/nse-sector-classification.md`. Ingested by `lib/market/sector-classification.ts`
+into an effective-dated ledger with full provenance (source, sourceUrl, sourceEffectiveDate,
+fetchedAt, identityVerification), matched by ISIN, superseding rather than overwriting when NSE
+reclassifies. Live against a production copy: **750 of 752 classified ISINs matched, 22 distinct
+sectors, zero symbol mismatches**, 2 ISINs unknown to the master correctly not written.
+
+Effect on the gate — sector moved from UNMEASURABLE to a real near-miss:
+
+```
+Opening Range Breakout: ready 6/60
+   NOT_SATISFIED  family-ready breadth: 6 qualified; 60 required
+   NOT_SATISFIED  liquidity representation: 1 of 3 buckets (HIGH)
+   NOT_SATISFIED  sector representation: 4 of 5 sectors represented
+```
+
+Migration `0024` is STAGED (`pending-migration/`), not registered — `lib/db/migrate.ts` is
+owner-protected and the two existing tests correctly refuse an unregistered file in `drizzle/`.
+Its tests apply the staged SQL to their own temporary database, which proves the SQL as well.
+Two owner-side steps in the README; the ingestion script then runs in one command.
+
+**The planner is now representativeness-aware.** Closest-to-ready alone was reinforcing exactly
+the bias the gate found: every ready instrument sat in HIGH. The queue now prefers
+UNDER-REPRESENTED strata (liquidity first, then sector) before proximity — deterministic, tested
+both ways, and drawing its stratum definitions from the gate's own functions so planner and gate
+can never chase different targets. The behaviour change is visible in the live pick:
+
+| | Before | After |
+|---|---|---|
+| Next 6 | BAJFINANCE, BHARTIARTL, HINDUNILVR, LT, SBIN, 20MICRONS | AETHER, ALKYLAMINE, ALOKINDS, ANUP, AARTIDRUGS, ADVENZYMES |
+| Strata | all HIGH liquidity mega-caps | all MEDIUM · Chemicals / Textiles / Capital Goods / Healthcare |
+
+**Liquidity buckets are now versioned** (`liquidity-buckets-2026-08-16`) and the version plus the
+floors are part of the pinned criteria hash — "3 of 3 buckets" means nothing without the floors
+that define a bucket, and liquidity regimes drift. Criteria hash is therefore
+**`5254d36998262f10`** (was `0f86755bbbebcaec` before the bucket definitions joined the pin).
+No threshold was changed.
+
+**A performance regression this leg caused, found and mostly fixed.** /brain's server render went
+4.6s → 11s because the new read-models scanned the candle table in JavaScript. Counting, median
+turnover and 5-minute session geometry now run as SQL aggregates (IST is a fixed UTC+5:30 with no
+DST, so local day and minute are exact arithmetic for this market). Measured per function
+afterwards: universeCoverage 263ms, medianTurnover 489ms, evaluateTrialActivation 714ms total,
+familyReadiness 3ms — **~1.1s for everything this leg added**. The page's remaining ~7s is
+pre-existing panels growing with the data and is NOT this leg's; it is recorded as a tracked item
+rather than silently accepted, and the acceptance suite serves a prebuilt build where the page is
+far faster.

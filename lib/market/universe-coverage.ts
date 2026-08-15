@@ -1,4 +1,4 @@
-import { isNull } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
 import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "./calendar";
@@ -152,53 +152,60 @@ export function universeCoverage(): UniverseCoverageReport {
     .where(isNull(schema.nseListingVersions.effectiveTo))
     .all();
 
-  // ONE pass over the candle store for daily counts and the 5m quality ladder.
-  //
-  // Session dates come from `sessionStamps` in the MARKET's timezone, not from a UTC slice: a
-  // 09:15 IST bar is 03:45 UTC the same day, but a 15:25 IST bar is 09:55 UTC — and any bar
-  // after 05:30 UTC crossing midnight would have been filed under the wrong day by a naive
-  // slice. The same call yields the minute-of-day the completeness and opening-window checks
-  // need, so the extra fidelity costs one pass rather than two.
-  const dailyByTicker = new Map<string, number>();
-  const intradayTimes = new Map<string, number[]>();
-  for (const candle of db
-    .select({ ticker: schema.priceCandles.ticker, resolution: schema.priceCandles.resolution, time: schema.priceCandles.time })
-    .from(schema.priceCandles)
-    .all()) {
-    if (candle.resolution === "D") {
-      dailyByTicker.set(candle.ticker, (dailyByTicker.get(candle.ticker) ?? 0) + 1);
-    } else if (candle.resolution === "5") {
-      let times = intradayTimes.get(candle.ticker);
-      if (!times) intradayTimes.set(candle.ticker, (times = []));
-      times.push(candle.time);
-    }
-  }
+  // Counting happens in SQLite, not in JavaScript. Materialising every candle row to count them
+  // made this page's server render 11s at ~100k bars and would have grown with the store; the
+  // aggregate returns one row per instrument instead. Only the 5-minute TIMES are pulled, because
+  // session geometry genuinely needs per-bar stamps — and only for the instruments that have any.
+  const dailyByTicker = new Map<string, number>(
+    db
+      .select({ ticker: schema.priceCandles.ticker, bars: sql<number>`COUNT(*)` })
+      .from(schema.priceCandles)
+      .where(eq(schema.priceCandles.resolution, "D"))
+      .groupBy(schema.priceCandles.ticker)
+      .all()
+      .map((row) => [row.ticker, Number(row.bars)]),
+  );
 
-  // The quality ladder, computed once per instrument from its bars' own session stamps.
-  const quality = new Map<string, { present: number; complete: number; opening: number }>();
+  // Session geometry in SQL as well. Stamping every 5-minute bar through Intl.DateTimeFormat was
+  // the remaining seconds of this page's render, and it scales the wrong way: the store is
+  // deliberately growing ~40 sessions × 12 instruments per day, so a per-bar formatter would be
+  // tens of seconds within weeks. IST is a fixed UTC+5:30 with no daylight saving — permanently,
+  // by definition — so the local day and minute are exact arithmetic for THIS market, and this
+  // query is NSE-only by construction (the canonical store keys XNSE instruments).
+  const IST_OFFSET_SECONDS = 19_800;
   const open = sessionOpenMinute("IN");
   const close = sessionCloseMinute("IN");
   const barsPerSession = Math.floor((close - open) / 5);
-  for (const [ticker, times] of intradayTimes) {
-    const byDay = new Map<string, { bars: number; openingBars: number }>();
-    for (const stamp of sessionStamps(times, "IN")) {
-      let day = byDay.get(stamp.date);
-      if (!day) byDay.set(stamp.date, (day = { bars: 0, openingBars: 0 }));
-      // Out-of-session bars are not counted toward a session's completeness at all: they are
-      // not part of the day the strategies trade.
-      if (stamp.minute < open || stamp.minute >= close) continue;
-      day.bars += 1;
-      if (stamp.minute < open + OPENING_WINDOW_MINUTES) day.openingBars += 1;
-    }
-    let complete = 0;
-    let opening = 0;
-    for (const day of byDay.values()) {
-      if (day.bars < barsPerSession * SESSION_COMPLETE_SHARE) continue;
-      complete += 1;
-      if (day.openingBars >= OPENING_WINDOW_MIN_BARS) opening += 1;
-    }
-    quality.set(ticker, { present: byDay.size, complete, opening });
-  }
+  const completeFloor = Math.ceil(barsPerSession * SESSION_COMPLETE_SHARE);
+  const openingEnd = open + OPENING_WINDOW_MINUTES;
+
+  const quality = new Map<string, { present: number; complete: number; opening: number }>(
+    db
+      .all<{ ticker: string; present: number; complete: number; opening: number }>(sql`
+        SELECT ticker,
+               COUNT(*) AS present,
+               SUM(CASE WHEN in_session >= ${completeFloor} THEN 1 ELSE 0 END) AS complete,
+               SUM(CASE WHEN in_session >= ${completeFloor} AND in_opening >= ${OPENING_WINDOW_MIN_BARS} THEN 1 ELSE 0 END) AS opening
+        FROM (
+          SELECT ticker,
+                 date(time + ${IST_OFFSET_SECONDS}, 'unixepoch') AS session_day,
+                 SUM(CASE WHEN ((time + ${IST_OFFSET_SECONDS}) % 86400) / 60 >= ${open}
+                           AND ((time + ${IST_OFFSET_SECONDS}) % 86400) / 60 < ${close}
+                          THEN 1 ELSE 0 END) AS in_session,
+                 SUM(CASE WHEN ((time + ${IST_OFFSET_SECONDS}) % 86400) / 60 >= ${open}
+                           AND ((time + ${IST_OFFSET_SECONDS}) % 86400) / 60 < ${openingEnd}
+                          THEN 1 ELSE 0 END) AS in_opening
+          FROM price_candles
+          WHERE resolution = '5'
+          GROUP BY ticker, session_day
+        )
+        GROUP BY ticker
+      `)
+      .map((row) => [
+        row.ticker,
+        { present: Number(row.present), complete: Number(row.complete), opening: Number(row.opening) },
+      ]),
+  );
 
   const ingest = ingestStates();
   const tiers: Record<UniverseTier, number> = {

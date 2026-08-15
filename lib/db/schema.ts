@@ -1150,3 +1150,38 @@ export const barIngestions = sqliteTable("bar_ingestions", {
 });
 
 export type BarIngestionRow = typeof barIngestions.$inferSelect;
+
+/**
+ * NSE sector classification — see
+ * `docs/plans/nse-qc-001/pending-migration/0024_sector_classifications.sql`.
+ *
+ * EFFECTIVE-DATED REFERENCE DATA, not a stock attribute: NSE reviews its four-level
+ * classification annually and reclassifies after mergers and demergers, so a classification is a
+ * fact with a date attached and superseding one must not erase what an earlier experiment was
+ * judged under.
+ *
+ * Declared here so the ORM can read it; the migration cannot register itself (`MIGRATIONS` lives
+ * in the protected `lib/db/migrate.ts`). Until an owner promotes it,
+ * `sectorClassificationReady()` returns false, ingestion refuses with a stated reason, and the
+ * trial-activation gate keeps reporting sector representation as UNMEASURABLE — the truthful
+ * reading, which keeps the gate shut rather than passing on absence.
+ */
+export const sectorClassifications = sqliteTable("sector_classifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  isin: text("isin").notNull(),
+  instrumentId: text("instrument_id").notNull(),
+  symbol: text("symbol").notNull(),
+  macroSector: text("macro_sector"),
+  sector: text("sector"),
+  industry: text("industry"),
+  basicIndustry: text("basic_industry"),
+  source: text("source").notNull(),
+  sourceUrl: text("source_url"),
+  sourceEffectiveDate: text("source_effective_date").notNull(),
+  fetchedAt: integer("fetched_at", { mode: "timestamp" }).notNull(),
+  identityVerification: text("identity_verification").notNull(),
+  effectiveFrom: integer("effective_from", { mode: "timestamp" }).notNull(),
+  effectiveTo: integer("effective_to", { mode: "timestamp" }),
+});
+
+export type SectorClassificationRow = typeof sectorClassifications.$inferSelect;

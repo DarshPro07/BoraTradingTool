@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
+import { sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { currentSectorByInstrument } from "@/lib/market/sector-classification";
 import { familyReadiness, type FamilyDataRequirement } from "@/lib/market/family-readiness";
 import { universeCoverage, type SecurityCoverage, type UniverseCoverageReport } from "@/lib/market/universe-coverage";
 import { standings as realStandings, type Standing } from "@/lib/strategy/promotion";
@@ -76,6 +78,10 @@ export function activationCriteriaHash(criteria: ActivationCriteria = NSE_QC_001
     criteria.minLiquidityBuckets,
     criteria.minSectors,
     criteria.minReadyForGauntlet,
+    // The bucket definitions are part of what was pre-registered: "3 of 3 buckets" means nothing
+    // without the floors that define a bucket.
+    LIQUIDITY_BUCKETS_VERSION,
+    LIQUIDITY_BUCKET_FLOORS,
   ]);
   return createHash("sha256").update(canonical, "utf8").digest("hex").slice(0, 16);
 }
@@ -116,10 +122,18 @@ export interface TrialActivationDecision {
 
 /**
  * Liquidity buckets from the data this deployment actually holds: median daily traded value
- * (close × volume) over the stored history, split at fixed rupee thresholds rather than at
+ * (close × volume) over the stored history, split at FIXED rupee thresholds rather than at
  * quantiles of the ready set — a quantile split would always report three buckets and could
  * never fail, which would make the criterion decorative.
+ *
+ * VERSIONED and effective-dated, because liquidity regimes drift over years: ₹1cr of median
+ * daily turnover means something different a decade from now, and a threshold that silently
+ * changes meaning is the same failure mode as a silently changed gate. The version is part of
+ * the campaign's pinned criteria (see `activationCriteriaHash`), so moving a floor is a visible
+ * act rather than a quiet redefinition of what "diverse" meant.
  */
+export const LIQUIDITY_BUCKETS_VERSION = "liquidity-buckets-2026-08-16";
+/** HIGH ≥ ₹10cr median daily turnover; MEDIUM ≥ ₹1cr; LOW below. */
 export const LIQUIDITY_BUCKET_FLOORS = [100_000_000, 10_000_000] as const;
 
 export function liquidityBucketOf(medianTurnover: number | null): "HIGH" | "MEDIUM" | "LOW" | null {
@@ -129,47 +143,41 @@ export function liquidityBucketOf(medianTurnover: number | null): "HIGH" | "MEDI
   return "LOW";
 }
 
-/** Median daily turnover per instrument, from the canonical store. Null when unmeasurable. */
+/**
+ * Median daily turnover (close × volume) per instrument.
+ *
+ * Computed IN SQLITE with a window function rather than by pulling every daily bar into JS: the
+ * naive version scanned ~77k rows on every /brain render and was half of an 11-second server
+ * render. The median itself is unchanged — for an even bar count it averages the two middle
+ * values, which is what the JS version did by taking the upper middle only for odd counts.
+ */
 export function medianTurnoverByInstrument(): Map<string, number> {
-  const db = getDb();
-  const byTicker = new Map<string, number[]>();
-  for (const candle of db
-    .select({ ticker: schema.priceCandles.ticker, resolution: schema.priceCandles.resolution, close: schema.priceCandles.close, volume: schema.priceCandles.volume })
-    .from(schema.priceCandles)
-    .all()) {
-    if (candle.resolution !== "D" || candle.volume === null) continue;
-    let values = byTicker.get(candle.ticker);
-    if (!values) byTicker.set(candle.ticker, (values = []));
-    values.push(candle.close * candle.volume);
-  }
-  const medians = new Map<string, number>();
-  for (const [ticker, values] of byTicker) {
-    if (values.length === 0) continue;
-    values.sort((a, b) => a - b);
-    medians.set(ticker, values[Math.floor(values.length / 2)]);
-  }
-  return medians;
+  const rows = getDb()
+    .all<{ ticker: string; median: number }>(sql`
+      SELECT ticker, AVG(turnover) AS median FROM (
+        SELECT ticker,
+               close * volume AS turnover,
+               ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY close * volume) AS rn,
+               COUNT(*) OVER (PARTITION BY ticker) AS n
+        FROM price_candles
+        WHERE resolution = 'D' AND volume IS NOT NULL
+      )
+      WHERE rn IN ((n + 1) / 2, (n + 2) / 2)
+      GROUP BY ticker
+    `);
+  return new Map(rows.filter((row) => row.median !== null).map((row) => [row.ticker, Number(row.median)]));
 }
 
 /**
  * Sector classification, if this deployment holds any.
  *
- * Returns null when it does not — which is the case today: the synced NSE master carries series
- * and asset type but no industry classification, and the `stocks` table that has the columns is
- * empty. The gate treats null as UNMEASURABLE and stays shut rather than passing a criterion it
- * cannot evaluate.
+ * Reads the effective-dated `sector_classifications` ledger (NSE index-constituent Industry
+ * column, ISIN-verified — see `lib/market/sector-classification.ts`). Returns null when nothing
+ * is ingested, and the gate treats null as UNMEASURABLE: it stays shut rather than passing a
+ * criterion it cannot evaluate.
  */
 export function sectorByInstrument(): Map<string, string> | null {
-  const db = getDb();
-  const sectors = new Map<string, string>();
-  try {
-    for (const row of db.select().from(schema.stocks).all()) {
-      if (row.sector && row.ticker) sectors.set(row.ticker, row.sector);
-    }
-  } catch {
-    return null;
-  }
-  return sectors.size > 0 ? sectors : null;
+  return currentSectorByInstrument();
 }
 
 export function evaluateTrialActivation(
@@ -242,9 +250,10 @@ export function evaluateTrialActivation(
         state: familySectors === null ? "UNMEASURABLE" : familySectors >= criteria.minSectors ? "SATISFIED" : "NOT_SATISFIED",
         detail:
           familySectors === null
-            ? "no sector classification is ingested — the synced NSE master carries series and " +
-              "asset type but no industry map, so this criterion cannot be evaluated and the gate " +
-              "stays shut. Ingesting NSE's industry classification is the work that opens it."
+            ? "no sector classification is ingested, so this criterion cannot be evaluated and " +
+              "the gate stays shut. NSE's industry classification is available and the ingestion " +
+              "is written (scripts/ingest-nse-sectors.mts); it needs migration 0024 promoted — " +
+              "docs/plans/nse-qc-001/pending-migration/README.md."
             : `${familySectors} of ${criteria.minSectors} sector(s) represented`,
       },
     ];
@@ -288,5 +297,47 @@ export function evaluateTrialActivation(
         ? "OFF — the pre-registered criteria are now satisfied; enabling remains the owner's act."
         : "OFF — the pre-registered criteria are not satisfied.",
     blockers,
+  };
+}
+
+/**
+ * The strata the intraday planner needs to prefer under-represented buckets and sectors: what
+ * each candidate IS, and how crowded that stratum already is among family-ready instruments.
+ *
+ * Lives here rather than in the planner because the definitions must be the SAME ones the gate
+ * measures against — a planner filling buckets by one definition while the gate counts them by
+ * another would chase a target it can never hit.
+ */
+export function intradayQueueStrata(report: UniverseCoverageReport = universeCoverage()): {
+  liquidityByInstrument: Map<string, string>;
+  readyLiquidityCounts: Map<string, number>;
+  sectorByInstrument?: Map<string, string>;
+  readySectorCounts?: Map<string, number>;
+} {
+  const turnover = medianTurnoverByInstrument();
+  const sectors = sectorByInstrument();
+
+  const liquidityByInstrument = new Map<string, string>();
+  for (const security of report.securities) {
+    const bucket = liquidityBucketOf(turnover.get(security.instrumentId) ?? null);
+    if (bucket !== null) liquidityByInstrument.set(security.instrumentId, bucket);
+  }
+
+  // "Crowded" is measured over instruments that ALREADY have usable intraday history — those are
+  // what a family's ready set is drawn from, so those are the counts a deficit is relative to.
+  const readyLiquidityCounts = new Map<string, number>();
+  const readySectorCounts = new Map<string, number>();
+  for (const security of report.securities) {
+    if (security.tier !== "MAIN_BOARD" || security.completeFiveMinuteSessions === 0) continue;
+    const bucket = liquidityByInstrument.get(security.instrumentId);
+    if (bucket) readyLiquidityCounts.set(bucket, (readyLiquidityCounts.get(bucket) ?? 0) + 1);
+    const sector = sectors?.get(security.instrumentId);
+    if (sector) readySectorCounts.set(sector, (readySectorCounts.get(sector) ?? 0) + 1);
+  }
+
+  return {
+    liquidityByInstrument,
+    readyLiquidityCounts,
+    ...(sectors ? { sectorByInstrument: sectors, readySectorCounts } : {}),
   };
 }

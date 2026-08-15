@@ -68,8 +68,10 @@ describe("the pre-registered trial-activation gate", () => {
     expect(sectorCriteria).toHaveLength(5);
     expect(sectorCriteria.every((criterion) => criterion.state === "UNMEASURABLE")).toBe(true);
     expect(sectorCriteria[0].detail).toMatch(/no sector classification is ingested/);
-    // And it names the work that opens it, rather than only refusing.
-    expect(sectorCriteria[0].detail).toMatch(/industry classification is the work that opens it/);
+    // And it names the SPECIFIC remaining act, rather than only refusing: the ingestion exists
+    // and is tested; what is missing is the migration promotion.
+    expect(sectorCriteria[0].detail).toMatch(/scripts\/ingest-nse-sectors\.mts/);
+    expect(sectorCriteria[0].detail).toMatch(/migration 0024 promoted/);
     expect(decision.criteriaSatisfied, "an unmeasurable criterion is not a satisfied one").toBe(false);
   });
 
@@ -112,10 +114,11 @@ describe("the pre-registered trial-activation gate", () => {
 
   it("pins the criteria as pre-registered — a later loosening changes the hash", () => {
     // The literal hash of the criteria as PRE-REGISTERED on 2026-08-16, before any family was
-    // tested. If this assertion fails, the activation bar was moved: that is allowed, but it must
-    // be a deliberate, visible act with this line changed by hand — never a quiet loosening after
-    // seeing which families looked promising.
-    expect(activationCriteriaHash(NSE_QC_001_ACTIVATION)).toBe("0f86755bbbebcaec");
+    // tested — thresholds AND the liquidity-bucket definitions that give "3 of 3 buckets" its
+    // meaning. If this assertion fails, the activation bar was moved: that is allowed, but it
+    // must be a deliberate, visible act with this line changed by hand — never a quiet loosening
+    // after seeing which families looked promising.
+    expect(activationCriteriaHash(NSE_QC_001_ACTIVATION)).toBe("5254d36998262f10");
     expect(activationCriteriaHash({ ...NSE_QC_001_ACTIVATION, minReadyPerIntradayFamily: 10 })).not.toBe(
       activationCriteriaHash(NSE_QC_001_ACTIVATION),
     );

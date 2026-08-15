@@ -8,6 +8,7 @@ import { findCurrentInstrument, listCurrentInstruments } from "@/lib/market/cata
 import { accumulateIntraday, accumulationDue, markAccumulated } from "@/lib/market/intraday-accumulator";
 import { intradayBackfillQueue } from "@/lib/market/family-readiness";
 import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
+import { intradayQueueStrata } from "@/lib/strategy/trial-activation";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import type { Market } from "@/lib/market/types";
 import { breedingBasis, OWNER_CAPITAL } from "@/lib/paper/capital";
@@ -517,7 +518,10 @@ async function runCycleBody(
   if ((mode === "learning" || mode === "evolving") && accumulationDue()) {
     try {
       const catalog = listCurrentInstruments({ market: OWNER_CAPITAL.market });
-      const queued = intradayBackfillQueue(NSE_QC_001.families, undefined, 12);
+      // Representativeness-aware selection: the first gate evaluation found every ORB-ready
+      // instrument in the HIGH liquidity bucket, so the queue prefers UNDER-REPRESENTED strata
+      // before proximity. Deterministic; the statistical gate is untouched.
+      const queued = intradayBackfillQueue(NSE_QC_001.families, undefined, 12, intradayQueueStrata());
       const byId = new Map(catalog.map((instrument) => [instrument.id, instrument]));
       const targeted = queued
         .map((entry) => byId.get(entry.instrumentId))
