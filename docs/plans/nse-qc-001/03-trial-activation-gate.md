@@ -6,8 +6,10 @@ permanent statistical trials *after* seeing which families look promising is the
 bias the campaign apparatus exists to prevent — moved one level up — so the rule is registered
 like a trial protocol, before enrolment.
 
-Declaration: `lib/strategy/trial-activation.ts` · criteria hash **`0f86755bbbebcaec`**, pinned
-literally in `trial-activation.test.ts`. Changing a threshold changes the hash and fails that
+Declaration: `lib/strategy/trial-activation.ts` · criteria hash **`5254d36998262f10`**, pinned
+literally in `trial-activation.test.ts`. (It was `0f86755bbbebcaec` when first registered at
+03:48; the liquidity-bucket VERSION and floors joined the pin at 04:50 — see the addendum. No
+threshold changed.) Changing a threshold changes the hash and fails that
 test by design: loosening the bar is permitted, but only as a deliberate, visible act.
 
 ## The criteria (conjunctive — every one must hold)
@@ -25,11 +27,11 @@ useful than a larger concentrated one.
 
 ## Fails closed
 
-A criterion the system cannot MEASURE is **not satisfied**. Sector classification is exactly
-that today — the synced NSE master carries series and asset type but no industry map, and the
-`stocks` table that has the columns holds no rows. The gate reports `UNMEASURABLE`, stays shut,
-and names the ingestion that would open it. Inventing a sector map to make a gate pass would be
-the most expensive kind of convenience.
+A criterion the system cannot MEASURE is **not satisfied**. Sector classification WAS exactly
+that when this gate was written, and the gate reported `UNMEASURABLE` and stayed shut rather than
+passing on absence — which is what made the gap visible and got it closed the same night (see the
+addendum: sector is now measured, at 4 of 5). Inventing a sector map to make a gate pass would
+have been the most expensive kind of convenience; refusing instead is what produced the fix.
 
 The owner's switch and the criteria are **independent facts**, and the decision says which is
 which — including the honest "ON BY SWITCH while the pre-registered criteria are NOT satisfied"
