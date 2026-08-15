@@ -138,7 +138,8 @@ export async function getNormalizedCandles(
   to = Math.floor(Date.now() / 1000),
 ): Promise<NormalizedCandles> {
   if (process.env.MARKETPULSE_TEST_MODE === "1") return fixtureCandles(instrument, resolution);
-  const candles = await getYahooCandles(instrument.providerSymbol, resolution, from, to);
+  const telemetry: { identityVerdict?: "MATCHED" | "UNSTATED" } = {};
+  const candles = await getYahooCandles(instrument.providerSymbol, resolution, from, to, telemetry);
   if (!candles.length) throw new Error(`No candle data is available for ${instrument.id}.`);
   const latest = new Date(candles.at(-1)!.time * 1000);
   const age = qualityFromAge(latest);
@@ -153,6 +154,7 @@ export async function getNormalizedCandles(
       quality: resolution === "D" && age.quality === "STALE" ? "DELAYED" : age.quality,
       delayedBySeconds: age.delayedBySeconds,
       sourceId: `yahoo:chart:${instrument.providerSymbol}:${resolution}:${candles[0].time}:${candles.at(-1)!.time}`,
+      identityVerdict: telemetry.identityVerdict ?? "UNSTATED",
     },
   };
 }

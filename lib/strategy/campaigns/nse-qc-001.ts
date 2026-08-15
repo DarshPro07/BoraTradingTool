@@ -1,4 +1,5 @@
 import type { CampaignDeclaration } from "@/lib/strategy/campaign-registry";
+import type { FamilyDataRequirement } from "@/lib/market/family-readiness";
 
 /**
  * NSE-QC-001 — the first explicitly REGISTERED research campaign (owner directive 2026-08-15).
@@ -18,7 +19,9 @@ import type { CampaignDeclaration } from "@/lib/strategy/campaign-registry";
  */
 // Not Object.freeze: the registry's declaration_hash refusal is the real immutability; freeze
 // only breaks literal-type inference here.
-export const NSE_QC_001: CampaignDeclaration = {
+export const NSE_QC_001: CampaignDeclaration & {
+  families: (CampaignDeclaration["families"][number] & { dataRequirement: FamilyDataRequirement })[];
+} = {
   campaignId: "camp_nse_qc_001",
   name: "NSE-QC-001",
   question:
@@ -30,6 +33,15 @@ export const NSE_QC_001: CampaignDeclaration = {
   families: [
     {
       familyId: "fam_qc001_orb",
+      dataRequirement: {
+        resolution: "INTRADAY_5M",
+        minDailyBars: 60,
+        minIntradaySessions: 40,
+        basis:
+          "the opening range is measured on 5m bars, so sessions are the binding input; 40 " +
+          "sessions is ~2 trading months — enough for a rehearsal signal count without waiting " +
+          "for a quarter, and inside the 60-day trailing window the current source serves",
+      },
       name: "Opening Range Breakout (intraday)",
       economicHypothesis:
         "The first minutes of NSE trading concentrate overnight-information price discovery; " +
@@ -51,6 +63,15 @@ export const NSE_QC_001: CampaignDeclaration = {
     },
     {
       familyId: "fam_qc001_rvol_breakout",
+      dataRequirement: {
+        resolution: "INTRADAY_5M",
+        minDailyBars: 60,
+        minIntradaySessions: 40,
+        basis:
+          "relative volume needs a trailing session baseline (declared up to 20 sessions) plus " +
+          "enough sessions after it to observe breakouts — 40 gives the baseline a full second " +
+          "half to fire in",
+      },
       name: "Relative-volume momentum breakout (intraday)",
       economicHypothesis:
         "Abnormal relative volume marks the arrival of new information or coordinated " +
@@ -72,6 +93,14 @@ export const NSE_QC_001: CampaignDeclaration = {
     },
     {
       familyId: "fam_qc001_intraday_mr",
+      dataRequirement: {
+        resolution: "INTRADAY_5M",
+        minDailyBars: 60,
+        minIntradaySessions: 40,
+        basis:
+          "the midday window is a fraction of each session, so signal count per session is low; " +
+          "40 sessions is the floor at which a fade edge is observable at all",
+      },
       name: "Intraday mean reversion (midday fade)",
       economicHypothesis:
         "Away from the opening and closing auctions, NSE large-cap intraday paths over-extend " +
@@ -94,6 +123,16 @@ export const NSE_QC_001: CampaignDeclaration = {
     },
     {
       familyId: "fam_qc001_xsec_momentum",
+      dataRequirement: {
+        resolution: "DAILY",
+        minDailyBars: 340,
+        minIntradaySessions: null,
+        basis:
+          "the longest declared lookback is 120 days and the regime filter reads a 200-day SMA; " +
+          "340 daily bars covers the longest warm-up plus a development window and the holdout " +
+          "generation the campaign contract requires (the same provisional floor as " +
+          "VALIDATION_READY, and provisional for the same reason)",
+      },
       name: "Swing cross-sectional momentum",
       economicHypothesis:
         "Across NSE equities, relative strength ranked over one-to-twelve-week horizons " +
@@ -115,6 +154,14 @@ export const NSE_QC_001: CampaignDeclaration = {
     },
     {
       familyId: "fam_qc001_swing_mr",
+      dataRequirement: {
+        resolution: "DAILY",
+        minDailyBars: 250,
+        minIntradaySessions: null,
+        basis:
+          "the trend filter reads up to a 200-day SMA, so 200 bars are consumed before the first " +
+          "signal can exist; 250 leaves a development year's worth of usable bars after warm-up",
+      },
       name: "Swing mean reversion (oversold snap-back)",
       economicHypothesis:
         "Multi-day oversold dislocations in liquid NSE equities — sharp short-window drops " +

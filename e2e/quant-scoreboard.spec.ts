@@ -101,6 +101,20 @@ test.describe("the quant scoreboard — /brain answers the primary question from
       `missing-reason block is neither typed reasons nor the stated empty:\n${reasonsText}`,
     ).toBe(true);
     await expect(coverage).toContainText("SME");
+
+    // The trial-switch metric: one row per pinned family, each with its own requirement.
+    const familyReady = page.getByTestId("coverage-family-readiness");
+    await expect(familyReady).toBeVisible();
+    await expect(page.getByTestId("coverage-family-row")).toHaveCount(5);
+    const firstFamilyRow = page.getByTestId("coverage-family-row").first();
+    await expect(firstFamilyRow.locator("td")).toHaveCount(6);
+    // The requirement column states bars (and sessions for intraday families), never a bare number.
+    await expect(familyReady).toContainText(/\d+d( \+ \d+×5m)?/);
+
+    // Fetch integrity is always stated — registered ledger, empty ledger, or unregistered.
+    const fetchHealth = page.getByTestId("coverage-fetch-health");
+    await expect(fetchHealth).toBeVisible();
+    await expect(fetchHealth).toContainText(/ledger not registered|no fetches recorded yet|COMPLETE|PARTIAL|EMPTY|SESSION_GAPS/);
     await expect(coverage).toContainText("historical backfill + live accumulation");
 
     // v2 — the diagnosis block: threshold-met readings, or the stated silence. Never absent.

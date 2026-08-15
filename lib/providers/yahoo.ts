@@ -1,4 +1,5 @@
 import type { Candle, CandleResolution, SectorPerformance, Quote, PriceTarget, MarketMover } from "./types";
+import { assertProviderIdentity } from "@/lib/market/identity-guard";
 
 // Fallback universe of liquid names, sorted only when Yahoo's dynamic, market-wide
 // movers screener is unavailable (see getYahooTopMovers). NOT the primary source
@@ -97,6 +98,8 @@ export async function getYahooPriceTarget(ticker: string): Promise<PriceTarget> 
 interface YahooChartResponse {
   chart: {
     result: Array<{
+      /** Yahoo states which symbol it served; the identity guard compares it to the request. */
+      meta?: { symbol?: string };
       timestamp: number[];
       indicators: {
         quote: Array<{
@@ -147,7 +150,9 @@ export async function getYahooCandles(
   ticker: string,
   resolution: CandleResolution,
   from: number,
-  to: number
+  to: number,
+  /** Optional out-param: the provider knows whether it verified identity, so it reports it. */
+  telemetry?: { identityVerdict?: "MATCHED" | "UNSTATED" }
 ): Promise<Candle[]> {
   let url: string;
 
@@ -176,6 +181,10 @@ export async function getYahooCandles(
   if (!data.chart.result?.[0]) throw new Error(`Yahoo Finance ${ticker}: no data`);
 
   const result = data.chart.result[0];
+  // THE identity invariant, before a single bar is built: a successful fetch of the wrong
+  // instrument is worse than a failed one, because it is undetectable once stored.
+  const identityVerdict = assertProviderIdentity("yahoo", ticker, result.meta?.symbol);
+  if (telemetry) telemetry.identityVerdict = identityVerdict === "MATCHED" ? "MATCHED" : "UNSTATED";
   const { timestamp } = result;
   const { open, high, low, close, volume } = result.indicators.quote[0];
 

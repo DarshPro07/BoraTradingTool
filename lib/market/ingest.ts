@@ -4,6 +4,8 @@ import type { ImportedCandle } from "@/lib/market/dataset-import";
 import { resolveInstrument } from "@/lib/market/instruments";
 import { findNseInstrument } from "@/lib/market/security-master";
 import { getNormalizedCandles } from "@/lib/market/service";
+import { auditBars } from "@/lib/market/bar-audit";
+import { recordBarIngestion } from "@/lib/market/bar-ingestion-ledger";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
 
 /**
@@ -241,6 +243,28 @@ export async function ingestInstrumentHistory(rawInstrumentId: string): Promise<
     { inserted: result.inserted, skipped: result.skipped, rejected, unfitForValidation: UNFIT_FOR_VALIDATION },
     "in-product-ingestion",
   );
+
+  // The request beside the response. A fetch that "succeeded" while returning a fraction of the
+  // window is the defect class that hid for weeks; it cannot hide from a stored comparison.
+  const audit = auditBars(fetched.candles, {
+    market: "IN",
+    requestedStart: to - LOOKBACK_SECONDS,
+    requestedEnd: to,
+    resolutionMinutes: null,
+  });
+  recordBarIngestion({
+    instrumentId: instrument.id,
+    resolution: "D",
+    source,
+    // Reported by the provider itself: MATCHED when it named the instrument it served and that
+    // name was the one requested, UNSTATED when it named none. A stated MISMATCH never reaches
+    // here — it throws before a bar is built.
+    identityVerdict: fetched.provenance?.identityVerdict ?? "UNSTATED",
+    audit,
+    inserted: result.inserted,
+    skipped: result.skipped,
+    rejected,
+  });
 
   const ready = storedAfter >= MIN_BARS_FOR_RESEARCH;
 

@@ -85,6 +85,32 @@ export function sessionOpenMinute(market: Market): number {
   return CONFIG[market].open;
 }
 
+/** The local minute a market's regular session closes. 15:30 IST is 930. */
+export function sessionCloseMinute(market: Market): number {
+  return CONFIG[market].close;
+}
+
+/**
+ * Trading days in a window, from the SAME weekend+holiday model the session logic uses — so a
+ * gap audit measures against this deployment's declared calendar rather than a guess at one.
+ *
+ * The holiday set is a fixed 2026 list (`HOLIDAYS` above), so a window reaching outside the
+ * years it covers overstates the session count. Callers that classify on this number must treat
+ * a small shortfall as unexplained-but-tolerable rather than as missing data — the audit does.
+ */
+export function expectedTradingDays(market: Market, fromEpochSeconds: number, toEpochSeconds: number): number {
+  const timeZone = CONFIG[market].timezone;
+  let count = 0;
+  // Step by whole days from the start, in the market's own timezone.
+  for (let time = fromEpochSeconds; time <= toEpochSeconds; time += 86_400) {
+    const local = localParts(new Date(time * 1000), timeZone);
+    if (local.weekday === "Sat" || local.weekday === "Sun") continue;
+    if (HOLIDAYS[market].has(local.date)) continue;
+    count += 1;
+  }
+  return count;
+}
+
 export function getMarketSession(market: Market, at = new Date()): {
   session: MarketSession;
   localTime: string;

@@ -14,6 +14,9 @@ import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 import { getBrainState, type LaneState } from "@/lib/brain/kernel";
 import { familyComparison, quantScoreboard, rejectionDiagnosis } from "@/lib/dashboard/quant-scoreboard";
 import { universeCoverage } from "@/lib/market/universe-coverage";
+import { familyReadiness } from "@/lib/market/family-readiness";
+import { ingestionHealth } from "@/lib/market/bar-ingestion-ledger";
+import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
 import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
@@ -112,6 +115,10 @@ export default async function BrainPage() {
   const diagnoses = rejectionDiagnosis();
   // Data coverage (owner directive 2026-08-16): the bottleneck, measured — never extrapolated.
   const coverage = universeCoverage();
+  // The metric that decides when spending trials is meaningful (owner, 2026-08-16): not a global
+  // percentage but whether EACH family's own data requirement is met across the universe.
+  const familyData = familyReadiness(NSE_QC_001.families, coverage);
+  const fetchHealth = ingestionHealth(5);
 
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
@@ -282,6 +289,60 @@ export default async function BrainPage() {
               <div className="tabular-nums">{coverage.mainBoard.intradayReady} — historical backfill + live accumulation</div>
             </div>
           </div>
+          {/* THE trial-switch metric (owner, 2026-08-16): not a global %, but whether each
+              family's own data requirement is met. Each row states its requirement and the gap. */}
+          <div className="border-t border-border pt-2 overflow-x-auto" data-testid="coverage-family-readiness">
+            <div className="text-muted-foreground text-[10px]">FAMILY-READY COVERAGE — NSE-QC-001, EACH AGAINST ITS OWN DECLARED REQUIREMENT</div>
+            <table className="w-full text-[10px] tabular-nums">
+              <thead>
+                <tr className="text-muted-foreground text-left">
+                  <th className="pr-2 font-normal">Family</th>
+                  <th className="pr-2 font-normal">Requires</th>
+                  <th className="pr-2 font-normal text-right">Ready</th>
+                  <th className="pr-2 font-normal text-right">Coverage</th>
+                  <th className="pr-2 font-normal text-right">Short on daily</th>
+                  <th className="font-normal text-right">Short on 5m</th>
+                </tr>
+              </thead>
+              <tbody>
+                {familyData.map((row) => (
+                  <tr key={row.familyId} data-testid="coverage-family-row">
+                    <td className="pr-2 break-all">{row.name}</td>
+                    <td className="pr-2" title={row.requirement.basis}>
+                      {row.requirement.minDailyBars}d
+                      {row.requirement.minIntradaySessions === null ? "" : ` + ${row.requirement.minIntradaySessions}×5m`}
+                    </td>
+                    <td className={`pr-2 text-right ${row.ready > 0 ? "text-gain" : ""}`}>{row.ready}</td>
+                    <td className="pr-2 text-right">{row.coveragePct}%</td>
+                    <td className="pr-2 text-right">{row.blockedOnDaily}</td>
+                    <td className="text-right">{row.requirement.minIntradaySessions === null ? "—" : row.blockedOnIntraday}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Fetch integrity: HTTP success is not a complete dataset. */}
+          <div className="border-t border-border pt-2" data-testid="coverage-fetch-health">
+            <div className="text-muted-foreground text-[10px]">FETCH INTEGRITY — REQUEST BESIDE RESPONSE</div>
+            {fetchHealth === null ? (
+              <div className="text-muted-foreground">
+                ledger not registered — the pending migration awaits promotion (docs/plans/nse-data-coverage/pending-migration/); audits still travel in each ingest outcome
+              </div>
+            ) : fetchHealth.recorded === 0 ? (
+              <div className="text-muted-foreground">no fetches recorded yet</div>
+            ) : (
+              <div className="tabular-nums">
+                {Object.entries(fetchHealth.byCompleteness)
+                  .map(([completeness, count]) => `${completeness} ${count}`)
+                  .join(" · ")}
+                {fetchHealth.unstatedIdentity > 0
+                  ? ` · ${fetchHealth.unstatedIdentity} fetch(es) whose source stated no instrument identity`
+                  : ""}
+              </div>
+            )}
+          </div>
+
           <div className="grid gap-2 md:grid-cols-2 border-t border-border pt-2">
             <div data-testid="coverage-missing-reasons">
               <div className="text-muted-foreground text-[10px]">NOT YET RESEARCH-READY — BY TYPED REASON</div>

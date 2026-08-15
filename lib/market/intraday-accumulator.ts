@@ -5,6 +5,8 @@ import type { CandleResolution } from "@/lib/providers/types";
 import type { Instrument } from "./types";
 import { getNormalizedCandles } from "./service";
 import { persistCandles, storedCoverage } from "./candle-store";
+import { auditBars } from "./bar-audit";
+import { recordBarIngestion } from "./bar-ingestion-ledger";
 import type { ImportedCandle } from "./dataset-import";
 
 /**
@@ -159,6 +161,24 @@ export async function accumulateIntraday(
         const persisted = persistCandles(settled);
         result.inserted = persisted.inserted;
         result.skipped = persisted.skipped;
+
+        // The request beside the response — the comparison that makes silent truncation visible.
+        // This is the exact path where a 59-day request was served one day for weeks.
+        recordBarIngestion({
+          instrumentId: instrument.id,
+          resolution,
+          source: "yahoo",
+          identityVerdict: "UNSTATED",
+          audit: auditBars(bars, {
+            market: "IN",
+            requestedStart: now - window,
+            requestedEnd: now,
+            resolutionMinutes: span / 60,
+          }),
+          inserted: persisted.inserted,
+          skipped: persisted.skipped,
+          rejected: bars.length - settled.length - result.unsettled,
+        });
       } catch (caught) {
         // One instrument failing must not cost the rest their accumulation. The window slides
         // whether or not this run succeeded, so a failure here is a day of history lost — worth

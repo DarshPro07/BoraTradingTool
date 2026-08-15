@@ -1106,3 +1106,47 @@ export const autonomousRuns = sqliteTable("autonomous_runs", {
 });
 
 export type AutonomousRunRow = typeof autonomousRuns.$inferSelect;
+
+/**
+ * The bar-ingestion ledger — see
+ * `docs/plans/nse-data-coverage/pending-migration/0023_bar_ingestions.sql`.
+ *
+ * What was ASKED FOR beside what ARRIVED, per fetch: the request window, the response's first
+ * and last bar and count, the identity verdict, and the gap/completeness audit. It exists
+ * because a provider layer once served one day for a 59-day request and every fetch still
+ * "succeeded" — silent truncation is invisible unless the request is stored beside the response.
+ *
+ * Declared here so the ORM can read it, but the migration cannot register itself: `MIGRATIONS`
+ * lives in the protected `lib/db/migrate.ts`, and a file sitting in `drizzle/` WITHOUT its line
+ * there would apply to no database while looking applied to a reader of the directory — a state
+ * two existing tests correctly refuse. So the SQL waits in its pending directory (see the README
+ * beside it for the two-step promotion) and `recordBarIngestion`
+ * (lib/market/bar-ingestion-ledger.ts) treats the absent table as "not recorded" rather than
+ * failing an ingest — the audit still travels in the ingest outcome, so the information is
+ * visible either way. Same interim-safe pattern as the research-identity tables above.
+ */
+export const barIngestions = sqliteTable("bar_ingestions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  instrumentId: text("instrument_id").notNull(),
+  resolution: text("resolution").notNull(),
+  source: text("source").notNull(),
+  requestedStart: integer("requested_start").notNull(),
+  requestedEnd: integer("requested_end").notNull(),
+  returnedFirstBar: integer("returned_first_bar"),
+  returnedLastBar: integer("returned_last_bar"),
+  returnedBarCount: integer("returned_bar_count").notNull(),
+  inserted: integer("inserted").notNull().default(0),
+  skipped: integer("skipped").notNull().default(0),
+  rejected: integer("rejected").notNull().default(0),
+  identityVerdict: text("identity_verdict").notNull(),
+  completeness: text("completeness").notNull(),
+  expectedSessions: integer("expected_sessions"),
+  observedSessions: integer("observed_sessions").notNull().default(0),
+  duplicateTimestamps: integer("duplicate_timestamps").notNull().default(0),
+  outOfSessionBars: integer("out_of_session_bars").notNull().default(0),
+  shortSessions: integer("short_sessions").notNull().default(0),
+  detail: text("detail"),
+  ingestedAt: integer("ingested_at", { mode: "timestamp" }).notNull(),
+});
+
+export type BarIngestionRow = typeof barIngestions.$inferSelect;

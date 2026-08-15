@@ -54,6 +54,13 @@ export interface Provenance {
   quality: DataQuality;
   delayedBySeconds: number | null;
   sourceId: string;
+  /**
+   * Whether the PROVIDER stated which instrument it served, and whether that matched the request
+   * (`lib/market/identity-guard.ts`). A stated mismatch never reaches here — it throws before any
+   * bar is built — so this distinguishes "verified" from "the source claimed no identity".
+   * Undefined for sources that predate the check.
+   */
+  identityVerdict?: "MATCHED" | "UNSTATED";
 }
 
 export interface NormalizedQuote {

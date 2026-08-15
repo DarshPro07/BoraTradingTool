@@ -858,3 +858,16 @@ floors 60/250/340 D bars + 20 accumulated 5m sessions, typed missing reasons) an
 pool columns (candidates/rehearsed/READY-FOR-GAUNTLET). Coverage at measurement: 118/2,122
 research-ready (5.6%), moving each cycle pass — the owner's live AUTO grew it 28→143 tickers in
 one evening. Trial switch flips only when the READY_FOR_GAUNTLET pools justify it.
+
+## P0 DATA OS INTEGRITY — **DONE 2026-08-16** (docs/plans/nse-data-coverage/03-data-os-integrity.md)
+Owner ruling: no new connectors — harden what exists. IDENTITY_MISMATCH invariant for EVERY
+provider (requested identity == served identity, else refuse; fail-first proven); declared
+sourceCapability with the ExternalCapabilityClaim rule (citation OR probe + verifiedAt, stale
+reads UNKNOWN) so planning answers "can this source satisfy this?" from declarations instead of
+failed requests; gap/completeness auditing (COMPLETE/PARTIAL/SESSION_GAPS/DUPLICATES/
+OUT_OF_SESSION/TIMEZONE_ERROR/EMPTY) with the request persisted beside the response; and
+FAMILY-READY COVERAGE as the trial-switch metric. Live measurement: intraday families 6 ready
+(0.3%) vs swing 77-78 (3.6%) — the number that replaces "143 research ready", with 80
+instruments daily-ready and short only on 5m sessions. Accumulator rate discipline unchanged by
+design. PENDING OWNER: promote drizzle migration 0023 (two steps, docs/plans/nse-data-coverage/
+pending-migration/README.md) to make the fetch ledger durable.
