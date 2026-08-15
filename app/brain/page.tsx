@@ -279,7 +279,7 @@ export default async function BrainPage() {
             </div>
             <div>
               <div className="text-muted-foreground text-[10px]">INTRADAY READY (≥{coverage.thresholds.intradaySessions} 5M SESSIONS)</div>
-              <div className="tabular-nums">{coverage.mainBoard.intradayReady} — grows only by live accumulation</div>
+              <div className="tabular-nums">{coverage.mainBoard.intradayReady} — historical backfill + live accumulation</div>
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-2 border-t border-border pt-2">

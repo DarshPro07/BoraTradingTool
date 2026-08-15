@@ -126,7 +126,22 @@ const PERIOD_INTERVAL: Partial<Record<CandleResolution, string>> = {
   "D": "1d",
   "W": "1wk",
   "M": "1mo",
+  // Intraday period-based fetches (historical backfill): Yahoo serves these within its own
+  // trailing retention window (~60 days for 5m/15m, ~30 days for hourly) — proven 2026-08-16
+  // with 4,125 5m bars / 55 sessions in one TCS.NS request.
+  "1": "1m",
+  "5": "5m",
+  "15": "15m",
+  "30": "30m",
+  "60": "60m",
 };
+
+/**
+ * The range shortcut serves the LIVE intraday paths (the accumulator's session window) and must
+ * keep its exact semantics; a request spanning more than this is a HISTORICAL BACKFILL and goes
+ * period-based instead. 5 days covers every live caller (the widest range entry) with margin.
+ */
+const RANGE_SHORTCUT_MAX_SECONDS = 5 * 86_400;
 
 export async function getYahooCandles(
   ticker: string,
@@ -136,7 +151,8 @@ export async function getYahooCandles(
 ): Promise<Candle[]> {
   let url: string;
 
-  const rangeConf = RANGE_CONFIG[resolution];
+  const rangeConf =
+    to - from <= RANGE_SHORTCUT_MAX_SECONDS ? RANGE_CONFIG[resolution] : undefined;
   if (rangeConf) {
     // Short timeframe: use range param for clean session-aware data. Include
     // pre/post-market so the intraday chart (and its last-price line) extends

@@ -24,7 +24,7 @@ candidates without spending trials.
 - **Research floor**: `MIN_BARS_FOR_RESEARCH` (60 daily bars, `lib/research/bridge`) via
   `instrumentReadiness`. Candle store keys `IN:XNSE:SYMBOL`; 28 instruments ≥ 60 D bars; the
   intraday accumulator has real per-session 5m history (e.g. HDFCBANK 67 sessions — 5m history
-  GROWS by live accumulation under the free-data constraint; it cannot be backfilled).
+  grows by live accumulation AND is historically backfillable — Upstox Historical V3 (minute candles from Jan 2022) and OpenChart both serve NSE intraday history; the "cannot be backfilled" claim in an earlier revision of this file was WRONG, corrected 2026-08-16).
 - `nse_provider_mappings` is EMPTY in production — the connector resolves symbols directly, so
   "PROVIDER_MAPPING_MISSING" is not a real failure mode today and is NOT invented as one.
 - Trial spending, forward enrollment and holdout looks remain owner-gated job kinds
@@ -62,8 +62,9 @@ candidates without spending trials.
 
 ## Explicitly out (stated, not smuggled)
 
-Flipping the trials switch (owner's); 5m backfill (impossible under the free-data constraint —
-accumulation only); SME campaign (needs its own declaration); AUTO consuming
+Flipping the trials switch (owner's); ~~5m backfill~~ (CORRECTED 2026-08-16: historical
+intraday backfill IS available — Upstox Historical V3, OpenChart — and is the follow-on leg,
+see 02-correction.md); SME campaign (needs its own declaration); AUTO consuming
 rejectionDiagnosis (owner approves that only after coverage expands); liquidity-eligible and
 execution-feasible gates of the campaign ladder (they PRUNE an already-ingested universe at
 scan time — coverage must come first and their inputs are the bars this mission fetches).

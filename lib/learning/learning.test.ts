@@ -252,7 +252,20 @@ const noIntake = async () => ({
   reason: "Research intake stubbed for this test.",
 });
 
-const cycle = (workerId?: string) => runLearningCycle(workerId, undefined, offline, noIntake);
+/**
+ * Accumulation is stubbed like its three siblings: since the range-shortcut fix the real path
+ * transfers ~40 sessions of 5m/15m bars per instrument per pass — 25 measured seconds of
+ * network inside one cycle test, which is a provider benchmark, not a cycle assertion.
+ */
+const noAccumulation = async () => ({
+  results: [],
+  inserted: 0,
+  failed: 0,
+  summary: "Intraday accumulation stubbed for this test.",
+});
+
+const cycle = (workerId?: string) =>
+  runLearningCycle(workerId, undefined, offline, noIntake, noAccumulation);
 
 // A cycle opens a database, runs migrations, seeds the quiz bank and writes five artifacts. Under
 // the full suite's parallelism that has exceeded the 5s default on this machine, and a timeout

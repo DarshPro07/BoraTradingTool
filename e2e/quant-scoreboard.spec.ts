@@ -101,7 +101,7 @@ test.describe("the quant scoreboard — /brain answers the primary question from
       `missing-reason block is neither typed reasons nor the stated empty:\n${reasonsText}`,
     ).toBe(true);
     await expect(coverage).toContainText("SME");
-    await expect(coverage).toContainText("grows only by live accumulation");
+    await expect(coverage).toContainText("historical backfill + live accumulation");
 
     // v2 — the diagnosis block: threshold-met readings, or the stated silence. Never absent.
     const diagnosis = page.getByTestId("quant-diagnosis");

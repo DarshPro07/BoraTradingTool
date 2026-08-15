@@ -22,7 +22,7 @@ strategy → rehearsal) without spending the statistical budget.
       and the dedupe keys keep one durable job per instrument, ever. 18/18.
 - [x] /brain NSE DATA COVERAGE panel: research universe measured (never extrapolated),
       readiness ladder with %s, typed missing-reason histogram, segregated universes stated,
-      intraday marked "grows only by live accumulation". e2e green on a fresh DB AND a live
+      intraday sourced from historical backfill + live accumulation (corrected 2026-08-16 — see 02-correction.md). e2e green on a fresh DB AND a live
       production backup.
 - [x] PBO threshold note recorded for NSE-QC-002 without touching the pinned campaign
       (docs/plans/quant-quality-program/06-pbo-note.md).
@@ -44,3 +44,32 @@ None for the builder — the machine expands coverage each cycle pass through th
 planner, and the panel shows it. Owner switches remain: `MARKETPULSE_AUTONOMOUS_TRIALS=1` when
 the READY_FOR_GAUNTLET pools justify spending; the AUTO-consumes-rejectionDiagnosis behavior
 change is queued behind coverage (quant-quality-program/05-slices.md #4).
+
+## Data OS v2 — the intraday correction leg (2026-08-16, second pass)
+
+- [x] The wrong "cannot backfill" claim corrected everywhere (02-correction.md) — with probes.
+- [x] **Root defect found and fixed while probing**: the intraday accumulator has ALWAYS
+      requested 59-day windows, but the Yahoo range shortcut built `range=1d` for every 5m/15m
+      call regardless, silently truncating 59 days to one — why intraday coverage grew one
+      session per day. `getYahooCandles` now keys the shortcut on the requested window (≤5 days
+      = live range semantics, byte-identical; wider = period-based). Fail-first proven (test
+      failed against the stashed pre-fix provider), then live-proven through the exact lib path:
+      2,903 5m bars / 39 sessions in one TCS call. The accumulator's NEXT session pass now
+      backfills ~40 sessions per tracked instrument with NO new code — the backfill engine
+      already existed; only the provider truncation hid it.
+- [x] Deliberate scope cut, stated: no separate intraday ingest job/planner tier tonight — the
+      accumulator owns intraday under its once-a-session, 12-instrument rate-limit discipline
+      (a real past rate-limiting incident is recorded at its call site); widening that set is a
+      later deliberate decision.
+- [x] Second root fix: the learning-cycle tests violated their own "cycles must not reach the
+      network" doctrine through the accumulation block (25 measured seconds of network in ONE
+      test — passing only while the provider was fast). Accumulation is now the cycle's FOURTH
+      injectable seam (beside loadCandles/loadEvidence/produce), stubbed in the suite like its
+      siblings. Full suite went from 143-153s with 2 consistent timeouts to 97-103s green.
+- [x] Connector roster with honest probe evidence: `docs/external/nse-data-connectors.md` —
+      OpenChart 0.2.0 BROKEN tonight (charting API answers status:true/data:[] for everything;
+      search ignores the query — a future connector must refuse non-exact matches), nsepython
+      capability-limited, jugaad/NSEazy queued, Tier-3 archives research-only, AI-trader
+      architecture-reference-only, Upstox V3 available pending owner credentials.
+- Verification: yahoo-window tests 3/3 (fail-first proven); learning 23/23 hermetic; full suite
+  **165 files / 1853 passed / 2 skipped / 0 failed** twice consecutively; tsc silent.

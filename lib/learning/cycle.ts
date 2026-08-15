@@ -144,6 +144,14 @@ export async function runLearningCycle(
    * reporting six processed jobs instead of the one it enqueued.
    */
   produce: ResearchProducer = produceResearchJobs,
+  /**
+   * Intraday accumulation. Injectable for the same reason as its three siblings above: the
+   * default reaches the provider — and since the range-shortcut fix (2026-08-16) each pass
+   * transfers ~40 sessions of 5m/15m bars per instrument, so a cycle test that quietly runs the
+   * real path stops testing the cycle and starts testing the network. The defect showed as
+   * exactly that: two cycle tests timing out at 30s under full-suite load, 25s of it network.
+   */
+  accumulate: typeof accumulateIntraday = accumulateIntraday,
 ): Promise<CycleReport> {
   // The lease is taken here rather than in each driver. The browser path runs through
   // `app/api/learning/cycle/`, which is owner-reviewed and cannot be edited by an agent — so a
@@ -154,7 +162,7 @@ export async function runLearningCycle(
     // and, eventually, one of them forgotten — which is precisely how a loop ends up running with
     // no trace that it ran.
     const startedAt = Date.now();
-    const report = await runCycleBody(workerId, loadCandles, loadEvidence, produce);
+    const report = await runCycleBody(workerId, loadCandles, loadEvidence, produce, accumulate);
     try {
       recordCycleRun(report, Date.now() - startedAt, workerId);
     } catch {
@@ -317,6 +325,7 @@ async function runCycleBody(
   loadCandles: CandleLoader,
   loadEvidence: EvidenceLoader,
   produce: ResearchProducer,
+  accumulate: typeof accumulateIntraday,
 ): Promise<CycleReport> {
   const mode = getLearningMode();
   const actions: string[] = [];
@@ -499,7 +508,7 @@ async function runCycleBody(
   // for a market whose data was fine.
   if ((mode === "learning" || mode === "evolving") && accumulationDue()) {
     try {
-      const accumulated = await accumulateIntraday(
+      const accumulated = await accumulate(
         listCurrentInstruments({ market: OWNER_CAPITAL.market }).slice(0, 12),
       );
       markAccumulated(accumulated, workerId);

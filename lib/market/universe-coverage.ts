@@ -24,9 +24,12 @@ import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
  *   VALIDATION_READY  ≥ 340 daily bars — development year + ~90-bar holdout-generation window
  *                     (incl. purge/embargo margin); PROVISIONAL until a live holdout definition
  *                     supplies exact bars, and stated as such
- *   INTRADAY_READY    ≥ 20 accumulated 5m sessions — the campaign's longest rvol baseline;
- *                     intraday history GROWS only by live accumulation (no backfill exists
- *                     under the free-data constraint)
+ *   INTRADAY_READY    ≥ 20 5m sessions — the campaign's longest rvol baseline. Sessions may
+ *                     come from HISTORICAL BACKFILL (Upstox Historical V3 serves minute
+ *                     candles from Jan 2022; OpenChart serves 1m-monthly NSE history) or from
+ *                     live accumulation — the class counts what the canonical store holds,
+ *                     source-blind. (An earlier revision claimed intraday "cannot be
+ *                     backfilled"; that was wrong — owner correction 2026-08-16.)
  */
 
 export const BACKTEST_BARS_FLOOR = 250;
