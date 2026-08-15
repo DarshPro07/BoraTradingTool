@@ -12,10 +12,13 @@ KPI set, and the permanent verdict-truthfulness rule. Cost facts live in
 ## Gates
 
 - [x] Gate 1 — product (02-product.md, owner-authored intent recorded verbatim)
-- [~] Gate 0 — reality (01-reality.md): inventory of what the funnel already has per stage —
-      IN PROGRESS this session
-- [ ] Gate 2+ — first build leg (expected: funnel read-model + typed rejection attribution on
-      /brain), only after 01-reality.md names what exists
+- [x] Gate 0 — reality (01-reality.md): per-stage inventory — the owner's chain
+      (campaign→family→identity→selection_trials), typed per-trial rejections, persisted
+      DSR/PBO, effective-dated costs, and the paper NET columns all EXIST; what was missing was
+      aggregation and the /brain surface
+- [x] Gate 2/3 — slice-1 design (03-architecture.md)
+- [x] Slice 1 — the Quant Scoreboard on /brain (05-slices.md): read model + panel + e2e, proven
+      on BOTH the empty and the populated (run-14 copy) database
 
 ## Preconditions closed before this program opened
 
@@ -25,6 +28,6 @@ KPI set, and the permanent verdict-truthfulness rule. Cost facts live in
 
 ## Exact next action
 
-Finish 01-reality.md (per-stage inventory: tables, verdict/refusal codes, cost-model coverage,
-what /brain shows today). Then decide the first vertical slice: the smallest funnel surface that
-reads ONLY existing ledgers.
+The machine's next work is RUNNING the mission (02-product.md §operating mission) — campaigns
+through the funnel — not building. Next build slices, when evidence calls for them, are ranked
+in 05-slices.md. The scoreboard now makes the outcome legible either way.

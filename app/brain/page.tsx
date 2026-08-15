@@ -12,6 +12,7 @@ import { Panel } from "@/components/system/Panel";
 import { AutonomousControl } from "@/components/system/AutonomousControl";
 import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 import { getBrainState, type LaneState } from "@/lib/brain/kernel";
+import { quantScoreboard } from "@/lib/dashboard/quant-scoreboard";
 import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
@@ -104,11 +105,93 @@ export default async function BrainPage() {
   const statusTone = (status: string) =>
     status === "READY" ? "text-gain" : status === "PARTIAL" ? "text-amber" : "text-loss";
 
+  // The primary scoreboard (owner directive 2026-08-15): the quant funnel over the ledgers.
+  const board = quantScoreboard();
+
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
       {/* The one button. Everything beneath the governance ceiling runs itself after this. */}
       <Panel title="MARKETPULSE — AUTONOMOUS RUNTIME">
         <AutonomousControl profile={RUNTIME_PROFILES[0]} />
+      </Panel>
+
+      {/* THE PRIMARY QUESTION (owner directive 2026-08-15): quant quality, not build metrics.
+          Every count names its basis; ratios over nothing render "—", never a fake 0. */}
+      <Panel title="QUANT SCOREBOARD — A REPEATABLE NET POSITIVE NSE EDGE, OR THE HONEST ABSENCE OF ONE">
+        <div className="p-3 space-y-3 text-[11px]" data-testid="brain-quant-scoreboard">
+          <p className="text-[10px] text-muted-foreground">{board.question}</p>
+          <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2" data-testid="quant-funnel">
+            {board.funnel.map((stage) => (
+              <div key={stage.key} className="flex items-baseline justify-between gap-2" data-testid={`quant-funnel-${stage.key}`} title={stage.basis}>
+                <span>{stage.label}</span>
+                <span className="tabular-nums font-bold">{stage.count}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-border pt-2">
+            <div>
+              <div className="text-muted-foreground text-[10px]">CAMPAIGNS / FAMILIES</div>
+              <div className="tabular-nums">{board.campaigns.open} open of {board.campaigns.total} · {board.families} families</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">TRIALS SPENT (DSR DENOMINATOR)</div>
+              <div className="tabular-nums">{board.trialsSpent} configuration(s), permanently</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">HOLDOUT</div>
+              <div className="tabular-nums">{board.holdout.generations} sealed · {board.holdout.evaluations} evaluated · {board.holdout.passed} passed</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">FORWARD</div>
+              <div className="tabular-nums">{board.forward.challengers} enrolled · {board.forward.signals} signals · {board.forward.resolved} resolved</div>
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 border-t border-border pt-2">
+            <div data-testid="quant-rejections">
+              <div className="text-muted-foreground text-[10px]">GAUNTLET REJECTIONS — BY TYPED STAGE</div>
+              {board.gauntletRejections.length === 0 ? (
+                <div className="text-muted-foreground">none recorded yet — no configuration has failed a gauntlet stage</div>
+              ) : (
+                board.gauntletRejections.map((rejection) => (
+                  <div key={rejection.kind} className="flex justify-between gap-2">
+                    <span>{rejection.kind}</span>
+                    <span className="tabular-nums">{rejection.count}</span>
+                  </div>
+                ))
+              )}
+              <div className="flex justify-between gap-2 text-muted-foreground">
+                <span>graveyard (all causes, permanent)</span>
+                <span className="tabular-nums">{board.graveyardCount}</span>
+              </div>
+            </div>
+            <div data-testid="quant-paper-net">
+              <div className="text-muted-foreground text-[10px]">PAPER — NET AFTER ALL MODELLED COSTS</div>
+              <div className="tabular-nums">
+                {board.paper.closedPositions} closed · gross ₹{board.paper.grossPnl.toFixed(2)} − fees ₹{board.paper.fees.toFixed(2)} ={" "}
+                <span className={board.paper.netPnl > 0 ? "text-gain" : board.paper.netPnl < 0 ? "text-loss" : ""}>net ₹{board.paper.netPnl.toFixed(2)}</span>
+              </div>
+              <div className="tabular-nums text-muted-foreground">
+                expectancy/trade {board.paper.netExpectancyPerTrade === null ? "—" : `₹${board.paper.netExpectancyPerTrade.toFixed(2)}`} · cost share of gross{" "}
+                {board.paper.costShareOfGross === null ? "—" : `${(board.paper.costShareOfGross * 100).toFixed(1)}%`}
+              </div>
+              <div className="text-muted-foreground text-[10px] mt-1">SURVIVORS — LATEST VALIDATION PASSED</div>
+              {board.survivors.length === 0 ? (
+                <div className="text-muted-foreground" data-testid="quant-survivors-empty">
+                  none — no strategy currently holds a passing validation (an honest zero, not a failure of the page)
+                </div>
+              ) : (
+                board.survivors.slice(0, 5).map((survivor) => (
+                  <div key={survivor.specId} className="flex flex-wrap justify-between gap-x-2" data-testid="quant-survivor-row">
+                    <span className="break-all">{survivor.name}</span>
+                    <span className="tabular-nums">
+                      DSR {survivor.deflatedSharpe?.toFixed(2) ?? "—"} · PBO {survivor.pbo?.toFixed(2) ?? "—"} · OOS PF {survivor.oosProfitFactor?.toFixed(2) ?? "—"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </Panel>
 
       <Panel title="MARKETPULSE BRAIN — WHAT THE SYSTEM KNOWS, DOES, AND STILL LACKS">
