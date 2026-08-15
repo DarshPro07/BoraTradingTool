@@ -1,6 +1,7 @@
 import { isNull } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
+import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "./calendar";
 
 /**
  * The NSE universe readiness index (owner directive 2026-08-16): separate the LISTED universe
@@ -35,6 +36,16 @@ import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
 export const BACKTEST_BARS_FLOOR = 250;
 export const VALIDATION_BARS_FLOOR = 340;
 export const INTRADAY_SESSIONS_FLOOR = 20;
+/**
+ * A session counts as COMPLETE at this share of a full day's bars. Having 40 sessions is not the
+ * same as having 40 CLEAN sessions (owner, 2026-08-16), and an instrument whose sessions are
+ * half-empty must never read as equal to one with whole days.
+ */
+export const SESSION_COMPLETE_SHARE = 0.8;
+/** The opening window ORB and RVOL measure their range in: the first 30 minutes. */
+export const OPENING_WINDOW_MINUTES = 30;
+/** Bars required inside that window for the session to carry a usable opening range (5m). */
+export const OPENING_WINDOW_MIN_BARS = 5;
 
 export type UniverseTier =
   | "MAIN_BOARD"
@@ -58,7 +69,16 @@ export interface SecurityCoverage {
   instrumentId: string;
   tier: UniverseTier;
   dailyBars: number;
+  /**
+   * The quality ladder for intraday coverage — DATA PRESENT is not FAMILY READY.
+   * `fiveMinuteSessions`         days holding ANY 5m bar (data present)
+   * `completeFiveMinuteSessions` days holding >= SESSION_COMPLETE_SHARE of a full day (complete)
+   * `openingWindowSessions`      complete days that also carry a usable opening range (quality
+   *                              pass for the families that trade the open)
+   */
   fiveMinuteSessions: number;
+  completeFiveMinuteSessions: number;
+  openingWindowSessions: number;
   researchReady: boolean;
   backtestReady: boolean;
   validationReady: boolean;
@@ -132,9 +152,15 @@ export function universeCoverage(): UniverseCoverageReport {
     .where(isNull(schema.nseListingVersions.effectiveTo))
     .all();
 
-  // ONE pass over the candle store for daily counts and 5m session counts.
+  // ONE pass over the candle store for daily counts and the 5m quality ladder.
+  //
+  // Session dates come from `sessionStamps` in the MARKET's timezone, not from a UTC slice: a
+  // 09:15 IST bar is 03:45 UTC the same day, but a 15:25 IST bar is 09:55 UTC — and any bar
+  // after 05:30 UTC crossing midnight would have been filed under the wrong day by a naive
+  // slice. The same call yields the minute-of-day the completeness and opening-window checks
+  // need, so the extra fidelity costs one pass rather than two.
   const dailyByTicker = new Map<string, number>();
-  const fiveMinSessions = new Map<string, Set<string>>();
+  const intradayTimes = new Map<string, number[]>();
   for (const candle of db
     .select({ ticker: schema.priceCandles.ticker, resolution: schema.priceCandles.resolution, time: schema.priceCandles.time })
     .from(schema.priceCandles)
@@ -142,11 +168,36 @@ export function universeCoverage(): UniverseCoverageReport {
     if (candle.resolution === "D") {
       dailyByTicker.set(candle.ticker, (dailyByTicker.get(candle.ticker) ?? 0) + 1);
     } else if (candle.resolution === "5") {
-      const day = new Date(candle.time * 1000).toISOString().slice(0, 10);
-      let sessions = fiveMinSessions.get(candle.ticker);
-      if (!sessions) fiveMinSessions.set(candle.ticker, (sessions = new Set()));
-      sessions.add(day);
+      let times = intradayTimes.get(candle.ticker);
+      if (!times) intradayTimes.set(candle.ticker, (times = []));
+      times.push(candle.time);
     }
+  }
+
+  // The quality ladder, computed once per instrument from its bars' own session stamps.
+  const quality = new Map<string, { present: number; complete: number; opening: number }>();
+  const open = sessionOpenMinute("IN");
+  const close = sessionCloseMinute("IN");
+  const barsPerSession = Math.floor((close - open) / 5);
+  for (const [ticker, times] of intradayTimes) {
+    const byDay = new Map<string, { bars: number; openingBars: number }>();
+    for (const stamp of sessionStamps(times, "IN")) {
+      let day = byDay.get(stamp.date);
+      if (!day) byDay.set(stamp.date, (day = { bars: 0, openingBars: 0 }));
+      // Out-of-session bars are not counted toward a session's completeness at all: they are
+      // not part of the day the strategies trade.
+      if (stamp.minute < open || stamp.minute >= close) continue;
+      day.bars += 1;
+      if (stamp.minute < open + OPENING_WINDOW_MINUTES) day.openingBars += 1;
+    }
+    let complete = 0;
+    let opening = 0;
+    for (const day of byDay.values()) {
+      if (day.bars < barsPerSession * SESSION_COMPLETE_SHARE) continue;
+      complete += 1;
+      if (day.openingBars >= OPENING_WINDOW_MIN_BARS) opening += 1;
+    }
+    quality.set(ticker, { present: byDay.size, complete, opening });
   }
 
   const ingest = ingestStates();
@@ -172,7 +223,7 @@ export function universeCoverage(): UniverseCoverageReport {
     tiers[tier] += 1;
     const instrumentId = `IN:XNSE:${listing.symbol}`;
     const dailyBars = dailyByTicker.get(instrumentId) ?? 0;
-    const sessions = fiveMinSessions.get(instrumentId)?.size ?? 0;
+    const sessions = quality.get(instrumentId) ?? { present: 0, complete: 0, opening: 0 };
     const researchReady = dailyBars >= MIN_BARS_FOR_RESEARCH;
     let missingReason: MissingReason | null = null;
     if (!researchReady) {
@@ -185,11 +236,15 @@ export function universeCoverage(): UniverseCoverageReport {
       instrumentId,
       tier,
       dailyBars,
-      fiveMinuteSessions: sessions,
+      fiveMinuteSessions: sessions.present,
+      completeFiveMinuteSessions: sessions.complete,
+      openingWindowSessions: sessions.opening,
       researchReady,
       backtestReady: dailyBars >= BACKTEST_BARS_FLOOR,
       validationReady: dailyBars >= VALIDATION_BARS_FLOOR,
-      intradayReady: sessions >= INTRADAY_SESSIONS_FLOOR,
+      // INTRADAY_READY counts COMPLETE sessions, not merely present ones: forty half-empty days
+      // are not forty tradable days.
+      intradayReady: sessions.complete >= INTRADAY_SESSIONS_FLOOR,
       missingReason,
     };
   });

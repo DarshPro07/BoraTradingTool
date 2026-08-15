@@ -20,8 +20,19 @@ export interface FamilyDataRequirement {
   resolution: "DAILY" | "INTRADAY_5M";
   /** Minimum daily bars — every family needs daily context even when it trades intraday. */
   minDailyBars: number;
-  /** Minimum accumulated/backfilled 5-minute sessions; null for daily-only families. */
+  /**
+   * Minimum QUALIFIED 5-minute sessions; null for daily-only families. Qualified means COMPLETE
+   * (>= SESSION_COMPLETE_SHARE of a full day's bars), not merely present — forty half-empty days
+   * are not forty tradable days.
+   */
   minIntradaySessions: number | null;
+  /**
+   * True when the family measures something in the opening window (ORB's range, RVOL's early
+   * participation). Those families additionally require sessions whose opening window is
+   * actually populated — a session missing its first bars is useless to them however complete
+   * the rest of the day is.
+   */
+  requiresOpeningWindow?: boolean;
   /** Why these numbers — stated so a threshold can never become a magic number. */
   basis: string;
 }
@@ -79,22 +90,33 @@ export function intradayBackfillQueue(
       (security) =>
         security.tier === "MAIN_BOARD" &&
         security.dailyBars >= minDaily &&
-        security.fiveMinuteSessions < target,
+        security.completeFiveMinuteSessions < target,
     )
-    .sort((a, b) => b.fiveMinuteSessions - a.fiveMinuteSessions || a.symbol.localeCompare(b.symbol))
+    .sort(
+      (a, b) =>
+        b.completeFiveMinuteSessions - a.completeFiveMinuteSessions || a.symbol.localeCompare(b.symbol),
+    )
     .slice(0, Math.max(0, limit))
     .map((security) => ({
       instrumentId: security.instrumentId,
       dailyBars: security.dailyBars,
-      fiveMinuteSessions: security.fiveMinuteSessions,
-      needed: target - security.fiveMinuteSessions,
+      fiveMinuteSessions: security.completeFiveMinuteSessions,
+      needed: target - security.completeFiveMinuteSessions,
     }));
 }
 
+/**
+ * The quality ladder, applied: DATA PRESENT → SESSION COMPLETE → QUALITY PASS → FAMILY READY.
+ * A family is ready on an instrument only at the top of that ladder, and each family declares
+ * which rung it needs.
+ */
 export function meetsRequirement(security: SecurityCoverage, requirement: FamilyDataRequirement): boolean {
   if (security.dailyBars < requirement.minDailyBars) return false;
   if (requirement.minIntradaySessions === null) return true;
-  return security.fiveMinuteSessions >= requirement.minIntradaySessions;
+  const qualified = requirement.requiresOpeningWindow
+    ? security.openingWindowSessions
+    : security.completeFiveMinuteSessions;
+  return qualified >= requirement.minIntradaySessions;
 }
 
 /**

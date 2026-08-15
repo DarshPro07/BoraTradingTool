@@ -17,6 +17,7 @@ import { universeCoverage } from "@/lib/market/universe-coverage";
 import { familyReadiness } from "@/lib/market/family-readiness";
 import { ingestionHealth } from "@/lib/market/bar-ingestion-ledger";
 import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
+import { evaluateTrialActivation } from "@/lib/strategy/trial-activation";
 import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
@@ -119,6 +120,9 @@ export default async function BrainPage() {
   // percentage but whether EACH family's own data requirement is met across the universe.
   const familyData = familyReadiness(NSE_QC_001.families, coverage);
   const fetchHealth = ingestionHealth(5);
+  // The PRE-REGISTERED activation gate: declared before any family looked good, so the decision
+  // is a reading rather than a judgement made after seeing results.
+  const activation = evaluateTrialActivation(NSE_QC_001.families, undefined, { report: coverage });
 
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
@@ -289,6 +293,27 @@ export default async function BrainPage() {
               <div className="tabular-nums">{coverage.mainBoard.intradayReady} — historical backfill + live accumulation</div>
             </div>
           </div>
+          {/* THE decision itself, pre-registered before any family looked good. */}
+          <div className="border-t border-border pt-2" data-testid="trial-activation">
+            <div className="text-muted-foreground text-[10px]">
+              AUTONOMOUS TRIALS — PRE-REGISTERED GATE (criteria pinned {activation.criteriaHash})
+            </div>
+            <div className={`font-bold ${activation.switchOn ? "text-amber" : ""}`} data-testid="trial-activation-state">
+              {activation.switchOn ? "ON" : "OFF"} · {activation.criteriaSatisfied ? "criteria satisfied" : "criteria not satisfied"}
+            </div>
+            <div className="text-muted-foreground">{activation.headline}</div>
+            {activation.blockers.length > 0 ? (
+              <ul className="mt-1 space-y-0.5" data-testid="trial-activation-blockers">
+                {activation.blockers.slice(0, 8).map((blocker) => (
+                  <li key={blocker}>· {blocker}</li>
+                ))}
+                {activation.blockers.length > 8 ? (
+                  <li className="text-muted-foreground">· …{activation.blockers.length - 8} more</li>
+                ) : null}
+              </ul>
+            ) : null}
+          </div>
+
           {/* THE trial-switch metric (owner, 2026-08-16): not a global %, but whether each
               family's own data requirement is met. Each row states its requirement and the gap. */}
           <div className="border-t border-border pt-2 overflow-x-auto" data-testid="coverage-family-readiness">

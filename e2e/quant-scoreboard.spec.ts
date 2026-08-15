@@ -111,6 +111,13 @@ test.describe("the quant scoreboard — /brain answers the primary question from
     // The requirement column states bars (and sessions for intraday families), never a bare number.
     await expect(familyReady).toContainText(/\d+d( \+ \d+×5m)?/);
 
+    // The pre-registered activation gate states its decision and its blockers.
+    const activation = page.getByTestId("trial-activation");
+    await expect(activation).toBeVisible();
+    await expect(activation).toContainText("PRE-REGISTERED GATE");
+    await expect(page.getByTestId("trial-activation-state")).toContainText(/^(ON|OFF) · criteria (not )?satisfied$/);
+    await expect(activation).toContainText(/criteria pinned [0-9a-f]{16}/);
+
     // Fetch integrity is always stated — registered ledger, empty ledger, or unregistered.
     const fetchHealth = page.getByTestId("coverage-fetch-health");
     await expect(fetchHealth).toBeVisible();

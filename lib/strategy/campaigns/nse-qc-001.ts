@@ -1,5 +1,15 @@
-import type { CampaignDeclaration } from "@/lib/strategy/campaign-registry";
+import type { CampaignDeclaration, FamilyDeclaration } from "@/lib/strategy/campaign-registry";
 import type { FamilyDataRequirement } from "@/lib/market/family-readiness";
+
+/** A declared family plus the data its study requires. The requirement is NOT part of the
+ * declaration hash — it describes what the bars must look like, not what the family claims. */
+export interface DeclaredFamilyWithData extends FamilyDeclaration {
+  dataRequirement: FamilyDataRequirement;
+}
+
+export interface CampaignWithDataRequirements extends Omit<CampaignDeclaration, "families"> {
+  families: DeclaredFamilyWithData[];
+}
 
 /**
  * NSE-QC-001 — the first explicitly REGISTERED research campaign (owner directive 2026-08-15).
@@ -19,9 +29,7 @@ import type { FamilyDataRequirement } from "@/lib/market/family-readiness";
  */
 // Not Object.freeze: the registry's declaration_hash refusal is the real immutability; freeze
 // only breaks literal-type inference here.
-export const NSE_QC_001: CampaignDeclaration & {
-  families: (CampaignDeclaration["families"][number] & { dataRequirement: FamilyDataRequirement })[];
-} = {
+export const NSE_QC_001: CampaignWithDataRequirements = {
   campaignId: "camp_nse_qc_001",
   name: "NSE-QC-001",
   question:
@@ -37,6 +45,7 @@ export const NSE_QC_001: CampaignDeclaration & {
         resolution: "INTRADAY_5M",
         minDailyBars: 60,
         minIntradaySessions: 40,
+        requiresOpeningWindow: true,
         basis:
           "the opening range is measured on 5m bars, so sessions are the binding input; 40 " +
           "sessions is ~2 trading months — enough for a rehearsal signal count without waiting " +
@@ -67,6 +76,7 @@ export const NSE_QC_001: CampaignDeclaration & {
         resolution: "INTRADAY_5M",
         minDailyBars: 60,
         minIntradaySessions: 40,
+        requiresOpeningWindow: true,
         basis:
           "relative volume needs a trailing session baseline (declared up to 20 sessions) plus " +
           "enough sessions after it to observe breakouts — 40 gives the baseline a full second " +

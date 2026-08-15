@@ -80,14 +80,26 @@ describe("the universe readiness index", () => {
     seedListing("EMPTY");
     seedListing("SMESTOCK", "SM");
 
-    // 5m sessions for READY: distinct days.
+    // 5m coverage for READY: COMPLETE sessions (75 bars from 09:15 IST), not one bar per day.
     const db = getDb();
+    const sessionRows: { ticker: string; resolution: string; time: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
+    for (let day = 0; day < INTRADAY_SESSIONS_FLOOR; day += 1) {
+      const date = new Date(Date.UTC(2026, 5, 1) + day * 86_400_000).toISOString().slice(0, 10);
+      const open = Math.floor(new Date(`${date}T09:15:00+05:30`).getTime() / 1000);
+      for (let bar = 0; bar < 75; bar += 1) {
+        sessionRows.push({ ticker: "IN:XNSE:READY", resolution: "5", time: open + bar * 300, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+      }
+    }
+    for (let start = 0; start < sessionRows.length; start += 500) {
+      db.insert(schema.priceCandles).values(sessionRows.slice(start, start + 500)).run();
+    }
+    // PARTIAL gets the same number of DAYS but one bar each — data present, no complete session.
     db.insert(schema.priceCandles)
       .values(
         Array.from({ length: INTRADAY_SESSIONS_FLOOR }, (_, index) => ({
-          ticker: "IN:XNSE:READY",
+          ticker: "IN:XNSE:PARTIAL",
           resolution: "5",
-          time: 1_700_000_000 + index * 86_400,
+          time: Math.floor(new Date(`2026-06-01T09:15:00+05:30`).getTime() / 1000) + index * 86_400,
           open: 1,
           high: 1,
           low: 1,
@@ -115,6 +127,16 @@ describe("the universe readiness index", () => {
       missingReason: "INSUFFICIENT_BARS",
       dailyBars: 30,
     });
+    // THE quality distinction (owner, 2026-08-16): twenty days holding ONE bar each are twenty
+    // days of DATA PRESENT and zero COMPLETE sessions — they must never read as intraday-ready.
+    expect(bySymbol.get("PARTIAL")).toMatchObject({
+      fiveMinuteSessions: INTRADAY_SESSIONS_FLOOR,
+      completeFiveMinuteSessions: 0,
+      openingWindowSessions: 0,
+      intradayReady: false,
+    });
+    expect(ready.completeFiveMinuteSessions).toBe(INTRADAY_SESSIONS_FLOOR);
+    expect(ready.openingWindowSessions).toBe(INTRADAY_SESSIONS_FLOOR);
     expect(bySymbol.get("EMPTY")).toMatchObject({ missingReason: "NO_HISTORY", dailyBars: 0 });
     expect(report.mainBoard.missingReasons.NO_HISTORY).toBe(1);
     expect(report.mainBoard.missingReasons.INSUFFICIENT_BARS).toBe(1);

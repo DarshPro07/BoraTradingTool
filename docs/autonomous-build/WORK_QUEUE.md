@@ -871,3 +871,14 @@ FAMILY-READY COVERAGE as the trial-switch metric. Live measurement: intraday fam
 instruments daily-ready and short only on 5m sessions. Accumulator rate discipline unchanged by
 design. PENDING OWNER: promote drizzle migration 0023 (two steps, docs/plans/nse-data-coverage/
 pending-migration/README.md) to make the fetch ledger durable.
+
+## P0 TRIAL-ACTIVATION GATE — **PRE-REGISTERED 2026-08-16** (docs/plans/nse-qc-001/03-trial-activation-gate.md)
+Declared BEFORE any family was tested, criteria hash `0f86755bbbebcaec` pinned literally in test.
+Conjunctive: family-ready breadth (60 intraday / 150 daily), all 3 liquidity buckets, 5 sectors,
+10 READY_FOR_GAUNTLET. Never "coverage > 10% → ON". Fails closed — sector classification is
+UNMEASURABLE today (no industry map in the synced master), so the gate stays shut and names the
+ingestion that would open it. First live read: OFF, and the liquidity criterion immediately
+exposed that all 6 ORB-ready instruments sit in the HIGH bucket alone. Also shipped: the data
+quality ladder (DATA PRESENT → SESSION COMPLETE → QUALITY PASS → FAMILY READY) so 40 sessions is
+never confused with 40 clean sessions. NEXT OWNER-SIDE: ingesting NSE industry classification is
+the single named blocker that is not simply "wait for coverage".

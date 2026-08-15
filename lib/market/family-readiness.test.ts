@@ -37,6 +37,36 @@ function seedBars(symbol: string, resolution: "D" | "5", count: number, stepSeco
   }
 }
 
+/** 09:15 IST on a date, epoch seconds — where a real NSE session starts. */
+function sessionOpen(date: string): number {
+  return Math.floor(new Date(`${date}T09:15:00+05:30`).getTime() / 1000);
+}
+
+/**
+ * `sessions` COMPLETE trading days of 5-minute bars. `openingBars` controls how much of the
+ * opening window is populated, which is what separates SESSION COMPLETE from QUALITY PASS for
+ * the families that trade the open.
+ */
+function seedSessions(symbol: string, sessions: number, options: { openingBars?: number; barsPerSession?: number } = {}): void {
+  const db = getDb();
+  const barsPerSession = options.barsPerSession ?? 75;
+  const openingBars = options.openingBars ?? 6;
+  const rows: { ticker: string; resolution: string; time: number; open: number; high: number; low: number; close: number; volume: number }[] = [];
+  for (let day = 0; day < sessions; day += 1) {
+    // Weekday-safe: a fixed Monday plus whole weeks keeps every seeded day a trading day.
+    const date = new Date(Date.UTC(2026, 5, 1) + day * 86_400_000).toISOString().slice(0, 10);
+    const open = sessionOpen(date);
+    for (let bar = 0; bar < barsPerSession; bar += 1) {
+      // Opening bars are the first `openingBars` slots; the rest are pushed past the window.
+      const slot = bar < openingBars ? bar : bar + (6 - openingBars);
+      rows.push({ ticker: `IN:XNSE:${symbol}`, resolution: "5", time: open + slot * 300, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+    }
+  }
+  for (let start = 0; start < rows.length; start += 500) {
+    db.insert(schema.priceCandles).values(rows.slice(start, start + 500)).run();
+  }
+}
+
 describe("family-specific data readiness", () => {
   useTemporaryDatabase();
 
@@ -47,7 +77,7 @@ describe("family-specific data readiness", () => {
     // An instrument with shallow daily history but plenty of 5m sessions: intraday-ready only.
     seedListing("INTRADAY");
     seedBars("INTRADAY", "D", 80, 86_400);
-    seedBars("INTRADAY", "5", 45, 86_400); // 45 distinct session days
+    seedSessions("INTRADAY", 45); // 45 COMPLETE sessions, opening window populated
     // An instrument with nothing.
     seedListing("BARE");
 
@@ -107,17 +137,17 @@ describe("family-specific data readiness", () => {
     // Daily-ready, needs 5 more sessions → the cheapest conversion, queued first.
     seedListing("ALMOST");
     seedBars("ALMOST", "D", 100, 86_400);
-    seedBars("ALMOST", "5", 35, 86_400);
+    seedSessions("ALMOST", 35);
     // Daily-ready, no intraday at all → queued, but behind.
     seedListing("ZERO5M");
     seedBars("ZERO5M", "D", 100, 86_400);
     // Already family-ready → not queued; nothing to gain.
     seedListing("DONE");
     seedBars("DONE", "D", 100, 86_400);
-    seedBars("DONE", "5", 45, 86_400);
+    seedSessions("DONE", 45);
     // Not daily-ready → not queued; its blocker is the daily lane, not this one.
     seedListing("NODAILY");
-    seedBars("NODAILY", "5", 10, 86_400);
+    seedSessions("NODAILY", 10);
     // Separate universe → never queued into the campaign's work.
     seedListing("SMEONE", "SM");
     seedBars("SMEONE", "D", 100, 86_400);
@@ -139,6 +169,8 @@ describe("family-specific data readiness", () => {
       tier: "MAIN_BOARD" as const,
       dailyBars: 100,
       fiveMinuteSessions: 39,
+      completeFiveMinuteSessions: 39,
+      openingWindowSessions: 39,
       researchReady: true,
       backtestReady: false,
       validationReady: false,
@@ -147,6 +179,19 @@ describe("family-specific data readiness", () => {
     };
     const orb = NSE_QC_001.families[0].dataRequirement;
     expect(meetsRequirement(security, orb), "39 sessions is one short of the declared 40").toBe(false);
-    expect(meetsRequirement({ ...security, fiveMinuteSessions: 40 }, orb)).toBe(true);
+    expect(
+      meetsRequirement({ ...security, completeFiveMinuteSessions: 40, openingWindowSessions: 40 }, orb),
+    ).toBe(true);
+    // THE quality distinction: 40 COMPLETE sessions whose opening windows are missing do not
+    // make an opening-range family ready, however many bars the rest of each day holds.
+    expect(
+      meetsRequirement({ ...security, completeFiveMinuteSessions: 40, openingWindowSessions: 12 }, orb),
+      "an opening-range family needs the opening window, not just complete days",
+    ).toBe(false);
+    // The midday family is satisfied by the same data, because it does not trade the open.
+    const middayFamily = NSE_QC_001.families.find((family) => family.familyId === "fam_qc001_intraday_mr")!;
+    expect(
+      meetsRequirement({ ...security, completeFiveMinuteSessions: 40, openingWindowSessions: 12 }, middayFamily!.dataRequirement),
+    ).toBe(true);
   });
 });
