@@ -52,11 +52,10 @@ window answered with one session.
 End, returnedFirstBar/LastBar/Count, identity verdict, and the full audit — on both write paths
 (daily ingest and intraday accumulation).
 
-**Pending owner action:** the migration is staged in `pending-migration/`, NOT in `drizzle/`,
-because `lib/db/migrate.ts` is owner-protected and two existing tests correctly refuse a
-migration file that would "apply to no database while looking applied to a reader of the
-directory". Until promoted (two steps, README beside it), recording no-ops and the panel says
-so; the audit still travels in each ingest outcome.
+**RESOLVED 2026-08-16 (owner-approved):** the migration was staged outside `drizzle/` while
+`lib/db/migrate.ts` remained unedited, then promoted with the owner's approval — see
+`04-migration-0023-promotion.md` for the acceptance contract and its evidence. The ledger is now
+durable, append-only by trigger, and fetch evidence survives a restart.
 
 ## 4. Family-specific readiness — the new decision metric
 

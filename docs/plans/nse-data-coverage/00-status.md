@@ -73,3 +73,24 @@ change is queued behind coverage (quant-quality-program/05-slices.md #4).
       architecture-reference-only, Upstox V3 available pending owner credentials.
 - Verification: yahoo-window tests 3/3 (fail-first proven); learning 23/23 hermetic; full suite
   **165 files / 1853 passed / 2 skipped / 0 failed** twice consecutively; tsc silent.
+
+
+## Data OS integrity + migration 0023 (2026-08-16, second half of the night)
+
+- [x] Intraday-backfill correction and its root cause (02-correction.md, commit 1d210d5)
+- [x] Data OS integrity: identity invariant, declared capabilities, gap auditing, family-ready
+      coverage (03-data-os-integrity.md, commit bee6a38)
+- [x] Migration 0023 PROMOTED under owner approval; every acceptance item evidenced
+      (04-migration-0023-promotion.md, commit 415fa78) — the fetch ledger is durable
+- [x] AUTO's intraday accumulation now targets the daily-ready-but-missing-5m queue
+      (commit c7ec2a2); rate discipline unchanged; queue depth 135 at 03:12 IST
+
+## Exact next action
+
+None for the builder. The machine expands daily coverage through the prioritized planner and
+converts the intraday queue twelve instruments per session; /brain's FAMILY-READY COVERAGE row
+is where that shows up. Owner-side: `MARKETPULSE_AUTONOMOUS_TRIALS` stays 0 until the
+family-ready pools are broad AND representative (sector/liquidity diversity), per the owner's
+trigger definition; Upstox credentials would unlock intraday history deeper than Yahoo's 60-day
+window; and the gated AUTO-reads-rejectionDiagnosis behaviour waits for real trial/rejection
+history to exist.
