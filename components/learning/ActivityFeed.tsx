@@ -63,7 +63,12 @@ export function ActivityFeed({ limit = 12, now = new Date() }: { limit?: number;
           </div>
           <ul className="mt-0.5 space-y-0.5">
             {lines(run).map((line, index) => (
-              <li key={index} className={`text-[11px] leading-relaxed ${line.tone}`}>
+              // Observation lines quote STRATEGY IDS verbatim, and an authored id runs to ~55
+              // unbroken characters (`gap_and_volume_screen_desktop_chromium_mstgkd94_ab3b77c3`).
+              // With nothing to break on, one such line pushed the whole cockpit sideways on a
+              // phone — the id has to wrap, because truncating it would hide which strategy the
+              // machine is talking about.
+              <li key={index} className={`text-[11px] leading-relaxed [overflow-wrap:anywhere] ${line.tone}`}>
                 {line.text}
               </li>
             ))}

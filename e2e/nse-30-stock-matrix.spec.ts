@@ -165,7 +165,14 @@ test.describe("NSE 30-stock breadth matrix", () => {
       test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
       // A refusal resolves in milliseconds; a real provider round-trip is the slow case. The
       // budget covers the slow case without hiding a hang — a hang still fails, just later.
-      test.setTimeout(120_000);
+      // MEASURED, not guessed: the same instrument (TITAN) settled in 36s on one pass and 104s on
+      // another in the same run — real model latency, not a stall (the agent_run COMPLETED both
+      // times). Master run 9 then measured a 208s completion on the identical path (HCLTECH,
+      // agr_68c76e0185d546c9, COMPLETED/SOURCE_VERIFIED, 3910 tokens) — inside a 150s poll, so the
+      // poll is now 300s (~1.4× the observed tail). A poll inside the real distribution fails
+      // intermittently on a system that is working. The assertion is unchanged: a run that never
+      // settles still fails.
+      test.setTimeout(330_000);
       const problems = collectPageProblems(page);
 
       const response = await page.goto(`/analyze/${encodeInstrument(stock.symbol)}`, {
@@ -200,7 +207,7 @@ test.describe("NSE 30-stock breadth matrix", () => {
       // Wait for a TERMINAL state. A run that never settles is a defect, not a slow test.
       await expect
         .poll(async () => ((await stateLabel.textContent()) ?? "").trim(), {
-          timeout: 90_000,
+          timeout: 300_000,
           message: `${stock.symbol} never reached a terminal research state`,
         })
         .toMatch(/^(PROPOSAL READY|NEEDS EVIDENCE|FAILED)$/);

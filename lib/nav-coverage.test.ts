@@ -27,6 +27,8 @@ const APP_DIR = path.join(process.cwd(), "app");
 const INTENTIONALLY_UNLINKED: Record<string, string> = {
   "/": "Redirects to /dashboard. Linking a redirect would put two entries on one destination.",
   "/analyze/[ticker]": "Reached by searching an instrument, and covered by the /analyze prefix.",
+  "/brain/executions/[id]":
+    "Reached by clicking an execution row on /brain (RECENT WORK). A static nav entry would need a fabricated id.",
 };
 
 function routesOnDisk(directory = APP_DIR, prefix = ""): string[] {

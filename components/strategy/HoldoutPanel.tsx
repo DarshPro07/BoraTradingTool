@@ -44,7 +44,10 @@ export function HoldoutPanel() {
 
   return (
     <Panel title="SEALED HOLDOUT">
-      <div className="space-y-2" data-testid="holdout-panel">
+      {/* [overflow-wrap:anywhere]: seal ids, API paths and the pinned-rule line are long
+          unbreakable tokens that pushed /strategies past a phone viewport (mobile overflow
+          caught by the consolidation master run). */}
+      <div className="space-y-2 [overflow-wrap:anywhere]" data-testid="holdout-panel">
         {seals.map((seal) => (
           <div key={seal.id} className="border border-panel p-2 text-xs" data-testid="holdout-seal-row">
             <div className="flex flex-wrap items-baseline gap-2">

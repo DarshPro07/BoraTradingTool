@@ -50,11 +50,17 @@ function killTree(pid: number): void {
   }
 }
 
-function spawnServer(dbPath: string, distDir: string, port: number, extraEnv: Record<string, string>): ChildHandles {
+function spawnServer(
+  dbPath: string,
+  distDir: string,
+  port: number,
+  extraEnv: Record<string, string>,
+  mode: "start" | "dev",
+): ChildHandles {
   const { spawn } = require("node:child_process") as typeof import("node:child_process");
   const child = spawn(
     process.execPath,
-    ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", String(port)],
+    ["node_modules/next/dist/bin/next", mode, "--hostname", "127.0.0.1", "--port", String(port)],
     {
       cwd: process.cwd(),
       env: {
@@ -143,7 +149,23 @@ test.describe("provider transports — the local family through the product", ()
     const PORT = await freePort();
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mp-providers-"));
     const dbPath = path.join(tmp, "providers.sqlite");
-    const distDir = path.join(".tmp", "provider-transports-dist");
+
+    // Compilation must stay OUT of the readiness path. Master run 12 failed here: this spec's
+    // `next dev` child sat in a FULL Turbopack recompile — the crash specs' dev boots had
+    // appended fresh `.tmp/crash-dist-*` include globs to tsconfig.json mid-run (15:37),
+    // invalidating the compile cache — while the ambient server ran queue-tail model calls, and
+    // 240s expired with the child alive and mid-compile (dist manifests written 16:28-16:29,
+    // stderr empty; boots measured 36.9s → 36.9s → 57.1s → >240s across runs 8/9/10/12). A
+    // recompile under co-load is unbounded, so no honest budget exists for it. Inside an
+    // acceptance run the prebuilt dist the ambient server itself serves is already on disk —
+    // `next start` serves it without compiling (post-fix, the whole test measured 38.4s cold /
+    // 11.8s warm; the child alone reached identity-ready in 7s) and the child then
+    // runs the EXACT acceptance build rather than a parallel dev compile of the tree.
+    // Standalone (no prebuilt dist) keeps the dev path; the master run remains the completion
+    // authority if that dist is ever stale.
+    const prebuiltDist = path.join(".tmp", "next-e2e-30stock");
+    const usePrebuilt = fs.existsSync(path.join(prebuiltDist, "BUILD_ID"));
+    const distDir = usePrebuilt ? prebuiltDist : path.join(".tmp", "provider-transports-dist");
     let server: ChildHandles | null = null;
 
     try {
@@ -151,7 +173,7 @@ test.describe("provider transports — the local family through the product", ()
         MARKETPULSE_VLLM_BASE_URL: upstreamBase,
         // A dead port: the not-running ladder state, distinguished from auth and from failure.
         MARKETPULSE_LMSTUDIO_BASE_URL: "http://127.0.0.1:9/v1",
-      });
+      }, usePrebuilt ? "start" : "dev");
       await waitForServer(server, PORT);
 
       const res = await fetch(`http://127.0.0.1:${PORT}/api/brain`);

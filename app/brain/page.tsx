@@ -12,6 +12,7 @@ import { Panel } from "@/components/system/Panel";
 import { AutonomousControl } from "@/components/system/AutonomousControl";
 import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 import { getBrainState, type LaneState } from "@/lib/brain/kernel";
+import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
 
@@ -167,8 +168,62 @@ export default async function BrainPage() {
         </div>
       </Panel>
 
+      <Panel title="RECENT WORK — TEAM EXECUTIONS, FROM THE LEDGERS">
+        <div className="p-3 space-y-1.5 text-[11px]" data-testid="brain-executions">
+          {(() => {
+            const executions = listExecutions(8);
+            if (executions.length === 0) {
+              return (
+                <div className="text-muted-foreground">
+                  No team executions yet. A deep research job (payload depth: &quot;deep&quot;) runs the
+                  Chief-of-Staff team; its full execution tree — members, models, artifacts,
+                  dissent — appears here from the ledgers.
+                </div>
+              );
+            }
+            return executions.map((execution) => (
+              <Link
+                key={execution.teamRunId}
+                href={`/brain/executions/${execution.teamRunId}`}
+                className="block border border-panel/60 px-2.5 py-1.5 hover:bg-panel-alt"
+                data-testid="brain-execution-row"
+              >
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span>{execution.instrumentId ?? execution.teamId}</span>
+                  <span
+                    className={
+                      execution.status === "COMPLETED"
+                        ? "text-gain"
+                        : execution.status === "FAILED"
+                          ? "text-loss"
+                          : "text-amber"
+                    }
+                  >
+                    {execution.status}
+                  </span>
+                  {execution.durationMs !== null ? (
+                    <span className="text-muted-foreground">{(execution.durationMs / 1000).toFixed(1)}s</span>
+                  ) : null}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {execution.memberCount} member(s) · {execution.artifactCount} artifact(s) ·{" "}
+                  {execution.dissentCount} dissent · tokens {execution.tokens ?? "—"}
+                  {execution.recommendation ? ` · ${execution.recommendation.replace(/_/g, " ")}` : ""}
+                </div>
+              </Link>
+            ));
+          })()}
+        </div>
+      </Panel>
+
       <Panel title="AUTONOMY ACTIVITY — WHAT IT IS WORKING ON, FROM THE LEDGERS">
-        <div className="p-3 grid gap-2 md:grid-cols-2 text-[11px]" data-testid="brain-activity">
+        {/* These cells quote strategy ids verbatim (`deep_journey_gap_jyothylab_mstjkez4_…`), and a
+            grid item will not shrink below its content. Unwrapped, one id made the cockpit 782px
+            wide on a 390px phone — the page this whole surface exists to be read on. */}
+        <div
+          className="p-3 grid gap-2 md:grid-cols-2 text-[11px] [overflow-wrap:anywhere] [&>*]:min-w-0"
+          data-testid="brain-activity"
+        >
           {/* U6: every lane opens the surface where its rows live — activity is inspectable,
               not just displayed. */}
           <div className="border border-panel/60 px-2.5 py-1.5">

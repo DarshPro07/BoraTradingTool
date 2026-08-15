@@ -257,7 +257,9 @@ test.describe("mobile", () => {
   test("the primary journey works on a phone without horizontal overflow", async ({ page }) => {
     const errors = trackRuntimeErrors(page);
 
-    for (const route of ["/command", "/paper", "/strategies", "/data-quality"]) {
+    // /brain is here because it was NOT here: the cockpit rendered 782px wide on a 390px phone
+    // (strategy ids quoted verbatim into grid cells that cannot shrink) and no test looked.
+    for (const route of ["/command", "/paper", "/strategies", "/data-quality", "/brain"]) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
 
       const overflow = await page.evaluate(() => ({

@@ -152,8 +152,10 @@ test.describe("NSE 30-stock breadth — Stage 2: ingest all, then research all",
   for (const symbol of STOCKS) {
     test(`${symbol} — post-ingestion research reaches a terminal outcome that is NOT a data refusal`, async ({ page }, testInfo) => {
       test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
-      // A real provider round-trip is the slow case; a hang still fails, just later.
-      test.setTimeout(180_000);
+      // A real provider round-trip is the slow case; a hang still fails, just later. Poll sized to
+      // the MEASURED tail: run 9 saw HCLTECH complete in 208s (agr_68c76e0185d546c9,
+      // COMPLETED/SOURCE_VERIFIED) while a 150s poll expired — 300s is ~1.4× that observation.
+      test.setTimeout(330_000);
 
       const matrix = loadMatrix();
       const row = matrix[symbol];
@@ -176,7 +178,7 @@ test.describe("NSE 30-stock breadth — Stage 2: ingest all, then research all",
 
       await expect
         .poll(async () => ((await stateLabel.textContent()) ?? "").trim(), {
-          timeout: 150_000,
+          timeout: 300_000,
           message: `${symbol} never reached a terminal research state after ingestion`,
         })
         .toMatch(/^(PROPOSAL READY|NEEDS EVIDENCE|FAILED)$/);

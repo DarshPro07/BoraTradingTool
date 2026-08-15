@@ -34,7 +34,12 @@ export function RehearsalLedger() {
           <ul className="space-y-1">
             {rows.map((row) => (
               <li key={row.strategySpecId} className="flex flex-wrap items-baseline gap-2" data-testid="rehearsal-ledger-row">
-                <span className="font-bold">{names.get(row.strategySpecId) ?? row.strategySpecId}</span>
+                {/* The fallback here is a raw strategy id — ~55 unbroken characters. As a flex
+                    item it will not shrink below its content (min-width:auto), so without a break
+                    opportunity one row widened the whole page on a phone. */}
+                <span className="font-bold [overflow-wrap:anywhere] min-w-0">
+                  {names.get(row.strategySpecId) ?? row.strategySpecId}
+                </span>
                 <span
                   className={
                     row.verdict === "would_pass" ? "text-gain" : row.verdict === "would_fail" ? "text-loss" : "text-amber"

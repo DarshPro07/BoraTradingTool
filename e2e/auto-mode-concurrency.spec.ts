@@ -119,6 +119,25 @@ function intervalsOverlap(a: LaneInterval, b: LaneInterval): boolean {
   return a.startedAt < b.completedAt && b.startedAt < a.completedAt;
 }
 
+/**
+ * One retry for a transient loopback reset of an idempotent read. Under this spec's deliberate
+ * concurrent load, a pooled keep-alive GET intermittently reads ECONNRESET while the server is
+ * demonstrably alive (3 occurrences on 2026-08-15 across BOTH launch contexts, always this
+ * spec, always a polling GET; the same URL served 200 within seconds each time; TIME_WAIT
+ * pressure ruled out at 44 sockets). A real outage fails the retry too — nothing is weakened,
+ * the poll is plumbing, and every assertion still runs on the returned evidence.
+ */
+async function getJson(requestCtx: APIRequestContext, url: string): Promise<any> {
+  try {
+    return await (await requestCtx.get(url)).json();
+  } catch (error) {
+    if (String(error).includes("ECONNRESET")) {
+      return await (await requestCtx.get(url)).json();
+    }
+    throw error;
+  }
+}
+
 test.describe("AUTO mode — lane execution in wall-clock time", () => {
   test.skip(!DB_PATH, "needs direct access to the server's database file");
 
@@ -172,7 +191,7 @@ test.describe("AUTO mode — lane execution in wall-clock time", () => {
     await request.post("/api/system/stop", { ...MUTATION, data: { reason: "test setup" } }).catch(() => undefined);
     // Give the stop a moment to land before Start, so the start below creates a FRESH run.
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      const status = await (await request.get("/api/system/status")).json();
+      const status = await getJson(request, "/api/system/status");
       if (status.running === false) break;
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
@@ -227,10 +246,10 @@ test.describe("AUTO mode — lane execution in wall-clock time", () => {
     let statuses: Array<{ running: boolean; run: { id: string; ticks: number; status: string } | null; queue: Record<string, number> }> = [];
 
     const collect = async (requestCtx: APIRequestContext): Promise<void> => {
-      const status = await (await requestCtx.get("/api/system/status")).json();
+      const status = await getJson(requestCtx, "/api/system/status");
       statuses.push(status);
 
-      const cycleData = await (await requestCtx.get("/api/cycles?limit=200")).json();
+      const cycleData = await getJson(requestCtx, "/api/cycles?limit=200");
       cycles = (cycleData.runs ?? [])
         .filter((row: { driver: string }) => row.driver === `supervisor-${runId}`)
         .map((row: { id: number; driver: string; ranAt: string; durationMs: number; jobsProcessed: number }) => ({
@@ -242,7 +261,7 @@ test.describe("AUTO mode — lane execution in wall-clock time", () => {
         }))
         .sort((a: CycleRec, b: CycleRec) => a.ranAt - b.ranAt);
 
-      const jobData = await (await requestCtx.get("/api/research/jobs")).json();
+      const jobData = await getJson(requestCtx, "/api/research/jobs");
       const freshJobs = (jobData.jobs as Array<{ id: number; kind: string; status: string; createdAt: string }>)
         .filter((job) => job.id > beforeMaxJobId);
       const events = readDb((db) => {

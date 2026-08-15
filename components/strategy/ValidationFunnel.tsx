@@ -112,7 +112,9 @@ export function ValidationFunnel({ standings }: { standings: Standing[] }) {
                 <span className="text-[9px] text-muted-foreground w-40 shrink-0">{rung.note}</span>
               </div>
               {breakdown ? (
-                <div className="text-[9px] text-muted-foreground pl-[6.5rem] leading-relaxed">{breakdown}</div>
+                <div className="text-[9px] text-muted-foreground pl-[6.5rem] leading-relaxed [overflow-wrap:anywhere]">
+                  {breakdown}
+                </div>
               ) : null}
             </div>
           );

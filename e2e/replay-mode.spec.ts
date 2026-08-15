@@ -41,15 +41,21 @@ test.describe("LIVE / REPLAY — the mode is explicit and every result is labell
     await expect(page.getByTestId("forward-run")).toBeEnabled();
     await page.getByTestId("forward-run").click();
 
+    // MEASURED, not guessed: at master-run data volume (~190 predecessor tests) the forward pass
+    // takes 7.2–8.0s server-side (three timed passes on the exact failure-state DB, 2026-08-15),
+    // so the 10s default sat inside the real distribution and failed a working system. 30s is
+    // ~3.5× the measured tail; a pass that never returns still fails, just later. The sibling
+    // meeting-journey step survives the same pass by awaiting the /api/forward/run response first.
+    const passBudget = { timeout: 30_000 };
     const note = page.getByTestId("forward-note");
-    await expect(note).toContainText("REPLAY — HISTORICAL EVIDENCE as of 2026-08-03");
+    await expect(note).toContainText("REPLAY — HISTORICAL EVIDENCE as of 2026-08-03", passBudget);
     await expect(note).not.toContainText(/LIVE/);
 
     // Back in LIVE, the same action labels itself as the wall clock.
     await live.click();
     await expect(page.getByTestId("forward-run")).toHaveText(/run shadow pass/i);
     await page.getByTestId("forward-run").click();
-    await expect(note).toContainText("LIVE (wall clock");
+    await expect(note).toContainText("LIVE (wall clock", passBudget);
     await expect(note).not.toContainText(/REPLAY/);
   });
 

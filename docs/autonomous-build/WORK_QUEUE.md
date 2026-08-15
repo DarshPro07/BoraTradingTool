@@ -1,5 +1,53 @@
 # Work queue (ordered; every item carries its dependency)
 
+## INFRASTRUCTURE FREEZE — in force from 2026-08-15 (owner order)
+> "Stop adding infrastructure. Which strategy families, if any, survive gauntlet → sealed holdout
+> → forward → paper after realistic costs across genuinely independent NSE data?"
+
+Brain execution observability was the LAST infrastructure rung. From here the scoreboard is quant
+quality, not new subsystems. A change that adds a subsystem instead of answering that question is
+out of order and needs an explicit owner ruling to start. Repairs, defect fixes and the tech-debt
+items already listed below remain in scope.
+
+## P0 BRAIN EXECUTION OBSERVABILITY — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/brain-observability/)
+**Acceptance (C36/C50) landed and committed**: two consecutive clean Master Golden runs on one
+unchanged tree — run 13: 208 passed / 2 skipped / 0 failed (57.1m); run 14: 208 passed /
+2 skipped / 0 failed (58.3m); build `973852a-dirty.4920d47e`, virgin identity-gated DBs. Mobile
+excluded from the pair by owner instruction (run 8, 210/2/0 with mobile, remains the one
+mobile-inclusive green). Full run-by-run forensics (runs 4→14, six launcher-environment defects,
+zero product defects after run 7) in `docs/plans/brain-observability/07-final.md`.
+**INFRASTRUCTURE IS NOW FROZEN** — next scoreboard is quant quality, per the owner order below.
+A READ MODEL over the ledgers already written — no new tracing store, no second truth. One
+correlated tree per execution: job (state from the Job OS row, never inferred) above TeamRun above
+its AgentRuns above their artifacts, members correlated by ID-EXACT recomputation of the runtime's
+own deterministic ids, assigned vs executed vs verification never collapsed into one field,
+dissent rendered verbatim or its absence stated, a real-timestamp timeline that makes parallelism
+visible, and totals that either reconcile against the children or say they could not be compared.
+`GET /api/brain/executions(/:id)` → `/brain` RECENT WORK → `/brain/executions/[id]`.
+
+Evidence: 160 unit files / 1829 passed, tsc clean, and the FIRST LIVE TEAM EXECUTION in the
+product's history — during which the source verifier and critic INDEPENDENTLY identified the
+TEST_MODE fixture data as synthetic, both dissented, and the chief preserved both verbatim and
+downgraded to NEEDS_MORE_EVIDENCE. The team caught the fixture being fake.
+
+The leg's most valuable output was a **CRITICAL holdout regression it introduced and then caught**:
+scoping the sealed-window exclusion to an allowlist of development actors is fail-OPEN, and
+`gauntlet` — which spends a permanent statistical trial — was not on the list, so it replayed
+across the sealed window (proven at 94 sealed bars). The boundary is now fail-CLOSED: only the
+consumption stages (`forward-shadow`, `paper-forward`) see through a live seal; everything else,
+including actors added later by someone who never reads that file, is development. **Any new
+snapshot consumer must now justify sightedness explicitly — do not re-invert this.**
+
+## FOLLOW-UP (first post-commit item; found by pre-commit claim verification 2026-08-15)
+Cost-honesty residual in the execution tree: a COMPLETED team whose members all report no usage
+writes summed tokens=0 (`team-runtime.ts:488` `?? 0`), which `/brain/executions/[id]` reads as
+measured and renders "COST UNAVAILABLE (tokens measured; no pricing source)" over nothing
+measured. The FAILED/interrupted no-usage path is already honest. Fix the summed-0-vs-null at
+team close or in the read model, PIN BOTH COST UNAVAILABLE strings with tests (neither is
+asserted anywhere today), and correct the stale comment `execution-trace.ts:71`. Deliberately
+NOT fixed pre-commit: it touches lib/ and would have reset the two-clean-run pair for a
+display-honesty edge. This is a repair, in scope under the freeze.
+
 ## P0 PROVIDER TRANSPORT FAMILIES — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/provider-transports/)
 The owner's milestone as stated: ONE scalable architecture, not 75 adapter files. Three HTTP wire
 transports under one tested contract (OpenAI-compatible / Anthropic-native / Gemini-native) +

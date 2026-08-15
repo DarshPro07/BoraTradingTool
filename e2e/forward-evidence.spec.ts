@@ -2,6 +2,7 @@ import fs from "node:fs";
 import Database from "better-sqlite3";
 import { expect, test } from "@playwright/test";
 import { ensureLocalSession } from "./lib/session";
+import { seedGapSessions5m } from "./lib/gap-sessions";
 
 /**
  * Forward evidence, end to end on DESKTOP (owner test 18; the mission's Playwright policy is
@@ -33,10 +34,12 @@ test.describe("forward evidence — the shadow stage through the running app", (
     }
     if (!fs.existsSync(DB_PATH!)) throw new Error(`Server database never appeared at ${DB_PATH}.`);
 
-    // Daily bars: the professor-authored gap strategy is daily, and the shadow evaluator will
-    // observe it on the same canonical store the historical side reads.
+    // Both resolutions: daily for the evidence side, and 5-MINUTE sessions for the strategy —
+    // professor-authored NSE strategies are born intraday (the capital basis's product), and the
+    // shadow evaluator observes them on the same canonical store the historical side reads.
     const db = new Database(DB_PATH!);
     try {
+      seedGapSessions5m(db, "IN:XNSE:TCS", SESSION_OPEN_UTC);
       // A dedicated instrument: other suites seed flat daily RELIANCE bars at these exact
       // timestamps, and a count-based guard once skipped this seeding entirely because of them.
       const existing = db
@@ -160,7 +163,9 @@ test.describe("forward evidence — the shadow stage through the running app", (
     await expect(row).toBeVisible();
     await expect(row).toContainText(/signal\(s\)/);
     await expect(row).toContainText(/resolved/);
-    await expect(row).toContainText(/INSUFFICIENT|ON_TRACK|DRIFTING/);
+    // Any STATED policy verdict is legitimate — this spec pins truthfulness of the scorecard,
+    // not profitability of the fixture. FAILS_POLICY on a losing sample is the policy working.
+    await expect(row).toContainText(/INSUFFICIENT|ON_TRACK|DRIFTING|FAILS_POLICY|MEETS_POLICY/);
     // The paper ledger, on the same row, strictly labelled as its own ledger.
     await expect(row.getByTestId("forward-paper")).toContainText(/PAPER \(separate ledger\)/);
     await expect(row.getByTestId("forward-paper")).toContainText(/executed/);

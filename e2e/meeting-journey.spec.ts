@@ -46,7 +46,9 @@ const RUN_STAMP = Date.now().toString(36);
 test.describe("meeting journey — NSE, research, factory, replay, paper, brain", () => {
   test("what the person does provably changes what the system knows", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
-    test.setTimeout(180_000);
+    // Research budget follows the measured model-latency tail (208s in master run 9): 300s wait
+    // inside a 330s test.
+    test.setTimeout(330_000);
     const pageErrors = collectPageErrors(page);
 
     let before = { hypotheses: 0, strategies: 0, paperOrders: 0 };
@@ -117,7 +119,7 @@ test.describe("meeting journey — NSE, research, factory, replay, paper, brain"
       // disabled handoff) described a driver that no longer exists.
       await expect(page.getByTestId("research-stock-state")).toHaveText(
         /PROPOSAL READY|NEEDS EVIDENCE|FAILED/,
-        { timeout: 150_000 },
+        { timeout: 300_000 },
       );
       await expect(page.getByTestId("research-stock-fixture-banner")).toHaveCount(0);
       const state = ((await page.getByTestId("research-stock-state").textContent()) ?? "").trim();

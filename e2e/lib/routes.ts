@@ -20,6 +20,10 @@ const DEFAULT_APP_DIR = path.join(process.cwd(), "app");
  */
 export const DYNAMIC_SEGMENT_SAMPLES: Record<string, string> = {
   "/analyze/[ticker]": "IN:XNSE:RELIANCE",
+  // A TeamRun id that will not exist on an arbitrary database — the page's honest empty state
+  // ("No TeamRun … exists in the ledger") is itself the render under test here; real trees are
+  // driven by e2e/brain-executions.spec.ts, which mints a live TeamRun and drills it.
+  "/brain/executions/[id]": "tmr_route_probe",
 };
 
 export interface DiscoveredRoute {

@@ -46,6 +46,20 @@ export interface SnapshotRefusal {
   message: string;
 }
 
+/**
+ * The ONLY actors that see through a live seal: the stages that CONSUME the arriving stream and
+ * tune nothing. The forward shadow records predictions on data as it arrives; paper reconciles
+ * fills against it. Neither chooses a strategy, so neither can bias the one holdout evaluation.
+ *
+ * This set is deliberately an allowlist of CONSUMPTION, not of development — the boundary fails
+ * CLOSED. Listing development actors instead is what let `gauntlet` (which spends a permanent
+ * statistical trial and selects on what it sees) and `statarb-formation` (pair mining is strategy
+ * search) replay straight across the sealed window: an actor nobody remembered to enumerate got
+ * full sight by default. Under this direction a forgotten actor loses recent bars — visible,
+ * recoverable, and honest — instead of silently contaminating the holdout.
+ */
+const SEAL_SIGHTED_ACTORS: ReadonlySet<string> = new Set(["forward-shadow", "paper-forward"]);
+
 /** The DSL resolution → the store's resolution key. Absent = the store cannot serve it. */
 export const STORE_RESOLUTION: Readonly<Record<string, string>> = Object.freeze({
   D: "D",
@@ -68,14 +82,22 @@ export function snapshotFromStore(
   actor = "research",
 ): SnapshotResult | SnapshotRefusal {
   /**
-   * DEVELOPMENT EXCLUSION (sealed holdout): while a seal is live for this universe, research
+   * DEVELOPMENT EXCLUSION (sealed holdout): while a seal is live for this universe, DEVELOPMENT
    * snapshots must not contain the sealed region — [start − purgeGap, end + embargo] — or the
    * holdout is development data and its one evaluation is biased before it happens. The purge
    * keeps development labels (which span forward in time) from overlapping INTO the window; the
    * embargo keeps the window's serial correlation from leaking OUT of it. A consumed or
    * invalidated seal frees the region, and the unsealed fingerprint returns byte-identically.
+   *
+   * DEVELOPMENT BY DEFAULT, by actor: rehearsal, backtest, validation, research, gauntlet and
+   * the statarb searches are all FITTING — they choose and tune on what they see — and so is any
+   * actor added later by someone who never read this file. Only the CONSUMPTION stages in
+   * SEAL_SIGHTED_ACTORS see through the seal: they record predictions on the arriving stream and
+   * tune nothing, and blinding THEM silently zeroed the entire shadow stage on the first
+   * consolidation master run (an active seal's tail IS the recent data forward observation
+   * exists to watch).
    */
-  const seal = activeSealFor(market, resolution);
+  const seal = SEAL_SIGHTED_ACTORS.has(actor) ? null : activeSealFor(market, resolution);
   if (!seal) {
     return buildSnapshot(market, resolution, actor, `${market}|${resolution}|`, () => true, null);
   }

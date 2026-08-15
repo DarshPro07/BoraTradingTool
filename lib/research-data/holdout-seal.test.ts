@@ -206,6 +206,37 @@ describe("development snapshots exclude the sealed region", () => {
     // And it is a DIFFERENT dataset than the unsealed build, by fingerprint.
     expect(dev.fingerprint).not.toBe(before.fingerprint);
 
+    // The FORWARD stage is consumption, not development — it must still see the full store
+    // while the seal is live (blinding it zeroed the entire shadow stage on the first
+    // consolidation master run: the sealed tail IS the recent data forward observation watches).
+    const forward = snapshotFromStore("NSE", "D", "forward-shadow");
+    expect(forward.ok).toBe(true);
+    if (forward.ok) expect(forward.fingerprint).toBe(before.fingerprint);
+
+    // FAIL-CLOSED, and this is the whole point: the boundary may not depend on someone having
+    // remembered to enumerate their actor. An allowlist of development actors let `gauntlet` —
+    // which SPENDS A PERMANENT TRIAL and selects on what it sees — replay across the sealed
+    // window, and `statarb-formation` (pair mining IS strategy search) with it. Anything that is
+    // not explicitly a consumption stage is development until proven otherwise.
+    for (const developmentActor of [
+      "gauntlet",
+      "statarb-formation",
+      "statarb-walkforward",
+      "inspection",
+      "some-actor-invented-next-year",
+    ]) {
+      const snapshot = snapshotFromStore("NSE", "D", developmentActor);
+      expect(snapshot.ok).toBe(true);
+      if (!snapshot.ok) continue;
+      const peeked = Object.values(snapshot.dataset)
+        .flat()
+        .filter((bar) => bar.time >= lo && bar.time <= hi);
+      expect(
+        peeked.length,
+        `actor "${developmentActor}" saw ${peeked.length} sealed bar(s) — an unlisted actor must fail CLOSED, not open`,
+      ).toBe(0);
+    }
+
     // Consuming the seal frees the region for development again.
     authorizeSeal(sealed.seal.id, "owner:test");
     consumeSeal(sealed.seal.id, "done (test)");

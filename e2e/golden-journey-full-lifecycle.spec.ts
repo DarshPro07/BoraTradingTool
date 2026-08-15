@@ -2,6 +2,7 @@ import fs from "node:fs";
 import Database from "better-sqlite3";
 import { expect, test, type Page } from "@playwright/test";
 import { ensureLocalSession } from "./lib/session";
+import { seedGapSessions5m } from "./lib/gap-sessions";
 
 /**
  * MASTER GOLDEN JOURNEY (masterclass A76/C34-36) — the FULL lifecycle, per stock, across a
@@ -84,13 +85,17 @@ test.describe("master golden journey — full lifecycle across 8 diverse NSE equ
     }
     if (!fs.existsSync(DB_PATH!)) throw new Error(`Server database never appeared at ${DB_PATH}.`);
 
-    // Deterministic daily bars per journey stock — every third day gaps up hard on heavy volume so
-    // gap_pct AND rvol genuinely fire (forward-evidence recipe; count-guarded per instrument so a
-    // shared database is never double-seeded).
+    // Deterministic bars per journey stock — every third session gaps up hard on heavy volume so
+    // gap_pct AND rvol genuinely fire. BOTH resolutions: daily for the research/evidence side,
+    // and 5-MINUTE sessions for the strategies themselves — autonomously authored NSE strategies
+    // are born intraday (the capital basis's own product), and a 5m strategy over a daily-only
+    // store truthfully produces nothing (the exact zero-signal failure the first consolidation
+    // master run caught). Count-guarded per instrument and resolution.
     const db = new Database(DB_PATH!);
     try {
       for (const stock of JOURNEY_STOCKS) {
         const ticker = `IN:XNSE:${stock.symbol}`;
+        seedGapSessions5m(db, ticker, SESSION_OPEN_UTC);
         const existing = db
           .prepare("SELECT COUNT(*) AS n FROM price_candles WHERE ticker = ? AND resolution = 'D'")
           .get(ticker) as { n: number };
@@ -130,7 +135,10 @@ test.describe("master golden journey — full lifecycle across 8 diverse NSE equ
       baseURL,
     }, testInfo) => {
       test.skip(testInfo.project.name.includes("mobile"), "mission policy: desktop-only Playwright");
-      test.setTimeout(420_000);
+      // 570s = the old 420s chain budget with its research allowance raised 150s→300s (the
+      // measured model-latency tail reached 208s in master run 9); the non-research remainder
+      // is unchanged.
+      test.setTimeout(570_000);
       await ensureLocalSession(request);
 
       await test.step("identity: the security master resolves the instrument canonically", async () => {
@@ -155,9 +163,10 @@ test.describe("master golden journey — full lifecycle across 8 diverse NSE equ
         await page.goto(`/analyze/${encoded}`, { waitUntil: "domcontentloaded" });
         await expect(page.getByRole("main")).toContainText("₹");
         await page.getByTestId("research-stock-run").click();
-        // A real provider round-trip is the slow case (~60s); a hang still fails, just later.
+        // A real provider round-trip is the slow case (measured 36–208s across master runs); a
+        // hang still fails, just later.
         await expect(page.getByTestId("research-stock-state")).toHaveText(/PROPOSAL READY|NEEDS EVIDENCE/, {
-          timeout: 150_000,
+          timeout: 300_000,
         });
         // Research is live — the fixture era's banner must NOT be on a real run.
         await expect(page.getByTestId("research-stock-fixture-banner")).toHaveCount(0);
