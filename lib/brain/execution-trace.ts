@@ -67,8 +67,16 @@ export interface ExecutionMemberView {
 }
 
 export interface ExecutionTotals {
+  /** Null = UNMEASURED (no usage reported). Never 0-as-a-stand-in — see tokensMeasurement. */
   tokens: number | null;
-  /** Sum of provider-REPORTED costs only. Null = COST UNAVAILABLE (tokens still measured). */
+  /**
+   * Measurement census over MODEL-CALL members only (ledger-recorded runs whose provider is not
+   * "deterministic" — the deterministic chief spends no tokens BY DESIGN, it is not a model
+   * call). MEASURED = every such member reported usage; PARTIAL = a strict subset did, so
+   * `tokens` is a subset sum, not a total; UNMEASURED = none did (tokens is null).
+   */
+  tokensMeasurement: "MEASURED" | "PARTIAL" | "UNMEASURED";
+  /** Sum of provider-REPORTED costs only, single-currency. Null = COST UNAVAILABLE. */
   cost: number | null;
   costCurrency: string | null;
   artifactCount: number;
@@ -237,6 +245,24 @@ export function executionTrace(teamRunId: string): ExecutionTrace | null {
 
   const measured = members.map((member) => member.tokens).filter((tokens): tokens is number => tokens !== null);
   const childTokens = measured.length > 0 ? measured.reduce((sum, tokens) => sum + tokens, 0) : null;
+  // Measurement census: only ledger-recorded model calls can be measured. The deterministic
+  // chief reports no usage BY DESIGN and must not drag a fully measured team to PARTIAL.
+  const censusMembers = members.filter(
+    (member) => member.executed !== null && member.executed.provider !== "deterministic",
+  );
+  const measuredCensus = censusMembers.filter((member) => member.tokens !== null);
+  const tokensMeasurement: ExecutionTotals["tokensMeasurement"] =
+    measuredCensus.length === 0
+      ? "UNMEASURED"
+      : measuredCensus.length === censusMembers.length
+        ? "MEASURED"
+        : "PARTIAL";
+  // Legacy healing: before 2026-08-15 the runtime summed member tokens with `?? 0`, so an
+  // all-unmeasured COMPLETED team wrote 0 to its row. A row.tokens of 0 over children that
+  // measured nothing can ONLY be that fake zero — a genuinely measured 0 total requires a
+  // measured-0 child, which would make childTokens 0, not null — so it reads as null here
+  // rather than needing a migration.
+  const rowTokens = row.tokens === 0 && childTokens === null ? null : row.tokens;
   const reportedCosts = members
     .map((member) => member.cost)
     .filter((cost): cost is number => cost !== null && Number.isFinite(cost));
@@ -245,7 +271,8 @@ export function executionTrace(teamRunId: string): ExecutionTrace | null {
   );
 
   const totals: ExecutionTotals = {
-    tokens: row.tokens ?? childTokens,
+    tokens: rowTokens ?? childTokens,
+    tokensMeasurement,
     // Cost is a sum ONLY when every reported cost shares one currency — a mixed-currency sum is
     // a fabricated conversion, so it reports UNAVAILABLE instead.
     cost: reportedCosts.length > 0 && currencies.size === 1 ? reportedCosts.reduce((sum, cost) => sum + cost, 0) : null,
@@ -284,6 +311,31 @@ function readJob(jobId: number | null): ExecutionTrace["job"] {
   const job = getDb().select().from(schema.researchJobs).where(eq(schema.researchJobs.id, jobId)).get();
   if (!job) return null;
   return { id: job.id, kind: job.kind, status: job.status, attempts: job.attempts, lastError: job.lastError };
+}
+
+/**
+ * The one place the totals' token/cost words are composed — the UI renders these verbatim and
+ * the tests pin every branch, so "measured" can never again be derived from a fake zero.
+ */
+export function tokensStatement(totals: ExecutionTotals): string {
+  if (totals.tokensMeasurement === "UNMEASURED" || totals.tokens === null) {
+    return "UNMEASURED — no usage reported by the provider";
+  }
+  if (totals.tokensMeasurement === "PARTIAL") {
+    return `${totals.tokens} (PARTIAL — some members reported no usage)`;
+  }
+  return String(totals.tokens);
+}
+
+export function costStatement(totals: ExecutionTotals): string {
+  if (totals.cost !== null) return `${totals.cost} ${totals.costCurrency ?? ""}`.trim();
+  if (totals.tokensMeasurement === "UNMEASURED") {
+    return "COST UNAVAILABLE (no usage reported by the provider)";
+  }
+  if (totals.tokensMeasurement === "PARTIAL") {
+    return "COST UNAVAILABLE (tokens partially measured; no pricing source)";
+  }
+  return "COST UNAVAILABLE (tokens measured; no pricing source)";
 }
 
 /** Newest first — what the /brain RECENT WORK panel renders. */

@@ -7,7 +7,7 @@ import { completeTeamRun, createTeamRun, failTeamRun, type TeamExecutionPlan, ty
 import { recordArtifact } from "@/lib/agents/artifacts";
 import { recordAgentRun } from "@/lib/runtime/agent-runs";
 import { enqueue } from "@/lib/research/queue";
-import { executionTrace, listExecutions } from "./execution-trace";
+import { costStatement, executionTrace, listExecutions, tokensStatement } from "./execution-trace";
 
 /**
  * The read model's contract, on SEEDED LEDGER ROWS written by the runtime's own writers
@@ -307,8 +307,12 @@ describe("the execution tree", () => {
   });
 
   it("refuses to claim a reconciliation it could not perform, and says why cost is absent", () => {
-    // A provider that reports no usage yields null tokens on every member while the runtime still
-    // sums them to 0 on the team row. Comparing 0 against nothing is not a passing comparison.
+    // A provider that reports no usage yields null tokens on every member. The PRE-FIX runtime
+    // summed them with `?? 0` and wrote 0 to the team row — this seeds that LEGACY row shape
+    // directly, and the read model must heal it: a row.tokens of 0 over children that measured
+    // nothing can only be the fake zero (a genuinely measured 0 total requires a measured-0
+    // child, which would make childTokens 0, not null). Fake zeroes must never reach a
+    // statistics consumer — an unmeasured model would look artificially cheap to the router.
     const { id: jobId } = enqueue({ kind: "instrument_research", payload: { instrumentId: INSTRUMENT } });
     const teamRunId = `tmr_${sha("trace-unmeasured")}`;
     createTeamRun({ id: teamRunId, teamId: "research.instrument.team", teamVersion: "1", jobId, instrumentId: INSTRUMENT, plan: PLAN });
@@ -351,11 +355,91 @@ describe("the execution tree", () => {
     });
 
     const trace = executionTrace(teamRunId);
-    expect(trace?.totals.tokens).toBe(0);
+    expect(
+      trace?.totals.tokens,
+      "a legacy summed-0 over unmeasured children must read UNMEASURED, never 'measured zero'",
+    ).toBeNull();
+    expect(trace?.totals.tokensMeasurement).toBe("UNMEASURED");
+    expect(tokensStatement(trace!.totals)).toBe("UNMEASURED — no usage reported by the provider");
+    expect(costStatement(trace!.totals)).toBe("COST UNAVAILABLE (no usage reported by the provider)");
     expect(
       trace?.reconciled,
       "an unmeasurable comparison must read NOT COMPARABLE, never as a passing reconciliation",
     ).toBeNull();
+  });
+
+  it("a partially measured team says PARTIAL — a subset sum is not a measured total", () => {
+    const { id: jobId } = enqueue({ kind: "instrument_research", payload: { instrumentId: INSTRUMENT } });
+    const teamRunId = `tmr_${sha("trace-partial")}`;
+    createTeamRun({ id: teamRunId, teamId: "research.instrument.team", teamVersion: "1", jobId, instrumentId: INSTRUMENT, plan: PLAN });
+    const researcher = seedMemberRun(teamRunId, "researcher", { tokens: 300 });
+    const critic = seedMemberRun(teamRunId, "critic", { tokens: null });
+    completeTeamRun({
+      id: teamRunId,
+      result: RESULT,
+      memberAgentRunIds: [researcher, critic],
+      artifactIds: [],
+      // Unrecorded chief id: renders as an UNRECORDED member (tested elsewhere) and stays out
+      // of the measurement census — only ledger-recorded model calls are measurable.
+      chiefAgentRunId: `agr_${sha(`${teamRunId}|chief`)}`,
+      tokens: 300,
+      cost: null,
+      costCurrency: null,
+    });
+
+    const trace = executionTrace(teamRunId);
+    expect(trace?.totals.tokens).toBe(300);
+    expect(trace?.totals.tokensMeasurement).toBe("PARTIAL");
+    expect(tokensStatement(trace!.totals)).toBe("300 (PARTIAL — some members reported no usage)");
+    expect(costStatement(trace!.totals)).toBe(
+      "COST UNAVAILABLE (tokens partially measured; no pricing source)",
+    );
+  });
+
+  it("the deterministic chief is not a model call — it never drags a fully measured team to PARTIAL", () => {
+    const { id: jobId } = enqueue({ kind: "instrument_research", payload: { instrumentId: INSTRUMENT } });
+    const teamRunId = `tmr_${sha("trace-chief-census")}`;
+    createTeamRun({ id: teamRunId, teamId: "research.instrument.team", teamVersion: "1", jobId, instrumentId: INSTRUMENT, plan: PLAN });
+    const researcher = seedMemberRun(teamRunId, "researcher", { tokens: 120 });
+    const chief = `agr_${sha(`${teamRunId}|chief`)}`;
+    recordAgentRun({
+      id: chief,
+      capability: "RESEARCH",
+      provider: "deterministic",
+      model: "chief_of_staff",
+      status: "COMPLETED",
+      trigger: "LEARNING",
+      instrumentId: INSTRUMENT,
+      evidenceFingerprint: null,
+      envelope: null,
+      refusalCode: null,
+      refusalMessage: null,
+      tokens: null,
+      cost: null,
+      costCurrency: null,
+      fallbackReason: null,
+      agentId: "agent.chief",
+      agentVersion: "1",
+      jobId,
+      teamRunId,
+      startedAt: new Date("2026-08-15T05:00:41Z"),
+      completedAt: new Date("2026-08-15T05:00:44Z"),
+    });
+    completeTeamRun({
+      id: teamRunId,
+      result: RESULT,
+      memberAgentRunIds: [researcher],
+      artifactIds: [],
+      chiefAgentRunId: chief,
+      tokens: 120,
+      cost: null,
+      costCurrency: null,
+    });
+
+    const trace = executionTrace(teamRunId);
+    expect(trace?.totals.tokensMeasurement).toBe("MEASURED");
+    expect(tokensStatement(trace!.totals)).toBe("120");
+    expect(costStatement(trace!.totals)).toBe("COST UNAVAILABLE (tokens measured; no pricing source)");
   });
 
   it("counts a failed run's artifacts from the ledger, not from a field failTeamRun never fills", () => {

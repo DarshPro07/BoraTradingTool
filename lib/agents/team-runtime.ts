@@ -485,7 +485,10 @@ export async function runInstrumentResearchTeam(
   });
 
   const artifactIds = [...outcomes.map((o) => o.artifactId).filter((id): id is string => id !== null), synthArtifactId];
-  const totalTokens = outcomes.reduce((sum, o) => sum + (o.tokens ?? 0), 0);
+  // Unmeasured is null, never 0: a provider that reports no usage must not make the team look
+  // like it measured zero spend (statistics consumers would read a fake 0 as "free").
+  const measuredTokenOutcomes = outcomes.filter((o) => o.tokens != null);
+  const totalTokens = measuredTokenOutcomes.reduce((sum, o) => sum + (o.tokens ?? 0), 0);
   const totalCost = outcomes.reduce((sum, o) => sum + (o.cost ?? 0), 0);
 
   // Post-guard: aggregate spend cannot exceed a stated cap.
@@ -500,7 +503,7 @@ export async function runInstrumentResearchTeam(
     memberAgentRunIds: memberRunIds,
     artifactIds,
     result,
-    tokens: totalTokens,
+    tokens: measuredTokenOutcomes.length > 0 ? totalTokens : null,
     cost: totalCost > 0 ? totalCost : null,
     costCurrency: outcomes.find((o) => o.cost != null) ? "USD" : null,
   });

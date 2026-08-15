@@ -169,6 +169,27 @@ describe("Team OS — orchestration (injected member runner)", () => {
     expect(maxActive, "at least two members were in flight at once").toBeGreaterThanOrEqual(2);
   });
 
+  it("an all-unmeasured team writes tokens NULL to its row — never a fake measured zero", async () => {
+    // A provider that reports no usage must not make the team look like it measured zero spend:
+    // the Model Router will learn from these statistics, and a fake 0 reads as "free".
+    seedDailyCandles();
+    const noUsageRunMember: RunMember = async (member) => ({
+      ok: true,
+      content: contentFor(member.role),
+      provider: "claude-code",
+      model: "test-model",
+      tokens: null,
+      cost: null,
+      costCurrency: null,
+    });
+
+    const outcome = await runInstrumentResearchTeam(INSTRUMENT, 97, { runMember: noUsageRunMember });
+    expect(outcome.ok).toBe(true);
+    const row = teamRuns().find((team) => team.id === outcome.teamRunId);
+    expect(row?.status).toBe("COMPLETED");
+    expect(row?.tokens, "an unmeasured team total is null, not a summed 0").toBeNull();
+  });
+
   it("[16] the team budget cannot be exceeded — the Chief-of-Staff cannot widen its own envelope", async () => {
     const tightTeam = { ...RESEARCH_TEAM_V1, budget: { ...RESEARCH_TEAM_V1.budget, maxModelCalls: 2 } };
     await expect(

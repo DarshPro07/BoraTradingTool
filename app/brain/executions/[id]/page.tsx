@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { executionTrace, type ExecutionMemberView } from "@/lib/brain/execution-trace";
+import { costStatement, executionTrace, tokensStatement, type ExecutionMemberView } from "@/lib/brain/execution-trace";
 import { Panel } from "@/components/system/Panel";
 
 export const dynamic = "force-dynamic";
@@ -234,7 +234,7 @@ export default async function ExecutionPage({ params }: { params: Promise<{ id: 
       <Panel title="TOTALS — RECONCILED AGAINST THE CHILD RUNS">
         <div className="p-3 grid gap-1 sm:grid-cols-3 text-xs" data-testid="execution-totals">
           <div>
-            Tokens: <span className="tabular-nums">{trace.totals.tokens ?? "—"}</span>{" "}
+            Tokens: <span className="tabular-nums">{tokensStatement(trace.totals)}</span>{" "}
             <span className="text-[10px] text-muted-foreground">
               (
               {trace.reconciled === null
@@ -245,14 +245,7 @@ export default async function ExecutionPage({ params }: { params: Promise<{ id: 
               )
             </span>
           </div>
-          <div>
-            Cost:{" "}
-            {trace.totals.cost !== null
-              ? `${trace.totals.cost} ${trace.totals.costCurrency ?? ""}`
-              : trace.totals.tokens !== null
-                ? "COST UNAVAILABLE (tokens measured; no pricing source)"
-                : "COST UNAVAILABLE (no usage reported by the provider)"}
-          </div>
+          <div>Cost: {costStatement(trace.totals)}</div>
           <div>
             Artifacts: {trace.totals.artifactCount} · Dissent: {trace.totals.dissentCount} · Unresolved:{" "}
             {trace.totals.unresolvedCount} · Failed members: {trace.totals.membersFailed}

@@ -77,8 +77,11 @@ test("market selector and instrument search preserve canonical navigation", asyn
  * environments would stop testing the fixture path in either.
  */
 const usesExternalServer = Boolean(process.env.MARKETPULSE_E2E_BASE_URL?.trim());
+// Typed classification (owner rule 2026-08-15): every deliberate acceptance skip names its class
+// so "2 skipped" in a run summary is attributable, and e2e/lib/expected-skips.test.ts pins the
+// manifest — a third expected skip cannot join silently.
 const fixtureOnly = usesExternalServer
-  ? "requires MARKETPULSE_TEST_MODE fixtures; the external server under test does not run in test mode"
+  ? "EXPECTED_SKIP(EXTERNAL_DEPENDENCY): requires MARKETPULSE_TEST_MODE fixtures; the external server under test does not run in test mode"
   : false;
 
 test("AI desk returns cited fixture analysis", async ({ page }) => {

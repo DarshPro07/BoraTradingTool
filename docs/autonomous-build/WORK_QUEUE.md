@@ -38,7 +38,14 @@ consumption stages (`forward-shadow`, `paper-forward`) see through a live seal; 
 including actors added later by someone who never reads that file, is development. **Any new
 snapshot consumer must now justify sightedness explicitly — do not re-invert this.**
 
-## FOLLOW-UP (first post-commit item; found by pre-commit claim verification 2026-08-15)
+## FOLLOW-UP — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/telemetry-measurement-honesty/)
+Resolved by the telemetry-measurement-honesty leg on owner order (with the acceptance-skip
+typed classification): unmeasured is null end to end, `tokensMeasurement`
+MEASURED|PARTIAL|UNMEASURED, both COST UNAVAILABLE strings composed in one place and test-pinned,
+legacy summed-0 rows healed at read time, `EXPECTED_SKIP(EXTERNAL_DEPENDENCY)` manifest guard.
+Original entry kept below for the record.
+
+## (superseded) FOLLOW-UP (first post-commit item; found by pre-commit claim verification 2026-08-15)
 Cost-honesty residual in the execution tree: a COMPLETED team whose members all report no usage
 writes summed tokens=0 (`team-runtime.ts:488` `?? 0`), which `/brain/executions/[id]` reads as
 measured and renders "COST UNAVAILABLE (tokens measured; no pricing source)" over nothing
