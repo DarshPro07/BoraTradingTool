@@ -72,6 +72,12 @@ export interface FamilyComparisonRow {
   name: string;
   campaignId: string;
   campaignName: string;
+  /** Specs declared into this family (strategy_identity rows) — the candidate pool. */
+  candidates: number;
+  /** Candidates whose evidence-derived standing is rehearsed or beyond (graveyard excluded). */
+  rehearsed: number;
+  /** Candidates standing ready to spend a gauntlet trial (blockedOn === "gauntlet"). */
+  readyForGauntlet: number;
   /** selection_trials rows for this family — its share of the DSR denominator. */
   trials: number;
   /** Specs in this family whose LATEST validation passed. */
@@ -97,7 +103,7 @@ export interface RejectionDiagnosis {
   reading: string;
 }
 
-export function familyComparison(): FamilyComparisonRow[] {
+export function familyComparison(deps: { standings?: () => Standing[] } = {}): FamilyComparisonRow[] {
   const db = getDb();
   const families = db.select().from(schema.strategyFamilies).all();
   if (families.length === 0) return [];
@@ -112,6 +118,27 @@ export function familyComparison(): FamilyComparisonRow[] {
   const familyBySpec = new Map(
     db.select().from(schema.strategyIdentity).all().map((row) => [row.strategySpecId, row.strategyFamilyId]),
   );
+
+  // Candidate pools: what AUTO can PREPARE without spending anything. Rungs come from the
+  // evidence-derived standings; "ready for gauntlet" is precisely the standing whose next act
+  // costs a statistical trial (blockedOn === "gauntlet") — the number worth spending budget on.
+  const ladder = (deps.standings ?? realStandings)();
+  const standingBySpec = new Map(ladder.map((standing) => [standing.specId, standing]));
+  const REHEARSED_OR_BEYOND = new Set(["rehearsed", "validated", "holdout_cleared", "paper_forward", "owner_review"]);
+  const candidatesByFamily = new Map<string, number>();
+  const rehearsedByFamily = new Map<string, number>();
+  const readyByFamily = new Map<string, number>();
+  for (const [specId, familyId] of familyBySpec) {
+    candidatesByFamily.set(familyId, (candidatesByFamily.get(familyId) ?? 0) + 1);
+    const standing = standingBySpec.get(specId);
+    if (!standing) continue;
+    if (REHEARSED_OR_BEYOND.has(standing.stage)) {
+      rehearsedByFamily.set(familyId, (rehearsedByFamily.get(familyId) ?? 0) + 1);
+    }
+    if (standing.blockedOn === "gauntlet") {
+      readyByFamily.set(familyId, (readyByFamily.get(familyId) ?? 0) + 1);
+    }
+  }
   const latestBySpec = new Map<string, { passed: number; at: number }>();
   for (const validation of db.select().from(schema.validationResults).all()) {
     const held = latestBySpec.get(validation.strategySpecId);
@@ -167,6 +194,9 @@ export function familyComparison(): FamilyComparisonRow[] {
       name: family.name,
       campaignId: family.researchCampaignId,
       campaignName: campaignNames.get(family.researchCampaignId) ?? family.researchCampaignId,
+      candidates: candidatesByFamily.get(family.id) ?? 0,
+      rehearsed: rehearsedByFamily.get(family.id) ?? 0,
+      readyForGauntlet: readyByFamily.get(family.id) ?? 0,
       trials: trialsByFamily.get(family.id) ?? 0,
       gauntletPass: gauntletPassByFamily.get(family.id) ?? 0,
       holdoutPass: holdoutPassByFamily.get(family.id) ?? 0,

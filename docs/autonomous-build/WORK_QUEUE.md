@@ -847,3 +847,14 @@ NSE sector/VIX/pre-market ingestion, scheduler/DataSufficiencyPolicy, provider s
 WS2 point-in-time universe. Deferred behind P-items: selection-search linkage, richer
 Scenario/Alpha-Health UI, Phase G Portfolio Engine, MCP universe pagination (spec above).
 
+
+## P0 NSE DATA COVERAGE EXPANSION — **ACTIVE-AUTONOMOUS 2026-08-16** (docs/plans/nse-data-coverage/)
+Owner ruling: coverage before trial spending; MARKETPULSE_AUTONOMOUS_TRIALS stays 0. The
+readiness index + deterministic batch planner (lib/market/universe-coverage.ts) now drives
+`resolveUniverseDataGaps` — P1 finishes referenced/partial instruments at rehearsal priority,
+P2/P3 expand the EQ main board (2,122) deterministically; SME (561)/ETF/REIT/surveillance are
+SEPARATE universes, never merged. /brain shows NSE DATA COVERAGE (readiness ladder with derived
+floors 60/250/340 D bars + 20 accumulated 5m sessions, typed missing reasons) and the family
+pool columns (candidates/rehearsed/READY-FOR-GAUNTLET). Coverage at measurement: 118/2,122
+research-ready (5.6%), moving each cycle pass — the owner's live AUTO grew it 28→143 tickers in
+one evening. Trial switch flips only when the READY_FOR_GAUNTLET pools justify it.

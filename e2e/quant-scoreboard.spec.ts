@@ -78,12 +78,30 @@ test.describe("the quant scoreboard — /brain answers the primary question from
     if (familyRowCount === 0) {
       await expect(familyBlock).toContainText("no registered families yet");
     } else {
-      // Each row carries every column — paper net and max DD are either ₹/% figures or "—".
+      // Each row carries every column — the candidate pool (C/R/G) plus the evidence columns;
+      // paper net and max DD are either ₹/% figures or "—".
       const firstRow = page.getByTestId("quant-family-row").first();
-      await expect(firstRow.locator("td")).toHaveCount(8);
+      await expect(firstRow.locator("td")).toHaveCount(9);
       const rowText = (await firstRow.textContent()) ?? "";
+      expect(rowText).toMatch(/\d+\/\d+\/\d+/);
       expect(rowText).toMatch(/₹-?\d|—/);
     }
+
+    // Data coverage (owner 2026-08-16): the eligible universe measured, reasons typed, SME
+    // segregated. Present on every database state — zeros are an honest reading.
+    const coverage = page.getByTestId("brain-data-coverage");
+    await expect(coverage).toBeVisible();
+    await expect(coverage).toContainText("TRADABLE RESEARCH UNIVERSE");
+    await expect(page.getByTestId("coverage-research-ready")).toContainText(/\d+ · \d+(\.\d+)?%/);
+    const reasons = page.getByTestId("coverage-missing-reasons");
+    await expect(reasons).toBeVisible();
+    const reasonsText = (await reasons.textContent()) ?? "";
+    expect(
+      /NO_HISTORY|INSUFFICIENT_BARS|INGEST_/.test(reasonsText) || /nothing missing/.test(reasonsText),
+      `missing-reason block is neither typed reasons nor the stated empty:\n${reasonsText}`,
+    ).toBe(true);
+    await expect(coverage).toContainText("SME");
+    await expect(coverage).toContainText("grows only by live accumulation");
 
     // v2 — the diagnosis block: threshold-met readings, or the stated silence. Never absent.
     const diagnosis = page.getByTestId("quant-diagnosis");

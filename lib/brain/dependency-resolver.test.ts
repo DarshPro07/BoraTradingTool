@@ -381,16 +381,31 @@ describe("the grammar — durable kinds (JOB) and the two-concept warm-up compos
 describe("universe-wide resolution", () => {
   useTemporaryDatabase();
 
-  it("bounds its readiness checks by quota and reports every outcome class", async () => {
+  it("bounds its readiness checks by quota, ADVANCES through the universe, and never stacks on an instrument", async () => {
     const report = await resolveUniverseDataGaps({ quota: 5 });
     expect(report.considered).toBeLessThanOrEqual(5);
     // The TEST_MODE master resolves at least one real instrument with an empty store.
     expect(report.queued).toBeGreaterThanOrEqual(1);
     expect(report.summary).toContain("ingest_history");
 
-    // Second pass: nothing stacks. Whatever was queued is now ACTIVE, not re-queued.
+    // v3 (coverage expansion): the planner EXCLUDES instruments whose ingest is already in
+    // flight, so a second pass plans the NEXT batch instead of re-checking the same head — each
+    // pass advances coverage. Per-instrument stacking is still impossible: the dedupe key is
+    // one durable job per instrument, so the union of both passes has no duplicates.
+    const firstPassJobs = getDb()
+      .select()
+      .from(schema.researchJobs)
+      .all()
+      .filter((job) => job.kind === "ingest_history");
     const again = await resolveUniverseDataGaps({ quota: 5 });
-    expect(again.queued).toBe(0);
-    expect(again.active).toBeGreaterThanOrEqual(report.queued);
+    const allJobs = getDb()
+      .select()
+      .from(schema.researchJobs)
+      .all()
+      .filter((job) => job.kind === "ingest_history");
+    const keys = allJobs.map((job) => job.dedupeKey);
+    expect(new Set(keys).size, "one durable ingest job per instrument, ever").toBe(keys.length);
+    expect(allJobs.length).toBe(firstPassJobs.length + again.queued);
+    expect(again.considered).toBeLessThanOrEqual(5);
   });
 });

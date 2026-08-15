@@ -228,7 +228,12 @@ describe("the quant scoreboard", () => {
       .values({ intentId: "fi_1", challengerId: "fc_a", instrumentId: "IN:XNSE:TCS", entryTime: EPOCH, entryPrice: 100, quantity: 5, exitTime: EPOCH + 300, exitPrice: 103, exitReason: "target", grossPnl: 15, fees: 4, netPnl: 11, capitalAfter: 1011, fingerprint: "fpo1" })
       .run();
 
-    const rows = familyComparison();
+    const rows = familyComparison({
+      standings: () => [
+        { specId: a.specId, name: "spec-fa", stage: "rehearsed", advance: { kind: "hold", reason: "t" } as never, blockedOn: "gauntlet" },
+        { specId: b.specId, name: "spec-fb", stage: "draft", advance: { kind: "hold", reason: "t" } as never, blockedOn: "rehearsal" },
+      ],
+    });
     const rowA = rows.find((row) => row.familyId === a.familyId)!;
     const rowB = rows.find((row) => row.familyId === b.familyId)!;
     expect(rowA).toMatchObject({
@@ -239,7 +244,12 @@ describe("the quant scoreboard", () => {
       paperNet: 11,
       maxDrawdown: 0.11,
       campaignName: "campaign-fa",
+      // The candidate pool: what AUTO prepared without spending — and what is worth budget.
+      candidates: 1,
+      rehearsed: 1,
+      readyForGauntlet: 1,
     });
+    expect(rowB).toMatchObject({ candidates: 1, rehearsed: 0, readyForGauntlet: 0 });
     expect(rowB).toMatchObject({ trials: 0, gauntletPass: 0, holdoutPass: 0, forwardResolved: 0 });
     expect(rowB.paperNet, "a family that never paper-traded shows —, not 0").toBeNull();
     expect(rowB.maxDrawdown).toBeNull();

@@ -13,6 +13,7 @@ import { AutonomousControl } from "@/components/system/AutonomousControl";
 import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 import { getBrainState, type LaneState } from "@/lib/brain/kernel";
 import { familyComparison, quantScoreboard, rejectionDiagnosis } from "@/lib/dashboard/quant-scoreboard";
+import { universeCoverage } from "@/lib/market/universe-coverage";
 import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,8 @@ export default async function BrainPage() {
   const board = quantScoreboard();
   const familyRows = familyComparison();
   const diagnoses = rejectionDiagnosis();
+  // Data coverage (owner directive 2026-08-16): the bottleneck, measured — never extrapolated.
+  const coverage = universeCoverage();
 
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
@@ -196,7 +199,7 @@ export default async function BrainPage() {
 
           {/* v2: which IDEA families deserve further research — not which backtest looked best. */}
           <div className="border-t border-border pt-2 overflow-x-auto" data-testid="quant-family-comparison">
-            <div className="text-muted-foreground text-[10px]">FAMILY COMPARISON — CAMPAIGN · TRIALS · GAUNTLET · HOLDOUT · FORWARD · PAPER NET · MAX DD</div>
+            <div className="text-muted-foreground text-[10px]">FAMILY COMPARISON — POOL (CANDIDATES · REHEARSED · READY) · TRIALS · GAUNTLET · HOLDOUT · FORWARD · PAPER NET · MAX DD</div>
             {familyRows.length === 0 ? (
               <div className="text-muted-foreground">no registered families yet</div>
             ) : (
@@ -205,6 +208,7 @@ export default async function BrainPage() {
                   <tr className="text-muted-foreground text-left">
                     <th className="pr-2 font-normal">Family</th>
                     <th className="pr-2 font-normal">Campaign</th>
+                    <th className="pr-2 font-normal text-right" title="candidates / rehearsed / ready for gauntlet — prepared without spending trials">Pool C/R/G</th>
                     <th className="pr-2 font-normal text-right">Trials</th>
                     <th className="pr-2 font-normal text-right">Gauntlet</th>
                     <th className="pr-2 font-normal text-right">Holdout</th>
@@ -218,6 +222,7 @@ export default async function BrainPage() {
                     <tr key={row.familyId} data-testid="quant-family-row">
                       <td className="pr-2 break-all">{row.name}</td>
                       <td className="pr-2">{row.campaignName}</td>
+                      <td className="pr-2 text-right">{row.candidates}/{row.rehearsed}/{row.readyForGauntlet}</td>
                       <td className="pr-2 text-right">{row.trials}</td>
                       <td className="pr-2 text-right">{row.gauntletPass}</td>
                       <td className="pr-2 text-right">{row.holdoutPass}</td>
@@ -247,6 +252,62 @@ export default async function BrainPage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      </Panel>
+
+      {/* The mission bottleneck (owner, 2026-08-16): coverage before trial spending. Every number
+          counts the exchange's own taxonomy; SME is a SEPARATE universe, reported beside. */}
+      <Panel title="NSE DATA COVERAGE — THE ELIGIBLE UNIVERSE, MEASURED">
+        <div className="p-3 space-y-2 text-[11px]" data-testid="brain-data-coverage">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div>
+              <div className="text-muted-foreground text-[10px]">TRADABLE RESEARCH UNIVERSE (EQ MAIN BOARD)</div>
+              <div className="tabular-nums font-bold">{coverage.mainBoard.total}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">RESEARCH READY (≥{coverage.thresholds.research} D BARS)</div>
+              <div className="tabular-nums" data-testid="coverage-research-ready">
+                {coverage.mainBoard.researchReady} · {coverage.mainBoard.researchCoveragePct}%
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">VALIDATION READY (≥{coverage.thresholds.validation} D BARS)</div>
+              <div className="tabular-nums">
+                {coverage.mainBoard.validationReady} · {coverage.mainBoard.validationCoveragePct}%
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">INTRADAY READY (≥{coverage.thresholds.intradaySessions} 5M SESSIONS)</div>
+              <div className="tabular-nums">{coverage.mainBoard.intradayReady} — grows only by live accumulation</div>
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 border-t border-border pt-2">
+            <div data-testid="coverage-missing-reasons">
+              <div className="text-muted-foreground text-[10px]">NOT YET RESEARCH-READY — BY TYPED REASON</div>
+              {Object.entries(coverage.mainBoard.missingReasons)
+                .filter(([, count]) => count > 0)
+                .map(([reason, count]) => (
+                  <div key={reason} className="flex justify-between gap-2">
+                    <span>{reason}</span>
+                    <span className="tabular-nums">{count}</span>
+                  </div>
+                ))}
+              {Object.values(coverage.mainBoard.missingReasons).every((count) => count === 0) ? (
+                <div className="text-muted-foreground">nothing missing — the main board is fully research-ready</div>
+              ) : null}
+            </div>
+            <div>
+              <div className="text-muted-foreground text-[10px]">SEGREGATED UNIVERSES (NEVER MERGED INTO NSE-QC RESEARCH)</div>
+              <div className="tabular-nums">
+                SME {coverage.tiers.SME} (its own future universe; {coverage.sme.researchReady} research-ready) ·
+                surveillance-restricted {coverage.tiers.SURVEILLANCE_RESTRICTED} · ETF {coverage.tiers.ETF} ·
+                REIT/InvIT {coverage.tiers.REIT_INVIT} · inactive {coverage.tiers.INACTIVE}
+              </div>
+              <div className="text-muted-foreground text-[10px] mt-1">
+                BACKTEST READY (≥{coverage.thresholds.backtest} D BARS): <span className="tabular-nums">{coverage.mainBoard.backtestReady}</span> — validation floor is provisional until a live holdout definition supplies exact bars
+              </div>
+            </div>
           </div>
         </div>
       </Panel>

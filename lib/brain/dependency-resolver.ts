@@ -154,20 +154,21 @@ export interface UniverseGapReport {
 }
 
 /**
- * Resolve data gaps across the acceptance universe — the cycle's rehearsal-outage remediation,
- * relocated here so any blocked surface can invoke the same machinery.
+ * Resolve data gaps across the research universe — the cycle's data-coverage expansion pass.
  *
- * `quota` bounds how many instruments are even READINESS-CHECKED per pass, not just how many
- * jobs are created: `instrumentReadiness` loads the instrument's stored bars, and the NSE master
- * holds 3,314 securities.
+ * v3 (owner directive 2026-08-16, the upgrade the v2 note named): the worklist comes from the
+ * READINESS INDEX + deterministic batch planner (`lib/market/universe-coverage.ts`), not the
+ * alphabetical head of the master. Tier 1 finishes what is started or referenced (partial
+ * coverage, active strategies/challengers/watchlist) and enqueues at rehearsal priority; the
+ * main-board expansion tiers enqueue at research priority. SME/ETF/REIT/surveillance series are
+ * SEPARATE universes and never planned from here. `quota` still bounds work per pass; the
+ * durable queue's dedupe keys keep re-planning harmless; nothing here performs a fetch.
  */
-// ponytail: alphabetical head of the master, as v1 had — a readiness index / batch planner is the
-// upgrade path when full-universe coverage matters.
 export async function resolveUniverseDataGaps(
   options: { quota?: number } = {},
 ): Promise<UniverseGapReport> {
   const quota = options.quota ?? 30;
-  const { searchInstruments } = await import("@/lib/market/catalog");
+  const { planUniverseIngestion } = await import("@/lib/market/universe-coverage");
 
   const report: UniverseGapReport = {
     considered: 0,
@@ -180,9 +181,12 @@ export async function resolveUniverseDataGaps(
     summary: "",
   };
 
-  for (const instrument of searchInstruments("", "XNSE").slice(0, quota)) {
+  for (const planned of planUniverseIngestion(quota)) {
     report.considered += 1;
-    const resolution = await resolveDataRequirement({ instrumentId: instrument.id, purpose: "rehearsal" });
+    const resolution = await resolveDataRequirement({
+      instrumentId: planned.instrumentId,
+      purpose: planned.tier === 1 ? "rehearsal" : "research",
+    });
     switch (resolution.state) {
       case "SATISFIED":
         break;
