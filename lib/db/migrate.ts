@@ -66,6 +66,12 @@ const MIGRATIONS = [
   // holdout×family). Additive only; the existing holdout_access / holdout_ledger enforcement
   // and every prior table are untouched.
   "0022_sealed_holdout.sql",
+  // The bar-ingestion ledger: the request stored beside the response (window asked for, bars
+  // returned, identity verdict, gap/completeness audit), append-only by trigger. Exists because
+  // a provider layer once served one day for a 59-day request while every fetch still
+  // "succeeded" — silent truncation is invisible unless the request is kept. Additive only: a
+  // new table plus its two immutability triggers; no existing table, row or index is touched.
+  "0023_bar_ingestions.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {
