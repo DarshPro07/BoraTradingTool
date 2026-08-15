@@ -21,6 +21,16 @@ VERIFIED_FOR_DEFINED_SCOPE (desktop) with mobile a named gap — never shorten i
 verified". Preconditions (telemetry measurement honesty + skip classification) closed at
 `9fb5d7e`.
 
+**CAMPAIGN NSE-QC-001 REGISTERED (2026-08-16, docs/plans/nse-qc-001/)**: the first explicit
+campaign — five declared families (ORB, RVOL breakout, intraday MR, swing x-sec momentum, swing
+MR), contract PINNED before any result (02-contract.md), declaration hashes enforced by
+`lib/strategy/campaign-registry.ts` (a changed re-registration REFUSES — no silent widening of
+a search box, ever). Eligible universe at pin time: 28 of 3,325 canonical (stated, never
+extrapolated) — coverage growth is ingestion breadth, engine lane. Autonomous gauntlet spending
+stays behind the owner's MARKETPULSE_AUTONOMOUS_TRIALS switch. The binding behavioral rule:
+0 survivors + typed-rejection analysis is a SUCCESSFUL outcome; never tune until something
+passes.
+
 ## P0 BRAIN EXECUTION OBSERVABILITY — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/brain-observability/)
 **Acceptance (C36/C50) landed and committed**: two consecutive clean Master Golden runs on one
 unchanged tree — run 13: 208 passed / 2 skipped / 0 failed (57.1m); run 14: 208 passed /

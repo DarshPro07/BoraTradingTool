@@ -31,8 +31,31 @@ with DSR/PBO/OOS-PF/cost-multiple; holdout/forward counts; paper NET identity
 bootstrap), regime-stability and per-cost-component KPIs (their reality is UNKNOWN in
 01-reality.md), API-cost-per-survivor (needs an agent_runs→campaign join that does not exist).
 
+## Slice 2 — Scoreboard v2: family comparison + rejection diagnosis (DONE 2026-08-16)
+
+**What**: `familyComparison()` (per family: campaign, selection trials, gauntlet passes via
+latest-validation×strategy_identity, family-level holdout passes, forward-resolved via the
+signal→challenger chain, paper NET via challengers, worst holdout max-DD — nulls render "—")
+and `rejectionDiagnosis()` (the owner's behavioral rule as a read model: cost-negative ≥ 80% →
+weak economics; parameter-instability ≥ 70% → fragile hypothesis; ≥ 2 validations above the 0.5
+PBO gate → "NARROW the search, never widen"; any failed family-level holdout → development
+overfit; silent under 5 failures — insufficient evidence is stated, not guessed). Both rendered
+in the /brain scoreboard panel: the FAMILY COMPARISON table (the owner's exact columns) and
+"WHEN NOTHING SURVIVES — READ THE REJECTIONS, NEVER TUNE UNTIL SOMETHING PASSES".
+
+**Verification**: units 7/7 (FK-complete seeds through the full provenance chains); tsc silent;
+live e2e on a fresh DB (honest empty: "no registered families yet" / "no diagnosis yet") AND on
+a safe BACKUP COPY of the real production database, where the table rendered 14 families —
+including all five newly registered NSE-QC-001 families at 0 trials and the historical
+autonomous families — with the 1-trial family correctly sorted first. Full suite 163 files /
+1846 passed / 2 skipped / 0 failed. Verification-harness note: a cold `next dev` SSR of /brain
+on the production copy exceeds a 30s goto until warmed (~4.6s steady) — warm before driving
+Playwright at a dev server; the acceptance context serves prebuilt and is unaffected.
+
 ## Next candidate slices (in owner-value order, each needs its own gate pass)
 
-1. Campaign detail drill-in (per-family funnel + rejections, same read model filtered).
+1. Per-campaign drill-in filter (same read model, campaign-scoped).
 2. API/model cost per survivor (join design first — 01-reality UNKNOWN).
 3. Regime-stability KPI (define regime segmentation honestly before displaying anything).
+4. AUTO-loop integration of the diagnosis (the machine READING rejectionDiagnosis before
+   deciding next work — a behavior change in the cycle, needs its own gate pass).

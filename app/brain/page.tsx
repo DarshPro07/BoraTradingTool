@@ -12,7 +12,7 @@ import { Panel } from "@/components/system/Panel";
 import { AutonomousControl } from "@/components/system/AutonomousControl";
 import { RUNTIME_PROFILES } from "@/lib/runtime/routing";
 import { getBrainState, type LaneState } from "@/lib/brain/kernel";
-import { quantScoreboard } from "@/lib/dashboard/quant-scoreboard";
+import { familyComparison, quantScoreboard, rejectionDiagnosis } from "@/lib/dashboard/quant-scoreboard";
 import { listExecutions } from "@/lib/brain/execution-trace";
 
 export const dynamic = "force-dynamic";
@@ -107,6 +107,8 @@ export default async function BrainPage() {
 
   // The primary scoreboard (owner directive 2026-08-15): the quant funnel over the ledgers.
   const board = quantScoreboard();
+  const familyRows = familyComparison();
+  const diagnoses = rejectionDiagnosis();
 
   return (
     <div className="p-4 space-y-3 max-w-6xl mx-auto" data-testid="brain-page">
@@ -190,6 +192,61 @@ export default async function BrainPage() {
                 ))
               )}
             </div>
+          </div>
+
+          {/* v2: which IDEA families deserve further research — not which backtest looked best. */}
+          <div className="border-t border-border pt-2 overflow-x-auto" data-testid="quant-family-comparison">
+            <div className="text-muted-foreground text-[10px]">FAMILY COMPARISON — CAMPAIGN · TRIALS · GAUNTLET · HOLDOUT · FORWARD · PAPER NET · MAX DD</div>
+            {familyRows.length === 0 ? (
+              <div className="text-muted-foreground">no registered families yet</div>
+            ) : (
+              <table className="w-full text-[10px] tabular-nums">
+                <thead>
+                  <tr className="text-muted-foreground text-left">
+                    <th className="pr-2 font-normal">Family</th>
+                    <th className="pr-2 font-normal">Campaign</th>
+                    <th className="pr-2 font-normal text-right">Trials</th>
+                    <th className="pr-2 font-normal text-right">Gauntlet</th>
+                    <th className="pr-2 font-normal text-right">Holdout</th>
+                    <th className="pr-2 font-normal text-right">Forward</th>
+                    <th className="pr-2 font-normal text-right">Paper net</th>
+                    <th className="font-normal text-right">Max DD</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {familyRows.map((row) => (
+                    <tr key={row.familyId} data-testid="quant-family-row">
+                      <td className="pr-2 break-all">{row.name}</td>
+                      <td className="pr-2">{row.campaignName}</td>
+                      <td className="pr-2 text-right">{row.trials}</td>
+                      <td className="pr-2 text-right">{row.gauntletPass}</td>
+                      <td className="pr-2 text-right">{row.holdoutPass}</td>
+                      <td className="pr-2 text-right">{row.forwardResolved}</td>
+                      <td className={`pr-2 text-right ${row.paperNet !== null && row.paperNet > 0 ? "text-gain" : row.paperNet !== null && row.paperNet < 0 ? "text-loss" : ""}`}>
+                        {row.paperNet === null ? "—" : `₹${row.paperNet.toFixed(2)}`}
+                      </td>
+                      <td className="text-right">{row.maxDrawdown === null ? "—" : `${(row.maxDrawdown * 100).toFixed(1)}%`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* The owner's behavioral rule: no survivor-optimization — read the rejections instead. */}
+          <div className="border-t border-border pt-2" data-testid="quant-diagnosis">
+            <div className="text-muted-foreground text-[10px]">WHEN NOTHING SURVIVES — READ THE REJECTIONS, NEVER TUNE UNTIL SOMETHING PASSES</div>
+            {diagnoses.length === 0 ? (
+              <div className="text-muted-foreground">no diagnosis yet — fewer than the evidence thresholds require, or nothing failing</div>
+            ) : (
+              diagnoses.map((diagnosis) => (
+                <div key={diagnosis.signal} className="flex flex-wrap gap-x-2" data-testid="quant-diagnosis-row">
+                  <span className="font-bold uppercase text-[10px]">{diagnosis.signal}</span>
+                  <span className="text-muted-foreground">{diagnosis.evidence}</span>
+                  <span>→ {diagnosis.reading}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </Panel>

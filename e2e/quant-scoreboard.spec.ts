@@ -71,6 +71,25 @@ test.describe("the quant scoreboard — /brain answers the primary question from
     const survivorRows = page.getByTestId("quant-survivor-row");
     expect((await survivorsEmpty.count()) > 0 || (await survivorRows.count()) > 0).toBe(true);
 
+    // v2 — the family comparison: a table of rows, or the stated "no registered families yet".
+    const familyBlock = page.getByTestId("quant-family-comparison");
+    await expect(familyBlock).toBeVisible();
+    const familyRowCount = await page.getByTestId("quant-family-row").count();
+    if (familyRowCount === 0) {
+      await expect(familyBlock).toContainText("no registered families yet");
+    } else {
+      // Each row carries every column — paper net and max DD are either ₹/% figures or "—".
+      const firstRow = page.getByTestId("quant-family-row").first();
+      await expect(firstRow.locator("td")).toHaveCount(8);
+      const rowText = (await firstRow.textContent()) ?? "";
+      expect(rowText).toMatch(/₹-?\d|—/);
+    }
+
+    // v2 — the diagnosis block: threshold-met readings, or the stated silence. Never absent.
+    const diagnosis = page.getByTestId("quant-diagnosis");
+    await expect(diagnosis).toBeVisible();
+    await expect(diagnosis).toContainText(/no diagnosis yet|→/);
+
     // Nothing on the page may claim a number that is not a number.
     const panelText = (await panel.textContent()) ?? "";
     expect(panelText).not.toMatch(/NaN|undefined|Infinity/);
