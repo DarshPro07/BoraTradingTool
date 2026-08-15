@@ -3,7 +3,7 @@ import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
 import { familyDeclarationHash } from "@/lib/strategy/campaign-registry";
-import { familyReadiness, meetsRequirement } from "./family-readiness";
+import { familyReadiness, intradayBackfillQueue, meetsRequirement } from "./family-readiness";
 import { universeCoverage } from "./universe-coverage";
 
 const NOW = new Date("2026-08-16T00:00:00Z");
@@ -101,6 +101,34 @@ describe("family-specific data readiness", () => {
         `${family.familyId}'s hash changed — a pinned family must not be redefined by a data-requirement edit`,
       ).toBe(registered[family.familyId]);
     }
+  });
+
+  it("queues the daily-ready-but-missing-5m instruments, closest to the bar first", () => {
+    // Daily-ready, needs 5 more sessions → the cheapest conversion, queued first.
+    seedListing("ALMOST");
+    seedBars("ALMOST", "D", 100, 86_400);
+    seedBars("ALMOST", "5", 35, 86_400);
+    // Daily-ready, no intraday at all → queued, but behind.
+    seedListing("ZERO5M");
+    seedBars("ZERO5M", "D", 100, 86_400);
+    // Already family-ready → not queued; nothing to gain.
+    seedListing("DONE");
+    seedBars("DONE", "D", 100, 86_400);
+    seedBars("DONE", "5", 45, 86_400);
+    // Not daily-ready → not queued; its blocker is the daily lane, not this one.
+    seedListing("NODAILY");
+    seedBars("NODAILY", "5", 10, 86_400);
+    // Separate universe → never queued into the campaign's work.
+    seedListing("SMEONE", "SM");
+    seedBars("SMEONE", "D", 100, 86_400);
+
+    const queue = intradayBackfillQueue(NSE_QC_001.families, universeCoverage(), 12);
+    expect(queue.map((entry) => entry.instrumentId)).toEqual(["IN:XNSE:ALMOST", "IN:XNSE:ZERO5M"]);
+    expect(queue[0]).toMatchObject({ fiveMinuteSessions: 35, needed: 5 });
+    expect(queue[1]).toMatchObject({ fiveMinuteSessions: 0, needed: 40 });
+
+    // The rate discipline is a LIMIT, honoured exactly.
+    expect(intradayBackfillQueue(NSE_QC_001.families, universeCoverage(), 1)).toHaveLength(1);
   });
 
   it("meetsRequirement is the single rule both the count and any planner consult", () => {

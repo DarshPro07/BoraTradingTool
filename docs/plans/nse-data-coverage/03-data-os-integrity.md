@@ -85,3 +85,37 @@ repaired throughput before touching rate policy); this table is that measurement
 
 Units **169 files / 1876 passed / 2 skipped / 0 failed**; tsc silent; identity-guard fail-first
 proven; live e2e green on a fresh DB and on a production backup. Trials remain OFF.
+
+## Addendum 2026-08-16 03:15 — the intraday queue is now targeted (owner directive)
+
+`intradayBackfillQueue()` selects instruments that are DAILY-READY, missing ONLY their 5-minute
+sessions, and inside the campaign's tradable universe — ordered closest-to-the-bar first, so the
+cheapest conversions land first. The learning cycle now draws its accumulation set from that
+queue instead of the catalog head.
+
+**The rate discipline is unchanged by design**: still twelve instruments per session (the past
+rate-limiting incident recorded at the call site is why). Only WHICH twelve changed. The catalog
+head remains the fallback when the queue is empty, so a fresh install still accumulates.
+
+Measured live against the production copy at 03:12 IST:
+
+```
+NEXT 12 THE ACCUMULATOR WOULD TAKE
+  BAJFINANCE   daily=500  5m=1   needs=39
+  BHARTIARTL   daily=500  5m=1   needs=39
+  HINDUNILVR   daily=500  5m=1   needs=39
+  LT           daily=500  5m=1   needs=39
+  SBIN         daily=500  5m=1   needs=39
+  20MICRONS    daily=498  5m=0   needs=40
+  … (7 more)
+TOTAL QUEUE DEPTH: 135          ORB today: ready=6, blockedOnIntraday=135
+```
+
+The queue is 135 deep, not the 80 measured three hours earlier — the daily planner kept working
+while this was built, so more instruments crossed into daily-ready.
+
+**Projection, stated as a projection**: one repaired fetch returns ~40 sessions and the target is
+40, so a batch should convert in a single pass; at twelve per session that is roughly eleven
+sessions to clear 135, taking the intraday families from 6 toward the low hundreds. That is an
+extrapolation from two measurements (sessions per fetch, cadence), not an observation — the
+family-ready row on /brain is where it gets confirmed or corrected.

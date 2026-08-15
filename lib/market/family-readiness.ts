@@ -42,6 +42,55 @@ export interface FamilyReadinessRow {
   readyInstruments: string[];
 }
 
+/**
+ * The intraday backfill queue (owner directive, 2026-08-16): instruments that are DAILY-READY,
+ * missing ONLY their 5-minute sessions, and inside the campaign's tradable universe — worked
+ * before intraday history is expanded indiscriminately across 2,122 main-board equities.
+ *
+ * The rate discipline is deliberately UNCHANGED: the accumulator still visits a small fixed
+ * number of instruments per session (the past rate-limiting incident recorded at its call site
+ * is why). This changes WHICH instruments those are, not how many — the cheapest possible way to
+ * grow the family-ready pool, since one repaired fetch now returns ~40 sessions.
+ *
+ * Ordered by how close each instrument is to clearing the bar (most sessions first): finishing
+ * an instrument that needs five more sessions converts a family-ready candidate sooner than
+ * starting one at zero.
+ */
+export function intradayBackfillQueue(
+  families: readonly { dataRequirement: FamilyDataRequirement }[],
+  report: UniverseCoverageReport = universeCoverage(),
+  limit = 12,
+): { instrumentId: string; dailyBars: number; fiveMinuteSessions: number; needed: number }[] {
+  const sessionsNeeded = families
+    .map((family) => family.dataRequirement.minIntradaySessions)
+    .filter((sessions): sessions is number => sessions !== null);
+  if (sessionsNeeded.length === 0) return [];
+  // The easiest bar to clear first: an instrument that satisfies the least demanding intraday
+  // family has already become useful to the campaign.
+  const target = Math.min(...sessionsNeeded);
+  const minDaily = Math.min(
+    ...families
+      .filter((family) => family.dataRequirement.minIntradaySessions !== null)
+      .map((family) => family.dataRequirement.minDailyBars),
+  );
+
+  return report.securities
+    .filter(
+      (security) =>
+        security.tier === "MAIN_BOARD" &&
+        security.dailyBars >= minDaily &&
+        security.fiveMinuteSessions < target,
+    )
+    .sort((a, b) => b.fiveMinuteSessions - a.fiveMinuteSessions || a.symbol.localeCompare(b.symbol))
+    .slice(0, Math.max(0, limit))
+    .map((security) => ({
+      instrumentId: security.instrumentId,
+      dailyBars: security.dailyBars,
+      fiveMinuteSessions: security.fiveMinuteSessions,
+      needed: target - security.fiveMinuteSessions,
+    }));
+}
+
 export function meetsRequirement(security: SecurityCoverage, requirement: FamilyDataRequirement): boolean {
   if (security.dailyBars < requirement.minDailyBars) return false;
   if (requirement.minIntradaySessions === null) return true;

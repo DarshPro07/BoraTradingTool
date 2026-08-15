@@ -6,6 +6,8 @@ import { generateQuantCoreArtifacts } from "@/lib/quantcore/generate";
 import { runFactoryGeneration } from "@/lib/factory/generation";
 import { findCurrentInstrument, listCurrentInstruments } from "@/lib/market/catalog";
 import { accumulateIntraday, accumulationDue, markAccumulated } from "@/lib/market/intraday-accumulator";
+import { intradayBackfillQueue } from "@/lib/market/family-readiness";
+import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import type { Market } from "@/lib/market/types";
 import { breedingBasis, OWNER_CAPITAL } from "@/lib/paper/capital";
@@ -506,10 +508,22 @@ async function runCycleBody(
   // fifteen-minute intervals that is 96 passes a day to learn that nothing new has settled. That
   // load is what rate-limited the feed earlier and made the rehearsal report "No stored candles"
   // for a market whose data was fine.
+  // WHICH twelve (owner directive 2026-08-16): the instruments that are already daily-ready and
+  // missing ONLY their 5-minute sessions, closest-to-the-bar first — the campaign's intraday
+  // families are the bottleneck (6 family-ready against 80 waiting on 5m alone), and one
+  // repaired fetch now returns ~40 sessions. The COUNT is unchanged on purpose; only the
+  // selection is. When that queue empties, the catalog head is the fallback, so a fresh install
+  // with no coverage index still accumulates something.
   if ((mode === "learning" || mode === "evolving") && accumulationDue()) {
     try {
+      const catalog = listCurrentInstruments({ market: OWNER_CAPITAL.market });
+      const queued = intradayBackfillQueue(NSE_QC_001.families, undefined, 12);
+      const byId = new Map(catalog.map((instrument) => [instrument.id, instrument]));
+      const targeted = queued
+        .map((entry) => byId.get(entry.instrumentId))
+        .filter((instrument): instrument is (typeof catalog)[number] => instrument !== undefined);
       const accumulated = await accumulate(
-        listCurrentInstruments({ market: OWNER_CAPITAL.market }).slice(0, 12),
+        targeted.length > 0 ? targeted : catalog.slice(0, 12),
       );
       markAccumulated(accumulated, workerId);
       if (accumulated.inserted > 0) actions.push(accumulated.summary);
