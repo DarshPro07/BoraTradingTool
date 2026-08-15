@@ -9,6 +9,18 @@ quality, not new subsystems. A change that adds a subsystem instead of answering
 out of order and needs an explicit owner ruling to start. Repairs, defect fixes and the tech-debt
 items already listed below remain in scope.
 
+## P0 QUANT QUALITY PROGRAM — ACTIVE (docs/plans/quant-quality-program/, owner directive 2026-08-15)
+The primary scoreboard: **can MarketPulse discover a repeatable NET positive NSE edge that
+survives independent evidence?** The program spine (funnel with typed rejection attribution,
+strategy-family catalogue, 16-step operating mission, quant KPI set, cost-as-first-class-gate)
+is recorded verbatim in `02-product.md`; effective-dated cost sources in
+`docs/external/india-equity-costs.md`. Owner-sketched surfaces (the /brain funnel + typed
+rejections + quant KPI dashboard) are IN scope as read-models over existing ledgers; anything
+beyond needs the concrete-need test. Permanent truthfulness rule: the acceptance verdict is
+VERIFIED_FOR_DEFINED_SCOPE (desktop) with mobile a named gap — never shorten it to "fully
+verified". Preconditions (telemetry measurement honesty + skip classification) closed at
+`9fb5d7e`.
+
 ## P0 BRAIN EXECUTION OBSERVABILITY — **DONE 2026-08-15, VERIFIED_FOR_DEFINED_SCOPE** (docs/plans/brain-observability/)
 **Acceptance (C36/C50) landed and committed**: two consecutive clean Master Golden runs on one
 unchanged tree — run 13: 208 passed / 2 skipped / 0 failed (57.1m); run 14: 208 passed /

@@ -123,9 +123,12 @@ Filled at the end of each working session. See `99-FINAL-VERIFICATION.md` for th
     for long runs (`SetThreadExecutionState`), and never edit the owner's power plan to do it.
   - Long unbreakable ids (55-char strategy names) are the recurring mobile-overflow cause. They
     must wrap; truncating them would hide which strategy the machine is talking about.
-- **Exact next action**: infrastructure is FROZEN by the standing owner order above. The next
-  scoreboard is quant quality: which strategy families, if any, survive gauntlet → sealed
-  holdout → forward → paper after realistic costs across genuinely independent NSE data. Anything
-  that adds a subsystem instead of answering that question is out of order. First queued
-  code item when a leg does open: the KNOWN RESIDUAL in 07-final (all-unmeasured COMPLETED team
-  reads tokens=0 as measured).
+- **Exact next action**: infrastructure is FROZEN. The scoreboard is now the **Quant Quality
+  Program** — `docs/plans/quant-quality-program/` (owner directive 2026-08-15): can MarketPulse
+  discover a repeatable NET positive NSE edge that survives independent evidence? Read its
+  `02-product.md` (funnel, family catalogue, 16-step mission, KPIs) before any work. The
+  measurement-honesty residual is CLOSED (`9fb5d7e`,
+  `docs/plans/telemetry-measurement-honesty/`).
+- **Permanent truthfulness rule (owner, 2026-08-15)**: the acceptance verdict is
+  `VERIFIED_FOR_DEFINED_SCOPE — Desktop / Master Golden acceptance; Mobile: separate known gap
+  (previously single-run green, run 8)`. Never shorten it to "fully verified" in any document.
