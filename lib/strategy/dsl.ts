@@ -63,6 +63,23 @@ export const POINT_IN_TIME_FEATURES = [
   "minutes_since_open",
   "opening_range_high",
   "opening_range_low",
+  /**
+   * Composites added 2026-08-16 so the campaign's PINNED family contracts become expressible.
+   *
+   * The grammar has comparisons and no arithmetic — deliberately, because an expression language
+   * is a much larger thing to get right than a feature list. Each of these is a quantity a
+   * declared mechanism already names in words: an N-bar extreme and the prior session's range as
+   * breakout reference levels, distance from the short mean measured in ATR units, a short-window
+   * return both raw and scaled by the instrument's own volatility, and a fast RSI.
+   */
+  "high_20d",
+  "low_20d",
+  "prior_session_high",
+  "prior_session_low",
+  "atr_stretch_sma20",
+  "return_5d",
+  "return_5d_in_vol",
+  "rsi2",
   // Kronos forecast quantities (ADR 0004). Both are real numbers the forecast file supplies —
   // the predicted next-bar return, and the cumulative return across the forecast horizon —
   // derived from its bars against the last actual close.

@@ -33,6 +33,15 @@ export const DERIVABLE_FEATURES = [
   // resolution is intraday. `compileStrategy` refuses these at daily resolution, so a panel that
   // reaches them without session context is a wiring bug rather than a user error.
   "minutes_since_open", "opening_range_high", "opening_range_low",
+  // Added 2026-08-16 so the campaign's PINNED family contracts become expressible. Each is a
+  // composite the DSL grammar cannot build for itself — it has comparisons but no arithmetic —
+  // and each corresponds to a quantity a declared mechanism names in words. Deriving them here
+  // keeps the language small, which is the alternative to growing one.
+  "high_20d", "low_20d",
+  "prior_session_high", "prior_session_low",
+  "atr_stretch_sma20",
+  "return_5d", "return_5d_in_vol",
+  "rsi2",
 ] as const satisfies readonly PointInTimeFeature[];
 
 export type DerivableFeature = (typeof DERIVABLE_FEATURES)[number];
@@ -78,6 +87,14 @@ export const FEATURE_WARMUP_BARS: Partial<Record<DerivableFeature, number>> = Ob
   ema26: 26,
   rsi14: 15,
   atr14: 15,
+  rsi2: 3,
+  high_20d: 21,
+  low_20d: 21,
+  return_5d: 6,
+  // Needs the 5-day return AND a 20-bar volatility estimate under it.
+  return_5d_in_vol: 21,
+  // sma20 (20) and atr14 (15) both, so the deeper one binds.
+  atr_stretch_sma20: 20,
   rvol: 21,
   gap_pct: 2,
   momentum_20d: 21,
@@ -183,6 +200,35 @@ function atrSeries(bars: readonly Candle[], period = 14): (number | undefined)[]
   return out;
 }
 
+/**
+ * Standard deviation of the last `window` bar-to-bar returns, in percent.
+ *
+ * The denominator that makes a drop threshold portable. "Fell 8%" means something different for a
+ * utility and for a microcap; "fell two standard deviations" means the same thing for both, which
+ * is exactly why the swing mean-reversion contract declares its trigger in volatility units.
+ *
+ * Sample standard deviation (n−1): with a 20-bar window the population form is biased low, and a
+ * volatility estimate that reads small makes an ordinary drop look extreme.
+ */
+function realizedVolatility(
+  closes: readonly number[],
+  index: number,
+  window: number,
+): number | undefined {
+  if (index < window) return undefined;
+  const returns: number[] = [];
+  for (let i = index - window + 1; i <= index; i += 1) {
+    const previous = closes[i - 1];
+    if (previous <= 0) return undefined;
+    returns.push((closes[i] / previous - 1) * 100);
+  }
+  if (returns.length < 2) return undefined;
+  const mean = returns.reduce((total, value) => total + value, 0) / returns.length;
+  const variance =
+    returns.reduce((total, value) => total + (value - mean) ** 2, 0) / (returns.length - 1);
+  return Math.sqrt(variance);
+}
+
 function rollingExtreme(
   values: readonly number[],
   index: number,
@@ -224,6 +270,7 @@ export function buildFeaturePanel(bars: readonly Candle[], options: PanelOptions
   const ema12 = emaSeries(closes, 12);
   const ema26 = emaSeries(closes, 26);
   const rsi14 = rsiSeries(closes, 14);
+  const rsi2 = rsiSeries(closes, 2);
   const atr14 = atrSeries(bars, 14);
 
   // Session position, and the opening range of each session, computed once for the whole series.
@@ -240,6 +287,30 @@ export function buildFeaturePanel(bars: readonly Candle[], options: PanelOptions
   const stamps = intraday && market ? sessionStamps(bars.map((bar) => bar.time), market) : null;
   const openMinute = market ? sessionOpenMinute(market) : 0;
   const rangeEndsAt = openMinute + OPENING_RANGE_MINUTES;
+
+  /**
+   * The previous session's high and low, which the relative-volume family names as its reference
+   * level ("prior-day high/low or N-bar extreme"). Keyed by session date and served only to bars
+   * of a LATER session, so it is complete history by the time it is read.
+   */
+  const sessionExtremes = new Map<string, { high: number; low: number }>();
+  const priorSessionDate = new Map<string, string>();
+  if (stamps) {
+    let seen: string | null = null;
+    for (let i = 0; i < bars.length; i += 1) {
+      const date = stamps[i].date;
+      if (date !== seen) {
+        if (seen !== null) priorSessionDate.set(date, seen);
+        seen = date;
+      }
+      const held = sessionExtremes.get(date);
+      if (held === undefined) sessionExtremes.set(date, { high: bars[i].high, low: bars[i].low });
+      else {
+        if (bars[i].high > held.high) held.high = bars[i].high;
+        if (bars[i].low < held.low) held.low = bars[i].low;
+      }
+    }
+  }
 
   const openingRange = new Map<string, { high: number; low: number }>();
   if (stamps) {
@@ -293,6 +364,43 @@ export function buildFeaturePanel(bars: readonly Candle[], options: PanelOptions
     }
     if (index >= 60 && closes[index - 60] > 0) {
       assign("momentum_60d", (bar.close / closes[index - 60] - 1) * 100);
+    }
+
+    assign("rsi2", rsi2[index]);
+
+    // The N-bar extreme EXCLUDING the current bar: a breakout is a move beyond what came before,
+    // and including today would make the comparison tautological on the bar that sets the high.
+    if (index >= 20) {
+      assign("high_20d", rollingExtreme(highs, index - 1, 20, "max"));
+      assign("low_20d", rollingExtreme(lows, index - 1, 20, "min"));
+    }
+
+    // Distance from the short mean IN ATR UNITS — the intraday mean-reversion family declares its
+    // stretch as "1.5-3.0 ATR(14) from VWAP/SMA", and the grammar cannot divide.
+    const mean20 = rollingMean(closes, index, 20);
+    const trueRange = atr14[index];
+    if (mean20 !== undefined && trueRange !== undefined && trueRange > 0) {
+      assign("atr_stretch_sma20", (bar.close - mean20) / trueRange);
+    }
+
+    if (index >= 5 && closes[index - 5] > 0) {
+      const return5 = (bar.close / closes[index - 5] - 1) * 100;
+      assign("return_5d", return5);
+      // ...and the same return expressed in units of the instrument's own volatility, because the
+      // swing family declares its trigger as a return "below -(1.5-3.0) x 20-day volatility".
+      // Scaling by volatility is what makes one threshold mean the same thing across a quiet
+      // large-cap and a violent small-cap.
+      const vol = realizedVolatility(closes, index, 20);
+      if (vol !== undefined && vol > 0) assign("return_5d_in_vol", return5 / vol);
+    }
+
+    if (stamps) {
+      const previous = priorSessionDate.get(stamps[index].date);
+      const extremes = previous === undefined ? undefined : sessionExtremes.get(previous);
+      if (extremes !== undefined) {
+        assign("prior_session_high", extremes.high);
+        assign("prior_session_low", extremes.low);
+      }
     }
 
     const window = Math.min(252, index + 1);
