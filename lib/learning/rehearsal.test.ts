@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
+import { crossSectionalRecord } from "@/lib/strategy/definition";
+import { NSE_QC_001_XSEC_SEED } from "@/lib/strategy/campaigns/nse-qc-001-seeds";
 import { compileStrategy } from "@/lib/strategy/dsl";
 import { registerTestSnapshot } from "@/lib/strategy/identity-fixture";
 import { runValidationRehearsal, type ResearchDatasetSource } from "./rehearsal";
@@ -321,5 +323,92 @@ describe("the rehearsal cap rotates instead of starving", () => {
       seen.size,
       "two capped passes over twelve drafts must reach all twelve — anything less is the cap acting as permanent starvation",
     ).toBe(12);
+  });
+});
+
+describe("a cross-sectional strategy rehearses through the same path", () => {
+  /**
+   * The lifecycle now holds two typed representations. What must be true is that the SECOND one
+   * is not on a side channel: same rehearsal call, same battery, same verdict vocabulary, same
+   * ledger row — otherwise a cross-sectional family's results would mean something subtly
+   * different from every other family's, and the campaign arithmetic would silently stop
+   * comparing like with like.
+   *
+   * Before the typed boundary existed, every reader `safeParse`d the stored JSON as a DSL and
+   * skipped on failure. A cross-sectional spec would have produced no verdict at all, and its
+   * absence would have looked like a strategy nobody had tried.
+   */
+  function seedCrossSectional(): void {
+    getDb()
+      .insert(schema.strategySpecs)
+      .values({
+        id: "spec_xsec_fixture",
+        hypothesisId: null,
+        parentId: null,
+        name: "xsec_fixture",
+        version: 1,
+        dsl: JSON.stringify(crossSectionalRecord(NSE_QC_001_XSEC_SEED.strategy)),
+        dslHash: "hash_xsec_fixture",
+        status: "draft",
+        createdBy: "rehearsal-test",
+        createdAt: new Date(),
+      })
+      .run();
+  }
+
+  /** A universe wide and long enough for a 60-day lookback plus rotations. */
+  function rankableDataset(): Record<string, Candle[]> {
+    const dataset: Record<string, Candle[]> = {};
+    for (let i = 0; i < 20; i += 1) {
+      const drift = 1 + (i - 10) * 0.002;
+      dataset[`IN:XNSE:R${String(i).padStart(2, "0")}`] = Array.from({ length: 200 }, (_u, day) => {
+        const close = 100 * drift ** day;
+        return {
+          time: 1_700_000_000 + day * 86_400,
+          open: close,
+          high: close * 1.01,
+          low: close * 0.99,
+          close,
+          volume: 1_000,
+        };
+      });
+    }
+    return dataset;
+  }
+
+  it("produces a real verdict, not a parse refusal", async () => {
+    seedCrossSectional();
+    const report = await runValidationRehearsal(() => snap(rankableDataset()), "learning");
+
+    const outcome = report.outcomes.find((o) => o.name === "xsec_fixture");
+    expect(outcome, "the cross-sectional spec must be reached at all").toBeDefined();
+    expect(outcome!.verdict).not.toBe("not_evaluable");
+    expect(outcome!.trades).toBeGreaterThan(0);
+    // `instrumentsEvaluated` carries the ranked universe, so the verdict states what it describes.
+    expect(outcome!.instrumentsEvaluated).toBe(20);
+    expect(outcome!.battery).not.toBeNull();
+  });
+
+  it("still refuses a row marked cross-sectional that the engine cannot read", async () => {
+    getDb()
+      .insert(schema.strategySpecs)
+      .values({
+        id: "spec_xsec_broken",
+        hypothesisId: null,
+        parentId: null,
+        name: "xsec_broken",
+        version: 1,
+        dsl: JSON.stringify({ kind: "CROSS_SECTIONAL", universe: { market: "NSE" } }),
+        dslHash: "hash_xsec_broken",
+        status: "draft",
+        createdBy: "rehearsal-test",
+        createdAt: new Date(),
+      })
+      .run();
+
+    const report = await runValidationRehearsal(() => snap(rankableDataset()), "learning");
+    const outcome = report.outcomes.find((o) => o.name === "xsec_broken");
+    expect(outcome?.verdict).toBe("not_evaluable");
+    expect(outcome?.reason).toMatch(/cannot be read/i);
   });
 });

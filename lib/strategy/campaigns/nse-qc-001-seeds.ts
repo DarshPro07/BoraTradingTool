@@ -213,26 +213,18 @@ export const NSE_QC_001_XSEC_SEED: { familyId: string; rationale: string; strate
 };
 
 /**
- * Families this file deliberately does not seed as a spec, and why.
+ * Families deliberately not seeded, and why. **Empty since the lifecycle became type-aware.**
  *
- * Kept as data rather than prose so a reader can see the gap is CHOSEN, and so a test can assert
- * that every declared family is either seeded or listed here — the two together must cover all
- * five, or a family has been forgotten rather than deferred.
+ * Kept as data rather than prose so a reader can see any future gap is CHOSEN, and so a test can
+ * assert that every declared family is either seeded or listed here — the two together must cover
+ * all five, or a family has been forgotten rather than deferred.
  *
- * The cross-sectional family is now EXECUTABLE (`NSE_QC_001_XSEC_SEED` runs on the engine above),
- * but it is not yet stored as a `strategy_specs` row: the spec lifecycle — cost gate, rehearsal,
- * stage ladder — is written against `StrategyDsl`, and filing an IR into that column would have
- * every downstream reader misparse it. Executability and lifecycle integration are separate steps,
- * and conflating them is how a half-wired strategy comes to look validated.
+ * It held `fam_qc001_xsec_momentum` while that family was executable but not yet filed as a spec:
+ * the lifecycle was written against `StrategyDsl` alone, and putting an IR in that column would
+ * have had every downstream reader misparse it. `lib/strategy/definition.ts` made the persistence
+ * boundary typed, so the family now travels the same path as the other four.
  */
-export const UNSEEDED_FAMILIES: Readonly<Record<string, string>> = Object.freeze({
-  fam_qc001_xsec_momentum:
-    "executable via NSE_QC_001_XSEC_SEED on the cross-sectional engine, but not yet filed as a " +
-    "strategy_specs row: the spec lifecycle (cost gate, rehearsal, stage ladder) is written " +
-    "against StrategyDsl, and storing a cross-sectional IR in that column would be misparsed by " +
-    "every downstream reader. Lifecycle integration is the next step, and is deliberately not " +
-    "half-done.",
-});
+export const UNSEEDED_FAMILIES: Readonly<Record<string, string>> = Object.freeze({});
 
 /**
  * Install the seeds: record each as a strategy spec and place it in its declared family.
@@ -259,6 +251,7 @@ export async function installCampaignSeeds(
   const { getDb, schema } = await import("@/lib/db");
   const { recordStrategySpec } = await import("@/lib/knowledge/repository");
   const { placeStrategy } = await import("@/lib/strategy/research-identity");
+  const { crossSectionalRecord } = await import("@/lib/strategy/definition");
 
   const report: SeedInstallReport = { installed: [], alreadyPresent: [], skipped: [] };
   const db = getDb();
@@ -270,7 +263,24 @@ export async function installCampaignSeeds(
     db.select().from(schema.strategyIdentity).all().map((row) => row.strategyFamilyId),
   );
 
-  for (const seed of NSE_QC_001_SEEDS) {
+  const all: { familyId: string; rationale: string; name: string; record: Record<string, unknown> }[] = [
+    ...NSE_QC_001_SEEDS.map((seed) => ({
+      familyId: seed.familyId,
+      rationale: seed.rationale,
+      name: seed.dsl.name,
+      record: seed.dsl as unknown as Record<string, unknown>,
+    })),
+    {
+      familyId: NSE_QC_001_XSEC_SEED.familyId,
+      rationale: NSE_QC_001_XSEC_SEED.rationale,
+      name: NSE_QC_001_XSEC_SEED.strategy.name,
+      // Carries its discriminator, so every reader routes it to the ranking engine rather than
+      // failing to parse it as a DSL and skipping it in silence.
+      record: crossSectionalRecord(NSE_QC_001_XSEC_SEED.strategy),
+    },
+  ];
+
+  for (const seed of all) {
     if (!families.has(seed.familyId)) {
       report.skipped.push({
         familyId: seed.familyId,
@@ -282,12 +292,26 @@ export async function installCampaignSeeds(
       report.alreadyPresent.push(seed.familyId);
       continue;
     }
-    const specId = recordStrategySpec({ name: seed.dsl.name, dsl: seed.dsl, createdBy: actor });
+    // A spec row can already exist without a placement: an earlier run that inserted the spec and
+    // then failed to place it leaves exactly that state, and re-inserting would collide on
+    // (name, version). Reuse it rather than minting a second row for one strategy.
+    const existing = db
+      .select()
+      .from(schema.strategySpecs)
+      .all()
+      .find((row) => row.name === seed.name);
+    const specId =
+      existing?.id ??
+      recordStrategySpec({
+        name: seed.name,
+        dsl: seed.record as never,
+        createdBy: actor,
+      });
     const placement = placeStrategy({
       specId,
       campaignId,
       familyId: seed.familyId,
-      dsl: seed.dsl,
+      dsl: seed.record as never,
       classification: "SAME_FAMILY",
       classifiedBy: actor,
       reason: seed.rationale,
@@ -297,7 +321,7 @@ export async function installCampaignSeeds(
       report.skipped.push({ familyId: seed.familyId, reason: placement.reason });
       continue;
     }
-    report.installed.push({ familyId: seed.familyId, specId, name: seed.dsl.name });
+    report.installed.push({ familyId: seed.familyId, specId, name: seed.name });
   }
   return report;
 }

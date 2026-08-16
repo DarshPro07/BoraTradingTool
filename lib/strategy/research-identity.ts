@@ -59,6 +59,31 @@ function shapeOf(condition: Condition): unknown {
  * point: it makes "rename and re-tune" visible as the same thing it always was.
  */
 export function semanticFingerprint(dsl: StrategyDsl): string {
+  /**
+   * Cross-sectional strategies have no `entry` condition to shape — their selection is a RANK over
+   * the universe, not a predicate on one symbol. So their structural identity is the shape of the
+   * ranking itself: what is scored, in which direction, and on what cadence — with the tunable
+   * magnitudes (lookback length, how many names, how many days between rotations) removed, exactly
+   * as parameter values are removed from a DSL's thresholds.
+   *
+   * Reached through the same function rather than a parallel one, so a cross-sectional variant
+   * cannot dodge the duplicate check by travelling a path that never applies it.
+   */
+  const asRecord = dsl as unknown as Record<string, unknown>;
+  if (asRecord.kind === "CROSS_SECTIONAL") {
+    const ranking = {
+      market: dsl.universe.market,
+      resolution: dsl.universe.resolution,
+      rank: {
+        score: asRecord.ranking,
+        direction: asRecord.direction,
+        skipsRecent: Number(asRecord.skipRecentDays) > 0,
+        rotates: true,
+      },
+    };
+    return createHash("sha256").update(stableStringify(ranking), "utf8").digest("hex").slice(0, 16);
+  }
+
   const payload = {
     market: dsl.universe.market,
     resolution: dsl.universe.resolution,

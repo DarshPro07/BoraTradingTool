@@ -3,6 +3,8 @@ import { evaluateAutonomousAction, type LearningMode } from "@/lib/governance/po
 import { COMPILER_VERSION, StrategyDslSchema, type StrategyDsl } from "@/lib/strategy/dsl";
 import { checkRediscovery, listGraveyard } from "@/lib/strategy/graveyard";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
+import { runCrossSectionalBacktest, type CrossSectionalResult } from "@/lib/backtest/cross-sectional";
+import { parseStrategyDefinition } from "@/lib/strategy/definition";
 import { collectFeatures } from "@/lib/backtest/engine";
 import { isDerivable } from "@/lib/backtest/features";
 import { runSimulationBattery, type BatteryReport } from "@/lib/simulation/battery";
@@ -103,13 +105,13 @@ export async function runValidationRehearsal(
   // One snapshot per (market, resolution) per pass: candidates share markets, and the fingerprint
   // hash over ~30k bars is work worth doing once, not ten times.
   const snapshots = new Map<string, SnapshotResult | SnapshotRefusal>();
-  const datasetFor = (dsl: StrategyDsl): SnapshotResult | SnapshotRefusal => {
-    const key = `${dsl.universe.market}|${dsl.universe.resolution}`;
+  const datasetFor = (universe: { market: StrategyDsl["universe"]["market"]; resolution: string }): SnapshotResult | SnapshotRefusal => {
+    const key = `${universe.market}|${universe.resolution}`;
     const held = snapshots.get(key);
     if (held) return held;
     let built: SnapshotResult | SnapshotRefusal;
     try {
-      built = source(dsl.universe.market, dsl.universe.resolution);
+      built = source(universe.market, universe.resolution);
     } catch (caught) {
       // A crashing source costs this candidate, not the cycle — and is reported as unavailable
       // data, never replaced with a default series.
@@ -174,14 +176,14 @@ export async function runValidationRehearsal(
 
   const outcomes: RehearsalOutcome[] = [];
   for (const spec of specs) {
-    const parsedDsl = parseDsl(spec.dsl);
-    if (!parsedDsl) {
+    const definition = parseStrategyDefinition(spec.dsl);
+    if (!definition.ok) {
       outcomes.push({
         specId: spec.id,
         name: spec.name,
         status: spec.status,
         verdict: "not_evaluable",
-        reason: "Stored DSL does not parse against the current compiler. It cannot be replayed until it is recompiled.",
+        reason: `Stored definition cannot be read: ${definition.message}. It cannot be replayed until it is recompiled.`,
         trades: 0,
         instrumentsEvaluated: 0,
         signalsRejectedForCapacity: 0,
@@ -192,13 +194,23 @@ export async function runValidationRehearsal(
       continue;
     }
 
+    const instrumentDsl = definition.definition.kind === "INSTRUMENT" ? definition.definition.dsl : null;
+    const crossSectional =
+      definition.definition.kind === "CROSS_SECTIONAL" ? definition.definition.strategy : null;
+    const universe = instrumentDsl ? instrumentDsl.universe : crossSectional!.universe;
+
     // Checked before any data is fetched: a strategy needing a feature no engine can derive
     // cannot be replayed however much data arrives. Discovering that *after* pulling twelve
     // instruments × three years — on every cycle, forever — is pure waste, and on a slow or
     // offline connection it is twelve ten-second timeouts to learn something already known.
+    //
+    // Cross-sectional strategies name no features — their inputs are returns over the universe —
+    // so this check simply does not apply to them.
     const required = new Set<string>();
-    collectFeatures(parsedDsl.entry, required);
-    if (parsedDsl.exit.condition) collectFeatures(parsedDsl.exit.condition, required);
+    if (instrumentDsl) {
+      collectFeatures(instrumentDsl.entry, required);
+      if (instrumentDsl.exit.condition) collectFeatures(instrumentDsl.exit.condition, required);
+    }
     const missing = [...required].filter((feature) => !isDerivable(feature));
     if (missing.length > 0) {
       outcomes.push({
@@ -219,7 +231,9 @@ export async function runValidationRehearsal(
 
     // A strategy identical to one already in the graveyard has nothing left to learn from a
     // replay either, and this too is cheaper than fetching.
-    const rediscovery = checkRediscovery(parsedDsl, graveyard);
+    const rediscovery = instrumentDsl
+      ? checkRediscovery(instrumentDsl, graveyard)
+      : { rediscovered: false as const, message: "" };
     if (rediscovery.rediscovered) {
       outcomes.push({
         specId: spec.id,
@@ -237,7 +251,7 @@ export async function runValidationRehearsal(
       continue;
     }
 
-    const snapshot = datasetFor(parsedDsl);
+    const snapshot = datasetFor(universe);
     if (!snapshot.ok) {
       // Fail closed, with the gap named. The refusal message identifies market and resolution and
       // classifies the remedy as ingestion — never a provider call inside a running evaluation.
@@ -258,10 +272,15 @@ export async function runValidationRehearsal(
       continue;
     }
 
-    const backtest = runPortfolioBacktest(parsedDsl, snapshot.dataset, {
-      datasetFingerprint: snapshot.fingerprint,
-      datasetSnapshotId: snapshot.snapshotId,
-    });
+    // One rehearsal, two engines. The verdict, the battery and the ledger row are identical
+    // whichever ran — a cross-sectional family must be accounted for in the same campaign
+    // arithmetic as the others, not on a side channel where its results mean something different.
+    const backtest = instrumentDsl
+      ? runPortfolioBacktest(instrumentDsl, snapshot.dataset, {
+          datasetFingerprint: snapshot.fingerprint,
+          datasetSnapshotId: snapshot.snapshotId,
+        })
+      : asRehearsable(runCrossSectionalBacktest(crossSectional!, snapshot.dataset));
     if (!backtest.ok) {
       outcomes.push({
         specId: spec.id,
@@ -284,9 +303,13 @@ export async function runValidationRehearsal(
     // Exit times so the walk-forward slices calendar rather than trade count. The engine has
     // them; not passing them would silently downgrade the test it performs.
     const battery = runSimulationBattery(returns, { times: backtest.trades.map((trade) => trade.exitTime) });
+    const capacityNoun =
+      "capacityNoun" in backtest
+        ? backtest.capacityNoun
+        : "signal(s) were dropped for lack of a free position slot";
     const capacityNote =
       backtest.signalsRejectedForCapacity > 0
-        ? ` ${backtest.signalsRejectedForCapacity} signal(s) were dropped for lack of a free position slot.`
+        ? ` ${backtest.signalsRejectedForCapacity} ${capacityNoun}.`
         : "";
     // The universe this verdict actually describes. Recent listings hold too little history to
     // evaluate and are excluded rather than aborting the run, so the reader is told how many —
@@ -364,6 +387,43 @@ export async function runValidationRehearsal(
 }
 
 /** A spec stored under an older compiler is a fact to report, not a crash. */
+/**
+ * A cross-sectional result, in the shape the rehearsal already knows how to grade.
+ *
+ * The two engines report different things because they do different work: a per-instrument run
+ * counts signals it could not take for lack of a position slot, while a ranking run counts
+ * rotations it could not fill to the declared width. Both are the same underlying fact — the
+ * portfolio was thinner than the strategy asked for — so `underfilledRebalances` is carried in
+ * the capacity field rather than being dropped to make the shapes line up.
+ *
+ * `instrumentsExcluded` is empty and not faked: the ranking engine refuses a universe too thin to
+ * rank at all rather than quietly dropping names from one that is wide enough.
+ */
+function asRehearsable(result: CrossSectionalResult) {
+  if (!result.ok) return result;
+  return {
+    ok: true as const,
+    trades: result.trades,
+    instrumentsEvaluated: result.instrumentsRanked,
+    signalsRejectedForCapacity: result.underfilledRebalances,
+    instrumentsExcluded: [] as { instrumentId: string; bars: number }[],
+    /**
+     * How the capacity shortfall should be DESCRIBED for this engine.
+     *
+     * The number lands in the same field for both, because it is the same underlying fact — the
+     * portfolio was thinner than the strategy asked for. What it counts is not the same: a
+     * per-instrument run drops individual signals when every slot is taken, while a ranking run
+     * fails to fill a whole rotation to its declared width. Reporting the second in the first's
+     * words would put a sentence in the durable ledger that misdescribes what happened.
+     */
+    capacityNoun: "rotation(s) could not be filled to the declared width" as const,
+    // Null, and null is the honest value: a daily cross-sectional rotation holds delivery
+    // positions, so no intraday broker deadline binds it and there is no execution profile to
+    // name. Inventing one would put a mandatory square-off on a strategy that has none.
+    execution: null as { profileId: string } | null,
+  };
+}
+
 function parseDsl(raw: string): StrategyDsl | null {
   try {
     const parsed = StrategyDslSchema.safeParse(JSON.parse(raw));

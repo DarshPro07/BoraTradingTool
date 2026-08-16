@@ -26,15 +26,16 @@ describe("every declared family is accounted for", () => {
     const declared = NSE_QC_001.families.map((family) => family.familyId).sort();
     const covered = [
       ...NSE_QC_001_SEEDS.map((seed) => seed.familyId),
+      NSE_QC_001_XSEC_SEED.familyId,
       ...Object.keys(UNSEEDED_FAMILIES),
     ].sort();
     expect(covered).toEqual(declared);
   });
 
-  it("names why the un-filed family is not yet a spec row", () => {
-    // Deferring is legitimate; deferring silently is not. The family is now EXECUTABLE — what is
-    // deferred is filing it into a lifecycle written against a different representation.
-    expect(UNSEEDED_FAMILIES.fam_qc001_xsec_momentum).toMatch(/lifecycle|StrategyDsl/i);
+  it("has no un-seeded family left — the list is the record, not the prose", () => {
+    // It held fam_qc001_xsec_momentum while that family was executable but unfiled. The typed
+    // persistence boundary closed that gap, so every declared family now has a spec.
+    expect(Object.keys(UNSEEDED_FAMILIES)).toEqual([]);
   });
 
   it("the cross-sectional family has an executable seed, even without a spec row", () => {
