@@ -58,7 +58,7 @@ describe("the pre-registered trial-activation gate", () => {
       env: {},
     });
 
-    expect(decision.switchOn).toBe(false);
+    expect(decision.ownerSwitchEnabled).toBe(false);
     expect(decision.criteriaSatisfied).toBe(false);
     expect(decision.headline).toMatch(/OFF — the pre-registered criteria are not satisfied/);
     // Every family reports its own shortfall; nothing is aggregated into one opaque percentage.
@@ -103,7 +103,7 @@ describe("the pre-registered trial-activation gate", () => {
       standings: () => [],
       env: { MARKETPULSE_AUTONOMOUS_TRIALS: "1" },
     });
-    expect(on.switchOn).toBe(true);
+    expect(on.ownerSwitchEnabled).toBe(true);
     expect(on.criteriaSatisfied).toBe(false);
     expect(on.headline).toMatch(/ON BY SWITCH while the pre-registered criteria are NOT satisfied/);
   });

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { closeDbForTests, getDb, schema } from "@/lib/db";
 import { evaluateAutonomousAction } from "@/lib/governance/policy";
 import { recordStrategySpec } from "@/lib/knowledge/repository";
@@ -14,6 +14,26 @@ import {
 } from "./auto-gauntlet";
 import { activeReservationsToday } from "./trial-governor";
 import type { ResearchDatasetSource } from "@/lib/learning/rehearsal";
+
+/**
+ * A satisfied registered-campaign gate, stubbed at its SOURCE.
+ *
+ * Since 2026-08-17 the governor evaluates the pre-registered gate before candidate eligibility,
+ * and this suite's temporary database has no registered campaign — so without the stub every case
+ * below would stop at CAMPAIGN_GATE_BLOCKED and prove nothing about the data source, the
+ * reservation lifecycle or the selection guards it exists to cover.
+ *
+ * Stubbed here rather than threaded through `AutoGauntletOptions` deliberately: a production seam
+ * for overriding the gate is exactly the hole that was just closed, and
+ * `trial-gate-composition.test.ts` asserts no production caller has one.
+ */
+vi.mock("./trial-activation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./trial-activation")>()),
+  evaluateTrialActivation: () => ({
+    criteriaSatisfied: true,
+    criteriaHash: "19e571a36128b1ef",
+  }),
+}));
 
 /**
  * The five guards, and the governance boundary they sit behind.

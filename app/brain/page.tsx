@@ -298,8 +298,21 @@ export default async function BrainPage() {
             <div className="text-muted-foreground text-[10px]">
               AUTONOMOUS TRIALS — PRE-REGISTERED GATE (criteria pinned {activation.criteriaHash})
             </div>
-            <div className={`font-bold ${activation.switchOn ? "text-amber" : ""}`} data-testid="trial-activation-state">
-              {activation.switchOn ? "ON" : "OFF"} · {activation.criteriaSatisfied ? "criteria satisfied" : "criteria not satisfied"}
+            {/*
+              Three facts, shown as three facts. Collapsing them into one "ON/OFF" is what let a
+              reader believe the switch implied readiness — the misreading behind the P0 in which
+              the pre-registered gate governed nothing at the point of spend.
+            */}
+            <div className="font-bold" data-testid="trial-activation-state">
+              <span className={activation.ownerSwitchEnabled ? "text-amber" : ""}>
+                Owner switch {activation.ownerSwitchEnabled ? "ON" : "OFF"}
+              </span>
+              {" · "}
+              <span>Campaign criteria {activation.criteriaSatisfied ? "SATISFIED" : "BLOCKED"}</span>
+              {" · "}
+              <span className={activation.effectiveActivation ? "text-amber" : ""}>
+                Effective trial access {activation.effectiveActivation ? "ENABLED" : "BLOCKED"}
+              </span>
             </div>
             <div className="text-muted-foreground">{activation.headline}</div>
             <div data-testid="trial-activation-ownership">

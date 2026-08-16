@@ -157,7 +157,20 @@ export interface TrialActivationDecision {
   /** Blockers the machine can and should keep working. */
   autonomousBlockers: number;
   /** The declared switch state, read from the environment — never inferred. */
-  switchOn: boolean;
+  /**
+   * Is the owner's dedicated switch set? **Only that.**
+   *
+   * Named `switchOn` until 2026-08-17, which encouraged exactly the misreading that cost a P0: it
+   * was read as "trials are activated" when it reported nothing about the registered criteria. The
+   * three facts are separate and must stay separate.
+   */
+  ownerSwitchEnabled: boolean;
+  /**
+   * Both, and this is the one that authorizes. `authorizeTrial` enforces the same conjunction at
+   * the point of spend — this field exists so a reader can see the same answer the governor will
+   * reach, never so a caller can pass it in as a substitute for evaluating it.
+   */
+  effectiveActivation: boolean;
   /** Whether the pre-registered criteria are ALL satisfied. Independent of the switch. */
   criteriaSatisfied: boolean;
   criteriaHash: string;
@@ -398,7 +411,7 @@ export function evaluateTrialActivation(
 
   const criteriaSatisfied =
     poolCriterion.state === "SATISFIED" && familyResults.every((family) => family.satisfied);
-  const switchOn = env.MARKETPULSE_AUTONOMOUS_TRIALS === "1";
+  const ownerSwitchEnabled = env.MARKETPULSE_AUTONOMOUS_TRIALS === "1";
 
   const blockers: string[] = [];
   const tag = (result: CriterionResult) =>
@@ -425,7 +438,8 @@ export function evaluateTrialActivation(
   const autonomousBlockers = unsatisfied.filter((result) => result.autoRetry).length;
 
   return {
-    switchOn,
+    ownerSwitchEnabled,
+    effectiveActivation: ownerSwitchEnabled && criteriaSatisfied,
     criteriaSatisfied,
     externalDependencies,
     autonomousBlockers,
@@ -433,7 +447,7 @@ export function evaluateTrialActivation(
     families: familyResults,
     poolCriterion,
     readyForGauntlet,
-    headline: switchOn
+    headline: ownerSwitchEnabled
       ? criteriaSatisfied
         ? "ON — the pre-registered criteria are satisfied and the owner's switch is set."
         : "ON BY SWITCH while the pre-registered criteria are NOT satisfied — the owner overrode the gate."

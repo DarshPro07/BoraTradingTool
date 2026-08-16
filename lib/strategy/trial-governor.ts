@@ -1,4 +1,6 @@
 import { and, eq, inArray, lt } from "drizzle-orm";
+import { evaluateTrialActivation, NSE_QC_001_ACTIVATION } from "./trial-activation";
+import { NSE_QC_001 } from "./campaigns/nse-qc-001";
 import { getDb, schema } from "@/lib/db";
 import { freezeStanding } from "./research-freeze";
 // Type-only: erased at compile time, so the governor carries no RUNTIME dependency on
@@ -101,6 +103,15 @@ export function autonomousTrialsEnabled(env: Readonly<Record<string, string | un
 export type TrialAuthorizationCode =
   | "APPROVED_AUTOMATICALLY"
   | "LANE_DISABLED"
+  /**
+   * The registered campaign's pre-declared criteria are not satisfied, could not be evaluated, or
+   * no longer match the hash they were pinned under.
+   *
+   * Added 2026-08-17 to close a P0: `evaluateTrialActivation` was imported by exactly one file,
+   * `app/brain/page.tsx` — a display page — so the pre-registered gate governed nothing. The owner
+   * switch was not a second lock in front of the gate; it was the only lock.
+   */
+  | "CAMPAIGN_GATE_BLOCKED"
   | "NO_ELIGIBLE_CANDIDATE"
   | "RESEARCH_FROZEN"
   | "BUDGET_EXHAUSTED";
@@ -114,9 +125,33 @@ export interface TrialAuthorization {
   reservationId?: number;
 }
 
+/** What the campaign gate must report before a permanent trial may be spent. */
+export interface CampaignGateReading {
+  criteriaSatisfied: boolean;
+  criteriaHash: string;
+}
+
+/**
+ * The criteria hash NSE-QC-001 was registered under.
+ *
+ * Checked at authorization, not merely displayed: if the bar has moved, the pin no longer
+ * describes the experiment being run, and a trial spent against unpinned criteria cannot be
+ * accounted for afterwards. Moving the bar is allowed — silently spending against a moved bar is
+ * not.
+ */
+export const REGISTERED_CRITERIA_HASH = "19e571a36128b1ef";
+
 export interface AuthorizeTrialInput {
   /** The candidate selected for a spend, or null when none cleared the selection guards. */
   candidate: TrialCandidate | null;
+  /**
+   * Reads the registered campaign gate. Injectable for tests; the default evaluates the LIVE gate.
+   *
+   * Deliberately a function rather than a boolean: a green verdict computed on `/brain` minutes
+   * ago must never be passed in and trusted. Authorization evaluates authoritative current state
+   * inside the same path that spends, because the display can be stale and the spend is permanent.
+   */
+  gate?: () => CampaignGateReading | null;
   now?: Date;
   budget?: number;
   env?: Readonly<Record<string, string | undefined>>;
@@ -132,6 +167,18 @@ export interface AuthorizeTrialInput {
  * Pure with respect to the trial ledger and the reservation table — it decides and records the
  * DECISION only. `withAuthorizedTrial` composes this policy check with the atomic reservation.
  */
+/**
+ * Evaluate the registered campaign gate against authoritative current state.
+ *
+ * Returns null rather than throwing when the campaign is not registered in this database — the
+ * caller treats an unobtainable verdict as a refusal, so "no campaign here" cannot read as
+ * "no objection".
+ */
+function liveCampaignGate(): CampaignGateReading | null {
+  const decision = evaluateTrialActivation(NSE_QC_001.families, NSE_QC_001_ACTIVATION);
+  return { criteriaSatisfied: decision.criteriaSatisfied, criteriaHash: decision.criteriaHash };
+}
+
 export function authorizeTrial(input: AuthorizeTrialInput): TrialAuthorization {
   const now = input.now ?? new Date();
   const budget = input.budget ?? DEFAULT_DAILY_TRIAL_BUDGET;
@@ -158,7 +205,54 @@ export function authorizeTrial(input: AuthorizeTrialInput): TrialAuthorization {
     );
   }
 
-  // 2. A candidate that cleared every selection guard must exist. `selectTrialCandidates` owns the
+  // 2. The REGISTERED campaign gate. Fails closed on every path: unsatisfied criteria, an
+  //    evaluator that throws, a reading that cannot be obtained, or a criteria hash that no longer
+  //    matches the registration. A failure to establish permission must never become permission.
+  //
+  //    Evaluated HERE rather than in a caller for the same reason the OHLC coherence check lives
+  //    in `persistCandles`: an upstream check is bypassed by the next caller somebody adds, and
+  //    this is the point where a permanent statistical trial is actually spent.
+  const readGate = input.gate ?? liveCampaignGate;
+  let gateReading: CampaignGateReading | null;
+  try {
+    gateReading = readGate();
+  } catch (caught) {
+    return decide(
+      false,
+      "CAMPAIGN_GATE_BLOCKED",
+      "The registered campaign gate could not be evaluated " +
+        `(${caught instanceof Error ? caught.message.split(/\r?\n/)[0] : String(caught)}). ` +
+        "Refused: an error is not permission.",
+    );
+  }
+  if (gateReading === null) {
+    return decide(
+      false,
+      "CAMPAIGN_GATE_BLOCKED",
+      "The registered campaign gate could not be obtained. Refused: absence of a verdict is not a " +
+        "favourable verdict.",
+    );
+  }
+  if (gateReading.criteriaHash !== REGISTERED_CRITERIA_HASH) {
+    return decide(
+      false,
+      "CAMPAIGN_GATE_BLOCKED",
+      `The activation criteria hash is ${gateReading.criteriaHash}, not the registered ` +
+        `${REGISTERED_CRITERIA_HASH}. The bar has moved, so the pin no longer describes this ` +
+        "experiment and a trial spent now could not be accounted for against the declaration.",
+    );
+  }
+  if (!gateReading.criteriaSatisfied) {
+    return decide(
+      false,
+      "CAMPAIGN_GATE_BLOCKED",
+      "The registered campaign's pre-declared criteria are not satisfied. The owner switch permits " +
+        "autonomous trials IF the registered experiment is ready — it does not override the " +
+        "declaration. Read the gate's own blockers for what remains.",
+    );
+  }
+
+  //    `selectTrialCandidates` owns the
   //    per-candidate integrity (identity, rung, cost honesty, capital fit); the governor refuses
   //    to invent one.
   if (!input.candidate || !input.candidate.eligible) {

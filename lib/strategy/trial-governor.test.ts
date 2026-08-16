@@ -66,6 +66,14 @@ describe("autonomousTrialsEnabled", () => {
 describe("authorizeTrial — the policy decision (lane, eligibility, freeze; NOT the budget)", () => {
   useTemporaryDatabase();
   const noAudit = () => {};
+  /**
+   * A satisfied campaign gate, injected so these tests keep testing THEIR subject.
+   *
+   * The gate now sits between the owner switch and candidate eligibility, so without this every
+   * assertion below would stop at CAMPAIGN_GATE_BLOCKED and prove nothing about eligibility,
+   * freeze or the audit ledger. The gate's own behaviour is covered in its own describe.
+   */
+  const passingGate = () => ({ criteriaSatisfied: true, criteriaHash: "19e571a36128b1ef" });
 
   it("refuses with the lane OFF even when a candidate is perfectly eligible — the safe default", () => {
     const decision = authorizeTrial({ candidate: candidate(), env: OFF, audit: noAudit });
@@ -74,19 +82,19 @@ describe("authorizeTrial — the policy decision (lane, eligibility, freeze; NOT
   });
 
   it("refuses when no eligible candidate exists, even with the lane ON — never spends to make activity", () => {
-    expect(authorizeTrial({ candidate: null, env: ON, audit: noAudit }).code).toBe("NO_ELIGIBLE_CANDIDATE");
-    expect(authorizeTrial({ candidate: candidate("x", false), env: ON, audit: noAudit }).code).toBe("NO_ELIGIBLE_CANDIDATE");
+    expect(authorizeTrial({ candidate: null, env: ON, audit: noAudit, gate: passingGate }).code).toBe("NO_ELIGIBLE_CANDIDATE");
+    expect(authorizeTrial({ candidate: candidate("x", false), env: ON, audit: noAudit, gate: passingGate }).code).toBe("NO_ELIGIBLE_CANDIDATE");
   });
 
   it("approves the POLICY when lane on + eligible + not frozen (the reservation decides the budget)", () => {
-    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit });
+    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit, gate: passingGate });
     expect(decision.approved).toBe(true);
     expect(decision.code).toBe("APPROVED_AUTOMATICALLY");
   });
 
   it("records its decision to the audit ledger but never writes a trial or a reservation", () => {
-    authorizeTrial({ candidate: candidate(), env: ON });
-    authorizeTrial({ candidate: candidate(), env: OFF });
+    authorizeTrial({ candidate: candidate(), env: ON, gate: passingGate });
+    authorizeTrial({ candidate: candidate(), env: OFF, gate: passingGate });
     expect(getDb().select().from(schema.auditEvents).where(eq(schema.auditEvents.action, "authorize_trial")).all().length).toBe(2);
     expect(getDb().select().from(schema.trials).all().length).toBe(0);
     expect(getDb().select().from(schema.trialReservations).all().length).toBe(0);
@@ -210,6 +218,13 @@ describe("consume / release lifecycle", () => {
 });
 
 describe("withAuthorizedTrial — policy + reservation + ledger-truth finalize", () => {
+  /**
+   * Injected so these tests keep testing the RESERVATION lifecycle. The campaign gate now sits in
+   * front of candidate eligibility, so without it every case below would stop at
+   * CAMPAIGN_GATE_BLOCKED and never reach the reservation it exists to exercise.
+   */
+  const passingGate = () => ({ criteriaSatisfied: true, criteriaHash: "19e571a36128b1ef" });
+
   useTemporaryDatabase();
 
   const reservations = () => getDb().select().from(schema.trialReservations).all();
@@ -222,7 +237,7 @@ describe("withAuthorizedTrial — policy + reservation + ledger-truth finalize",
 
   it("a real spend (a selection trial lands) → the reservation is consumed as SPENT", async () => {
     const c = seeded();
-    const decision = await withAuthorizedTrial({ candidate: c, env: ON, budget: 1 }, (a) => {
+    const decision = await withAuthorizedTrial({ candidate: c, env: ON, budget: 1, gate: passingGate }, (a) => {
       expect(a.approved).toBe(true);
       expect(a.reservationId).toBeGreaterThan(0);
       spendTrial(c); // the gauntlet ran
@@ -233,14 +248,14 @@ describe("withAuthorizedTrial — policy + reservation + ledger-truth finalize",
   });
 
   it("a refusal with NO trial recorded (no data) → the reservation is RELEASED, budget freed", async () => {
-    await withAuthorizedTrial({ candidate: seeded(), env: ON, budget: 1 }, (a) => a); // records nothing
+    await withAuthorizedTrial({ candidate: seeded(), env: ON, budget: 1, gate: passingGate }, (a) => a); // records nothing
     expect(reservations()[0]?.state).toBe("RELEASED");
     expect(activeReservationsToday()).toBe(0);
   });
 
   it("a throw BEFORE any trial is recorded → RELEASED, throw propagates (no budget burned)", async () => {
     await expect(
-      withAuthorizedTrial({ candidate: seeded(), env: ON, budget: 1 }, () => {
+      withAuthorizedTrial({ candidate: seeded(), env: ON, budget: 1, gate: passingGate }, () => {
         throw new Error("boom");
       }),
     ).rejects.toThrow("boom");
@@ -253,7 +268,7 @@ describe("withAuthorizedTrial — policy + reservation + ledger-truth finalize",
     // undercount. The ledger-truth finalize consumes it instead.
     const c = seeded();
     await expect(
-      withAuthorizedTrial({ candidate: c, env: ON, budget: 1 }, () => {
+      withAuthorizedTrial({ candidate: c, env: ON, budget: 1, gate: passingGate }, () => {
         spendTrial(c); // record-before-compute
         throw new Error("HoldoutBudgetExhausted"); // throw AFTER the record
       }),
@@ -264,12 +279,109 @@ describe("withAuthorizedTrial — policy + reservation + ledger-truth finalize",
 
   it("[owner #1, end to end] a second spend against budget=1 is refused BUDGET_EXHAUSTED", async () => {
     const first = seeded("first");
-    await withAuthorizedTrial({ candidate: first, env: ON, budget: 1 }, (a) => {
+    await withAuthorizedTrial({ candidate: first, env: ON, budget: 1, gate: passingGate }, (a) => {
       spendTrial(first);
       return a;
     });
-    const second = await withAuthorizedTrial({ candidate: seeded("second"), env: ON, budget: 1 }, (a) => a);
+    const second = await withAuthorizedTrial({ candidate: seeded("second"), env: ON, budget: 1, gate: passingGate }, (a) => a);
     expect(second.approved).toBe(false);
     expect(second.code).toBe("BUDGET_EXHAUSTED");
+  });
+});
+
+describe("the registered campaign gate governs authorization, not just the owner switch", () => {
+  useTemporaryDatabase();
+  const noAudit = () => {};
+
+  /**
+   * The P0 defect this closes, found 2026-08-17.
+   *
+   * `evaluateTrialActivation` — the pre-registered gate, hashed `19e571a36128b1ef`, whose criteria
+   * were declared before any strategy result was seen — was imported by exactly ONE file:
+   * `app/brain/page.tsx`. A display page. The authorization path that spends a permanent
+   * statistical trial never consulted it.
+   *
+   * So `MARKETPULSE_AUTONOMOUS_TRIALS=1` did not mean "the owner permits trials IF the registered
+   * experiment is ready". It meant "start spending", and would have done so at 18/60 breadth, 38%
+   * sector classification and ZERO strategies in the ready pool.
+   *
+   * Each layer was individually correct — the gate computed honestly, the governor guarded
+   * honestly — and the wire between them was never run. That is this repository's signature
+   * failure mode, named in CLAUDE.md: a declared resolution ignored in three separate layers.
+   *
+   * The invariant now lives at the choke point, for the same reason the OHLC coherence check
+   * belongs in `persistCandles` rather than in one caller: an upstream check can be bypassed by
+   * the next caller somebody adds.
+   *
+   * FAIL CLOSED throughout. A failure to establish permission must never become permission.
+   */
+  const gateOk = () => ({ criteriaSatisfied: true, criteriaHash: "19e571a36128b1ef" });
+  const gateBlocked = () => ({ criteriaSatisfied: false, criteriaHash: "19e571a36128b1ef" });
+
+  it("DENIES when the owner switch is off and the gate is blocked", () => {
+    const decision = authorizeTrial({ candidate: candidate(), env: OFF, audit: noAudit, gate: gateBlocked });
+    expect(decision.approved).toBe(false);
+  });
+
+  it("DENIES when the owner switch is off even though the gate is satisfied", () => {
+    const decision = authorizeTrial({ candidate: candidate(), env: OFF, audit: noAudit, gate: gateOk });
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("LANE_DISABLED");
+  });
+
+  it("DENIES when the switch is ON but the registered criteria are NOT satisfied", () => {
+    // The row that matters. Before this fix, this combination authorized a permanent spend.
+    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit, gate: gateBlocked });
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("CAMPAIGN_GATE_BLOCKED");
+    expect(decision.reason).toMatch(/registered/i);
+  });
+
+  it("DENIES when the gate evaluator throws — an error is not permission", () => {
+    const decision = authorizeTrial({
+      candidate: candidate(),
+      env: ON,
+      audit: noAudit,
+      gate: () => {
+        throw new Error("coverage report unavailable");
+      },
+    });
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("CAMPAIGN_GATE_BLOCKED");
+    expect(decision.reason).toMatch(/could not be evaluated/i);
+  });
+
+  it("DENIES on a criteria-hash mismatch — the bar moved, so the pin no longer describes it", () => {
+    const decision = authorizeTrial({
+      candidate: candidate(),
+      env: ON,
+      audit: noAudit,
+      gate: () => ({ criteriaSatisfied: true, criteriaHash: "deadbeefdeadbeef" }),
+    });
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("CAMPAIGN_GATE_BLOCKED");
+    expect(decision.reason).toMatch(/hash/i);
+  });
+
+  it("DENIES when the gate cannot be obtained at all", () => {
+    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit, gate: () => null });
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("CAMPAIGN_GATE_BLOCKED");
+  });
+
+  it("proceeds to the existing checks only when switch AND gate both hold", () => {
+    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit, gate: gateOk });
+    // Past the campaign gate; whatever it decides next is the pre-existing policy, unchanged.
+    expect(decision.code).not.toBe("CAMPAIGN_GATE_BLOCKED");
+    expect(decision.code).not.toBe("LANE_DISABLED");
+  });
+
+  it("defaults to evaluating the LIVE gate when no evaluator is injected", () => {
+    // A green boolean computed on /brain minutes ago must never be passed in and trusted. The
+    // authorization evaluates authoritative current state; the display can be stale.
+    const decision = authorizeTrial({ candidate: candidate(), env: ON, audit: noAudit });
+    // Nothing is registered in this temporary database, so the live gate cannot be satisfied.
+    expect(decision.approved).toBe(false);
+    expect(decision.code).toBe("CAMPAIGN_GATE_BLOCKED");
   });
 });
