@@ -58,6 +58,37 @@ the timestamp is `ingested_at`, not `created_at`. The `CASE` guard is not cosmet
 returns 0 when the delimiter is absent, and `substr(detail, 1, -1)` then returns the **empty
 string** rather than the whole value, so an unguarded expression fails silently and blank.
 
+### What tonight can and cannot establish
+
+The causal ladder, kept honest about which rungs are actually load-bearing:
+
+```
+ESTABLISHED   4s budget + a large 5m request -> reproducible ASKAUTOLTD timeout
+ESTABLISHED   30s budget + a manual 36-fetch probe -> 36/36 success
+TONIGHT       30s budget + the normal learning cycle + 36 COLD fetches -> ?
+```
+
+A green result licenses exactly one sentence: **the timeout correction survived the scheduled
+production workload.** It does NOT establish that resource contention was the original cause —
+that remains a plausible hypothesis and nothing more, because no concurrency or resource
+measurement was ever taken. Saying "contention was proven" would be inventing a mechanism to
+explain a result, which is the failure mode this whole leg exists to avoid.
+
+### Acceptance criteria, and what is only an expectation
+
+Expected insert is ~50,000 bars (12 instruments × 3 resolutions, all twelve currently holding
+ZERO intraday bars — verified, so a near-empty result would be a genuine anomaly rather than "no
+new data"). That number is an **expectation, not a threshold**: bar counts move with trading
+sessions, provider retention boundaries, and missing intervals. 49,100 is not a failure.
+
+The decisive assertions are:
+
+- the accumulation marker advanced past `2026-08-15 21:42:23Z`
+- fetches were actually attempted (ingestion-ledger rows exist for this pass)
+- the expected instruments and resolutions are represented
+- no **unexplained** `FETCH_FAILED` rows
+- bars are materially populated
+
 ### If `.tmp/accumulation-check.log` is missing, that is a fact about the WATCHER
 
 A detached watcher (`.tmp/watch-accumulation.ps1`) writes the three checks to
