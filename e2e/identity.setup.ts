@@ -1,4 +1,5 @@
 import { expect, test as setup } from "@playwright/test";
+import { refuseUnprovenTarget } from "./lib/server-provenance";
 
 /**
  * Prove which server this suite is about to interrogate, before it interrogates it.
@@ -78,6 +79,18 @@ setup("the server under test is the build under test", async ({ request }, testI
     identity.databaseFingerprint,
     "The server cannot reach or has not migrated its database. Fix that before reading any test result below.",
   ).not.toBeNull();
+
+  // Also unconditional, and for the same reason the fingerprint check is: this one is about the
+  // database the suite is about to WRITE to. `testMode` was read and printed here from the start
+  // but never asserted, and an external base URL inherits none of the config's webServer
+  // environment — so a run pointed at the owner's dev server seeded 14 fixtures into the live
+  // strategy population. Proving the target is the precondition; see `lib/server-provenance.ts`.
+  const unproven = refuseUnprovenTarget({
+    external: Boolean(process.env.MARKETPULSE_E2E_BASE_URL?.trim()),
+    testMode: identity.testMode,
+    pinnedDatabase: expected.database,
+  });
+  if (unproven) throw new Error(`${unproven}\n\nTarget: ${baseURL}`);
 
   if (expected.commit) {
     expect(
