@@ -58,6 +58,33 @@ the timestamp is `ingested_at`, not `created_at`. The `CASE` guard is not cosmet
 returns 0 when the delimiter is absent, and `substr(detail, 1, -1)` then returns the **empty
 string** rather than the whole value, so an unguarded expression fails silently and blank.
 
+### The identifiers tonight's result belongs to
+
+The repository head and the running build are no longer the same commit, so the result must name
+both or it is not reproducible.
+
+```
+SYSTEM UNDER TEST     bb5b6bf   (committed 13:44:38Z; server started 13:45:06Z, 28s later)
+OBSERVATION TOOLING   916c984   or later
+CHANGES SINCE         docs/plans/intraday-fetch-failures/00-status.md ONLY
+                      no lib/, app/, mcp/ or drizzle/ change; no restart
+```
+
+Verified by `git diff --name-only bb5b6bf..HEAD`: the only file touched is this one. Runtime
+behaviour at HEAD is therefore identical to the build under test — but that is a fact to CHECK
+each time, not to assume, because a doc-only diff today is an accident of what was edited rather
+than a property of the process.
+
+Do **not** later report "the experiment passed on 916c984". The honest form is:
+
+> The scheduled pass ran on `bb5b6bf`, observed with tooling at `916c984` (docs and checker only,
+> no runtime change, no restart).
+
+Observation tooling may evolve mid-experiment provided it does not alter the process under test,
+does not mutate its data, preserves the raw evidence, and does not redefine the acceptance test to
+favour a result that already exists. Tonight's checker change tightened specificity BEFORE any
+result existed — the safe direction. It is frozen now.
+
 ### What tonight can and cannot establish
 
 The causal ladder, kept honest about which rungs are actually load-bearing:
