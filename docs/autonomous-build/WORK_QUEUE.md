@@ -9,6 +9,49 @@ quality, not new subsystems. A change that adds a subsystem instead of answering
 out of order and needs an explicit owner ruling to start. Repairs, defect fixes and the tech-debt
 items already listed below remain in scope.
 
+## FINDINGS 2026-08-16 (quant-program lane, under the freeze) — OWNER DECISIONS PENDING
+
+Found by asking the pre-registered gate what was actually blocking, then following it down.
+Full write-ups in `docs/plans/rehearsal-funnel/` and `docs/plans/intraday-fetch-failures/`.
+
+**FIXED (committed, VERIFIED):**
+- `805ca01` — one instrument below `MIN_BARS` aborted the ENTIRE portfolio backtest. 15 of 1,728
+  daily instruments (0.9%) were destroying 100% of the evidence. Now excluded and REPORTED
+  (`PortfolioRun.instrumentsExcluded`). Preventive for both swing families, which run over exactly
+  that universe.
+- `fe1695f` — e2e runs against an external base URL inherited no `MARKETPULSE_DB_PATH`, so a run
+  pointed at :3000 wrote fixtures into production. `identity.setup.ts` read `testMode` and only
+  PRINTED it. An external target must now prove itself. Verified against the real server: :3000
+  reports `testMode: false`, so the guard refuses the exact configuration that caused it.
+- `189caf5` — failed intraday fetches were recorded nowhere; classified `FETCH_FAILED` rows now
+  persist. Root cause was a 4s render-latency budget applied to a ~3,000-bar bulk backfill.
+
+**OWNER DECISIONS — not taken autonomously:**
+1. **NSE-QC-001 declares five families; the engine can express ONE.** All five hold zero seeded
+   specs, and the factory is a breeder (inherits a parent's family, refuses to invent one), so a
+   family with no seed can never receive one autonomously. RVOL breakout needs a prior-day/N-bar
+   extreme; intraday MR needs ATR-scaled distance arithmetic or RSI(2-5); swing MR needs a
+   short-window return and realized volatility; x-sec momentum needs a cross-sectional ranking
+   operator the DSL does not have. **Fork: extend the feature registry, or amend the contract as a
+   deliberate recorded act.** See `03-campaign-capability-gap.md`.
+2. **14 of 22 strategy specs in production are e2e fixtures.** Deleting production research data is
+   destructive; the read-model alternative rests on a heuristic (`http-20124` is an HTTP client id).
+   Future recurrence is already blocked by `fe1695f`.
+3. **`market_cap` blocks 3 of 8 real candidates** and is EXTERNAL, not a defect: the `stocks` table
+   is empty, and a current market cap against historical bars is look-ahead. Both gap screens use it
+   only as a universe filter, so a derivable liquidity proxy (median turnover) could express the
+   same intent — a strategy re-specification, hence the owner's call.
+
+**RECORDED, NOT CHASED:**
+- The pool's "2 ready" is ONE distinct strategy: `sma_cross_20_50` and `sma_cross_ui_probe` return
+  identical results (24 instruments, 165 trades).
+- 40 orphan candles under `IN:XBOM:*` at resolution `60`, all stamped 13:30 UTC (19:00 IST, four
+  hours after the close) — daily bars in an hourly resolution, for five instruments absent from the
+  catalog and with no `bar_ingestions` provenance. Contained by `805ca01` (8 bars each → excluded).
+- Capacity-ordering sensitivity TESTED and largely refuted: relabelling instruments to reverse slot
+  priority moves Sharpe 1.2% at the real 80% rejection rate, 38% at 96.7%. Not a defect at the
+  operating point that matters.
+
 ## P0 QUANT QUALITY PROGRAM — ACTIVE (docs/plans/quant-quality-program/, owner directive 2026-08-15)
 The primary scoreboard: **can MarketPulse discover a repeatable NET positive NSE edge that
 survives independent evidence?** The program spine (funnel with typed rejection attribution,
