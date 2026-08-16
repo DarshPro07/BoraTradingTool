@@ -274,3 +274,25 @@ sector *diversity*, which more breadth genuinely fixes. The distinction is compu
 | Swing classification coverage | 4.5/10 | **structurally blocked** |
 | Data architecture | 9.5/10 | mature |
 | Source-rights governance | 9.8/10 | mature |
+
+### What the gate actually emits today (verified 2026-08-16 13:05 — do not over-read the enum)
+
+`ResolutionOwner` declares five values. The gate currently **emits only two**: `AUTO` and
+`EXTERNAL_PROVIDER`. `OWNER`, `MARKET_TIME` and `PERMANENT` are declared for the model's
+completeness and are **unexercised by any of the five criteria** — none of them is time-bound,
+none is an owner-authorization condition, and none is impossible. Nobody should read those three
+as live paths in this gate.
+
+**The `MARKET_TIME` nuance is already satisfied, elsewhere and correctly.** Time- and event-bound
+blockers are the Dependency Resolver's objects, not the gate's, and it already carries
+`resumeAt` / `resumeAtMs` / `wakeEvent` with `RESOLVABLE_LATER` and `RESOLVABLE_ON_EVENT` (plus
+`MARKET_STATE` and `TIME` prerequisites) — so such blockers wake on a knowable instant or a named
+event rather than polling. **Nothing was added**: this was checked because the owner asked for the
+nuance only if a connection were missing, and none is.
+
+**Two vocabularies now coexist, deliberately.** The resolver classifies JOB blockers
+(`RESOLVABLE_NOW / LATER / ON_EVENT / VIA_ALTERNATIVE / EXTERNAL_REQUIRED / IMPOSSIBLE`); the gate
+classifies CAMPAIGN CRITERIA (`AUTO / OWNER / EXTERNAL_PROVIDER / MARKET_TIME / PERMANENT`). They
+overlap in meaning but describe different objects with different lifetimes. Recorded here as a
+known, accepted overlap so a future session does not "discover" it and unify them under the
+freeze — that would be a refactor with no failing test behind it.
