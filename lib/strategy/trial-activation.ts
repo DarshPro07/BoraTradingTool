@@ -249,7 +249,13 @@ export function evaluateTrialActivation(
   const byInstrument = new Map(report.securities.map((security) => [security.instrumentId, security]));
 
   // The candidate pool: strategies whose very next act would spend a trial.
-  const readyForGauntlet = ladder.filter((standing) => standing.blockedOn === "gauntlet").length;
+  // Research only. 14 of 22 specs in the production store are browser-test fixtures, and a trial
+  // is a PERMANENT statistical cost — authorising one because a Playwright run left a row behind
+  // would spend the multiple-testing budget on nothing. A strategy whose market this deployment
+  // does not serve is excluded for the same reason: it is out of scope, not waiting.
+  const readyForGauntlet = ladder.filter(
+    (standing) => standing.blockedOn === "gauntlet" && standing.researchEligible,
+  ).length;
   const poolCriterion: CriterionResult = {
     criterion: "READY_FOR_GAUNTLET pool",
     state: readyForGauntlet >= criteria.minReadyForGauntlet ? "SATISFIED" : "NOT_SATISFIED",

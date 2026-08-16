@@ -16,7 +16,16 @@ const NOW = new Date("2026-08-15T10:00:00Z");
 const EPOCH = Math.floor(NOW.getTime() / 1000);
 
 function standing(specId: string, stage: Standing["stage"]): Standing {
-  return { specId, name: specId, stage, advance: { kind: "hold", reason: "test" } as never, blockedOn: null };
+  return {
+    specId,
+    name: specId,
+    stage,
+    advance: { kind: "hold", reason: "test" } as never,
+    blockedOn: null,
+    origin: "PRODUCTION_RESEARCH",
+    researchEligible: true,
+    eligibilityReason: "test fixture",
+  };
 }
 
 /** Campaign → family → spec, FK-complete, so ledger rows can hang off something real. */
@@ -230,8 +239,8 @@ describe("the quant scoreboard", () => {
 
     const rows = familyComparison({
       standings: () => [
-        { specId: a.specId, name: "spec-fa", stage: "rehearsed", advance: { kind: "hold", reason: "t" } as never, blockedOn: "gauntlet" },
-        { specId: b.specId, name: "spec-fb", stage: "draft", advance: { kind: "hold", reason: "t" } as never, blockedOn: "rehearsal" },
+        { specId: a.specId, name: "spec-fa", stage: "rehearsed", advance: { kind: "hold", reason: "t" } as never, blockedOn: "gauntlet", origin: "PRODUCTION_RESEARCH", researchEligible: true, eligibilityReason: "test fixture" },
+        { specId: b.specId, name: "spec-fb", stage: "draft", advance: { kind: "hold", reason: "t" } as never, blockedOn: "rehearsal", origin: "PRODUCTION_RESEARCH", researchEligible: true, eligibilityReason: "test fixture" },
       ],
     });
     const rowA = rows.find((row) => row.familyId === a.familyId)!;

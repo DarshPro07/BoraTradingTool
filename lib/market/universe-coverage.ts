@@ -35,6 +35,15 @@ import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "./calendar
 
 export const BACKTEST_BARS_FLOOR = 250;
 export const VALIDATION_BARS_FLOOR = 340;
+/**
+ * How far behind the universe's newest bar an instrument may fall before it counts as stale.
+ *
+ * Four days spans a weekend plus a public holiday, so a normal market closure never trips it.
+ * Measured 2026-08-16: exactly three instruments were behind — RELIANCE, HDFCBANK and TCS, at
+ * eight days against a universe that had moved on.
+ */
+export const STALE_AFTER_SECONDS = 4 * 86_400;
+
 export const INTRADAY_SESSIONS_FLOOR = 20;
 /**
  * A session counts as COMPLETE at this share of a full day's bars. Having 40 sessions is not the
@@ -79,7 +88,24 @@ export interface SecurityCoverage {
   fiveMinuteSessions: number;
   completeFiveMinuteSessions: number;
   openingWindowSessions: number;
+  /**
+   * Enough history to research over. Kept as the name every existing reader uses; `historyReady`
+   * is its precise synonym, introduced beside `freshnessReady` so the two dimensions stop being
+   * conflated.
+   */
   researchReady: boolean;
+  /** DEPTH: does it hold enough bars? */
+  historyReady: boolean;
+  /**
+   * CURRENCY: is it keeping up with the rest of the universe?
+   *
+   * Separate from depth because the planner excluded anything already `researchReady` from its
+   * worklist, so an instrument that had enough history could never re-enter the queue and simply
+   * went stale — the better covered it was, the sooner it stopped being updated.
+   */
+  freshnessReady: boolean;
+  /** Unix seconds of the newest daily bar. Null when none is held — not 0, which would be 1970. */
+  lastDailyBar: number | null;
   backtestReady: boolean;
   validationReady: boolean;
   intradayReady: boolean;
@@ -156,15 +182,28 @@ export function universeCoverage(): UniverseCoverageReport {
   // made this page's server render 11s at ~100k bars and would have grown with the store; the
   // aggregate returns one row per instrument instead. Only the 5-minute TIMES are pulled, because
   // session geometry genuinely needs per-bar stamps — and only for the instruments that have any.
-  const dailyByTicker = new Map<string, number>(
-    db
-      .select({ ticker: schema.priceCandles.ticker, bars: sql<number>`COUNT(*)` })
-      .from(schema.priceCandles)
-      .where(eq(schema.priceCandles.resolution, "D"))
-      .groupBy(schema.priceCandles.ticker)
-      .all()
-      .map((row) => [row.ticker, Number(row.bars)]),
-  );
+  const dailyRows = db
+    .select({
+      ticker: schema.priceCandles.ticker,
+      bars: sql<number>`COUNT(*)`,
+      lastBar: sql<number>`MAX(${schema.priceCandles.time})`,
+    })
+    .from(schema.priceCandles)
+    .where(eq(schema.priceCandles.resolution, "D"))
+    .groupBy(schema.priceCandles.ticker)
+    .all();
+  const dailyByTicker = new Map<string, number>(dailyRows.map((row) => [row.ticker, Number(row.bars)]));
+  const lastBarByTicker = new Map<string, number>(dailyRows.map((row) => [row.ticker, Number(row.lastBar)]));
+
+  /**
+   * The freshness reference: the newest daily bar anywhere in the universe.
+   *
+   * Measured against the universe rather than the wall clock on purpose — holidays, weekends and
+   * a paused ingest all move the whole market together, and calling every instrument stale on a
+   * public holiday would be a false alarm every few weeks. What matters is falling BEHIND the
+   * rest of the market.
+   */
+  const universeLastBar = dailyRows.reduce((newest, row) => Math.max(newest, Number(row.lastBar)), 0);
 
   // Session geometry in SQL as well. Stamping every 5-minute bar through Intl.DateTimeFormat was
   // the remaining seconds of this page's render, and it scales the wrong way: the store is
@@ -231,7 +270,14 @@ export function universeCoverage(): UniverseCoverageReport {
     const instrumentId = `IN:XNSE:${listing.symbol}`;
     const dailyBars = dailyByTicker.get(instrumentId) ?? 0;
     const sessions = quality.get(instrumentId) ?? { present: 0, complete: 0, opening: 0 };
-    const researchReady = dailyBars >= MIN_BARS_FOR_RESEARCH;
+    const historyReady = dailyBars >= MIN_BARS_FOR_RESEARCH;
+    const researchReady = historyReady;
+    const lastDailyBar = lastBarByTicker.get(instrumentId) ?? null;
+    // Enough history is not the same as current history. An instrument can hold three years of
+    // bars and still have stopped updating a week ago — which is exactly what RELIANCE, HDFCBANK
+    // and TCS did while every other name stayed current.
+    const freshnessReady =
+      lastDailyBar !== null && universeLastBar - lastDailyBar <= STALE_AFTER_SECONDS;
     let missingReason: MissingReason | null = null;
     if (!researchReady) {
       missingReason =
@@ -247,6 +293,9 @@ export function universeCoverage(): UniverseCoverageReport {
       completeFiveMinuteSessions: sessions.complete,
       openingWindowSessions: sessions.opening,
       researchReady,
+      historyReady,
+      freshnessReady,
+      lastDailyBar,
       backtestReady: dailyBars >= BACKTEST_BARS_FLOOR,
       validationReady: dailyBars >= VALIDATION_BARS_FLOOR,
       // INTRADAY_READY counts COMPLETE sessions, not merely present ones: forty half-empty days
@@ -323,18 +372,25 @@ export function planUniverseIngestion(limit: number, report = universeCoverage()
     .filter(
       (security) =>
         security.tier === "MAIN_BOARD" &&
-        !security.researchReady &&
+        // Two ways to belong on the worklist, and conflating them was the bug: not enough HISTORY,
+        // or history that has stopped being CURRENT. Filtering on `!researchReady` alone meant an
+        // instrument left the queue permanently the moment it was deep enough, so the best-covered
+        // names were the first to go stale. Three had — RELIANCE, HDFCBANK and TCS.
+        (!security.historyReady || !security.freshnessReady) &&
         security.missingReason !== "INGEST_IN_FLIGHT" &&
         security.missingReason !== "INGEST_BLOCKED_PERMANENT",
     )
     .map((security) => {
       const isReferenced = referenced.has(security.instrumentId);
       const partiallyCovered = security.dailyBars > 0;
+      const staleOnly = security.historyReady && !security.freshnessReady;
       const tier: 1 | 2 | 3 = isReferenced || partiallyCovered ? 1 : 2;
       return {
         instrumentId: security.instrumentId,
         tier,
-        reason: isReferenced
+        reason: staleOnly
+          ? `deep but stale (${security.dailyBars} bars, last bar behind the universe) — refresh, not backfill`
+          : isReferenced
           ? "referenced by an active strategy/challenger/watchlist"
           : partiallyCovered
             ? `partially covered (${security.dailyBars} bars) — finish what is started`

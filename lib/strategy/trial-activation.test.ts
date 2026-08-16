@@ -23,7 +23,16 @@ const NOW = new Date("2026-08-16T00:00:00Z");
 const SECTOR_MIGRATION = path.join(process.cwd(), "drizzle/0024_sector_classifications.sql");
 
 function standing(specId: string, blockedOn: Standing["blockedOn"]): Standing {
-  return { specId, name: specId, stage: "rehearsed", advance: { kind: "hold", reason: "t" } as never, blockedOn };
+  return {
+    specId,
+    name: specId,
+    stage: "rehearsed",
+    advance: { kind: "hold", reason: "t" } as never,
+    blockedOn,
+    origin: "PRODUCTION_RESEARCH",
+    researchEligible: true,
+    eligibilityReason: "test fixture",
+  };
 }
 
 function seedListing(symbol: string): void {
@@ -114,6 +123,9 @@ describe("the pre-registered trial-activation gate", () => {
       completeFiveMinuteSessions: 60,
       openingWindowSessions: 60,
       researchReady: true,
+      historyReady: true,
+      freshnessReady: true,
+      lastDailyBar: 1_780_000_000,
       backtestReady: true,
       validationReady: true,
       intradayReady: true,
@@ -227,5 +239,45 @@ describe("the pre-registered trial-activation gate", () => {
     expect(NSE_QC_001_ACTIVATION.minLiquidityBuckets).toBe(3);
     expect(NSE_QC_001_ACTIVATION.minSectors).toBe(5);
     expect(NSE_QC_001_ACTIVATION.minSectorClassificationCoverage).toBe(0.8);
+  });
+});
+
+describe("the pool counts research, not residue", () => {
+  useTemporaryDatabase();
+
+  /**
+   * Measured 2026-08-16: 14 of 22 strategy specs in the production database were Playwright
+   * fixtures, and the gate reported "2 strategy(ies) standing ready to spend a trial" partly on
+   * their strength. A trial is a permanent statistical cost; authorising one because a browser
+   * test left a row behind would spend the multiple-testing budget on nothing.
+   */
+  it("does not count an e2e fixture as ready to spend a trial", () => {
+    const fixture: Standing = {
+      ...standing("stg_fixture", "gauntlet"),
+      origin: "E2E_FIXTURE",
+      researchEligible: false,
+      eligibilityReason: "written by test actor e2e",
+    };
+    const real: Standing = standing("stg_real", "gauntlet");
+
+    const decision = evaluateTrialActivation(NSE_QC_001.families, NSE_QC_001_ACTIVATION, {
+      standings: () => [fixture, real],
+    });
+    const pool = decision.blockers.find((b) => b.startsWith("pool:"));
+    expect(pool, "the pool blocker should still be present").toBeDefined();
+    expect(pool, "only the research-eligible standing may be counted").toContain("1 strategy(ies)");
+  });
+
+  it("does not count a strategy whose market this deployment does not serve", () => {
+    const unsupported: Standing = {
+      ...standing("stg_us", "gauntlet"),
+      origin: "UNSUPPORTED_MARKET",
+      researchEligible: false,
+      eligibilityReason: "declares market US",
+    };
+    const decision = evaluateTrialActivation(NSE_QC_001.families, NSE_QC_001_ACTIVATION, {
+      standings: () => [unsupported],
+    });
+    expect(decision.blockers.find((b) => b.startsWith("pool:"))).toContain("0 strategy(ies)");
   });
 });

@@ -10,6 +10,7 @@ import {
   tierFor,
   universeCoverage,
   VALIDATION_BARS_FLOOR,
+  type SecurityCoverage,
 } from "./universe-coverage";
 
 const NOW = new Date("2026-08-16T00:00:00Z");
@@ -206,5 +207,50 @@ describe("the universe readiness index", () => {
 
     const limited = planUniverseIngestion(2);
     expect(limited.map((planned) => planned.instrumentId)).toEqual(["IN:XNSE:PART", "IN:XNSE:REF"]);
+  });
+});
+
+describe("freshness is planned separately from history", () => {
+  useTemporaryDatabase();
+
+  /**
+   * The planner bug, measured 2026-08-16. `planUniverseIngestion` filtered on
+   * `!security.researchReady`, so an instrument left the ingestion worklist the moment it had
+   * ENOUGH history — and nothing ever put it back on freshness grounds. Self-reinforcing: the
+   * better covered a name was, the sooner it stopped being updated.
+   *
+   * Exactly three instruments had fallen behind, and they were RELIANCE, HDFCBANK and TCS — the
+   * three largest weights on the NSE, eight days stale while 1,979 others stayed current.
+   */
+  function ready(symbol: string, fresh: boolean): SecurityCoverage {
+    return {
+      isin: `INE${symbol}`,
+      symbol,
+      instrumentId: `IN:XNSE:${symbol}`,
+      tier: "MAIN_BOARD",
+      dailyBars: 900,
+      fiveMinuteSessions: 0,
+      completeFiveMinuteSessions: 0,
+      openingWindowSessions: 0,
+      researchReady: true,
+      historyReady: true,
+      freshnessReady: fresh,
+      lastDailyBar: fresh ? 1_780_000_000 : 1_779_000_000,
+      backtestReady: true,
+      validationReady: true,
+      intradayReady: false,
+      missingReason: null,
+    };
+  }
+
+  it("plans a refresh for an instrument that is deep but stale", () => {
+    const plan = planUniverseIngestion(10, {
+      securities: [ready("RELIANCE", false), ready("INFY", true)],
+    } as never);
+
+    const reliance = plan.find((item) => item.instrumentId === "IN:XNSE:RELIANCE");
+    expect(reliance, "a stale instrument must re-enter the worklist").toBeDefined();
+    expect(reliance?.reason).toMatch(/stale|fresh/i);
+    expect(plan.find((item) => item.instrumentId === "IN:XNSE:INFY")).toBeUndefined();
   });
 });

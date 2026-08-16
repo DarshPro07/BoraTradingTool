@@ -1,4 +1,5 @@
 import { desc, eq } from "drizzle-orm";
+import { classifySpec, marketOfDsl, type SpecOrigin } from "./research-eligibility";
 import { getDb, schema } from "@/lib/db";
 import { advanceStrategy, type Advance, type Stage, type StageEvidence } from "./lifecycle";
 import { costStanding, type CostVerdict } from "./cost-gate";
@@ -30,6 +31,16 @@ export interface Standing {
   advance: Advance;
   /** What the owner would have to do for it to move, when the system cannot move it alone. */
   blockedOn: "rehearsal" | "gauntlet" | "holdout" | "forward_observations" | "owner" | null;
+  /**
+   * Where this spec came from, and whether the research scoreboard may count it.
+   *
+   * Carried rather than filtered out here: 14 of 22 specs in the production store are browser-test
+   * fixtures, and they are kept for audit. A consumer that wants the research population asks for
+   * `researchEligible`; one that wants the full ledger still sees everything.
+   */
+  origin: SpecOrigin;
+  researchEligible: boolean;
+  eligibilityReason: string;
 }
 
 /**
@@ -170,12 +181,20 @@ export function standings(): Standing[] {
   return specs
     .map((spec) => {
       const { stage, advance } = currentStage(spec.id, spec.dsl);
+      const eligibility = classifySpec({
+        name: spec.name,
+        createdBy: spec.createdBy,
+        market: marketOfDsl(spec.dsl),
+      });
       return {
         specId: spec.id,
         name: spec.name,
         stage,
         advance,
         blockedOn: blockedOn(stage, advance.moved),
+        origin: eligibility.origin,
+        researchEligible: eligibility.researchEligible,
+        eligibilityReason: eligibility.reason,
       };
     })
     .sort((a, b) => {
