@@ -58,6 +58,32 @@ the timestamp is `ingested_at`, not `created_at`. The `CASE` guard is not cosmet
 returns 0 when the delimiter is absent, and `substr(detail, 1, -1)` then returns the **empty
 string** rather than the whole value, so an unguarded expression fails silently and blank.
 
+### Observer mechanics, and what was actually established about them
+
+Two observer defects were found before the window, both of which would have produced the false
+alarm this document already warns about — a missing log read as an accumulator failure.
+
+**PATH.** `python` resolves only inside the Bash/venv environment; a bare PowerShell process does
+not inherit it, and executables are resolved from the process environment a child inherits. The
+first watcher looked healthy all evening because it was asleep and had never exercised its
+interpreter call. It would have woken at 18:05Z, failed to find `python`, and written nothing.
+Fixed by pinning the absolute interpreter (`D:\hermes\hermes-agentenv\Scripts\python.exe`),
+verified to run from a bare PowerShell.
+
+**Detachment.** `ESTABLISHED`: in this harness, children launched through the short-lived wrapper
+did not survive, and did survive once the launch sequence was changed and independently verified
+alive by PID. `NOT ESTABLISHED`: why. `-PassThru` is not a detachment mechanism — it returns the
+process object, which is what made `HasExited` checkable, and attributing survival to it was an
+unfounded causal claim. A short delay avoiding a race, or Windows job-object containment reclaiming
+descendants, are both plausible and neither was measured.
+
+**The discipline that outranks all of it: watcher survival is not MarketPulse evidence.** A live
+observer proves nothing about the accumulator, and a dead one disproves nothing. The authoritative
+sequence is unchanged — scheduler alive → marker advanced → intraday 5/15/60 work → FETCH_FAILED.
+
+The in-session waiter was reclaimed by the harness twice within minutes of arming and is no longer
+relied upon.
+
 ### The identifiers tonight's result belongs to
 
 The repository head and the running build are no longer the same commit, so the result must name
