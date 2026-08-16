@@ -882,3 +882,22 @@ exposed that all 6 ORB-ready instruments sit in the HIGH bucket alone. Also ship
 quality ladder (DATA PRESENT → SESSION COMPLETE → QUALITY PASS → FAMILY READY) so 40 sessions is
 never confused with 40 clean sessions. NEXT OWNER-SIDE: ingesting NSE industry classification is
 the single named blocker that is not simply "wait for coverage".
+
+## BUILD FREEZE TIGHTENED — **owner directive 2026-08-16 12:13**
+> "I would now spend roughly 80% of future effort on data + strategy research + forward/paper
+> evidence and only 20% on code, unless the research process uncovers an architectural
+> deficiency."
+
+Do NOT add: new agent frameworks · orchestration engines · provider abstractions · UI frameworks ·
+memory architectures · additional strategy families. The infrastructure is sophisticated enough
+(owner assessment: platform ~90-93% complete).
+
+The only scoreboard from here: family-ready → READY_FOR_GAUNTLET → trials spent → gauntlet
+survivors → holdout survivors → forward observations → paper trades → NET expectancy → drawdown →
+profit after all costs. The PRE-REGISTERED gate (hash 19e571a36128b1ef) decides when trials start —
+not a human judgement that coverage "looks good enough".
+
+Owner-side items, unchanged: MARKETPULSE_AUTONOMOUS_TRIALS stays 0 until the gate says ON; Upstox
+credentials would unlock deep intraday history AND are the only source permitted for LIVE_TRADING;
+sector coverage beyond 35% needs a licensed source, never scraping (ADR 0009). Broker sandbox
+lifecycle proving is the next broker-side step once quant evidence justifies it — not before.

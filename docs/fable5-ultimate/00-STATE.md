@@ -123,12 +123,37 @@ Filled at the end of each working session. See `99-FINAL-VERIFICATION.md` for th
     for long runs (`SetThreadExecutionState`), and never edit the owner's power plan to do it.
   - Long unbreakable ids (55-char strategy names) are the recurring mobile-overflow cause. They
     must wrap; truncating them would hide which strategy the machine is talking about.
-- **Exact next action**: infrastructure is FROZEN. The scoreboard is now the **Quant Quality
-  Program** — `docs/plans/quant-quality-program/` (owner directive 2026-08-15): can MarketPulse
-  discover a repeatable NET positive NSE edge that survives independent evidence? Read its
-  `02-product.md` (funnel, family catalogue, 16-step mission, KPIs) before any work. The
-  measurement-honesty residual is CLOSED (`9fb5d7e`,
-  `docs/plans/telemetry-measurement-honesty/`).
-- **Permanent truthfulness rule (owner, 2026-08-15)**: the acceptance verdict is
-  `VERIFIED_FOR_DEFINED_SCOPE — Desktop / Master Golden acceptance; Mobile: separate known gap
-  (previously single-run green, run 8)`. Never shorten it to "fully verified" in any document.
+- **Exact next action**: **STOP BUILDING INFRASTRUCTURE.** Owner directive 2026-08-16 12:13:
+  roughly **80% of future effort on data + strategy research + forward/paper evidence, 20% on
+  code**, unless the research process uncovers an architectural deficiency. Explicitly do NOT add:
+  new agent frameworks, orchestration engines, provider abstractions, UI frameworks, memory
+  architectures, or additional strategy families. The infrastructure is sophisticated enough.
+
+  What runs by itself: the daily planner expands coverage, the representativeness-aware accumulator
+  converts the intraday queue twelve instruments per session, and the pre-registered gate decides
+  when trials may start. Read the gate's own output on `/brain`, not an intuition about readiness.
+
+- **The only scoreboard that matters now**:
+  family-ready instruments → strategies READY_FOR_GAUNTLET → trials spent → gauntlet survivors →
+  holdout survivors → forward observations → paper trades → NET expectancy → drawdown → profit
+  after all costs.
+
+- **Owner assessment 2026-08-16** (from reported architecture/test evidence, not an independent
+  audit of the tree): platform ~90–93% complete; quant research system for serious paper
+  validation ~80–85%; carefully live-deployable product ~55–60%; proven reliable income **not
+  measurable yet**, because it depends on future unseen market results rather than on code.
+  The project's category changed: from "promising codebase with wiring problems" to "a mature
+  autonomous quant-research operating system whose primary remaining uncertainty is whether its
+  research process can discover durable NSE alpha."
+
+- **Standing boundaries** (ADR 0009/0010): data-usage rights are checked before technical
+  capability; a provider's block is an answer, not an obstacle — no browser automation, session
+  replay or proxy rotation against sources whose terms prohibit automated collection;
+  `MARKETPULSE_COMMERCIAL_USE=1` REVOKES personal-research-only sources rather than granting
+  anything; a future research crawler may produce documents and claims, never bars, quotes, fills
+  or holdout inputs.
+
+- **Known, deliberately unfixed**: `/brain` server render is ~8.5s warm on a production-sized
+  database. Measured per function — everything added this session totals ~1.1s; the rest is
+  pre-existing panels growing with the data. Recorded as a tracked item, not a blocker; the
+  acceptance suite serves a prebuilt build where it is far faster.
