@@ -58,6 +58,22 @@ the timestamp is `ingested_at`, not `created_at`. The `CASE` guard is not cosmet
 returns 0 when the delimiter is absent, and `substr(detail, 1, -1)` then returns the **empty
 string** rather than the whole value, so an unguarded expression fails silently and blank.
 
+### If `.tmp/accumulation-check.log` is missing, that is a fact about the WATCHER
+
+A detached watcher (`.tmp/watch-accumulation.ps1`) writes the three checks to
+`.tmp/accumulation-check.log` shortly after the window. If that file is absent, it means the
+watcher did not execute — **not** that accumulation failed. The two are unrelated, and reading the
+first as the second would raise a false alarm about a pass that may have run perfectly.
+
+The authoritative proof that the real accumulation ran is, and remains, the database marker:
+
+```sql
+SELECT datetime(MAX(created_at), 'unixepoch') FROM audit_events
+ WHERE action = 'intraday_accumulation';
+```
+
+The log is a convenience. The marker is the evidence.
+
 ### Decision table
 
 | Evidence | Conclusion |
