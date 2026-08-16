@@ -46,6 +46,19 @@ export interface ActivationCriteria {
   minLiquidityBuckets: number;
   /** Distinct sectors the ready set must span, per family. */
   minSectors: number;
+  /**
+   * How much of a family's ready set must actually BE classified before its sector diversity can
+   * be believed. "7 distinct sectors" over a ready set where 42 of 60 instruments are unclassified
+   * is not evidence of diversity — it is evidence about the 18 that happen to be known.
+   *
+   * AMENDMENT, 2026-08-16 10:56 IST (owner-authorized), recorded rather than slipped in: this
+   * field did not exist in the original pre-registration and its addition CHANGES the criteria
+   * hash. It is legitimate because (a) it was made before a single statistical trial was spent,
+   * (b) it strictly TIGHTENS the bar — no criterion becomes easier to satisfy — and (c) both
+   * hashes are recorded in docs/plans/nse-qc-001/03-trial-activation-gate.md. Loosening after
+   * seeing results would be a different act entirely and remains forbidden.
+   */
+  minSectorClassificationCoverage: number;
   /** Strategies standing ready to spend a trial (blockedOn === "gauntlet"), campaign-wide. */
   minReadyForGauntlet: number;
   /** Why each number is what it is — no threshold without its reason. */
@@ -57,6 +70,7 @@ export const NSE_QC_001_ACTIVATION: ActivationCriteria = {
   minReadyPerDailyFamily: 150,
   minLiquidityBuckets: 3,
   minSectors: 5,
+  minSectorClassificationCoverage: 0.8,
   minReadyForGauntlet: 10,
   basis:
     "Intraday: 60 instruments is the smallest cross-section over which a per-instrument intraday " +
@@ -65,7 +79,10 @@ export const NSE_QC_001_ACTIVATION: ActivationCriteria = {
     "universe — a ranking over a thin universe measures the universe, not the signal. Liquidity: " +
     "all three buckets, because an edge that exists only in the most liquid tercile is a " +
     "different claim from a market-wide one and must not be able to masquerade as one. Sectors: " +
-    "5 distinct sectors, so no single sector's regime can carry a family's result. Pool: 10 " +
+    "5 distinct sectors, so no single sector's regime can carry a family's result — and at least " +
+    "80% of the ready set must be CLASSIFIED before that diversity is believed, because a sector " +
+    "count over a mostly-unclassified sample describes the classified minority rather than the " +
+    "sample. Pool: 10 " +
     "strategies standing ready to spend a trial, so the first trials are drawn from a real " +
     "candidate set rather than being whatever happened to compile first.",
 };
@@ -77,6 +94,7 @@ export function activationCriteriaHash(criteria: ActivationCriteria = NSE_QC_001
     criteria.minReadyPerDailyFamily,
     criteria.minLiquidityBuckets,
     criteria.minSectors,
+    criteria.minSectorClassificationCoverage,
     criteria.minReadyForGauntlet,
     // The bucket definitions are part of what was pre-registered: "3 of 3 buckets" means nothing
     // without the floors that define a bucket.
@@ -101,6 +119,8 @@ export interface FamilyActivationResult {
   required: number;
   liquidityBuckets: number;
   sectors: number | null;
+  /** How many of the ready set carry a verified sector — the prerequisite beneath diversity. */
+  classifiedReady: number;
   criteria: CriterionResult[];
   satisfied: boolean;
 }
@@ -220,6 +240,10 @@ export function evaluateTrialActivation(
         .map((security) => liquidityBucketOf(turnover.get(security.instrumentId) ?? null))
         .filter((bucket): bucket is "HIGH" | "MEDIUM" | "LOW" => bucket !== null),
     );
+    const classifiedReady =
+      sectors === null
+        ? 0
+        : readySecurities.filter((security) => sectors.get(security.instrumentId) !== undefined).length;
     const familySectors =
       sectors === null
         ? null
@@ -228,6 +252,8 @@ export function evaluateTrialActivation(
               .map((security) => sectors.get(security.instrumentId))
               .filter((sector): sector is string => sector !== undefined),
           ).size;
+    const classificationCoverage =
+      readySecurities.length === 0 ? 0 : classifiedReady / readySecurities.length;
 
     const results: CriterionResult[] = [
       {
@@ -247,14 +273,29 @@ export function evaluateTrialActivation(
       },
       {
         criterion: "sector representation",
-        state: familySectors === null ? "UNMEASURABLE" : familySectors >= criteria.minSectors ? "SATISFIED" : "NOT_SATISFIED",
+        // Coverage is a PREREQUISITE beneath diversity: a sector count over a mostly-unclassified
+        // ready set is not a measurement of that set, so it reads UNMEASURABLE rather than
+        // passing on the classified minority.
+        state:
+          familySectors === null
+            ? "UNMEASURABLE"
+            : classificationCoverage < criteria.minSectorClassificationCoverage
+              ? "UNMEASURABLE"
+              : familySectors >= criteria.minSectors
+                ? "SATISFIED"
+                : "NOT_SATISFIED",
         detail:
           familySectors === null
             ? "no sector classification is ingested, so this criterion cannot be evaluated and " +
-              "the gate stays shut. NSE's industry classification is available and the ingestion " +
-              "is written (scripts/ingest-nse-sectors.mts); it needs migration 0024 promoted — " +
-              "docs/plans/nse-qc-001/pending-migration/README.md."
-            : `${familySectors} of ${criteria.minSectors} sector(s) represented`,
+              "the gate stays shut. Run scripts/ingest-nse-sectors.mts."
+            : classificationCoverage < criteria.minSectorClassificationCoverage
+              ? `only ${classifiedReady} of ${readySecurities.length} ready instrument(s) are ` +
+                `classified (${Math.round(classificationCoverage * 100)}%, ` +
+                `${Math.round(criteria.minSectorClassificationCoverage * 100)}% required) — ` +
+                `${familySectors} sector(s) seen, but a count over a mostly-unclassified set ` +
+                "describes the classified minority, not the set"
+              : `${familySectors} of ${criteria.minSectors} sector(s) represented across ` +
+                `${classifiedReady}/${readySecurities.length} classified`,
       },
     ];
 
@@ -265,6 +306,7 @@ export function evaluateTrialActivation(
       required,
       liquidityBuckets: buckets.size,
       sectors: familySectors,
+      classifiedReady,
       criteria: results,
       satisfied: results.every((result) => result.state === "SATISFIED"),
     };

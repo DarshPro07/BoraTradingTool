@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -18,6 +20,7 @@ import {
  */
 
 const NOW = new Date("2026-08-16T00:00:00Z");
+const SECTOR_MIGRATION = path.join(process.cwd(), "drizzle/0024_sector_classifications.sql");
 
 function standing(specId: string, blockedOn: Standing["blockedOn"]): Standing {
   return { specId, name: specId, stage: "rehearsed", advance: { kind: "hold", reason: "t" } as never, blockedOn };
@@ -71,7 +74,6 @@ describe("the pre-registered trial-activation gate", () => {
     // And it names the SPECIFIC remaining act, rather than only refusing: the ingestion exists
     // and is tested; what is missing is the migration promotion.
     expect(sectorCriteria[0].detail).toMatch(/scripts\/ingest-nse-sectors\.mts/);
-    expect(sectorCriteria[0].detail).toMatch(/migration 0024 promoted/);
     expect(decision.criteriaSatisfied, "an unmeasurable criterion is not a satisfied one").toBe(false);
   });
 
@@ -86,6 +88,87 @@ describe("the pre-registered trial-activation gate", () => {
     expect(on.switchOn).toBe(true);
     expect(on.criteriaSatisfied).toBe(false);
     expect(on.headline).toMatch(/ON BY SWITCH while the pre-registered criteria are NOT satisfied/);
+  });
+
+  it("refuses to read sector diversity off a mostly-unclassified ready set", () => {
+    // The owner's example, driven through the real evaluation: 60 ready, 18 classified, 7 distinct
+    // sectors. 7 >= 5, but 7 sectors over 18 of 60 describes the classified minority — so the
+    // criterion must read UNMEASURABLE, never SATISFIED. Coverage is a prerequisite BENEATH
+    // diversity, not a substitute for it.
+    const securities = Array.from({ length: 60 }, (_, index) => ({
+      isin: `INE_R${index}`,
+      symbol: `R${index}`,
+      instrumentId: `IN:XNSE:R${index}`,
+      tier: "MAIN_BOARD" as const,
+      dailyBars: 400,
+      fiveMinuteSessions: 60,
+      completeFiveMinuteSessions: 60,
+      openingWindowSessions: 60,
+      researchReady: true,
+      backtestReady: true,
+      validationReady: true,
+      intradayReady: true,
+      missingReason: null,
+    }));
+    const report = {
+      generatedBasis: "synthetic",
+      tiers: { MAIN_BOARD: 60, SME: 0, SURVEILLANCE_RESTRICTED: 0, ETF: 0, REIT_INVIT: 0, INACTIVE: 0, OTHER: 0 },
+      mainBoard: {
+        total: 60,
+        researchReady: 60,
+        backtestReady: 60,
+        validationReady: 60,
+        intradayReady: 60,
+        researchCoveragePct: 100,
+        validationCoveragePct: 100,
+        missingReasons: { NO_HISTORY: 0, INSUFFICIENT_BARS: 0, INGEST_IN_FLIGHT: 0, INGEST_COOLING: 0, INGEST_BLOCKED_PERMANENT: 0 },
+      },
+      sme: { total: 0, researchReady: 0 },
+      thresholds: { research: 60, backtest: 250, validation: 340, intradaySessions: 20 },
+      securities,
+    };
+
+    // 18 of 60 classified, spread across 7 distinct sectors.
+    const db = getDb();
+    (db as unknown as { $client: { exec: (sql: string) => void } }).$client.exec(
+      fs.readFileSync(SECTOR_MIGRATION, "utf8"),
+    );
+    for (let index = 0; index < 18; index += 1) {
+      db.insert(schema.sectorClassifications)
+        .values({
+          isin: `INE_R${index}`,
+          instrumentId: `IN:XNSE:R${index}`,
+          symbol: `R${index}`,
+          rawLabel: `Sector ${index % 7}`,
+          rawField: "Industry",
+          sectorCode: `IN00${index % 7}`,
+          normalizedSector: `Sector ${index % 7}`,
+          normalizationBasis: "PROVEN_AGAINST_NSE_STRUCTURE",
+          source: "test",
+          sourceEffectiveDate: "2026-08-16",
+          fetchedAt: NOW,
+          identityVerification: "ISIN_AND_SYMBOL_MATCHED",
+          effectiveFrom: NOW,
+          effectiveTo: null,
+        })
+        .run();
+    }
+
+    const decision = evaluateTrialActivation(NSE_QC_001.families, NSE_QC_001_ACTIVATION, {
+      report,
+      standings: () => [],
+      env: {},
+    });
+    const orb = decision.families.find((family) => family.familyId === "fam_qc001_orb")!;
+    expect(orb.ready, "breadth itself is satisfied — this test is only about the sector claim").toBe(60);
+    expect(orb.classifiedReady).toBe(18);
+    expect(orb.sectors, "seven distinct sectors ARE present among the classified").toBe(7);
+
+    const sectorCriterion = orb.criteria.find((criterion) => criterion.criterion === "sector representation")!;
+    expect(sectorCriterion.state, "7 >= 5 must NOT pass while 42 of 60 are unclassified").toBe("UNMEASURABLE");
+    expect(sectorCriterion.detail).toMatch(/only 18 of 60 ready instrument\(s\) are classified \(30%, 80% required\)/);
+    expect(sectorCriterion.detail).toMatch(/describes the classified minority/);
+    expect(orb.satisfied).toBe(false);
   });
 
   it("buckets liquidity at fixed rupee floors, so the criterion can actually fail", () => {
@@ -113,12 +196,14 @@ describe("the pre-registered trial-activation gate", () => {
   });
 
   it("pins the criteria as pre-registered — a later loosening changes the hash", () => {
-    // The literal hash of the criteria as PRE-REGISTERED on 2026-08-16, before any family was
-    // tested — thresholds AND the liquidity-bucket definitions that give "3 of 3 buckets" its
-    // meaning. If this assertion fails, the activation bar was moved: that is allowed, but it
+    // The literal hash of the criteria as pre-registered on 2026-08-16 and AMENDED the same day
+    // (10:56 IST, owner-authorized, before any trial was spent, strictly tightening) to include
+    // the sector-classification coverage prerequisite. Thresholds AND the liquidity-bucket
+    // definitions that give "3 of 3 buckets" its meaning are inside the hash.
+    // Lineage: 0f86755bbbebcaec → 5254d36998262f10 (bucket version+floors) → 19e571a36128b1ef. If this assertion fails, the activation bar was moved: that is allowed, but it
     // must be a deliberate, visible act with this line changed by hand — never a quiet loosening
     // after seeing which families looked promising.
-    expect(activationCriteriaHash(NSE_QC_001_ACTIVATION)).toBe("5254d36998262f10");
+    expect(activationCriteriaHash(NSE_QC_001_ACTIVATION)).toBe("19e571a36128b1ef");
     expect(activationCriteriaHash({ ...NSE_QC_001_ACTIVATION, minReadyPerIntradayFamily: 10 })).not.toBe(
       activationCriteriaHash(NSE_QC_001_ACTIVATION),
     );
@@ -126,5 +211,6 @@ describe("the pre-registered trial-activation gate", () => {
     expect(NSE_QC_001_ACTIVATION.basis.length).toBeGreaterThan(200);
     expect(NSE_QC_001_ACTIVATION.minLiquidityBuckets).toBe(3);
     expect(NSE_QC_001_ACTIVATION.minSectors).toBe(5);
+    expect(NSE_QC_001_ACTIVATION.minSectorClassificationCoverage).toBe(0.8);
   });
 });

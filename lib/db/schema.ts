@@ -1171,8 +1171,14 @@ export const sectorClassifications = sqliteTable("sector_classifications", {
   isin: text("isin").notNull(),
   instrumentId: text("instrument_id").notNull(),
   symbol: text("symbol").notNull(),
+  /** What the source literally said, and the field it came from — kept apart from what it means. */
+  rawLabel: text("raw_label").notNull(),
+  rawField: text("raw_field").notNull(),
   macroSector: text("macro_sector"),
-  sector: text("sector"),
+  /** NSE's official sector code, populated only when the label was PROVEN against the taxonomy. */
+  sectorCode: text("sector_code"),
+  normalizedSector: text("normalized_sector"),
+  normalizationBasis: text("normalization_basis").notNull(),
   industry: text("industry"),
   basicIndustry: text("basic_industry"),
   source: text("source").notNull(),

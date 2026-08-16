@@ -1,6 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { isNull } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -39,29 +37,8 @@ function seedMaster(entries: { isin: string; symbol: string }[]): void {
 
 const csv = (rows: string[]) => ["Company Name,Industry,Symbol,Series,ISIN Code", ...rows].join("\n");
 
-/**
- * Migration 0024 is staged rather than registered (`lib/db/migrate.ts` is owner-protected), so
- * each test applies the pending SQL to its own temporary database. That is not a workaround for
- * the protection — it is a second thing proven: the staged SQL is valid and creates exactly what
- * this module expects, so promotion is a one-line act with no surprises. `CREATE TABLE IF NOT
- * EXISTS` means these tests keep passing unchanged once it IS registered.
- */
-const PENDING_MIGRATION = path.join(
-  process.cwd(),
-  "docs/plans/nse-qc-001/pending-migration/0024_sector_classifications.sql",
-);
-
 describe("NSE sector classification", () => {
   useTemporaryDatabase();
-
-  beforeEach(() => {
-    // `exec` rather than `run`: the staged file is multi-statement (table, two indexes, a
-    // trigger whose body contains its own semicolons), and better-sqlite3's prepare() accepts
-    // exactly one statement. Applying the real file verbatim is the point — it proves the SQL.
-    (getDb() as unknown as { $client: { exec: (sql: string) => void } }).$client.exec(
-      fs.readFileSync(PENDING_MIGRATION, "utf8"),
-    );
-  });
 
   it("parses the real file shape, including quoted names containing commas", () => {
     const rows = parseCsv(csv(['"Apar Industries, Limited",Capital Goods,APARINDS,EQ,INE372A01015']));
@@ -102,7 +79,12 @@ describe("NSE sector classification", () => {
     const alpha = rows.find((row) => row.isin === "INE001")!;
     expect(alpha).toMatchObject({
       instrumentId: "IN:XNSE:ALPHA",
-      sector: "Financial Services",
+      // What the file said, kept apart from what it was verified to mean.
+      rawLabel: "Financial Services",
+      rawField: "Industry",
+      normalizedSector: "Financial Services",
+      sectorCode: "IN0501",
+      normalizationBasis: "PROVEN_AGAINST_NSE_STRUCTURE",
       identityVerification: "ISIN_AND_SYMBOL_MATCHED",
       sourceEffectiveDate: "2026-08-16",
       effectiveTo: null,
@@ -139,14 +121,15 @@ describe("NSE sector classification", () => {
     const all = getDb().select().from(schema.sectorClassifications).all();
     expect(all).toHaveLength(2);
     const closed = all.find((row) => row.effectiveTo !== null)!;
-    expect(closed.sector, "the earlier classification survives with its window closed").toBe("Financial Services");
+    expect(closed.rawLabel, "the earlier classification survives with its window closed").toBe("Financial Services");
     const open = getDb()
       .select()
       .from(schema.sectorClassifications)
       .where(isNull(schema.sectorClassifications.effectiveTo))
       .all();
     expect(open).toHaveLength(1);
-    expect(open[0].sector).toBe("Capital Goods");
+    expect(open[0].normalizedSector).toBe("Capital Goods");
+    expect(open[0].sectorCode).toBe("IN0702");
   });
 
   it("is append-only: history cannot be deleted", async () => {
@@ -167,6 +150,22 @@ describe("NSE sector classification", () => {
     expect(report.code).toBe("SOURCE_UNAVAILABLE");
     expect(report.message).toMatch(/Nothing was written/);
     expect(currentSectorByInstrument(), "no classification is null, never an empty map").toBeNull();
+  });
+
+  it("stores an UNMAPPED label raw rather than forcing it into the taxonomy", async () => {
+    seedMaster([{ isin: "INE001", symbol: "ALPHA" }]);
+    const report = await ingestNseSectors({
+      now: NOW,
+      fetcher: async () => csv(["Alpha Ltd,Quantum Teleportation,ALPHA,EQ,INE001"]),
+    });
+    expect(report.unmapped).toBe(1);
+    const row = getDb().select().from(schema.sectorClassifications).all()[0];
+    expect(row.rawLabel).toBe("Quantum Teleportation");
+    expect(row.normalizationBasis).toBe("UNMAPPED");
+    expect(row.normalizedSector, "an unmappable label is never given a sector").toBeNull();
+    expect(row.sectorCode).toBeNull();
+    // And it contributes NO sector knowledge — data present, sector unknown.
+    expect(currentSectorByInstrument()).toBeNull();
   });
 
   it("exposes the current map only when something is actually classified", async () => {

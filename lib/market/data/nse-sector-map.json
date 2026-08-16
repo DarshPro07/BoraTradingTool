@@ -1,0 +1,90 @@
+{
+  "Automobile and Auto Components": {
+    "sectorCode": "IN0201",
+    "sector": "Automobile and Auto Components"
+  },
+  "Capital Goods": {
+    "sectorCode": "IN0702",
+    "sector": "Capital Goods"
+  },
+  "Chemicals": {
+    "sectorCode": "IN0101",
+    "sector": "Chemicals"
+  },
+  "Construction": {
+    "sectorCode": "IN0701",
+    "sector": "Construction"
+  },
+  "Construction Materials": {
+    "sectorCode": "IN0102",
+    "sector": "Construction Materials"
+  },
+  "Consumer Durables": {
+    "sectorCode": "IN0202",
+    "sector": "Consumer Durables"
+  },
+  "Consumer Services": {
+    "sectorCode": "IN0206",
+    "sector": "Consumer Services"
+  },
+  "Diversified": {
+    "sectorCode": "IN1201",
+    "sector": "Diversified"
+  },
+  "Fast Moving Consumer Goods": {
+    "sectorCode": "IN0401",
+    "sector": "Fast Moving Consumer Goods"
+  },
+  "Financial Services": {
+    "sectorCode": "IN0501",
+    "sector": "Financial Services"
+  },
+  "Forest Materials": {
+    "sectorCode": "IN0104",
+    "sector": "Forest Materials"
+  },
+  "Healthcare": {
+    "sectorCode": "IN0601",
+    "sector": "Healthcare"
+  },
+  "Information Technology": {
+    "sectorCode": "IN0801",
+    "sector": "Information Technology"
+  },
+  "Media Entertainment & Publication": {
+    "sectorCode": "IN0204",
+    "sector": "Media, Entertainme nt & Publication"
+  },
+  "Metals & Mining": {
+    "sectorCode": "IN0103",
+    "sector": "Metals & Mining"
+  },
+  "Oil Gas & Consumable Fuels": {
+    "sectorCode": "IN0301",
+    "sector": "Oil, Gas & Consumable Fuels"
+  },
+  "Power": {
+    "sectorCode": "IN1101",
+    "sector": "Power"
+  },
+  "Realty": {
+    "sectorCode": "IN0205",
+    "sector": "Realty"
+  },
+  "Services": {
+    "sectorCode": "IN0901",
+    "sector": "Services"
+  },
+  "Telecommunication": {
+    "sectorCode": "IN1001",
+    "sector": "Telecommu nication"
+  },
+  "Textiles": {
+    "sectorCode": "IN0203",
+    "sector": "Textiles"
+  },
+  "Utilities": {
+    "sectorCode": "IN1102",
+    "sector": "Utilities"
+  }
+}

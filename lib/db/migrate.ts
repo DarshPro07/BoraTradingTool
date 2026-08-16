@@ -72,6 +72,12 @@ const MIGRATIONS = [
   // "succeeded" — silent truncation is invisible unless the request is kept. Additive only: a
   // new table plus its two immutability triggers; no existing table, row or index is touched.
   "0023_bar_ingestions.sql",
+  // NSE sector classification as effective-dated reference data: the raw source label beside the
+  // normalized sector and its official NSE sector code, with the basis of that normalization
+  // recorded. NSE reviews classifications annually and reclassifies after mergers/demergers, so a
+  // change closes the previous effective window instead of overwriting it. Additive only: one new
+  // table, two indexes and a no-delete trigger; no existing table, row or index is touched.
+  "0024_sector_classifications.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

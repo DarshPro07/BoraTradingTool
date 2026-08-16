@@ -1,5 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import SECTOR_MAP from "./data/nse-sector-map.json";
 
 /**
  * NSE sector classification — ingested, identity-verified, effective-dated.
@@ -14,10 +15,21 @@ import { getDb, schema } from "@/lib/db";
  * ## Where the data comes from, and what it actually is
  *
  * NSE publishes index constituent files that carry an `Industry` column beside the ISIN — probed
- * from this machine on 2026-08-16 (see `docs/external/nse-sector-classification.md`). The values
- * are NSE's **Sector** level: the probe found exactly 22 distinct values, matching NSE's
- * documented 22 sectors. The deeper Industry and Basic Industry levels are NOT in these files,
- * so they stay NULL here rather than being guessed from the sector above them.
+ * from this machine on 2026-08-16 (see `docs/external/nse-sector-classification.md`).
+ *
+ * **The column's NAME is misleading, and the distinction is kept explicitly.** Its values are not
+ * NSE's *Industry* level (of which there are 59). An earlier revision of this module asserted
+ * they were the *Sector* level from cardinality alone — 22 values, 22 official sectors — which
+ * was an inference dressed as a fact. It has since been VERIFIED: NSE Indices' published
+ * "Industry Classification Structure" (March 2022) was fetched and parsed, and its 22 sector
+ * codes and labels match the 22 distinct source values BIJECTIVELY — 22/22, nothing unmatched in
+ * either direction. `lib/market/data/nse-sector-map.json` is that proof, checked in.
+ *
+ * So each row stores BOTH: the raw label exactly as the file gave it (with the field name it came
+ * from), and the normalized sector plus its official NSE sector code, with `normalizationBasis`
+ * recording which is which. A label that ever fails to map is stored RAW with the normalized
+ * levels NULL rather than being forced into the taxonomy. Industry and Basic Industry are absent
+ * from this source and stay NULL.
  *
  * Coverage is partial and honestly so: the union of the probed index lists classified 745 of the
  * 2,122 main-board equities (35.1%). Index membership is the investable universe, which is also
@@ -59,6 +71,22 @@ export const NSE_SECTOR_SOURCES = [
 
 export type IdentityVerification = "ISIN_AND_SYMBOL_MATCHED" | "ISIN_MATCHED_SYMBOL_DIFFERS";
 
+/** The column these files carry. Named "Industry"; its values are the SECTOR level (verified). */
+export const RAW_FIELD = "Industry";
+
+/**
+ * Map a raw source label onto NSE's official taxonomy, or refuse.
+ *
+ * The map is a checked-in artifact derived from NSE Indices' published classification structure
+ * (March 2022) and verified bijective against the source's 22 labels. A label absent from it
+ * returns null and is stored raw with normalized levels NULL — the source may add a sector one
+ * day, and inventing a mapping for it would be exactly the inference this function replaces.
+ */
+export function normalizeSectorLabel(rawLabel: string): { sectorCode: string; sector: string } | null {
+  const entry = (SECTOR_MAP as Record<string, { sectorCode: string; sector: string }>)[rawLabel.trim()];
+  return entry ?? null;
+}
+
 export interface SectorIngestReport {
   ok: boolean;
   code: "INGESTED" | "TABLE_NOT_REGISTERED" | "SOURCE_UNAVAILABLE" | "NO_ROWS";
@@ -71,6 +99,8 @@ export interface SectorIngestReport {
   unchanged: number;
   superseded: number;
   sectors: number;
+  /** Labels the published taxonomy did not contain — stored raw, never forced into it. */
+  unmapped: number;
 }
 
 export function sectorClassificationReady(): boolean {
@@ -133,7 +163,7 @@ export async function ingestNseSectors(
   const fetcher = options.fetcher ?? defaultFetcher;
   const now = options.now ?? new Date();
   const effectiveDate = now.toISOString().slice(0, 10);
-  const empty = { fetched: 0, matched: 0, symbolMismatches: 0, unmatched: 0, inserted: 0, unchanged: 0, superseded: 0, sectors: 0 };
+  const empty = { fetched: 0, matched: 0, symbolMismatches: 0, unmatched: 0, inserted: 0, unchanged: 0, superseded: 0, sectors: 0, unmapped: 0 };
 
   if (!sectorClassificationReady()) {
     return {
@@ -159,7 +189,7 @@ export async function ingestNseSectors(
 
   // Last source wins per ISIN, but every source is fetched so a single file changing shape
   // degrades coverage rather than the whole ingest.
-  const observed = new Map<string, { sector: string; symbol: string; sourceId: string; url: string }>();
+  const observed = new Map<string, { rawLabel: string; symbol: string; sourceId: string; url: string }>();
   let fetched = 0;
   const failures: string[] = [];
   for (const source of NSE_SECTOR_SOURCES) {
@@ -172,11 +202,11 @@ export async function ingestNseSectors(
     }
     for (const row of parseCsv(text)) {
       const isin = (row["ISIN Code"] ?? "").trim();
-      const sector = (row["Industry"] ?? "").trim();
+      const rawLabel = (row[RAW_FIELD] ?? "").trim();
       const symbol = (row["Symbol"] ?? "").trim();
-      if (!isin || !sector) continue;
+      if (!isin || !rawLabel) continue;
       fetched += 1;
-      if (!observed.has(isin)) observed.set(isin, { sector, symbol, sourceId: source.id, url: source.url });
+      if (!observed.has(isin)) observed.set(isin, { rawLabel, symbol, sourceId: source.id, url: source.url });
     }
   }
 
@@ -223,8 +253,12 @@ export async function ingestNseSectors(
         : "ISIN_MATCHED_SYMBOL_DIFFERS";
     if (verification === "ISIN_MATCHED_SYMBOL_DIFFERS") report.symbolMismatches += 1;
 
+    const mapped = normalizeSectorLabel(entry.rawLabel);
     const existing = currentByIsin.get(isin);
-    if (existing && existing.sector === entry.sector) {
+    // Compare on the RAW label: that is what the source actually said, so a change in it is a real
+    // reclassification, while a change in our INTERPRETATION is a code change with its own review.
+    // Confusing the two would let a mapping edit masquerade as an exchange event.
+    if (existing && existing.rawLabel === entry.rawLabel) {
       report.unchanged += 1;
       continue;
     }
@@ -241,10 +275,14 @@ export async function ingestNseSectors(
         isin,
         instrumentId: `IN:XNSE:${masterSymbol}`,
         symbol: masterSymbol,
-        // Only the level the source actually states. NSE's deeper Industry/Basic Industry levels
-        // are not in these files and are left NULL rather than guessed from the sector above.
+        // What the file literally said, beside what it was verified to mean.
+        rawLabel: entry.rawLabel,
+        rawField: RAW_FIELD,
         macroSector: null,
-        sector: entry.sector,
+        sectorCode: mapped?.sectorCode ?? null,
+        normalizedSector: mapped?.sector ?? null,
+        normalizationBasis: mapped ? "PROVEN_AGAINST_NSE_STRUCTURE" : "UNMAPPED",
+        // Absent from this source; never inferred from the sector above.
         industry: null,
         basicIndustry: null,
         source: `NSE_INDEX_CONSTITUENTS:${entry.sourceId}`,
@@ -259,7 +297,14 @@ export async function ingestNseSectors(
     report.inserted += 1;
   }
 
-  report.sectors = new Set([...observed.values()].map((entry) => entry.sector)).size;
+  report.sectors = new Set(
+    [...observed.values()]
+      .map((entry) => normalizeSectorLabel(entry.rawLabel)?.sector)
+      .filter((sector): sector is string => sector !== undefined),
+  ).size;
+  report.unmapped = [...observed.values()].filter(
+    (entry) => normalizeSectorLabel(entry.rawLabel) === null,
+  ).length;
   report.message =
     `${report.matched} of ${observed.size} classified ISIN(s) matched the security master ` +
     `(${report.inserted} written, ${report.unchanged} unchanged, ${report.superseded} superseded, ` +
@@ -280,7 +325,9 @@ export function currentSectorByInstrument(): Map<string, string> | null {
   if (rows.length === 0) return null;
   const byInstrument = new Map<string, string>();
   for (const row of rows) {
-    if (row.sector) byInstrument.set(row.instrumentId, row.sector);
+    // Only VERIFIED sectors count as sector knowledge. A raw label that could not be placed in the
+    // official taxonomy is data, but it is not a sector for representativeness purposes.
+    if (row.normalizedSector) byInstrument.set(row.instrumentId, row.normalizedSector);
   }
   return byInstrument.size > 0 ? byInstrument : null;
 }

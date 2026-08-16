@@ -127,3 +127,52 @@ familyReadiness 3ms — **~1.1s for everything this leg added**. The page's rema
 pre-existing panels growing with the data and is NOT this leg's; it is recorded as a tracked item
 rather than silently accepted, and the acceptance suite serves a prebuilt build where the page is
 far faster.
+
+## Amendment 2026-08-16 10:56 IST — sector-classification COVERAGE as a prerequisite
+
+**Owner-authorized amendment to the pre-registration**, recorded rather than slipped in.
+
+Hash lineage: `0f86755bbbebcaec` (original, 03:48) → `5254d36998262f10` (liquidity-bucket version
+and floors joined the pin, 04:50) → **`19e571a36128b1ef`** (this amendment).
+
+Amending a pre-registration is legitimate here on three conditions, all met: it was made **before
+a single statistical trial was spent**, it **strictly tightens** the bar (no criterion became
+easier), and both the reason and every hash are recorded. Loosening after seeing results would be
+a different act and remains forbidden.
+
+### What changed
+
+`minSectorClassificationCoverage: 0.8` — the sector criterion can no longer be SATISFIED while
+most of a family's ready set is unclassified. "7 distinct sectors" over a ready set where 42 of 60
+instruments carry no classification is not evidence about that set; it is evidence about the 18
+that happen to be known. Below the floor the criterion reads **UNMEASURABLE**, consistent with how
+this gate already treats everything it cannot measure.
+
+### It earned itself immediately — on the swing families
+
+Live on production, minutes after the sector ingestion:
+
+```
+Swing cross-sectional momentum
+  ready 309/150 · classified 140 · buckets 3/3 · sectors 19
+    UNMEASURABLE  sector representation: only 140 of 309 ready instrument(s) are classified
+                  (45%, 80% required) — 19 sector(s) seen, but a count over a mostly-
+                  unclassified set describes the classified minority, not the set
+```
+
+Without the amendment this family would have read **breadth ✓ (309/150), liquidity ✓ (3/3),
+sector ✓ (19 ≥ 5)** — three of four criteria satisfied, with only the gauntlet pool left. The gate
+would have been one step from opening on a ready set that is **45% classified**. That is exactly
+the false-confidence the owner predicted, caught by the amendment on the day it was made.
+
+Also visible: swing breadth has more than doubled overnight (148/152 → 309/321) as the daily
+planner worked, and the liquidity criterion now PASSES for both swing families (3/3 buckets) —
+the first criterion in this campaign to go green.
+
+### The new named blocker
+
+Reaching 80% classification coverage needs more than the free index CSVs, which cover ~35% of the
+main board by construction (index membership is the investable universe). That is now the honest
+next data gap, and it is recorded rather than worked around: either NSE Indices' licensed
+classification product, or rate-limited per-symbol official quote data. It is NOT a reason to
+lower the floor.
