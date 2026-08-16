@@ -255,3 +255,97 @@ describe("inferred actions are lower authority than declared ones", () => {
     expect(snapshot.inferredActionsUsed, "a declared action is not an inference").toBe(0);
   });
 });
+
+describe("out-of-session bars must not reach regular-session research", () => {
+  /**
+   * Measured 2026-08-16 in the production store. The scheduled accumulation pass flagged nine
+   * `OUT_OF_SESSION` fetches, and they resolved to one bar type on one date:
+   *
+   *   2026-08-14 (Friday) 15:30 IST — exactly the session close
+   *   ASAHIINDIA · BALAMINES · BLUEDART, at 5m, 15m and 60m
+   *   O = H = L = C, volume = 0
+   *
+   * A zero-volume, zero-range stamp at the closing boundary is a provider artifact, not a traded
+   * observation — nothing changed hands at that price at that time. All three instruments were
+   * nonetheless counted among the eighteen family-ready names.
+   *
+   * The bar is kept: it is a real thing the provider said, and the ledger records it. What it must
+   * not do is enter a REGULAR-SESSION backtest as a tradeable price, because a strategy without a
+   * time cutoff would fill at a price where no volume existed. The declared seeds happen to
+   * exclude it via their 14:30 entry cutoff, but that is a property of those seeds, not a
+   * guarantee the engine makes.
+   */
+  const IST_OFFSET = 19_800;
+
+  /** A bar at `hhmm` IST on a given date, in the store's shape. */
+  function barAt(date: string, hhmm: string, ticker: string, resolution: string, volume: number) {
+    const [h, m] = hhmm.split(":").map(Number);
+    const midnightUtc = Math.floor(new Date(`${date}T00:00:00Z`).getTime() / 1000);
+    return {
+      ticker,
+      resolution,
+      time: midnightUtc + h * 3600 + m * 60 - IST_OFFSET,
+      open: 100,
+      high: 100,
+      low: 100,
+      close: 100,
+      volume,
+    };
+  }
+
+  it("withholds a closing-boundary artifact while keeping the session's real bars", async () => {
+    const { persistCandles } = await import("./candle-store");
+    const { snapshotFromStore } = await import("@/lib/research-data/snapshot");
+
+    const ticker = "IN:XNSE:CLOSESTAMP";
+    const bars = [];
+    // A full regular session, 09:15 through 15:25 at 5m.
+    for (let minute = 9 * 60 + 15; minute <= 15 * 60 + 25; minute += 5) {
+      const hh = String(Math.floor(minute / 60)).padStart(2, "0");
+      const mm = String(minute % 60).padStart(2, "0");
+      bars.push(barAt("2026-08-14", `${hh}:${mm}`, ticker, "5", 1_000));
+    }
+    // ...plus the artifact at exactly the close.
+    bars.push(barAt("2026-08-14", "15:30", ticker, "5", 0));
+    persistCandles(bars);
+
+    const snapshot = snapshotFromStore("NSE", "5m", "rehearsal");
+    expect(snapshot.ok).toBe(true);
+    if (!snapshot.ok) return;
+
+    const served = snapshot.dataset[ticker] ?? [];
+    expect(served.length, "the session's real bars must survive").toBe(bars.length - 1);
+
+    // Nothing at or beyond the close reaches research.
+    const minuteOf = (time: number) => {
+      const ist = (time + IST_OFFSET) % 86_400;
+      return Math.floor(ist / 60);
+    };
+    expect(served.every((bar) => minuteOf(bar.time) < 15 * 60 + 30)).toBe(true);
+    expect(snapshot.outOfSessionWithheld).toBe(1);
+  });
+
+  it("leaves daily bars alone — they have no intraday session to be outside of", async () => {
+    const { persistCandles } = await import("./candle-store");
+    const { snapshotFromStore } = await import("@/lib/research-data/snapshot");
+
+    const ticker = "IN:XNSE:DAILYONLY";
+    persistCandles(
+      Array.from({ length: 40 }, (_unused, i) => ({
+        ticker,
+        resolution: "D",
+        time: 1_700_000_000 + i * 86_400,
+        open: 100,
+        high: 101,
+        low: 99,
+        close: 100,
+        volume: 1_000,
+      })),
+    );
+    const snapshot = snapshotFromStore("NSE", "D", "rehearsal");
+    expect(snapshot.ok).toBe(true);
+    if (!snapshot.ok) return;
+    expect(snapshot.dataset[ticker]?.length).toBe(40);
+    expect(snapshot.outOfSessionWithheld).toBe(0);
+  });
+});

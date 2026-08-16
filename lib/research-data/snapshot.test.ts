@@ -62,7 +62,13 @@ describe("T1 — the store is the only source; the provider does not exist here"
     const snapshot = snapshotFromStore("NSE", "5m", "test");
     expect(snapshot.ok).toBe(true);
     if (!snapshot.ok) return;
-    expect(snapshot.barCount).toBe(80);
+    // 75, not the 80 seeded. `seedBars` lays 80 consecutive 5-minute bars from 09:15 IST, which
+    // runs to 15:55 — past the 15:30 close. The snapshot withholds the five that fall at or beyond
+    // the session boundary, which is the point: a bar stamped outside the continuous session is
+    // not a tradeable observation, and the production store held exactly such artifacts (three
+    // instruments, one zero-volume bar each at 15:30 on 2026-08-14).
+    expect(snapshot.barCount).toBe(75);
+    expect(snapshot.outOfSessionWithheld).toBe(5);
     expect(snapshot.instruments).toEqual(["IN:XNSE:RELIANCE"]);
   });
 

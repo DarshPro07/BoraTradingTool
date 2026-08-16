@@ -1,6 +1,28 @@
 # Status — intraday fetch failures
 
-**Complete. Verdict VERIFIED** — see `07-final.md`.
+**Complete. Verdict VERIFIED_PRODUCTION** — see `07-final.md` for the fix, and the result below.
+
+## The scheduled production pass — 2026-08-16
+
+```
+marker        2026-08-16 17:43:23Z    advanced; fired 60s after becoming due
+work          36 fetches, 12 instruments, resolutions 5/15/60
+bars          51,238 inserted
+FETCH_FAILED  0
+
+[PASS] marker advanced past baseline
+[PASS] fetches actually attempted
+[PASS] expected resolutions represented
+[PASS] no FETCH_FAILED rows
+[PASS] bars materially populated
+```
+
+Ran on `bb5b6bf`, observed with tooling at `916c984`+ (docs and checker only, no runtime change,
+no restart). The marker-triggered watcher reached the same verdict independently.
+
+**The one sentence this licenses:** the 30-second timeout correction survived the scheduled
+production workload. It does NOT establish that contention caused the original failures — no
+concurrency or resource measurement was taken.
 
 | Gate | State | Where |
 |---|---|---|

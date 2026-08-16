@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import { normalizeSeries, type PriceBasis } from "@/lib/market/price-basis";
+import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "@/lib/market/calendar";
 import { actionsByInstrument } from "@/lib/market/corporate-actions";
 import { activeSealFor } from "./holdout-seal";
 import type { Candle } from "@/lib/providers/types";
@@ -77,6 +78,18 @@ export interface SnapshotResult {
    * returns the moment its seam is explained.
    */
   quarantined: { instrumentId: string; effectiveTime: number; observedRatio: number; reason: string }[];
+  /**
+   * Intraday bars withheld for falling outside the regular continuous session.
+   *
+   * Measured 2026-08-16: three instruments each carried one bar stamped at exactly 15:30 IST — the
+   * session close — with `O = H = L = C` and volume 0. A zero-volume, zero-range stamp at the
+   * boundary is a provider artifact, not a traded observation: nothing changed hands at that price
+   * at that time, and a strategy without its own time cutoff would fill there.
+   *
+   * The bars stay in the store, because they are a real thing the provider said and the ingestion
+   * ledger records them. They simply do not reach regular-session research. Counted, never silent.
+   */
+  outOfSessionWithheld: number;
 }
 
 export interface SnapshotRefusal {
@@ -232,6 +245,15 @@ function buildSnapshot(
   const actionsAmbiguous: SnapshotResult["actionsAmbiguous"] = [];
   const quarantined: SnapshotResult["quarantined"] = [];
   let inferredActionsUsed = 0;
+  let outOfSessionWithheld = 0;
+
+  /**
+   * The regular continuous session, for intraday resolutions only. Daily bars have no
+   * inside-the-day, so the concept does not apply to them and the filter is skipped entirely.
+   */
+  const intradayStore = storeResolution !== "D";
+  const sessionOpen = sessionOpenMinute(market === "US" ? "US" : "IN");
+  const sessionClose = sessionCloseMinute(market === "US" ? "US" : "IN");
 
   // Enumerate the store, not today's security master. A delisted security with retained bars is
   // historical evidence and must remain eligible for a historical dataset snapshot.
@@ -247,6 +269,15 @@ function buildSnapshot(
   for (const instrumentId of instrumentIds) {
     const stored = loadStoredCandles(instrumentId, storeResolution)
       .filter((bar) => includeBar(bar.time))
+      .filter((bar) => {
+        if (!intradayStore) return true;
+        // Same boundary the bar audit uses: `< open || >= close`. A bar stamped AT the close is
+        // outside the continuous session — that is exactly the artifact this exists to withhold.
+        const [stamp] = sessionStamps([bar.time], market === "US" ? "US" : "IN");
+        const outside = stamp.minute < sessionOpen || stamp.minute >= sessionClose;
+        if (outside) outOfSessionWithheld += 1;
+        return !outside;
+      })
       .map((bar) => ({
         time: bar.time,
         open: bar.open,
@@ -354,6 +385,7 @@ function buildSnapshot(
       dataset,
       priceBasis: basis,
       inferredActionsUsed,
+      outOfSessionWithheld,
       quarantined,
       actionsApplied,
       actionsSkipped,
@@ -395,6 +427,7 @@ function buildSnapshot(
     dataset,
     priceBasis: basis,
     inferredActionsUsed,
+    outOfSessionWithheld,
     quarantined,
     actionsApplied,
     actionsSkipped,
