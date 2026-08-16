@@ -38,6 +38,27 @@ can never collapse into a single green number that lets the first stand in for t
 4. **Each test names the incident that motivated it.** An invariant with no history behind it is a
    guess about what matters.
 
+## Coverage strength, stated honestly
+
+Six invariants, 19 tests. Every one drives a real production entry point; two of them
+(`production-cleanliness`, `freshness-planning`) additionally start from **real persisted rows**
+rather than constructed inputs, which was a gap the suite documented about itself on the day it was
+written and closed the same day.
+
+Each invariant has been verified to **bite**: the guarantee was deliberately broken and the suite
+turned red, then restored and turned green. A green suite that cannot fail would be the same
+illusion one level up — the one this directory exists to prevent.
+
+```
+disable the out-of-session research filter   →  1 failed | 18 passed
+revert the planner to !researchReady         →  3 failed | 16 passed
+restore both                                 →  19 passed
+```
+
+What this does NOT establish: that every important composition invariant has been found. These
+encode the failure classes discovered so far. The methodology is one day old and has yet to catch
+something nobody already knew about.
+
 ## Running it
 
 ```bash

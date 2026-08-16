@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
+import { recordStrategySpec } from "@/lib/knowledge/repository";
+import { standings } from "@/lib/strategy/promotion";
 import { evaluateTrialActivation, NSE_QC_001_ACTIVATION } from "@/lib/strategy/trial-activation";
 import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
 import { classifySpec } from "@/lib/strategy/research-eligibility";
@@ -91,5 +94,65 @@ describe("INVARIANT: only production research counts toward campaign readiness",
       }),
     ]);
     expect(counted).toContain("0 strategy(ies)");
+  });
+});
+
+describe("INVARIANT: end to end, from real rows — fixtures never reach the pool", () => {
+  /**
+   * The stronger form of the same claim, and the one that closes this suite's own gap.
+   *
+   * The tests above construct `Standing` fixtures, so they prove the GATE respects a verdict. They
+   * do not prove the verdict is derived from real persisted rows. This one starts where production
+   * starts — actual `strategy_specs` — and runs the whole chain:
+   *
+   *   real spec rows -> classifySpec -> standings() -> evaluateTrialActivation -> pool count
+   *
+   * with nothing injected. That is the composition the 14-of-22 contamination lived in.
+   */
+  function seedRehearsedSpec(name: string, createdBy: string, market: string): string {
+    const specId = recordStrategySpec({
+      name,
+      createdBy,
+      dsl: {
+        name,
+        universe: { market, maxPositions: 4, resolution: "D" },
+        entry: { feature: "close", op: "gt", value: 10 },
+        exit: { afterDays: 5, stopLossPct: 4 },
+        sizing: { maxPositionPct: 10 },
+        costs: { commissionBps: 5, slippageBps: 7 },
+      } as never,
+    });
+    // `would_pass` is what carries a draft to `rehearsed`, which is what puts it in the pool.
+    getDb()
+      .insert(schema.rehearsalOutcomes)
+      .values({
+        strategySpecId: specId,
+        verdict: "would_pass",
+        reason: "seeded for the invariant",
+        trades: 100,
+        instrumentsEvaluated: 20,
+        rehearsedAt: new Date(),
+        datasetSnapshotId: null,
+      })
+      .run();
+    return specId;
+  }
+
+  it("counts the production spec and neither the fixture nor the unsupported market", () => {
+    seedRehearsedSpec("qc_real_candidate", "claude-code:research", "NSE");
+    seedRehearsedSpec("e2e_ledger_ui_mspoack3_desktop_chromium", "e2e", "NSE");
+    seedRehearsedSpec("us_legacy_probe", "owner", "US");
+
+    // Real classification over real rows — no fixture Standing anywhere in this path.
+    const ladder = standings();
+    expect(ladder.length, "all three specs must be visible in the ledger").toBe(3);
+    expect(ladder.filter((s) => s.researchEligible).length).toBe(1);
+
+    const pool = evaluateTrialActivation(NSE_QC_001.families, NSE_QC_001_ACTIVATION).blockers.find(
+      (b) => b.startsWith("pool:"),
+    );
+    expect(pool, "only the production research spec may count toward a permanent trial").toContain(
+      "1 strategy(ies)",
+    );
   });
 });
