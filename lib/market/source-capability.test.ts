@@ -28,16 +28,31 @@ describe("source capability declarations", () => {
   });
 
   it("refuses research datasets and non-authoritative sources for validation-grade requirements", () => {
+    // USAGE RIGHTS outrank capability: Yahoo's terms make it research/backtest only, so that is
+    // the refusal a caller sees. The capability layer's own validationAuthority=false remains as
+    // the second guard beneath it — both must hold, and each states its own reason.
     expect(canSatisfy("yahoo", { resolution: "D", lookbackDays: 300, validationGrade: true }, NOW).reason).toMatch(
-      /may not stand as validation or holdout truth/,
+      /not permitted for VALIDATION/,
     );
+    expect(SOURCE_CAPABILITIES.yahoo?.validationAuthority, "the capability guard still stands beneath").toBe(false);
     expect(canSatisfy("aeron7-archive", { resolution: "INTRADAY", lookbackDays: 30, validationGrade: true }, NOW).answer).toBe("NO");
-    expect(canSatisfy("rajgmishra-dataset", { resolution: "INTRADAY", lookbackDays: 30 }, NOW).reason).toMatch(/research-only/);
+    // A research dataset is refused for BACKTEST by its usage policy; the capability layer's own
+    // research-only marker still stands beneath it.
+    expect(canSatisfy("rajgmishra-dataset", { resolution: "INTRADAY", lookbackDays: 30 }, NOW).reason).toMatch(
+      /not permitted for BACKTEST/,
+    );
+    expect(SOURCE_CAPABILITIES["rajgmishra-dataset"]?.disabledReason).toMatch(/research-only/);
   });
 
   it("keeps the probed-unhealthy and capability-limited sources out of every plan", () => {
-    expect(canSatisfy("openchart", { resolution: "INTRADAY", lookbackDays: 30 }, NOW).reason).toMatch(/UNHEALTHY/);
-    expect(canSatisfy("nsepython", { resolution: "D", lookbackDays: 300 }, NOW).reason).toMatch(/NEVER historical equity/);
+    // These are refused on USAGE first (research-only), and their capability records still carry
+    // the technical reasons — a source can be doubly ineligible and should say so precisely.
+    expect(canSatisfy("openchart", { resolution: "INTRADAY", lookbackDays: 30 }, NOW).reason).toMatch(
+      /not permitted for BACKTEST/,
+    );
+    expect(SOURCE_CAPABILITIES.openchart?.disabledReason).toMatch(/UNHEALTHY/);
+    expect(canSatisfy("nsepython", { resolution: "D", lookbackDays: 300 }, NOW).answer).toBe("NO");
+    expect(SOURCE_CAPABILITIES.nsepython?.disabledReason).toMatch(/NEVER historical equity/);
     expect(sourcesFor({ resolution: "INTRADAY", lookbackDays: 30 }, NOW)).toEqual(["yahoo"]);
   });
 

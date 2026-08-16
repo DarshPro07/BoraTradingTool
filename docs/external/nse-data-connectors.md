@@ -48,3 +48,31 @@ Provider → Connector → quarantine/validation → canonical store → dataset
   widening of that set is a deliberate decision, not a loop.
 - Values and issue links recorded from owner-supplied sources 2026-08-16; re-verify before
   wiring a new connector.
+
+---
+
+## Usage rights (added 2026-08-16 — see ADR 0009)
+
+Technical reachability was never the whole question, and the roster above is now paired with
+`lib/market/source-usage-policy.ts`, which is consulted BEFORE capability:
+
+| Source | automation | commercial | allowed purposes |
+|---|---|---|---|
+| NSE official downloadable files | ALLOWED | LICENSE_REQUIRED | identity, display, research, backtest, validation |
+| NSE equity-quote surface | **PROHIBITED** | LICENSE_REQUIRED | **none** |
+| Yahoo | RESTRICTED | PERSONAL_RESEARCH_ONLY | display, research, backtest |
+| Upstox V3 | LICENSED | LICENSE_REQUIRED | display, research, backtest, validation, **live trading** |
+| jugaad-data / openchart / nsepython | RESTRICTED | UNKNOWN | research only |
+| offline archives (aeron7, rajgmishra) | ALLOWED | UNKNOWN | research only |
+
+Three consequences worth stating plainly:
+
+- **The NSE quote 403 is not to be circumvented.** Its terms prohibit systematic or automated
+  collection, so the block is the answer. Headless browsers, session replay and proxy rotation are
+  out of bounds there however well they would work (ADR 0009).
+- **Yahoo is refused for VALIDATION and LIVE_TRADING on rights**, independently of the
+  data-quality refusal the ingest path already records. Both reasons are true and each states
+  itself.
+- **`MARKETPULSE_COMMERCIAL_USE=1` REVOKES** every personal-research-only source rather than
+  granting anything — so a research build cannot drift into being a product on data it may not
+  use commercially.

@@ -1,4 +1,5 @@
 import type { DataProviderId } from "./data-source-registry";
+import { usagePermitted, type DataPurpose } from "./source-usage-policy";
 
 /**
  * What each data source CAN actually do — declared, evidenced and dated, so the planner asks a
@@ -253,6 +254,12 @@ export interface HistoryRequirement {
   lookbackDays: number;
   /** Must the result be usable as validation/holdout truth? */
   validationGrade?: boolean;
+  /**
+   * What the data would be USED FOR. Checked against the source's usage policy before its
+   * technical capability is even considered: a source may deliver exactly the bars asked for and
+   * still not be permitted to supply them for this purpose, and that refusal outranks capability.
+   */
+  purpose?: DataPurpose;
 }
 
 /**
@@ -265,6 +272,13 @@ export function canSatisfy(
   requirement: HistoryRequirement,
   now = new Date(),
 ): { answer: CapabilityAnswer; reason: string } {
+  // USAGE RIGHTS FIRST. "Can it?" is the second question; "may we?" is the first, and a source
+  // that answers no to the second is not made eligible by answering yes to the first.
+  const purpose: DataPurpose = requirement.purpose ?? (requirement.validationGrade ? "VALIDATION" : "BACKTEST");
+  const usage = usagePermitted(sourceId, purpose, { now });
+  if (usage.verdict === "NOT_PERMITTED") return { answer: "NO", reason: usage.reason };
+  if (usage.verdict === "UNKNOWN") return { answer: "UNKNOWN", reason: usage.reason };
+
   const capability = SOURCE_CAPABILITIES[sourceId];
   if (!capability) {
     return { answer: "UNKNOWN", reason: `${sourceId} has no declared capability — probe before relying on it.` };
