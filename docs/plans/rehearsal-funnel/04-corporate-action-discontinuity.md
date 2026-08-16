@@ -121,3 +121,42 @@ The options, none taken:
 
 Option 3 preserves the store's immutability doctrine, which is why it is listed last rather than
 dismissed — it is the most conservative, and also the most work.
+
+
+## Addendum — the three largest NSE names are stale, and uninstrumented
+
+`OBSERVED`, 2026-08-16.
+
+```
+latest daily bar, by instrument count
+  2026-08-14   1,979
+  2026-08-13      25
+  2026-08-06       3   <- RELIANCE, HDFCBANK, TCS
+```
+
+Exactly three instruments are stale, and they are India's three largest listed names. They are the
+same three that carry weekly **Sunday** bars and the one-day date shift documented above, and they
+have **no `bar_ingestions` rows at all** — they have never passed through the instrumented daily
+path. All four checks against the catalog pass: they are present with correct provider symbols
+(`RELIANCE.NS` etc.), so this is not a mapping problem.
+
+One contributing mechanism is confirmed in code. `planUniverseIngestion`
+(`lib/market/universe-coverage.ts:309`) filters candidates with:
+
+```ts
+security.tier === "MAIN_BOARD" && !security.researchReady && ...
+```
+
+**`!researchReady` excludes an instrument from the ingestion worklist once it has enough history.**
+Readiness is a statement about DEPTH, not about CURRENCY — so an instrument can be research-ready
+and eight days stale simultaneously, and nothing puts it back in the queue on freshness grounds.
+It is self-reinforcing: the better covered an instrument is, the sooner it stops being updated.
+
+`UNKNOWN`, and stated as such: this does not fully explain the observation. Roughly 1,500
+instruments are family-ready and only three are stale, so a second path is keeping the rest
+current and is missing exactly these three. The complete cause is not established, and the
+freshness blind spot above is reported as a verified code fact rather than as the diagnosis.
+
+Why it matters regardless: RELIANCE, HDFCBANK and TCS carry the largest index weights on the NSE.
+Any liquidity bucketing, index proxy, or forward/paper evidence involving them is reading data
+that is eight days old and dated one day wrong.
