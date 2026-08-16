@@ -12,11 +12,12 @@
     "test": "vitest run --exclude mcp/**/*.test.ts",
     "test:mcp": "npm run build:mcp && vitest run mcp/server.integration.test.ts",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run test && npm run test:mcp && npm run build",
+    "check": "npm run typecheck && npm run test && npm run test:invariants && npm run test:mcp && npm run build",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "test:full": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json",
     "test:verified": "node esbuild.mcp.mjs && vitest run --reporter=default --reporter=json --outputFile=.tmp/vitest-run.json && tsx scripts/verify-test-run.mts .tmp/vitest-run.json --min-files 130",
-    "test:master-golden": "playwright test --project=desktop-chromium"
+    "test:master-golden": "playwright test --project=desktop-chromium",
+    "test:invariants": "vitest run tests/invariants"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

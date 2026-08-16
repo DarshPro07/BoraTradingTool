@@ -101,6 +101,37 @@ invalidation condition. That is the guardrail working, not an obstacle.
 
 **Abstain is a valid, frequently correct answer.**
 
+## A name may not promise more than the code delivers
+
+**A name must never imply a stronger guarantee than the data or implementation establishes.**
+
+Three names cost real engineering conclusions in one day (2026-08-17):
+
+| name | implied | actually meant |
+|---|---|---|
+| `switchOn` | trials are activated | the env var is set — nothing about the criteria |
+| `researchReady` | ready for research use now | has enough historical DEPTH; said nothing about currency |
+| `RAW` | the prices printed on the tape | whatever the provider returned when the bar was fetched |
+
+Each led a reader — including the owner, and including this agent — to a wrong belief, and one of
+them hid a P0: the registered campaign gate governed nothing while `switchOn` made it look
+governed. In a system whose entire value is epistemic honesty, a name is a claim, and an
+overstated name is the cheapest possible way to make a false one.
+
+Prefer the narrower word: `historyDepthReady` over `ready`, `asFetched` over `raw`,
+`schemaValidated` over `valid`, `fetchCompleted` over `successful`, `verifiedForDefinedScope` over
+`verified`, `effectiveActivation` over `active`.
+
+## The system invariant suite
+
+`tests/invariants/` holds ten to twenty claims that must never be false, each driven through the
+REAL production composition and reported separately (`npm run test:invariants`).
+
+It exists because three P0-class defects escaped in one session while every unit test passed — the
+gaps were *between* units, and a test architecture that mirrors the module architecture cannot see
+them. Keep it small: it earns its authority by being short enough that a failure is read rather
+than skimmed. Read `tests/invariants/README.md` before adding to it.
+
 ## Missing is not zero
 
 When a quant-core resource returns `RESOURCE_NOT_PROVIDED` or `QUANT_CORE_UNAVAILABLE`, say so.

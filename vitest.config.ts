@@ -11,7 +11,18 @@ export default defineConfig({
     // route walk would silently empty the Playwright matrix. The repo's convention keeps the two
     // runners apart by extension: Playwright owns `*.spec.ts`, vitest owns `*.test.ts`, so this
     // glob cannot pick up a browser spec.
-    include: ["lib/**/*.test.ts", "app/**/*.test.ts", "mcp/**/*.test.ts", "e2e/lib/**/*.test.ts"],
+    // `tests/invariants/**` holds the SYSTEM INVARIANT SUITE: a deliberately small set of claims
+    // that must never be false, each exercised through the real production composition rather than
+    // against mocked collaborators. It is separated from the unit suite so that "2,035 tests green"
+    // can never be read as "the scientific guarantees hold" — three P0-class defects in one day
+    // escaped precisely because every unit passed while the wire between them was never run.
+    include: [
+      "lib/**/*.test.ts",
+      "app/**/*.test.ts",
+      "mcp/**/*.test.ts",
+      "e2e/lib/**/*.test.ts",
+      "tests/invariants/**/*.test.ts",
+    ],
     // Process isolation per file. Many suites mutate process.env (MARKETPULSE_DB_PATH,
     // QUANT_CORE_ROOT, MARKETPULSE_TEST_MODE); under the default threads pool env is
     // process-global, so parallel files raced each other's environments — the captured flakes

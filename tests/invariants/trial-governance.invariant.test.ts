@@ -3,8 +3,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
-import { runAutonomousGauntlet } from "./auto-gauntlet";
-import { REGISTERED_CRITERIA_HASH } from "./trial-governor";
+import { runAutonomousGauntlet } from "@/lib/strategy/auto-gauntlet";
+import { REGISTERED_CRITERIA_HASH } from "@/lib/strategy/trial-governor";
 
 /**
  * The composition, not the parts.
@@ -32,7 +32,7 @@ function withOwnerSwitchOn(): void {
   vi.stubEnv("MARKETPULSE_AUTONOMOUS_TRIALS", "1");
 }
 
-describe("the real gauntlet entry point cannot spend against an unsatisfied gate", () => {
+describe("INVARIANT: no permanent trial can be spent unless every gate holds", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("refuses with the owner switch ON, and spends nothing", async () => {
@@ -62,7 +62,7 @@ describe("the real gauntlet entry point cannot spend against an unsatisfied gate
   });
 });
 
-describe("no production caller may supply its own campaign gate", () => {
+describe("INVARIANT: no production caller may supply its own campaign gate", () => {
   /**
    * The structural guard. The `gate` seam exists so tests can drive the branches; a production
    * caller passing `() => ({ criteriaSatisfied: true })` would reopen the hole this closed, and it
