@@ -42,12 +42,27 @@ Full write-ups in `docs/plans/rehearsal-funnel/` and `docs/plans/intraday-fetch-
    only as a universe filter, so a derivable liquidity proxy (median turnover) could express the
    same intent — a strategy re-specification, hence the owner's call.
 
+4. **The canonical daily series holds TWO adjustment bases at once.** Yahoo retroactively adjusts
+   its whole history at a corporate action; `persistCandles` is idempotent by (ticker, resolution,
+   time) and never revisits a stored bar. So every split leaves a permanent step: RELIANCE
+   2024-10-24 = 2655.70 beside 2024-10-27 = 1334.35, HDFCBANK 1964.10 -> 973.40. At least 22 of 24
+   real-volume extreme moves sit on exact split ratios (1:2, 1:3, 1:4, 1:10), including India's
+   largest company and largest private bank. BOTH declared swing families read exactly this
+   quantity — a 1:2 split is the strongest possible "oversold snap-back" trigger and is not a
+   market event. NOT FIXED: re-adjusting history re-fingerprints every dataset snapshot and a
+   sealed holdout invalidates on drift. Three options in `04-corporate-action-discontinuity.md`.
+
 **RECORDED, NOT CHASED:**
 - The pool's "2 ready" is ONE distinct strategy: `sma_cross_20_50` and `sma_cross_ui_probe` return
   identical results (24 instruments, 165 trades).
 - 40 orphan candles under `IN:XBOM:*` at resolution `60`, all stamped 13:30 UTC (19:00 IST, four
   hours after the close) — daily bars in an hourly resolution, for five instruments absent from the
   catalog and with no `bar_ingestions` provenance. Contained by `805ca01` (8 bars each → excluded).
+- 36 structurally impossible daily bars (open/close outside the bar's own high/low). The
+  accumulator validates `high < low` but never that open/close fall inside the range.
+- HDFCBANK/RELIANCE/TCS carry weekly SUNDAY bars and are dated one day off Yahoo's labels — a
+  second timestamp convention confined to three instruments. (Other weekend bars are legitimate:
+  NSE held a full Union Budget session on Saturday 2025-02-01.)
 - Capacity-ordering sensitivity TESTED and largely refuted: relabelling instruments to reverse slot
   priority moves Sharpe 1.2% at the real 80% rejection rate, 38% at 96.7%. Not a defect at the
   operating point that matters.
