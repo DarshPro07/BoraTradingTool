@@ -92,3 +92,43 @@ capacity rejection exceeds ~95%.
 2. **Enforcing the e2e database boundary** so this cannot recur.
 3. **Re-expressing the two gap screens** against a derivable liquidity proxy instead of
    `market_cap`.
+
+
+## Addendum — the pool's "2 ready" rests on verdicts that cannot be reproduced today
+
+`REPRODUCED`. Both `would_pass` verdicts are dated **2026-08-09 15:41**. Every other verdict in the
+ledger was refreshed on 2026-08-16. The two that make up the entire pool were not.
+
+The mechanism is deliberate (`lib/learning/cycle.ts`):
+
+```ts
+if (outcome.dataMissing) { outageSkipped += 1; continue; }   // do not overwrite a verdict
+```
+
+`NO_DATA_REASON` exists precisely so the cycle can tell a durable capability gap from a transient
+data outage, and refuse to destroy a real verdict because the provider rate-limited for ten
+seconds. That is right.
+
+But `sma_cross_20_50` is a **US-market** strategy, and the store holds **no US daily bars at all** —
+`price_candles` at resolution `D` contains only `IN:` tickers (1,974 of them, 0 others). The
+absence is not a ten-second outage; it has held for seven days and there is no ingestion path
+supplying it. A durable condition is being treated as transient indefinitely, and the verdict it
+protects never expires.
+
+Consequences, both worth stating plainly:
+
+1. The pre-registered gate reads **"2 strategy(ies) standing ready to spend a trial"** from
+   evidence that cannot be reproduced against today's store. Re-run now, both return
+   `not_evaluable`.
+2. The system's only distinct `would_pass` strategy is on **US equities**, outside NSE-QC-001's
+   universe entirely. It says nothing about the campaign's research question — which is a
+   different and more important fact than its staleness.
+
+The distinction the code draws is by reason TYPE, never by DURATION or by consecutive-attempt
+count. `outageSkipped` is counted per cycle and then discarded, so "this verdict has survived N
+consecutive data-missing rehearsals" is not recordable today. Choosing a staleness threshold is a
+research-policy decision, so no threshold was invented here.
+
+One thing this clears: the corporate-action discontinuity in
+`04-corporate-action-discontinuity.md` does **not** contaminate `sma_cross_20_50`, because that
+strategy never ran on NSE data. The non-`IN` universe has **0** extreme daily moves.

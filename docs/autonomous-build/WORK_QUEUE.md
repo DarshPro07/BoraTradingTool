@@ -53,8 +53,12 @@ Full write-ups in `docs/plans/rehearsal-funnel/` and `docs/plans/intraday-fetch-
    sealed holdout invalidates on drift. Three options in `04-corporate-action-discontinuity.md`.
 
 **RECORDED, NOT CHASED:**
-- The pool's "2 ready" is ONE distinct strategy: `sma_cross_20_50` and `sma_cross_ui_probe` return
-  identical results (24 instruments, 165 trades).
+- The pool's "2 ready" is ONE distinct strategy (`sma_cross_20_50` and `sma_cross_ui_probe` return
+  identical results), it is a **US** strategy outside the campaign's universe, and its verdict is
+  from 2026-08-09 and cannot be reproduced: the store holds NO US daily bars. The cycle preserves
+  it deliberately (`if (outcome.dataMissing) continue;`) because a data outage must not destroy a
+  verdict — but that test is by reason TYPE, never by duration, so a permanent absence reads as a
+  ten-second outage forever. The gate's "2 ready to spend a trial" rests on it.
 - 40 orphan candles under `IN:XBOM:*` at resolution `60`, all stamped 13:30 UTC (19:00 IST, four
   hours after the close) — daily bars in an hourly resolution, for five instruments absent from the
   catalog and with no `bar_ingestions` provenance. Contained by `805ca01` (8 bars each → excluded).
