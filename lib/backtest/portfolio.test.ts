@@ -194,3 +194,53 @@ describe("refusals", () => {
     expect(result.ok).toBe(false);
   });
 });
+
+describe("a thin instrument must not destroy the whole universe", () => {
+  /**
+   * The measured defect, and its ratio. `rehearsal_outcomes` held 12 `not_evaluable` verdicts
+   * against 2 `would_pass`, and eight of the twelve read:
+   *
+   *     INSUFFICIENT_BARS: IN:XNSE:ALPINETEX has 19 bars; 30 is the minimum.
+   *
+   * One recent listing. The loop `return`ed on the first instrument under MIN_BARS, so the whole
+   * portfolio refused. Measured against the live store: **15 of 1,728 daily instruments (0.9%)
+   * hold fewer than 30 bars** — under one percent of the universe was destroying one hundred
+   * percent of the evidence, and the strategy funnel sat at 2 of 10 ready-for-gauntlet because
+   * of it.
+   *
+   * Excluding is not the silent option. The count rides out in the result and into the recorded
+   * rehearsal reason, because a universe quietly reduced is how a backtest starts describing a
+   * different strategy from the one that was asked about.
+   */
+  it("evaluates the instruments that qualify and reports the ones it dropped", () => {
+    const result = runPortfolioBacktest(dsl(), {
+      RICH_A: walk(1, 150),
+      RICH_B: walk(2, 150),
+      THIN: walk(3, 19), // the ALPINETEX shape: a recent listing
+    });
+
+    expect(result.ok, "one 19-bar listing aborted a 1,728-instrument universe").toBe(true);
+    if (!result.ok) return;
+    expect(result.instrumentsEvaluated).toBe(2);
+    expect(result.instrumentsExcluded).toEqual([{ instrumentId: "THIN", bars: 19 }]);
+  });
+
+  it("still refuses when nothing in the dataset can be evaluated", () => {
+    // Excluding everything is not a result. "No instrument had enough history" is the honest
+    // answer, and it is the one case where the original refusal was right.
+    const result = runPortfolioBacktest(dsl(), { THIN_A: walk(1, 19), THIN_B: walk(2, 8) });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("INSUFFICIENT_BARS");
+  });
+
+  it("keeps refusing out-of-order bars — that is a provider defect, not thin history", () => {
+    // Dropping it would hide exactly what the UNORDERED_BARS guard exists to surface.
+    const scrambled = walk(4, 150);
+    [scrambled[40], scrambled[41]] = [scrambled[41], scrambled[40]];
+    const result = runPortfolioBacktest(dsl(), { GOOD: walk(1, 150), SCRAMBLED: scrambled });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("UNORDERED_BARS");
+  });
+});

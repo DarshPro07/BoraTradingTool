@@ -288,6 +288,14 @@ export async function runValidationRehearsal(
       backtest.signalsRejectedForCapacity > 0
         ? ` ${backtest.signalsRejectedForCapacity} signal(s) were dropped for lack of a free position slot.`
         : "";
+    // The universe this verdict actually describes. Recent listings hold too little history to
+    // evaluate and are excluded rather than aborting the run, so the reader is told how many —
+    // a verdict over a quietly reduced universe is a verdict about a different question.
+    const exclusionNote =
+      backtest.instrumentsExcluded.length > 0
+        ? ` ${backtest.instrumentsExcluded.length} instrument(s) were excluded for holding too little history` +
+          ` (thinnest: ${backtest.instrumentsExcluded.reduce((a, b) => (b.bars < a.bars ? b : a)).bars} bars).`
+        : "";
     // An inconclusive battery is not a failure. It means the sample was too thin to say
     // anything, and collapsing that into "would fail" would retire candidates for having too
     // few trades rather than for being wrong — the exact error the battery's own gates exist
@@ -321,7 +329,7 @@ export async function runValidationRehearsal(
       name: spec.name,
       status: spec.status,
       verdict,
-      reason: `${battery.summary}${capacityNote}`,
+      reason: `${battery.summary}${capacityNote}${exclusionNote}`,
       trades: returns.length,
       instrumentsEvaluated: backtest.instrumentsEvaluated,
       signalsRejectedForCapacity: backtest.signalsRejectedForCapacity,

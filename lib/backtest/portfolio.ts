@@ -48,6 +48,13 @@ export interface PortfolioRun {
   /** Instruments in the dataset that produced at least one bar. */
   instrumentsEvaluated: number;
   /**
+   * Instruments dropped before the walk for holding less than `MIN_BARS` of history.
+   *
+   * Never empty-by-omission: a reduced universe is a material fact about what the result
+   * describes, so it is reported rather than absorbed.
+   */
+  instrumentsExcluded: { instrumentId: string; bars: number }[];
+  /**
    * Signals dropped because every position slot was occupied. A large number here means the
    * reported returns describe a strategy that could not actually have taken them all.
    */
@@ -232,13 +239,19 @@ export function runPortfolioBacktest(
       : null;
 
   const series: Series[] = [];
+  const excluded: { instrumentId: string; bars: number }[] = [];
   for (const [instrumentId, bars] of entries) {
     if (bars.length < MIN_BARS) {
-      return {
-        ok: false,
-        code: "INSUFFICIENT_BARS",
-        message: `${instrumentId} has ${bars.length} bars; ${MIN_BARS} is the minimum.`,
-      };
+      // Excluded, not fatal. Refusing the whole run here meant one recent listing destroyed the
+      // evidence for every other name in the universe: measured against the live store, 15 of
+      // 1,728 daily instruments (0.9%) hold fewer than 30 bars, and eight rehearsals died naming
+      // a single 19-bar symbol while the strategy funnel sat at 2 of 10 ready-for-gauntlet.
+      //
+      // The exclusion travels in the result rather than being swallowed, because a universe
+      // quietly reduced is how a backtest starts describing a different strategy from the one
+      // that was asked about.
+      excluded.push({ instrumentId, bars: bars.length });
+      continue;
     }
     for (let i = 1; i < bars.length; i += 1) {
       if (bars[i].time <= bars[i - 1].time) {
@@ -258,6 +271,17 @@ export function runPortfolioBacktest(
       panel: buildFeaturePanel(bars, { market, resolution }),
       indexByTime,
     });
+  }
+
+  if (series.length === 0) {
+    // Excluding everything is not a result. This is the one case the original refusal had right.
+    return {
+      ok: false,
+      code: "INSUFFICIENT_BARS",
+      message:
+        `No instrument in the dataset holds ${MIN_BARS} bars. ` +
+        `${excluded.length} were checked; the deepest had ${Math.max(...excluded.map((e) => e.bars))}.`,
+    };
   }
 
   // Deterministic order for slot contention. Arbitrary, and deliberately so: ranking
@@ -366,6 +390,7 @@ export function runPortfolioBacktest(
     ok: true,
     trades,
     instrumentsEvaluated: series.length,
+    instrumentsExcluded: excluded,
     signalsRejectedForCapacity,
     execution:
       executionProfile === null
