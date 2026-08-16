@@ -67,6 +67,15 @@ export const NSE_SECTOR_SOURCES = [
     url: "https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv",
     note: "NIFTY 500 — overlaps the above; kept for redundancy if one file changes shape",
   },
+  {
+    // A different HOST serving the same file, added after watching www.nseindia.com return 403
+    // to every server-side request on 2026-08-16 while nsearchives stayed healthy. Host-level
+    // blocking is evidently per-origin, so a second origin is cheap insurance. Identical
+    // content, so it changes no number — it only survives one host refusing.
+    id: "niftyindices-total-market-mirror",
+    url: "https://www.niftyindices.com/IndexConstituent/ind_niftytotalmarket_list.csv",
+    note: "NSE Indices' own host, same constituent file — resilience against per-origin blocking",
+  },
 ] as const;
 
 export type IdentityVerification = "ISIN_AND_SYMBOL_MATCHED" | "ISIN_MATCHED_SYMBOL_DIFFERS";

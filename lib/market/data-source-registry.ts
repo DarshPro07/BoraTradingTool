@@ -14,6 +14,7 @@
 
 export type DataProviderId =
   | "nse-official"
+  | "nse-equity-quote"
   | "upstox-v3"
   | "jugaad-data"
   | "nsepython"
@@ -96,6 +97,36 @@ export const DATA_SOURCE_REGISTRY: Readonly<Record<DataProviderId, DataSourceEnt
     qualityScore: 100,
     crossValidatedAgainst: [],
     status: "ACTIVE",
+  },
+  /**
+   * NSE's own equity-quote surface. Registered so it can be named and REFUSED explicitly rather
+   * than being an unknown; probed 2026-08-16 and blocked for server-side requests (60/60 HTTP
+   * 403). See SOURCE_CAPABILITIES for the evidence.
+   */
+  "nse-equity-quote": {
+    sourceId: "nse-equity-quote",
+    sourceType: "IDENTITY_REFERENCE",
+    tier: 0,
+    provider: "NSE India",
+    market: "IN",
+    instrumentClass: "EQUITY",
+    resolution: "REFERENCE",
+    coverageStart: null,
+    coverageEnd: null,
+    provenance: "NSE official equity quote surface (four-level industry classification)",
+    officialStatus: "OFFICIAL",
+    license: "NSE terms of use",
+    commercialUse: "RESEARCH_ONLY",
+    redistribution: "PROHIBITED",
+    adjustmentPolicy: "RAW",
+    timezone: "Asia/Kolkata",
+    sessionPolicy: "NSE_CALENDAR",
+    corporateActionPolicy: "OFFICIAL",
+    expectedLatency: "UNKNOWN",
+    freshness: "UNKNOWN",
+    qualityScore: 100,
+    crossValidatedAgainst: [],
+    status: "QUARANTINE",
   },
   "upstox-v3": {
     sourceId: "upstox-v3",

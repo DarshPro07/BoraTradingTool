@@ -153,6 +153,42 @@ export const SOURCE_CAPABILITIES: Readonly<Partial<Record<DataProviderId, Source
       "'use the first result' fallback would serve NIFTY 50 for a TCS request (the identity " +
       "guard would now refuse that, but the source is useless until it answers at all)",
   },
+  /**
+   * NSE's own equity-quote surface — the one that exposes the four-level classification
+   * (Basic Industry → Industry → Sector → Macro) for names outside every index.
+   *
+   * BLOCKED from this deployment, measured rather than assumed: 60 canonical symbols requested
+   * against `/api/quote-equity` returned HTTP 403 sixty times out of sixty; `www.nseindia.com`
+   * itself answers 403 and the get-quote page 404, even after a cookie handshake and with a
+   * page Referer. The archives host (`nsearchives.nseindia.com`) is a DIFFERENT host with
+   * different protection and continues to serve the constituent CSVs normally.
+   *
+   * So the classification data genuinely exists and is visible in a real browser — it is the
+   * server-side fetch that is refused. An autonomous ingestion lane cannot be built on it from
+   * here; that would need either a browser context or NSE Indices' licensed product.
+   */
+  "nse-equity-quote": {
+    sourceId: "nse-equity-quote",
+    dailyHistorical: false,
+    intradayHistorical: false,
+    intradayLookbackDays: null,
+    intradayHistoryFloor: null,
+    canonicalIdentity: false,
+    validationAuthority: false,
+    authenticated: false,
+    realtime: false,
+    claim: {
+      probeEvidence:
+        "2026-08-16 from this machine: 60/60 HTTP 403 on /api/quote-equity across a diverse " +
+        "sample (50 non-index + 10 index names), 403 on the site root, 404 on the get-quote " +
+        "page; p50 latency 118ms so the refusal is immediate, not a timeout",
+      verifiedAt: "2026-08-16",
+    },
+    disabledReason:
+      "edge-blocked for server-side requests (403). The four-level classification it exposes is " +
+      "real and browser-visible, but unreachable from this deployment without a browser context " +
+      "or a licensed feed",
+  },
   nsepython: {
     sourceId: "nsepython",
     dailyHistorical: false,

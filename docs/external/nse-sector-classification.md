@@ -57,3 +57,51 @@ stops being refreshed. That is acceptable for a representativeness criterion (in
 is the investable universe, which is where family-ready instruments concentrate) but it is NOT
 the same thing as NSE's full company classification product. If complete coverage is ever
 required, that product is the source to license.
+
+---
+
+## Probe 2026-08-16 11:47 — can the QUOTE surface close the coverage gap? No, not from here.
+
+The classification the gate needs for the remaining ~1,377 unclassified main-board names is
+genuinely published: NSE's equity quote pages expose all four levels (Basic Industry → Industry →
+Sector → Macro) for ordinary non-index names. So the question was whether this deployment can
+fetch it. **Measured, not assumed:**
+
+| Probe | Result |
+|---|---|
+| `/api/quote-equity` × 60 diverse symbols (50 non-index + 10 index) | **60/60 HTTP 403** |
+| `www.nseindia.com` root, after cookie handshake | 403 |
+| `get-quote/equity/NRAIL` HTML page | 404 (and no classification text — the page is client-rendered) |
+| API retried with page `Referer` + `X-Requested-With` | 403 "Access Denied" |
+| p50 latency | 118ms — an immediate refusal, not a timeout or a throttle |
+
+`www.nseindia.com` blocks server-side requests at the edge. `nsearchives.nseindia.com` is a
+DIFFERENT host with different protection and kept serving the constituent CSVs throughout — which
+is why the existing ingestion is unaffected.
+
+**Conclusion: the quote-based enricher cannot be built as an autonomous lane from this
+deployment.** The data exists and is browser-visible; the server-side fetch is refused. Reaching it
+would need a browser context or NSE Indices' licensed product — an owner decision, not something
+to work around. Recorded as a capability claim with its evidence in
+`lib/market/source-capability.ts` (`nse-equity-quote`, disabled with the probe attached).
+
+### The index route is structurally capped
+
+Eight index constituent files were unioned across both hosts (total market, 500, midsmallcap 400,
+largemidcap 250, midcap 150, smallcap 250, smallcap 100, microcap 250):
+
+```
+union = 752 ISINs → 745 / 2,122 main board = 35.1%
+```
+
+Every additional file is a SUBSET of NIFTY Total Market. Index membership is the top ~750 by
+construction, so this route cannot exceed ~35% however many files are added. The remaining 1,377
+names sit below the microcap-250 cut.
+
+### What was changed as a result
+
+Only one thing, and it is not a new source: `www.niftyindices.com` was added as a **mirror origin**
+for the same total-market file. After watching one NSE host 403 every server-side request while
+another stayed healthy, a second origin for identical content is cheap insurance against
+per-origin blocking. It changes no number — verified by re-running the ingestion: 750 unchanged,
+zero churn.
