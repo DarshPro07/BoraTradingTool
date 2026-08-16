@@ -57,10 +57,14 @@ describe("the pre-registered trial-activation gate", () => {
     expect(decision.blockers.length).toBeGreaterThan(5);
     expect(decision.blockers.some((blocker) => /READY_FOR_GAUNTLET|pool/.test(blocker))).toBe(true);
     // Blockers the machine CAN close are distinguished from those it cannot.
-    expect(decision.blockers.some((blocker) => blocker.includes("[EXTERNAL_DATA_DEPENDENCY]"))).toBe(true);
+    expect(decision.blockers.some((blocker) => blocker.includes("[EXTERNAL_PROVIDER:"))).toBe(true);
     expect(decision.externalDependencies).toBeGreaterThan(0);
+    // Breadth is genuinely the machine's own work, and says what that work IS.
     const breadth = decision.families[0].criteria.find((c) => c.criterion === "family-ready breadth")!;
-    expect(breadth.resolution, "breadth is genuinely the machine's own work").toBe("AUTONOMOUS_WORK");
+    expect(breadth.resolutionOwner).toBe("AUTO");
+    expect(breadth.autoRetry, "the scheduler may keep working this").toBe(true);
+    expect(breadth.resolutionAction).toMatch(/5m backfill/);
+    expect(decision.autonomousBlockers).toBeGreaterThan(0);
   });
 
   it("reports sector representation as UNMEASURABLE and stays shut — never passes what it cannot evaluate", () => {
@@ -175,7 +179,9 @@ describe("the pre-registered trial-activation gate", () => {
     expect(sectorCriterion.detail).toMatch(/describes the classified minority/);
     // WHO can close it: not the machine. "45% < 80%" reads as "keep waiting", which is exactly
     // wrong — the authorized source covers a bounded universe, so ingesting more dilutes it.
-    expect(sectorCriterion.resolution).toBe("EXTERNAL_DATA_DEPENDENCY");
+    expect(sectorCriterion.resolutionOwner).toBe("EXTERNAL_PROVIDER");
+    expect(sectorCriterion.autoRetry, "the scheduler must NOT keep re-attempting this").toBe(false);
+    expect(sectorCriterion.resolutionAction).toMatch(/acquire a broader authorized NSE classification source/);
     expect(sectorCriterion.detail).toMatch(/DILUTES as breadth grows/);
     expect(orb.satisfied).toBe(false);
   });

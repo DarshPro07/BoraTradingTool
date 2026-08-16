@@ -302,13 +302,16 @@ export default async function BrainPage() {
               {activation.switchOn ? "ON" : "OFF"} · {activation.criteriaSatisfied ? "criteria satisfied" : "criteria not satisfied"}
             </div>
             <div className="text-muted-foreground">{activation.headline}</div>
-            {activation.externalDependencies > 0 ? (
-              <div className="text-amber" data-testid="trial-activation-external">
-                {activation.externalDependencies} blocker(s) marked EXTERNAL_DATA_DEPENDENCY — autonomous work
-                cannot close these; they need a data-rights decision, and further ingestion moves them the
-                wrong way.
-              </div>
-            ) : null}
+            <div data-testid="trial-activation-ownership">
+              <span>{activation.autonomousBlockers} blocker(s) the machine is working</span>
+              {activation.externalDependencies > 0 ? (
+                <span className="text-amber">
+                  {" · "}
+                  {activation.externalDependencies} it cannot — those need an owner or provider decision, and
+                  further ingestion moves them the wrong way
+                </span>
+              ) : null}
+            </div>
             {activation.blockers.length > 0 ? (
               <ul className="mt-1 space-y-0.5" data-testid="trial-activation-blockers">
                 {activation.blockers.slice(0, 8).map((blocker) => (

@@ -212,7 +212,28 @@ relaxed because it turned out to be hard to satisfy. That is the entire point of
 The intraday families are unaffected: their ready sets are 100% classified, and their bottleneck
 is 5-minute history, which AUTO genuinely can close on its own.
 
-### Typed resolution: who can close each blocker (2026-08-16 12:39)
+### Typed resolution ownership: who can close each blocker, and with what act (2026-08-16 12:48)
+
+Completed from a two-value marker into the full ownership model the owner specified. Every
+unsatisfied criterion carries `resolutionOwner` (AUTO · OWNER · EXTERNAL_PROVIDER · MARKET_TIME ·
+PERMANENT), a concrete `resolutionAction` in the voice of whoever owns it, and `autoRetry` — so
+the scheduler can mechanically stop spending cycles on conditions it cannot change.
+
+Live: **10 blockers the machine is working, 2 it cannot.**
+
+| Blocker | owner | action | autoRetry |
+|---|---|---|---|
+| family-ready breadth (intraday) | AUTO | historical 5m backfill for daily-ready instruments missing only intraday sessions | true |
+| liquidity representation | AUTO | prefer under-represented liquidity buckets in the backfill queue | true |
+| sector diversity, coverage adequate | AUTO | grow the ready set so more sectors are represented | true |
+| READY_FOR_GAUNTLET pool | AUTO | author and rehearse candidates until enough stand ready | true |
+| **sector classification coverage** | **EXTERNAL_PROVIDER** | acquire a broader authorized NSE classification source, or deliberately declare a narrower future campaign | **false** |
+
+The intraday sector line stays AUTO at 6/6 classified — its shortfall is diversity, which breadth
+fixes. Only the coverage shortfall is EXTERNAL_PROVIDER. The distinction is computed from the
+numbers, never asserted.
+
+### (superseded) Typed resolution: who can close each blocker (2026-08-16 12:39)
 
 "140 of 309 classified (45%, 80% required)" reads as *keep waiting*, and that is exactly the wrong
 conclusion. Every criterion result now carries a `resolution`:

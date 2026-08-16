@@ -106,24 +106,36 @@ export function activationCriteriaHash(criteria: ActivationCriteria = NSE_QC_001
 
 export type CriterionState = "SATISFIED" | "NOT_SATISFIED" | "UNMEASURABLE";
 
+/**
+ * WHO can close a blocker, and with what act.
+ *
+ * `AUTO`               the machine's own ingestion/rehearsal closes it with time
+ * `OWNER`              a human decision or switch — the machine must not attempt it
+ * `EXTERNAL_PROVIDER`  a data-rights or licensing dependency outside the system entirely
+ * `MARKET_TIME`        only future observations close it; nothing can be hurried
+ * `PERMANENT`          it cannot be closed at all; the honest answer is to stop asking
+ */
+export type ResolutionOwner = "AUTO" | "OWNER" | "EXTERNAL_PROVIDER" | "MARKET_TIME" | "PERMANENT";
+
 export interface CriterionResult {
   criterion: string;
   state: CriterionState;
   detail: string;
   /**
-   * Who can close this, when the answer is not "keep working".
+   * Null exactly when the criterion is satisfied. Otherwise names who can close it — the
+   * distinction that lets the scheduler stop spending cycles on conditions it cannot change.
    *
-   * `AUTONOMOUS_WORK`      the machine's own ingestion/rehearsal closes it with time
-   * `EXTERNAL_DATA_DEPENDENCY` it cannot: the authorized source covers a bounded universe, so
-   *                        further ingestion moves the number the WRONG way and only a data-rights
-   *                        decision (or a differently-scoped campaign) resolves it
-   *
-   * This exists because "140 of 309 classified (45%, 80% required)" reads as "keep waiting", and
-   * that is precisely the wrong conclusion: the classified universe is bounded at ~750 index
-   * constituents while the ready set grows across a 2,122-name main board, so the percentage
-   * DILUTES toward ~35% as the machine succeeds at its other work.
+   * The concrete case that motivated it: "140 of 309 classified (45%, 80% required)" reads as
+   * "keep working", but the authorized classification source covers a bounded index universe, so
+   * further ingestion DILUTES the number instead of raising it. That blocker is
+   * EXTERNAL_PROVIDER with `autoRetry: false`; family breadth beside it is AUTO with
+   * `autoRetry: true`, and the two must never be scheduled alike.
    */
-  resolution: "AUTONOMOUS_WORK" | "EXTERNAL_DATA_DEPENDENCY" | null;
+  resolutionOwner: ResolutionOwner | null;
+  /** The specific next act, in the voice of whoever owns it. Null when satisfied. */
+  resolutionAction: string | null;
+  /** May the machine usefully re-attempt this? False whenever the owner is not AUTO. */
+  autoRetry: boolean;
 }
 
 export interface FamilyActivationResult {
@@ -140,8 +152,10 @@ export interface FamilyActivationResult {
 }
 
 export interface TrialActivationDecision {
-  /** Blockers no amount of autonomous work can close — they need a data-rights decision. */
+  /** Blockers no amount of autonomous work can close (autoRetry false) — do not re-attempt. */
   externalDependencies: number;
+  /** Blockers the machine can and should keep working. */
+  autonomousBlockers: number;
   /** The declared switch state, read from the environment — never inferred. */
   switchOn: boolean;
   /** Whether the pre-registered criteria are ALL satisfied. Independent of the switch. */
@@ -240,7 +254,13 @@ export function evaluateTrialActivation(
     criterion: "READY_FOR_GAUNTLET pool",
     state: readyForGauntlet >= criteria.minReadyForGauntlet ? "SATISFIED" : "NOT_SATISFIED",
     detail: `${readyForGauntlet} strategy(ies) standing ready to spend a trial; ${criteria.minReadyForGauntlet} required`,
-    resolution: readyForGauntlet >= criteria.minReadyForGauntlet ? null : "AUTONOMOUS_WORK",
+    ...(readyForGauntlet >= criteria.minReadyForGauntlet
+      ? { resolutionOwner: null, resolutionAction: null, autoRetry: false }
+      : {
+          resolutionOwner: "AUTO" as const,
+          resolutionAction: "author and rehearse candidates until enough stand ready to spend a trial",
+          autoRetry: true,
+        }),
   };
 
   const readinessRows = familyReadiness(families, report, 5000);
@@ -277,7 +297,15 @@ export function evaluateTrialActivation(
         criterion: "family-ready breadth",
         state: row.ready >= required ? "SATISFIED" : "NOT_SATISFIED",
         detail: `${row.ready} qualified instrument(s); ${required} required`,
-        resolution: row.ready >= required ? null : "AUTONOMOUS_WORK",
+        ...(row.ready >= required
+          ? { resolutionOwner: null, resolutionAction: null, autoRetry: false }
+          : {
+              resolutionOwner: "AUTO" as const,
+              resolutionAction: intraday
+                ? "historical 5m backfill for daily-ready instruments missing only intraday sessions"
+                : "continue daily-history expansion across the main board",
+              autoRetry: true,
+            }),
       },
       {
         criterion: "liquidity representation",
@@ -289,7 +317,13 @@ export function evaluateTrialActivation(
               : "NOT_SATISFIED",
         detail: `${buckets.size} of ${criteria.minLiquidityBuckets} liquidity bucket(s) represented${buckets.size > 0 ? ` (${[...buckets].join(", ")})` : ""}`,
         // The representativeness-aware planner works this one directly.
-        resolution: buckets.size >= criteria.minLiquidityBuckets ? null : "AUTONOMOUS_WORK",
+        ...(buckets.size >= criteria.minLiquidityBuckets
+          ? { resolutionOwner: null, resolutionAction: null, autoRetry: false }
+          : {
+              resolutionOwner: "AUTO" as const,
+              resolutionAction: "prefer under-represented liquidity buckets in the backfill queue",
+              autoRetry: true,
+            }),
       },
       {
         criterion: "sector representation",
@@ -321,15 +355,25 @@ export function evaluateTrialActivation(
         // A coverage shortfall is NOT autonomous work. The authorized classification source
         // covers a bounded universe (index constituents), so the unclassified remainder of a
         // ready set cannot be reached by ingesting more bars — and as breadth grows the
-        // percentage dilutes toward the main-board rate rather than rising.
-        resolution:
-          familySectors === null
-            ? "EXTERNAL_DATA_DEPENDENCY"
-            : classificationCoverage < criteria.minSectorClassificationCoverage
-              ? "EXTERNAL_DATA_DEPENDENCY"
-              : familySectors >= criteria.minSectors
-                ? null
-                : "AUTONOMOUS_WORK",
+        // percentage dilutes toward the main-board rate rather than rising. Sector DIVERSITY
+        // over an adequately-classified set is a different matter, and is the machine's own work.
+        ...(familySectors !== null &&
+        classificationCoverage >= criteria.minSectorClassificationCoverage &&
+        familySectors >= criteria.minSectors
+          ? { resolutionOwner: null, resolutionAction: null, autoRetry: false }
+          : familySectors === null || classificationCoverage < criteria.minSectorClassificationCoverage
+            ? {
+                resolutionOwner: "EXTERNAL_PROVIDER" as const,
+                resolutionAction:
+                  "acquire a broader authorized NSE classification source, or deliberately declare " +
+                  "a narrower future campaign whose universe is the classified index constituents",
+                autoRetry: false,
+              }
+            : {
+                resolutionOwner: "AUTO" as const,
+                resolutionAction: "grow the ready set so more sectors are represented",
+                autoRetry: true,
+              }),
       },
     ];
 
@@ -352,7 +396,9 @@ export function evaluateTrialActivation(
 
   const blockers: string[] = [];
   const tag = (result: CriterionResult) =>
-    result.resolution === "EXTERNAL_DATA_DEPENDENCY" ? " [EXTERNAL_DATA_DEPENDENCY]" : "";
+    result.resolutionOwner && result.resolutionOwner !== "AUTO"
+      ? ` [${result.resolutionOwner}: ${result.resolutionAction}]`
+      : "";
   if (poolCriterion.state !== "SATISFIED") {
     blockers.push(`pool: ${poolCriterion.detail}${tag(poolCriterion)}`);
   }
@@ -364,15 +410,19 @@ export function evaluateTrialActivation(
     }
   }
 
-  const externalDependencies = familyResults
+  const unsatisfied = familyResults
     .flatMap((family) => family.criteria)
     .concat(poolCriterion)
-    .filter((result) => result.state !== "SATISFIED" && result.resolution === "EXTERNAL_DATA_DEPENDENCY").length;
+    .filter((result) => result.state !== "SATISFIED");
+  // The scheduler's number: blockers the machine must NOT keep spending cycles on.
+  const externalDependencies = unsatisfied.filter((result) => !result.autoRetry).length;
+  const autonomousBlockers = unsatisfied.filter((result) => result.autoRetry).length;
 
   return {
     switchOn,
     criteriaSatisfied,
     externalDependencies,
+    autonomousBlockers,
     criteriaHash: activationCriteriaHash(criteria),
     families: familyResults,
     poolCriterion,
