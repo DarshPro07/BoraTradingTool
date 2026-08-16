@@ -130,6 +130,17 @@ interface YahooChartResponse {
     result: Array<{
       /** Yahoo states which symbol it served; the identity guard compares it to the request. */
       meta?: { symbol?: string };
+      /**
+       * Corporate actions, returned only when `events=div,split` is requested.
+       *
+       * Yahoo retroactively adjusts its price history at each of these, which is precisely why
+       * they must be recorded: our store keeps whatever basis was current when each bar was
+       * written, so the events are the only way to reconstruct a continuous series later.
+       */
+      events?: {
+        splits?: Record<string, { date: number; numerator: number; denominator: number; splitRatio?: string }>;
+        dividends?: Record<string, { date: number; amount: number }>;
+      };
       timestamp: number[];
       indicators: {
         quote: Array<{
@@ -456,4 +467,77 @@ export async function getYahooSectorPerformance(): Promise<SectorPerformance[]> 
   return results.map((r, i) =>
     r.status === "fulfilled" ? r.value : { sector: SECTOR_ETFS[i].sector, changePct: 0 }
   );
+}
+
+
+export interface YahooCorporateAction {
+  /** Unix seconds. The first session at or after this trades on the new basis. */
+  effectiveTime: number;
+  kind: "SPLIT" | "DIVIDEND";
+  /** SPLIT: shares after per share before (a 2:1 split is 2). Null for dividends. */
+  ratio: number | null;
+  /** DIVIDEND: cash per share. Null for splits. */
+  amount: number | null;
+  /** The provider's own words, kept so a later disagreement can be adjudicated. */
+  evidence: string;
+}
+
+/**
+ * The corporate actions Yahoo declares for a symbol over a window.
+ *
+ * Deliberately separate from `getYahooCandles`. The prices and the events answer different
+ * questions and are trusted differently: prices are what the provider currently believes, events
+ * are what it says happened. The normalizer needs both, and needs to be able to disagree with
+ * either — a declared split that the prices do not show is a real condition worth surfacing, not
+ * an error to paper over.
+ *
+ * Bulk-history budget: this is a background reference-data call with nobody waiting on it.
+ */
+export async function getYahooCorporateActions(
+  ticker: string,
+  from: number,
+  to: number,
+): Promise<YahooCorporateAction[]> {
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}` +
+    `?period1=${from}&period2=${to}&interval=1d&events=div%2Csplit`;
+
+  const res = await yahooFetch(url, {
+    headers: { "User-Agent": YAHOO_UA },
+    next: { revalidate: 21_600 },
+    signal: AbortSignal.timeout(YAHOO_BULK_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`Yahoo Finance ${ticker}: HTTP ${res.status}`);
+
+  const data: YahooChartResponse = await res.json();
+  if (data.chart.error) throw new Error(`Yahoo Finance ${ticker}: ${data.chart.error.description}`);
+  const result = data.chart.result?.[0];
+  if (!result) return [];
+
+  const identityVerdict = assertProviderIdentity("yahoo", ticker, result.meta?.symbol);
+  if (identityVerdict === "MISMATCHED") return [];
+
+  const actions: YahooCorporateAction[] = [];
+  for (const split of Object.values(result.events?.splits ?? {})) {
+    // numerator/denominator are shares AFTER / BEFORE. A 2:1 split is 2/1.
+    if (!Number.isFinite(split.numerator) || !Number.isFinite(split.denominator) || split.denominator === 0) continue;
+    actions.push({
+      effectiveTime: split.date,
+      kind: "SPLIT",
+      ratio: split.numerator / split.denominator,
+      amount: null,
+      evidence: `yahoo split ${split.splitRatio ?? `${split.numerator}:${split.denominator}`} at ${split.date}`,
+    });
+  }
+  for (const dividend of Object.values(result.events?.dividends ?? {})) {
+    if (!Number.isFinite(dividend.amount) || dividend.amount <= 0) continue;
+    actions.push({
+      effectiveTime: dividend.date,
+      kind: "DIVIDEND",
+      ratio: null,
+      amount: dividend.amount,
+      evidence: `yahoo dividend ${dividend.amount} at ${dividend.date}`,
+    });
+  }
+  return actions.sort((a, b) => a.effectiveTime - b.effectiveTime);
 }

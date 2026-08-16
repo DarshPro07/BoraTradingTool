@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles } from "@/lib/market/candle-store";
+import { normalizeSeries, type PriceBasis } from "@/lib/market/price-basis";
+import { actionsByInstrument } from "@/lib/market/corporate-actions";
 import { activeSealFor } from "./holdout-seal";
 import type { Candle } from "@/lib/providers/types";
 
@@ -38,6 +40,32 @@ export interface SnapshotResult {
   firstTime: number;
   lastTime: number;
   dataset: Readonly<Record<string, readonly Candle[]>>;
+  /**
+   * What these prices ARE. A series without a declared basis is what let the canonical store hold
+   * two of them at once, so this is never optional and never inferred.
+   */
+  priceBasis: PriceBasis;
+  /** Corporate actions whose discontinuity was found and removed while building this snapshot. */
+  actionsApplied: number;
+  /** Actions the series was already adjusted for — recorded because "nothing to do" is a finding. */
+  actionsSkipped: number;
+  /**
+   * Actions whose declared ratio disagrees with the stored prices. NOTHING was adjusted for these,
+   * and they travel in the snapshot so a reader learns the series has a known unresolved seam
+   * rather than discovering it as a strategy result.
+   */
+  actionsAmbiguous: { instrumentId: string; effectiveTime: number; observedRatio: number; declaredRatio: number }[];
+  /**
+   * Instruments withheld from `dataset` because their normalized series still steps in a way
+   * nothing explains.
+   *
+   * The guarantee this buys: **a research snapshot contains no unexplained price discontinuity.**
+   * An unexplained step is indistinguishable from a spectacular signal — a −50% day with the
+   * trend filter intact is the strongest trigger the swing mean-reversion family has — so serving
+   * one and hoping is not an option. Withholding is visible and recoverable; the instrument
+   * returns the moment its seam is explained.
+   */
+  quarantined: { instrumentId: string; effectiveTime: number; observedRatio: number; reason: string }[];
 }
 
 export interface SnapshotRefusal {
@@ -59,6 +87,28 @@ export interface SnapshotRefusal {
  * recoverable, and honest — instead of silently contaminating the holdout.
  */
 const SEAL_SIGHTED_ACTORS: ReadonlySet<string> = new Set(["forward-shadow", "paper-forward"]);
+
+/**
+ * The basis research reads by default.
+ *
+ * SPLIT_ADJUSTED, because a split is an accounting event and not information about value: a
+ * continuous series is what technical and price-pattern research needs, and the mixed-basis
+ * defect proved what the alternative costs. Execution simulation asks for RAW explicitly — those
+ * are the numbers that were on the tape — and dividend-sensitive work asks for TOTAL_RETURN.
+ *
+ * Changing this changes every fingerprint, which is the point: a snapshot on a different basis is
+ * a different dataset, and must not be mistaken for the old one.
+ */
+export const RESEARCH_PRICE_BASIS: PriceBasis = "SPLIT_ADJUSTED";
+
+/**
+ * A single-bar move beyond this, left after normalization, is treated as unexplained.
+ *
+ * Deliberately generous: real Indian equities do move 40% in a session, rarely. The point is not
+ * to catch every anomaly but to refuse the ones that are indistinguishable from a corporate-action
+ * artifact — and every measured case in this store was 44% or more.
+ */
+export const UNEXPLAINED_STEP = 0.4;
 
 /** The DSL resolution → the store's resolution key. Absent = the store cannot serve it. */
 export const STORE_RESOLUTION: Readonly<Record<string, string>> = Object.freeze({
@@ -144,6 +194,7 @@ function buildSnapshot(
   hashSeed: string,
   includeBar: (time: number) => boolean,
   lineageNote: string | null,
+  basis: PriceBasis = RESEARCH_PRICE_BASIS,
 ): SnapshotResult | SnapshotRefusal {
   const storeResolution = STORE_RESOLUTION[resolution];
   if (!storeResolution) {
@@ -160,7 +211,15 @@ function buildSnapshot(
   let barCount = 0;
 
   const hash = createHash("sha256");
-  hash.update(hashSeed, "utf8");
+  // The basis is part of the identity. Two snapshots over identical bars on different bases are
+  // different datasets, and a fingerprint that ignored the basis would let one pass as the other.
+  hash.update(`${hashSeed}basis=${basis};`, "utf8");
+
+  const actionLedger = actionsByInstrument();
+  let actionsApplied = 0;
+  let actionsSkipped = 0;
+  const actionsAmbiguous: SnapshotResult["actionsAmbiguous"] = [];
+  const quarantined: SnapshotResult["quarantined"] = [];
 
   // Enumerate the store, not today's security master. A delisted security with retained bars is
   // historical evidence and must remain eligible for a historical dataset snapshot.
@@ -174,7 +233,7 @@ function buildSnapshot(
     .sort();
 
   for (const instrumentId of instrumentIds) {
-    const bars = loadStoredCandles(instrumentId, storeResolution)
+    const stored = loadStoredCandles(instrumentId, storeResolution)
       .filter((bar) => includeBar(bar.time))
       .map((bar) => ({
         time: bar.time,
@@ -184,7 +243,49 @@ function buildSnapshot(
         close: bar.close,
         volume: bar.volume ?? 0,
       }));
-    if (bars.length === 0) continue;
+    if (stored.length === 0) continue;
+
+    // The store holds RAW traded prices; the requested basis is reconstructed here, per
+    // instrument, from the recorded actions. Nothing is written back — rewriting stored bars in
+    // place is exactly how the series acquired two bases.
+    const normalized = normalizeSeries(stored, actionLedger.get(instrumentId) ?? [], basis);
+    actionsApplied += normalized.applied.length;
+    actionsSkipped += normalized.skipped.length;
+    for (const item of normalized.ambiguous) {
+      actionsAmbiguous.push({
+        instrumentId,
+        effectiveTime: item.action.effectiveTime,
+        observedRatio: item.observedRatio,
+        declaredRatio: item.declaredRatio,
+      });
+    }
+    // A seam nothing explains must not reach research. Checked AFTER normalization, so a step a
+    // recorded action already removed is not counted twice.
+    let unexplained: { time: number; ratio: number; reason: string } | null = null;
+    for (let i = 1; i < normalized.bars.length && unexplained === null; i += 1) {
+      const previous = normalized.bars[i - 1];
+      const current = normalized.bars[i];
+      if (previous.close <= 0) continue;
+      if (Math.abs(current.close - previous.close) / previous.close <= UNEXPLAINED_STEP) continue;
+      unexplained = {
+        time: current.time,
+        ratio: previous.close / current.close,
+        reason: previous.volume
+          ? "step matches no recorded or plausible corporate action"
+          : "first real print after a run of zero-volume placeholder bars",
+      };
+    }
+    if (unexplained !== null) {
+      quarantined.push({
+        instrumentId,
+        effectiveTime: unexplained.time,
+        observedRatio: unexplained.ratio,
+        reason: unexplained.reason,
+      });
+      continue;
+    }
+
+    const bars = normalized.bars;
 
     dataset[instrumentId] = bars;
     barCount += bars.length;
@@ -230,6 +331,11 @@ function buildSnapshot(
       firstTime,
       lastTime,
       dataset,
+      priceBasis: basis,
+      quarantined,
+      actionsApplied,
+      actionsSkipped,
+      actionsAmbiguous,
     };
   }
 
@@ -243,17 +349,34 @@ function buildSnapshot(
       firstTime,
       lastTime,
       barCount,
+      priceBasis: basis,
       fingerprint,
       sourceLineage:
         "canonical candle store (accumulator + verified imports); see audit_events dataset_import rows" +
         (lineageNote ? `; ${lineageNote}` : ""),
-      normalizationVersion: "utc-clock-repair-2026-08-09",
+      // Bumped with the basis contract: a series reconstructed from the corporate-action ledger
+      // is a NEW normalization generation, not a revision of the old one.
+      normalizationVersion: "corporate-action-basis-2026-08-16",
       createdAt: new Date(),
       createdBy: actor,
     })
     .run();
 
-  return { ok: true, snapshotId, fingerprint, barCount, instruments, firstTime, lastTime, dataset };
+  return {
+    ok: true,
+    snapshotId,
+    fingerprint,
+    barCount,
+    instruments,
+    firstTime,
+    lastTime,
+    dataset,
+    priceBasis: basis,
+    quarantined,
+    actionsApplied,
+    actionsSkipped,
+    actionsAmbiguous,
+  };
 }
 
 /** The most recent completed experiment for a spec, with its ledger. */

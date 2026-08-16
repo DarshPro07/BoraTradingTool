@@ -848,9 +848,40 @@ export const datasetSnapshots = sqliteTable("dataset_snapshots", {
   fingerprint: text("fingerprint").notNull(),
   sourceLineage: text("source_lineage").notNull(),
   normalizationVersion: text("normalization_version").notNull(),
+  /**
+   * RAW | SPLIT_ADJUSTED | TOTAL_RETURN | MIXED_CONTAMINATED.
+   *
+   * A price series has no meaning without saying what it is a price OF. Snapshots built before
+   * this contract existed are `MIXED_CONTAMINATED` — the canonical daily store was measured
+   * holding two corporate-action bases at once, and claiming RAW for them would assert something
+   * that was never verified.
+   */
+  priceBasis: text("price_basis").notNull().default("MIXED_CONTAMINATED"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   createdBy: text("created_by").notNull(),
 });
+
+/**
+ * Corporate actions, append-only. The ledger that lets a continuous series be RECONSTRUCTED at
+ * read time instead of the store being rewritten in place — which is how it acquired two bases.
+ */
+export const corporateActions = sqliteTable("corporate_actions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  instrumentId: text("instrument_id").notNull(),
+  /** The first bar at or after this instant trades on the new basis. */
+  effectiveTime: integer("effective_time").notNull(),
+  kind: text("kind").notNull(),
+  /** SPLIT: shares after per share before. A 2:1 split is 2. */
+  ratio: real("ratio"),
+  /** DIVIDEND: cash per share. */
+  amount: real("amount"),
+  /** `yahoo:events` is a provider declaration; `detected:store` is our own inference. */
+  source: text("source").notNull(),
+  evidence: text("evidence"),
+  recordedAt: integer("recorded_at", { mode: "timestamp" }).notNull(),
+});
+
+export type CorporateActionRow = typeof corporateActions.$inferSelect;
 
 export const experiments = sqliteTable("experiments", {
   id: text("id").primaryKey(),

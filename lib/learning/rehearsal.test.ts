@@ -46,6 +46,11 @@ function snap(data: Record<string, Candle[]>): SnapshotResult {
     firstTime: all[0]?.time ?? 0,
     lastTime: all[all.length - 1]?.time ?? 0,
     dataset: data,
+    priceBasis: "SPLIT_ADJUSTED",
+    actionsApplied: 0,
+    actionsSkipped: 0,
+    actionsAmbiguous: [],
+    quarantined: [],
   };
 }
 

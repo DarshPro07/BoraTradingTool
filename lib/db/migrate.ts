@@ -78,6 +78,13 @@ const MIGRATIONS = [
   // change closes the previous effective window instead of overwriting it. Additive only: one new
   // table, two indexes and a no-delete trigger; no existing table, row or index is touched.
   "0024_sector_classifications.sql",
+  // The corporate-action ledger + explicit price basis on every snapshot. Registered on owner
+  // instruction 2026-08-16 ("Fix the corporate-action discontinuity using option 3"), after the
+  // canonical daily series was measured holding TWO adjustment bases at once — RELIANCE
+  // 2024-10-24=2655.70 beside 2024-10-27=1334.35. Raw prices stay raw; actions are recorded and
+  // normalization happens at read time into a declared basis. Existing snapshots are backfilled
+  // to MIXED_CONTAMINATED rather than being assumed RAW.
+  "0025_corporate_actions.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

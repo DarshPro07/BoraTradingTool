@@ -103,9 +103,14 @@ describe("T6 — one changed bar is a different dataset", () => {
 
     // Mutate exactly one bar, via raw SQL: the store's own API is append-only by design, and the
     // point of this test is that even an out-of-band change is visible in the fingerprint.
+    //
+    // One paisa, not a tenfold jump. A large mutation now trips the snapshot's unexplained-step
+    // quarantine (the instrument is withheld, and there is nothing left to fingerprint) — which is
+    // the guard working. A minimal delta tests what this test is actually about, and tests it
+    // harder: the fingerprint must notice the smallest possible change.
     closeDbForTests();
     const raw = new Database(process.env.MARKETPULSE_DB_PATH!);
-    raw.prepare("UPDATE price_candles SET close = 999 WHERE time = ?").run(OPEN);
+    raw.prepare("UPDATE price_candles SET close = close + 0.01 WHERE time = ?").run(OPEN);
     raw.close();
     getDb();
 
