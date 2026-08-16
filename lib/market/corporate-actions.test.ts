@@ -176,3 +176,82 @@ describe("end to end: the RELIANCE discontinuity is gone from the snapshot", () 
     expect(snapshot.dataset[RELIANCE.id][0].close).toBeCloseTo(1334.35, 4);
   });
 });
+
+describe("inferred actions are lower authority than declared ones", () => {
+  const SPLIT_AT2 = 1_730_500_000;
+  const DAY2 = 86_400;
+
+  function store2(price: number, count: number, from: number) {
+    return Array.from({ length: count }, (_unused, i) => ({
+      ticker: "IN:XNSE:BONUSCO",
+      resolution: "D",
+      time: from + i * DAY2,
+      open: price,
+      high: price * 1.005,
+      low: price * 0.995,
+      close: price,
+      volume: 1_000,
+    }));
+  }
+
+  /**
+   * Owner rule, 2026-08-16: `detected:store` must never be promoted to the authority of an
+   * exchange- or provider-declared action. A bonus issue Yahoo does not report and we deduce from
+   * a 2.99x step is a defensible correction — it is not the same evidence.
+   *
+   * So a snapshot built partly on inference is a DIFFERENT dataset from one built entirely on
+   * declared actions, and the two must not be able to share a fingerprint. Otherwise a
+   * validation-grade result could rest on inference without any reader being able to tell.
+   */
+  it("reports how much of the correction rests on inference, and feeds it into the hash", async () => {
+    const { persistCandles } = await import("./candle-store");
+    const { snapshotFromStore } = await import("@/lib/research-data/snapshot");
+
+    persistCandles([...store2(2000, 6, SPLIT_AT2 - 6 * DAY2), ...store2(1000, 6, SPLIT_AT2)]);
+    recordCorporateActions([
+      {
+        instrumentId: "IN:XNSE:BONUSCO",
+        effectiveTime: SPLIT_AT2,
+        kind: "SPLIT",
+        ratio: 2,
+        amount: null,
+        source: "detected:store",
+      },
+    ]);
+
+    const snapshot = snapshotFromStore("NSE", "D", "rehearsal");
+    expect(snapshot.ok).toBe(true);
+    if (!snapshot.ok) return;
+
+    // The correction landed — the 2x step is gone...
+    expect(snapshot.actionsApplied).toBe(1);
+    expect(snapshot.dataset["IN:XNSE:BONUSCO"][0].close).toBeCloseTo(1000, 6);
+    // ...and the snapshot says out loud that it rests on an inference rather than a declaration.
+    // `buildSnapshot` also folds the instrument, time and factor of each inferred correction into
+    // the fingerprint, so an inferred series cannot pass as a declared one.
+    expect(snapshot.inferredActionsUsed).toBe(1);
+  });
+
+  it("counts a provider-declared correction as zero inference", async () => {
+    const { persistCandles } = await import("./candle-store");
+    const { snapshotFromStore } = await import("@/lib/research-data/snapshot");
+
+    persistCandles([...store2(2000, 6, SPLIT_AT2 - 6 * DAY2), ...store2(1000, 6, SPLIT_AT2)]);
+    recordCorporateActions([
+      {
+        instrumentId: "IN:XNSE:BONUSCO",
+        effectiveTime: SPLIT_AT2,
+        kind: "SPLIT",
+        ratio: 2,
+        amount: null,
+        source: "yahoo:events",
+      },
+    ]);
+
+    const snapshot = snapshotFromStore("NSE", "D", "rehearsal");
+    expect(snapshot.ok).toBe(true);
+    if (!snapshot.ok) return;
+    expect(snapshot.actionsApplied).toBe(1);
+    expect(snapshot.inferredActionsUsed, "a declared action is not an inference").toBe(0);
+  });
+});

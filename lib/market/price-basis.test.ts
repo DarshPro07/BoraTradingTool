@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSeries, type CorporateAction } from "./price-basis";
+import { normalizeSeries, PriceBasisUnavailableError, type CorporateAction } from "./price-basis";
 
 /**
  * The defect this exists for, measured 2026-08-16 in the production store:
@@ -105,12 +105,33 @@ describe("refusing to adjust a series that is already on the new basis", () => {
 });
 
 describe("the basis contract", () => {
-  it("RAW returns the stored bars untouched — execution simulation needs traded prices", () => {
+  it("AS_FETCHED returns the stored bars untouched", () => {
     const bars = [...flat(2000, 5), ...flat(1000, 5, SPLIT_AT)];
-    const out = normalizeSeries(bars, [split2for1], "RAW");
-    expect(out.basis).toBe("RAW");
+    const out = normalizeSeries(bars, [split2for1], "AS_FETCHED");
+    expect(out.basis).toBe("AS_FETCHED");
     expect(out.applied).toHaveLength(0);
     expect(out.bars[0].close).toBe(2000);
+  });
+
+  it("REFUSES RAW rather than aliasing it to AS_FETCHED", () => {
+    /**
+     * VERIFIED against Yahoo, 2026-08-16, around RELIANCE's 1:1 bonus of ex-date 2024-10-28:
+     *
+     *   2024-10-22   as fetched then   O 2675.00  C 2677.05
+     *                as fetched now    O 1369.20  C 1343.35
+     *
+     * The provider retroactively adjusts the WHOLE OHLC, so a stored bar carries whatever basis
+     * was current the day it was written. "RAW" claims the numbers printed on the tape, and this
+     * store cannot make that claim about history — reconstructing it needs per-bar ingestion dates
+     * that predate the ingestion ledger.
+     *
+     * Refusing is the point. Execution simulation and cost accounting are exactly where the
+     * difference decides whether a fill was possible, so letting AS_FETCHED answer to the name
+     * RAW would put the error where it does the most damage.
+     */
+    const bars = [...flat(2000, 5), ...flat(1000, 5, SPLIT_AT)];
+    expect(() => normalizeSeries(bars, [split2for1], "RAW")).toThrow(PriceBasisUnavailableError);
+    expect(() => normalizeSeries(bars, [split2for1], "RAW")).toThrow(/retroactively adjusts/i);
   });
 
   it("TOTAL_RETURN applies dividends on top of splits", () => {

@@ -47,6 +47,7 @@ function snap(data: Record<string, Candle[]>): SnapshotResult {
     lastTime: all[all.length - 1]?.time ?? 0,
     dataset: data,
     priceBasis: "SPLIT_ADJUSTED",
+    inferredActionsUsed: 0,
     actionsApplied: 0,
     actionsSkipped: 0,
     actionsAmbiguous: [],

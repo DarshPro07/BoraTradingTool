@@ -53,9 +53,50 @@
  * would hide a disagreement between the provider's event feed and its own prices.
  */
 
-export type PriceBasis = "RAW" | "SPLIT_ADJUSTED" | "TOTAL_RETURN";
+export type PriceBasis = "AS_FETCHED" | "RAW" | "SPLIT_ADJUSTED" | "TOTAL_RETURN";
 
-export const PRICE_BASES: readonly PriceBasis[] = ["RAW", "SPLIT_ADJUSTED", "TOTAL_RETURN"];
+export const PRICE_BASES: readonly PriceBasis[] = [
+  "AS_FETCHED",
+  "RAW",
+  "SPLIT_ADJUSTED",
+  "TOTAL_RETURN",
+];
+
+/**
+ * Why `AS_FETCHED` exists, and why `RAW` cannot be served from this store.
+ *
+ * VERIFIED against Yahoo on 2026-08-16, against RELIANCE's 1:1 bonus of ex-date 2024-10-28:
+ *
+ * ```
+ *   2024-10-22   Yahoo today      O 1369.20  H 1376.00  L 1340.22  C 1343.35
+ *                our store        O 2675.00  H 2714.95  L 2670.00  C 2677.05
+ * ```
+ *
+ * Yahoo retroactively adjusts the **entire OHLC**, not merely the close, and `adjclose` is a
+ * further dividend adjustment on top. So what a fetch returns for a past date depends on WHEN the
+ * fetch happens, and a bar in this store carries whatever basis the provider was serving on the
+ * day it was written: genuinely traded prices for bars written before an action, already-adjusted
+ * prices for bars written after.
+ *
+ * That mixture is precisely what `AS_FETCHED` names. It is an honest label for a heterogeneous
+ * series, and it is NOT a synonym for traded prices.
+ *
+ * `RAW` — the actual numbers printed on the tape — is therefore **not reconstructible** for
+ * historical bars: it would need each bar's ingestion date and the action history between then and
+ * now, and the ingestion ledger only began recording in migration 0023. Asking for RAW gets a
+ * typed refusal rather than `AS_FETCHED` wearing a better name, because execution simulation and
+ * cost accounting are exactly the places where the difference decides whether a fill was possible.
+ *
+ * Prospectively RAW becomes serviceable: a bar ingested today, with no action between its session
+ * and now, IS its traded price. The refusal is about history, not about the concept.
+ */
+export const RAW_UNAVAILABLE_REASON =
+  "This store cannot serve RAW traded prices for historical bars. The provider retroactively " +
+  "adjusts its whole OHLC at each corporate action (verified against RELIANCE's 2024-10-28 1:1 " +
+  "bonus: the same session reads 2677.05 as fetched then and 1343.35 as fetched now), so a stored " +
+  "bar carries whatever basis was current on the day it was written. Reconstructing the tape " +
+  "would need per-bar ingestion dates that predate the ingestion ledger. Ask for AS_FETCHED to " +
+  "get the stored numbers unmodified, or SPLIT_ADJUSTED for a continuous series.";
 
 /**
  * How closely the observed step must match the declared ratio before it is believed.
@@ -66,6 +107,15 @@ export const PRICE_BASES: readonly PriceBasis[] = ["RAW", "SPLIT_ADJUSTED", "TOT
  * discontinuity in place, which is the failure that costs evidence.
  */
 export const RATIO_TOLERANCE = 0.12;
+
+/** Thrown when a caller asks for a basis this store cannot honestly produce. */
+export class PriceBasisUnavailableError extends Error {
+  readonly code = "PRICE_BASIS_UNAVAILABLE";
+  constructor(message: string) {
+    super(message);
+    this.name = "PriceBasisUnavailableError";
+  }
+}
 
 export interface NormalizableBar {
   time: number;
@@ -184,8 +234,10 @@ export function normalizeSeries(
 ): NormalizationOutcome {
   const tolerance = options.tolerance ?? RATIO_TOLERANCE;
 
-  // RAW is the stored truth. Returning it untouched is the point of keeping the store raw.
-  if (basis === "RAW" || bars.length === 0) {
+  // AS_FETCHED is the stored series, untouched. RAW is a stronger claim this store cannot make
+  // about history — see RAW_UNAVAILABLE_REASON — so it is refused rather than quietly aliased.
+  if (basis === "RAW") throw new PriceBasisUnavailableError(RAW_UNAVAILABLE_REASON);
+  if (basis === "AS_FETCHED" || bars.length === 0) {
     return { bars: [...bars], basis, applied: [], skipped: [], ambiguous: [] };
   }
 

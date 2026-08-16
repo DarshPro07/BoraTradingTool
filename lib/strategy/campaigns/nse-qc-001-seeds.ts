@@ -1,4 +1,5 @@
 import type { StrategyDsl } from "@/lib/strategy/dsl";
+import type { CrossSectionalStrategy } from "@/lib/backtest/cross-sectional";
 
 /**
  * One canonical seed per declared NSE-QC-001 family.
@@ -173,18 +174,64 @@ export const NSE_QC_001_SEEDS: readonly FamilySeed[] = [
 ];
 
 /**
- * Families this file deliberately does not seed, and why.
+ * The cross-sectional seed, which is not a `StrategyDsl` because it cannot be one.
+ *
+ * `fam_qc001_xsec_momentum` declares a ranking over the universe, and the DSL's conditions are
+ * per-instrument booleans — a statement about one symbol, never about its position relative to the
+ * others at the same instant. So this family is expressed in `CrossSectionalStrategy`
+ * (`lib/backtest/cross-sectional.ts`), a small typed IR whose every field maps to a dimension the
+ * pinned contract already names. It is not a second DSL and has no knob the contract does not.
+ *
+ * Values sit near the centre of each declared range, for the same reason as the others: tuning
+ * before the search is the selection bias the campaign exists to prevent.
+ */
+export const NSE_QC_001_XSEC_SEED: { familyId: string; rationale: string; strategy: CrossSectionalStrategy } = {
+  familyId: "fam_qc001_xsec_momentum",
+  rationale:
+    "lookback 60 trading days (declared 20-120, centre — and the classic three-month formation " +
+    "period); skip_recent 2 days (declared 0-5, the family's own guard against short-term " +
+    "reversal contaminating the rank); top_n 10 names (declared 5-20, centre); rebalance every 7 " +
+    "trading days (declared 5-10, centre); ranking raw return (a declared option, and the simpler " +
+    "of the two); regime_filter none (a declared option — the filter is optional, so the seed " +
+    "takes the plainer form and leaves the filter to the variant space).",
+  strategy: {
+    name: "qc001_xsec_momentum_seed",
+    description:
+      "Cross-sectional momentum seed for NSE-QC-001. Ranks the eligible universe by 60-day " +
+      "return skipping the most recent 2 days, holds the top 10 as delivery positions, and " +
+      "rotates every 7 trading days.",
+    universe: { market: "NSE", resolution: "D" },
+    lookbackDays: 60,
+    skipRecentDays: 2,
+    ranking: "RAW_RETURN",
+    direction: "TOP",
+    topN: 10,
+    rebalanceDays: 7,
+    sizing: { maxPositionPct: 10 },
+    costs: { commissionBps: 5, slippageBps: 10, assumedSpreadBps: 8 },
+  },
+};
+
+/**
+ * Families this file deliberately does not seed as a spec, and why.
  *
  * Kept as data rather than prose so a reader can see the gap is CHOSEN, and so a test can assert
  * that every declared family is either seeded or listed here — the two together must cover all
  * five, or a family has been forgotten rather than deferred.
+ *
+ * The cross-sectional family is now EXECUTABLE (`NSE_QC_001_XSEC_SEED` runs on the engine above),
+ * but it is not yet stored as a `strategy_specs` row: the spec lifecycle — cost gate, rehearsal,
+ * stage ladder — is written against `StrategyDsl`, and filing an IR into that column would have
+ * every downstream reader misparse it. Executability and lifecycle integration are separate steps,
+ * and conflating them is how a half-wired strategy comes to look validated.
  */
 export const UNSEEDED_FAMILIES: Readonly<Record<string, string>> = Object.freeze({
   fam_qc001_xsec_momentum:
-    "declares a universe-level ranking ('rank the eligible universe by lookback return, hold the " +
-    "top N'). The DSL is per-instrument by construction and has no ranking operator, so a faithful " +
-    "seed cannot be written in it. Approximating the rank with an absolute momentum threshold " +
-    "would be a materially different and much looser strategy than the one pinned.",
+    "executable via NSE_QC_001_XSEC_SEED on the cross-sectional engine, but not yet filed as a " +
+    "strategy_specs row: the spec lifecycle (cost gate, rehearsal, stage ladder) is written " +
+    "against StrategyDsl, and storing a cross-sectional IR in that column would be misparsed by " +
+    "every downstream reader. Lifecycle integration is the next step, and is deliberately not " +
+    "half-done.",
 });
 
 /**

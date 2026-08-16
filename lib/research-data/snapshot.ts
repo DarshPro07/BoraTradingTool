@@ -45,6 +45,17 @@ export interface SnapshotResult {
    * two of them at once, so this is never optional and never inferred.
    */
   priceBasis: PriceBasis;
+  /**
+   * How many of the applied corporate actions were INFERRED from our own prices rather than
+   * declared by the provider (`detected:store` vs `yahoo:events`).
+   *
+   * Lower authority, and carried all the way into the fingerprint so it cannot be lost: a bonus
+   * issue Yahoo never reported and we deduced from a 2.99x step is a defensible correction, but it
+   * is not the same evidence as an exchange-declared action. A validation-grade dataset must be
+   * able to see that it rests partly on inference — and a snapshot built with inference is a
+   * DIFFERENT dataset from one built without, so the two must never share a fingerprint.
+   */
+  inferredActionsUsed: number;
   /** Corporate actions whose discontinuity was found and removed while building this snapshot. */
   actionsApplied: number;
   /** Actions the series was already adjusted for — recorded because "nothing to do" is a finding. */
@@ -220,6 +231,7 @@ function buildSnapshot(
   let actionsSkipped = 0;
   const actionsAmbiguous: SnapshotResult["actionsAmbiguous"] = [];
   const quarantined: SnapshotResult["quarantined"] = [];
+  let inferredActionsUsed = 0;
 
   // Enumerate the store, not today's security master. A delisted security with retained bars is
   // historical evidence and must remain eligible for a historical dataset snapshot.
@@ -251,6 +263,15 @@ function buildSnapshot(
     const normalized = normalizeSeries(stored, actionLedger.get(instrumentId) ?? [], basis);
     actionsApplied += normalized.applied.length;
     actionsSkipped += normalized.skipped.length;
+    for (const item of normalized.applied) {
+      if (item.action.source.startsWith("detected:")) {
+        inferredActionsUsed += 1;
+        // Into the hash, per instrument and action: an inferred correction changes the prices, and
+        // a fingerprint that ignored its PROVENANCE would let an inferred series pass as a
+        // declared one.
+        hash.update(`inferred:${instrumentId}:${item.action.effectiveTime}:${item.factor};`, "utf8");
+      }
+    }
     for (const item of normalized.ambiguous) {
       actionsAmbiguous.push({
         instrumentId,
@@ -332,6 +353,7 @@ function buildSnapshot(
       lastTime,
       dataset,
       priceBasis: basis,
+      inferredActionsUsed,
       quarantined,
       actionsApplied,
       actionsSkipped,
@@ -372,6 +394,7 @@ function buildSnapshot(
     lastTime,
     dataset,
     priceBasis: basis,
+    inferredActionsUsed,
     quarantined,
     actionsApplied,
     actionsSkipped,
