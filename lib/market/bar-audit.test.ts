@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { auditBars } from "./bar-audit";
+import { auditBars, classifyFetchFailure, failedFetchAudit } from "./bar-audit";
 
 /**
  * The audit exists because HTTP 200 is not a complete dataset. Its motivating case is first:
@@ -116,5 +116,47 @@ describe("bar gap auditing", () => {
       resolutionMinutes: null,
     });
     expect(audit.expectedSessions).toBe(1);
+  });
+});
+
+describe("classifying a fetch that never returned", () => {
+  /**
+   * The owner's standing rule, and the reason for it: yfinance raises `YFTzMissingError` with the
+   * words "possibly delisted" in the message. Believing that sentence would let a gap in a free
+   * provider's OWN metadata write a false fact about a live NSE security into this system's
+   * reference data — and reference data is the layer everything downstream trusts without
+   * re-checking. Only the canonical NSE master may say an instrument is inactive.
+   */
+  it("never reads a provider's timezone gap as a claim about the instrument", () => {
+    const reason = classifyFetchFailure(
+      new Error("YFTzMissingError('$TATAMOTORS.NS: possibly delisted; no timezone found')"),
+    );
+    expect(reason).toBe("TIMEZONE_METADATA_FAILURE");
+    // The whole point: the provider said "delisted" and the classification does not repeat it.
+    expect(reason).not.toBe("TRUE_INSTRUMENT_STATE");
+  });
+
+  it("names the transport timeout that the six-category taxonomy could not express", () => {
+    expect(classifyFetchFailure(new Error("The operation was aborted due to timeout"))).toBe(
+      "TRANSPORT_TIMEOUT",
+    );
+  });
+
+  it("refuses to guess at a message it does not recognise", () => {
+    // An unclassified failure is a prompt to look; a confidently wrong label is a reason not to.
+    expect(classifyFetchFailure(new Error("something entirely new"))).toBe("UNCLASSIFIED");
+  });
+
+  it("records the request beside the reason, with no bars implied", () => {
+    const audit = failedFetchAudit({
+      requestedStart: 1_000,
+      requestedEnd: 2_000,
+      error: new Error("HTTP 429 too many requests"),
+    });
+    expect(audit.completeness).toBe("FETCH_FAILED");
+    expect(audit.returnedBarCount).toBe(0);
+    expect(audit.returnedFirstBar).toBeNull();
+    expect(audit.requestedStart).toBe(1_000);
+    expect(audit.detail).toContain("RATE_BLOCK_COOKIE");
   });
 });

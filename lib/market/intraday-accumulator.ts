@@ -5,7 +5,7 @@ import type { CandleResolution } from "@/lib/providers/types";
 import type { Instrument } from "./types";
 import { getNormalizedCandles } from "./service";
 import { persistCandles, storedCoverage } from "./candle-store";
-import { auditBars } from "./bar-audit";
+import { auditBars, failedFetchAudit } from "./bar-audit";
 import { recordBarIngestion } from "./bar-ingestion-ledger";
 import type { ImportedCandle } from "./dataset-import";
 
@@ -184,6 +184,21 @@ export async function accumulateIntraday(
         // whether or not this run succeeded, so a failure here is a day of history lost — worth
         // reporting, never worth aborting the pass for.
         result.error = caught instanceof Error ? caught.message.split("\n")[0] : String(caught);
+
+        // ...and worth RECORDING, which for three consecutive production passes it was not.
+        // The success path above wrote the ledger row; this one wrote an in-memory field, so
+        // "3 fetch(es) failed" was the entire durable trace and no later reader could learn which
+        // instrument, which resolution, or why. A count cannot be diagnosed.
+        recordBarIngestion({
+          instrumentId: instrument.id,
+          resolution,
+          source: "yahoo",
+          identityVerdict: "UNSTATED",
+          audit: failedFetchAudit({ requestedStart: now - window, requestedEnd: now, error: caught }),
+          inserted: 0,
+          skipped: 0,
+          rejected: 0,
+        });
       }
 
       results.push(result);

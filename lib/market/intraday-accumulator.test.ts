@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { loadStoredCandles } from "./candle-store";
+import { latestIngestion } from "./bar-ingestion-ledger";
 import {
   accumulateIntraday,
   accumulationDue,
@@ -161,5 +162,35 @@ describe("when a fetch fails", () => {
     expect(report.failed).toBe(1);
     expect(report.inserted).toBe(4);
     expect(report.results.find((r) => r.resolution === "5")?.error).toMatch(/rate limited/);
+  });
+
+  /**
+   * The defect this guards, in the words of the investigation that found it: three fetches failed
+   * in each of three consecutive production passes, and NOTHING recorded which instrument, which
+   * resolution, or why. `recordBarIngestion` sat inside the `try` after `persistCandles`, so the
+   * only path that wrote to the ledger was the path that had already succeeded. The failure
+   * survived as an in-memory field and a prose sentence — `report.failed = 3` — and a count cannot
+   * be diagnosed. `drizzle/0023_bar_ingestions.sql` had promised the opposite in writing: a failed
+   * fetch "is recorded with returned_bar_count 0 and the reason".
+   *
+   * Asserting on the REPORT is what the test above does and it passed throughout; only the
+   * durable row proves the evidence outlives the process that observed it.
+   */
+  it("writes the failure to the durable ledger, with the request beside the reason", async () => {
+    await accumulateIntraday([INSTRUMENT], ["5"], NOW, async () => {
+      throw new Error("The operation was aborted due to timeout");
+    });
+
+    const record = latestIngestion(INSTRUMENT.id, "5");
+    expect(record).not.toBeNull();
+    expect(record?.completeness).toBe("FETCH_FAILED");
+    expect(record?.returnedBarCount).toBe(0);
+    expect(record?.inserted).toBe(0);
+    // Classified, so the failure can be counted by kind rather than re-read as prose.
+    expect(record?.detail).toMatch(/TRANSPORT_TIMEOUT/);
+    // The request the owner asked to be able to reconstruct: interval, start, end.
+    expect(record?.requestedEnd).toBe(NOW);
+    expect(record?.requestedStart).toBe(NOW - 59 * 86_400);
+    expect(record?.source).toBe("yahoo");
   });
 });

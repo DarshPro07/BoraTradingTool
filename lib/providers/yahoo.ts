@@ -22,7 +22,37 @@ const YAHOO_UA = "Mozilla/5.0";
  * turning an outage into a fast, honest refusal. The panel-state vocabulary already renders that
  * refusal correctly; it just had to arrive before the operator gave up.
  */
-const YAHOO_TIMEOUT_MS = 4_000;
+export const YAHOO_TIMEOUT_MS = 4_000;
+
+/**
+ * The exception the four-second rule needs, and why it is not a relaxation of it.
+ *
+ * Once the window-aware range fix landed, one request in this system stopped resembling all the
+ * others: a 59-day 5-minute backfill returns ~3,000 bars and several hundred KB of JSON, against a
+ * quote's handful. Nothing renders behind it — the intraday accumulator is a background job whose
+ * only reader is the store — so the reasoning above (an operator waiting on a page) does not
+ * apply, while its cost does: the largest payload in the system was being cancelled at the budget
+ * chosen for the smallest.
+ *
+ * Measured 2026-08-16: `IN:XNSE:ASKAUTOLTD` 5m aborted at 4s while the same instrument's 15m and
+ * 60m fetches — ~3× and ~10× smaller — completed in the same pass. Thirty seconds is chosen to
+ * clear a slow-but-working transfer, not to wait out an outage.
+ */
+export const YAHOO_BULK_TIMEOUT_MS = 30_000;
+
+/**
+ * How long this specific request may take, decided by what it asks for.
+ *
+ * Only a *bulk intraday* window earns the longer budget: intraday resolutions are the ones that
+ * return thousands of bars over a wide window. A daily request spanning a year is a few hundred
+ * bars, and a session-sized intraday request is the live path a page waits on — both keep the
+ * render budget, because for them a slow answer really is the worse failure.
+ */
+export function candleTimeoutMs(resolution: CandleResolution, from: number, to: number): number {
+  const intraday = Number.isFinite(Number(resolution));
+  const bulk = to - from > RANGE_SHORTCUT_MAX_SECONDS;
+  return intraday && bulk ? YAHOO_BULK_TIMEOUT_MS : YAHOO_TIMEOUT_MS;
+}
 
 type NextFetchInit = RequestInit & { next?: { revalidate?: number } };
 
@@ -172,6 +202,7 @@ export async function getYahooCandles(
     headers: { "User-Agent": "Mozilla/5.0" },
     // Short cache for intraday, longer for daily+
     next: { revalidate: rangeConf ? 60 : 300 },
+    signal: AbortSignal.timeout(candleTimeoutMs(resolution, from, to)),
   });
 
   if (!res.ok) throw new Error(`Yahoo Finance ${ticker}: HTTP ${res.status}`);

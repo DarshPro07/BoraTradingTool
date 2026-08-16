@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getYahooCandles } from "./yahoo";
+import { candleTimeoutMs, getYahooCandles, YAHOO_TIMEOUT_MS } from "./yahoo";
 
 /**
  * The window-aware range shortcut (owner correction 2026-08-16).
@@ -58,6 +58,30 @@ describe("getYahooCandles window-aware URL selection", () => {
     expect(urls[0]).toContain(`period1=${from}`);
     expect(urls[0]).toContain(`period2=${now}`);
     expect(urls[0]).toContain("interval=5m");
+  });
+
+  /**
+   * The second half of the same defect. Having fixed the URL so a 59-day 5m request actually asks
+   * for 59 days, the request now returns ~3,000 bars — and it was still governed by a timeout
+   * whose own comment says it was sized so a *page render* would not hang: "these calls block a
+   * server render… four seconds… turning an outage into a fast, honest refusal."
+   *
+   * Correct for a quote, wrong for the heaviest request in the system. The observed production
+   * failure was exactly this shape: `IN:XNSE:ASKAUTOLTD` timed out at 5m while its own 15m and
+   * 60m fetches succeeded in the same pass — the largest payload under the smallest budget. The
+   * budget must follow what is being asked for, not the caller that happens to be least patient.
+   */
+  it("a bulk intraday backfill is not held to the render budget", () => {
+    const now = 1_755_300_000;
+    const bulk = candleTimeoutMs("5", now - 59 * 86_400, now);
+    expect(bulk).toBeGreaterThan(YAHOO_TIMEOUT_MS);
+  });
+
+  it("a session-sized request keeps the render budget — a slow page is still the worse failure", () => {
+    const now = 1_755_300_000;
+    expect(candleTimeoutMs("5", now - 6 * 3_600, now)).toBe(YAHOO_TIMEOUT_MS);
+    // Daily history is a few hundred bars however long the window; nobody needs to wait longer.
+    expect(candleTimeoutMs("D", now - 365 * 86_400, now)).toBe(YAHOO_TIMEOUT_MS);
   });
 
   it("daily requests are untouched by the shortcut logic", async () => {
