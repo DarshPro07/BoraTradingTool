@@ -26,7 +26,26 @@ Full write-ups in `docs/plans/rehearsal-funnel/` and `docs/plans/intraday-fetch-
 - `189caf5` — failed intraday fetches were recorded nowhere; classified `FETCH_FAILED` rows now
   persist. Root cause was a 4s render-latency budget applied to a ~3,000-bar bulk backfill.
 
-**OWNER DECISIONS — not taken autonomously:**
+**RESOLVED 2026-08-16 (owner-directed, all four scientific-integrity fixes):**
+- `f9346b5` — CORPORATE-ACTION PRICE BASIS. Option 3 as directed: store keeps RAW traded prices,
+  actions in an append-only ledger, continuous series reconstructed at read time into an explicit
+  `RAW | SPLIT_ADJUSTED | TOTAL_RETURN` basis that is part of the fingerprint. Verify-before-accept
+  (a series already adjusted is skipped, not double-adjusted); boundary LOCATED within 6 days
+  because Yahoo's split dates do not match our bar labels; bonus issues Yahoo never declares are
+  inferred only at plausible ratios, under the distinct source `detected:store`. Snapshots
+  QUARANTINE any instrument still stepping unexplained. Production: 25 of 26 discontinuities
+  removed, 145 actions recorded, NSE daily snapshot SPLIT_ADJUSTED over 2,062 instruments.
+- `db2c4f2` — RESEARCH CLEANLINESS + FRESHNESS. Derived origin classification
+  (PRODUCTION_RESEARCH / E2E_FIXTURE / UNSUPPORTED_MARKET); nothing deleted. Pool went from
+  "2 ready" to 0 research-eligible — both were the US pair whose verdict cannot be reproduced.
+  `historyReady` and `freshnessReady` separated: RELIANCE/HDFCBANK/TCS now plan as refresh.
+- `40a317f` — FAMILY EXECUTABILITY. Derived the composites the pinned mechanisms name
+  (`high_20d`, `prior_session_high/low`, `atr_stretch_sma20`, `return_5d`, `return_5d_in_vol`,
+  `rsi2`) rather than growing the grammar; canonical seeds for 4 of 5 families, each inside its
+  declared variant space. `fam_qc001_xsec_momentum` stays un-seeded IN DATA — it needs a
+  universe-level ranking IR, and a test asserts no family can be silently forgotten.
+
+**STILL OPEN — OWNER DECISIONS:**
 1. **NSE-QC-001 declares five families; the engine can express ONE.** All five hold zero seeded
    specs, and the factory is a breeder (inherits a parent's family, refuses to invent one), so a
    family with no seed can never receive one autonomously. RVOL breakout needs a prior-day/N-bar
