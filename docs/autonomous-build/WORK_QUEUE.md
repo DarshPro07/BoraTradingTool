@@ -901,3 +901,23 @@ Owner-side items, unchanged: MARKETPULSE_AUTONOMOUS_TRIALS stays 0 until the gat
 credentials would unlock deep intraday history AND are the only source permitted for LIVE_TRADING;
 sector coverage beyond 35% needs a licensed source, never scraping (ADR 0009). Broker sandbox
 lifecycle proving is the next broker-side step once quant evidence justifies it — not before.
+
+### Do-not list, expanded (owner 2026-08-16 12:30)
+```
+DO NOT:
+- add another orchestration engine
+- add another memory architecture
+- add another provider abstraction
+- bypass source terms
+- scrape NSE with browsers
+- weaken campaign gates
+- turn trials on manually
+- add random strategy families
+```
+Allowed engineering is now mostly **bugs exposed by the quant program**. Everything else is
+DATA → RESEARCH → STRATEGY → STATISTICS → FORWARD → PAPER.
+
+Measured consequence (docs/plans/nse-qc-001/03-trial-activation-gate.md): the swing sector
+criterion cannot be reached by waiting — coverage drifts from ~45% toward the 35.1% structural
+ceiling as breadth grows. Two doors only: license a full classification source (QC-001 unchanged),
+or declare a LATER separate index-universe campaign. Do not modify QC-001 either way.

@@ -176,3 +176,38 @@ main board by construction (index membership is the investable universe). That i
 next data gap, and it is recorded rather than worked around: either NSE Indices' licensed
 classification product, or rate-limited per-symbol official quote data. It is NOT a reason to
 lower the floor.
+
+## Measured 2026-08-16 12:30 — the swing sector criterion cannot be reached by waiting
+
+The owner observed that licensing, not patience, closes the classification gap. Measured against
+production, it is stronger than that: **the coverage percentage drifts DOWNWARD as AUTO works.**
+
+```
+main board                     2,122   classified 745 (35.1%)  ← the structural ceiling
+  instruments with >=340 bars    334   classified 151 (45.2%)  ← the swing-eligible depth band
+swing ready sets (gate, full)    309   classified 140 (45%)
+intraday ready sets                6   classified   6 (100%)
+```
+
+The swing families require ≥340 (momentum) / ≥250 (mean reversion) daily bars, and the deep-history
+band is itself only 45.2% classified. Every additional instrument the daily planner pushes past
+that depth is drawn from a population that is 35.1% classified — so as breadth grows, the ready
+set's classification rate **falls from ~45% toward ~35%**, away from the pinned 80% floor rather
+than toward it.
+
+**Therefore the swing sector criterion has exactly two doors, and no third:**
+
+- **Path A** — obtain an authorized full classification source (NSE Indices' data product;
+  `indices@nse.co.in`). QC-001 stays exactly as pinned and the gate can then evaluate honestly
+  across the full main board.
+- **Path B** — a LATER, separate campaign (e.g. `NSE-QC-002-INDEX-UNIVERSE`) whose research
+  universe is *defined* as the ~750 officially classified index-universe companies, so ~100%
+  coverage is a property of the design rather than a convenience discovered afterwards. It
+  answers a genuinely different question — "does this work in the investable index universe?" —
+  and must never be presented as evidence about all 2,122 main-board equities.
+
+**QC-001 is not modified.** Hash `19e571a36128b1ef` stays frozen; the 80% floor stays; nothing is
+relaxed because it turned out to be hard to satisfy. That is the entire point of pinning it.
+
+The intraday families are unaffected: their ready sets are 100% classified, and their bottleneck
+is 5-minute history, which AUTO genuinely can close on its own.
