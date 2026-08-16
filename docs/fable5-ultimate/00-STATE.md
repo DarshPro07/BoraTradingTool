@@ -18,7 +18,7 @@ file **indexes** them instead, and `99-FINAL-VERIFICATION.md` beside it carries 
 |---|---|
 | Path | `E:\BoraTradingTool` |
 | Branch | `checkpoint/m5-research-bridge-verified` |
-| Last commit | `973852a` (see the leg table below for the chain) |
+| Last commit | `189caf5` (see the leg table below for the chain) |
 | Known-good baseline | `9627ee5` — Master Golden 221/221 ×2, units 1786. Never declare a new baseline without focused tests **and** a full master acceptance. |
 | Owner's other repo | `E:\Trading_BOT` — **do not write to it.** A hook blocks the attempt. |
 
@@ -46,6 +46,7 @@ Independent verification) with its own plan directory. Read that directory, not 
 | Strategy pipeline progression | `342414f` | `docs/plans/strategy-progression/` | Five structural funnel defects (22→10→2→0). Authored NSE strategies are now born **5m/INTRADAY** — the product the ₹1,000 capital basis can actually trade — plus rehearsal rotation, guarded cost standing, rendered `blockedOn`, and a path above `validated`. |
 | Sealed holdout apparatus | `e0f2a3d` | `docs/plans/sealed-holdout/` | The owner's six pieces: immutable `HoldoutDefinition`, seal states (SEALED / AUTHORIZED_FOR_EVALUATION / CONSUMED / INVALIDATED), access ledger, deterministic evaluator, **family-level** consumption, rich `HoldoutResult`. Holdout sits AFTER DSR/PBO as an architectural invariant — it does not replace them. |
 | Provider transport families | `7cbc249`, `973852a` | `docs/plans/provider-transports/` | ONE architecture for a 75+ roster, not 75 adapter files: three HTTP wires (OpenAI-compatible / Anthropic-native / Gemini-native) + the CLI path, 16 registry providers, wire-driven detection ladder, binding provenance stored (`REQUEST_BOUND_ONLY` when a provider cannot guarantee binding — stated, not faked). |
+| Intraday fetch failures | `189caf5` | `docs/plans/intraday-fetch-failures/` | Three failures per accumulation pass, recorded nowhere: `recordBarIngestion` sat inside the `try` after `persistCandles`, so only successes reached the ledger. Reproduced a transport timeout — a 59-day 5m backfill (~3,000 bars) under the 4s budget sized for render-blocking quotes. The `catch` now records a classified `FETCH_FAILED` row; `candleTimeoutMs()` sizes the budget by the request. Live: 1 failure of 36 → 0, bars kept 48,630 → 51,621. |
 | Brain execution observability | *in flight* | `docs/plans/brain-observability/` | Read-model over existing ledgers: one correlated tree job → TeamRun → AgentRuns → ModelCalls → Artifacts. Assigned vs executed vs verification never collapsed; dissent first-class; TOKENS MEASURED / COST UNAVAILABLE. Produced the **first live team execution in the product's history**. |
 
 ## Standing owner order after this leg
