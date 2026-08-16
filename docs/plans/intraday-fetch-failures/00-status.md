@@ -17,8 +17,40 @@
 
 ## Exact next action
 
-**None here.** Read `bar_ingestions WHERE completeness = 'FETCH_FAILED'` after the next few
-production passes. Two questions it now answers that could not be asked before:
+**No further code change.** The next meaningful event is runtime evidence. Run this after the next
+scheduled accumulation:
+
+```sql
+SELECT
+    instrument_id,
+    resolution,
+    source,
+    substr(detail, 1, instr(detail, ':') - 1) AS failure_reason,
+    requested_start,
+    requested_end,
+    datetime(ingested_at, 'unixepoch') AS ingested_at
+FROM bar_ingestions
+WHERE completeness = 'FETCH_FAILED'
+ORDER BY ingested_at DESC;
+```
+
+Two schema notes, because the obvious column names do not exist: there is **no `failure_reason`
+column** — the classified reason is the prefix of `detail` (`"TRANSPORT_TIMEOUT: <message>"`), hence
+the `substr`; and the timestamp is `ingested_at`, not `created_at`.
+
+**Read zero rows carefully.** Zero is the desired answer only if the scheduler actually ran. It
+stopped once already (2026-08-16 08:26:47Z, cause unrecorded — the process left no log and was gone
+before it could be inspected; restarted 08:36Z and confirmed ticking). Check liveness first:
+
+```sql
+SELECT datetime(MAX(created_at), 'unixepoch') FROM audit_events
+ WHERE action = 'intraday_accumulation';
+```
+
+A stopped machine and a fixed bug both produce an empty `FETCH_FAILED` table. Only the second one
+earns the conclusion.
+
+Two questions the ledger now answers that could not be asked before:
 
 1. Were the other two per-pass failures also `TRANSPORT_TIMEOUT`? (`UNKNOWN` — the evidence for the
    original three does not exist and cannot be recovered.)
