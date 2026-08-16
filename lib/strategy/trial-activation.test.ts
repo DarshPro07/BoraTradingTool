@@ -56,6 +56,11 @@ describe("the pre-registered trial-activation gate", () => {
     expect(decision.families).toHaveLength(5);
     expect(decision.blockers.length).toBeGreaterThan(5);
     expect(decision.blockers.some((blocker) => /READY_FOR_GAUNTLET|pool/.test(blocker))).toBe(true);
+    // Blockers the machine CAN close are distinguished from those it cannot.
+    expect(decision.blockers.some((blocker) => blocker.includes("[EXTERNAL_DATA_DEPENDENCY]"))).toBe(true);
+    expect(decision.externalDependencies).toBeGreaterThan(0);
+    const breadth = decision.families[0].criteria.find((c) => c.criterion === "family-ready breadth")!;
+    expect(breadth.resolution, "breadth is genuinely the machine's own work").toBe("AUTONOMOUS_WORK");
   });
 
   it("reports sector representation as UNMEASURABLE and stays shut — never passes what it cannot evaluate", () => {
@@ -168,6 +173,10 @@ describe("the pre-registered trial-activation gate", () => {
     expect(sectorCriterion.state, "7 >= 5 must NOT pass while 42 of 60 are unclassified").toBe("UNMEASURABLE");
     expect(sectorCriterion.detail).toMatch(/only 18 of 60 ready instrument\(s\) are classified \(30%, 80% required\)/);
     expect(sectorCriterion.detail).toMatch(/describes the classified minority/);
+    // WHO can close it: not the machine. "45% < 80%" reads as "keep waiting", which is exactly
+    // wrong — the authorized source covers a bounded universe, so ingesting more dilutes it.
+    expect(sectorCriterion.resolution).toBe("EXTERNAL_DATA_DEPENDENCY");
+    expect(sectorCriterion.detail).toMatch(/DILUTES as breadth grows/);
     expect(orb.satisfied).toBe(false);
   });
 

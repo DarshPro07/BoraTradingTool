@@ -110,6 +110,20 @@ export interface CriterionResult {
   criterion: string;
   state: CriterionState;
   detail: string;
+  /**
+   * Who can close this, when the answer is not "keep working".
+   *
+   * `AUTONOMOUS_WORK`      the machine's own ingestion/rehearsal closes it with time
+   * `EXTERNAL_DATA_DEPENDENCY` it cannot: the authorized source covers a bounded universe, so
+   *                        further ingestion moves the number the WRONG way and only a data-rights
+   *                        decision (or a differently-scoped campaign) resolves it
+   *
+   * This exists because "140 of 309 classified (45%, 80% required)" reads as "keep waiting", and
+   * that is precisely the wrong conclusion: the classified universe is bounded at ~750 index
+   * constituents while the ready set grows across a 2,122-name main board, so the percentage
+   * DILUTES toward ~35% as the machine succeeds at its other work.
+   */
+  resolution: "AUTONOMOUS_WORK" | "EXTERNAL_DATA_DEPENDENCY" | null;
 }
 
 export interface FamilyActivationResult {
@@ -126,6 +140,8 @@ export interface FamilyActivationResult {
 }
 
 export interface TrialActivationDecision {
+  /** Blockers no amount of autonomous work can close — they need a data-rights decision. */
+  externalDependencies: number;
   /** The declared switch state, read from the environment — never inferred. */
   switchOn: boolean;
   /** Whether the pre-registered criteria are ALL satisfied. Independent of the switch. */
@@ -224,6 +240,7 @@ export function evaluateTrialActivation(
     criterion: "READY_FOR_GAUNTLET pool",
     state: readyForGauntlet >= criteria.minReadyForGauntlet ? "SATISFIED" : "NOT_SATISFIED",
     detail: `${readyForGauntlet} strategy(ies) standing ready to spend a trial; ${criteria.minReadyForGauntlet} required`,
+    resolution: readyForGauntlet >= criteria.minReadyForGauntlet ? null : "AUTONOMOUS_WORK",
   };
 
   const readinessRows = familyReadiness(families, report, 5000);
@@ -260,6 +277,7 @@ export function evaluateTrialActivation(
         criterion: "family-ready breadth",
         state: row.ready >= required ? "SATISFIED" : "NOT_SATISFIED",
         detail: `${row.ready} qualified instrument(s); ${required} required`,
+        resolution: row.ready >= required ? null : "AUTONOMOUS_WORK",
       },
       {
         criterion: "liquidity representation",
@@ -270,6 +288,8 @@ export function evaluateTrialActivation(
               ? "NOT_SATISFIED"
               : "NOT_SATISFIED",
         detail: `${buckets.size} of ${criteria.minLiquidityBuckets} liquidity bucket(s) represented${buckets.size > 0 ? ` (${[...buckets].join(", ")})` : ""}`,
+        // The representativeness-aware planner works this one directly.
+        resolution: buckets.size >= criteria.minLiquidityBuckets ? null : "AUTONOMOUS_WORK",
       },
       {
         criterion: "sector representation",
@@ -293,9 +313,23 @@ export function evaluateTrialActivation(
                 `classified (${Math.round(classificationCoverage * 100)}%, ` +
                 `${Math.round(criteria.minSectorClassificationCoverage * 100)}% required) — ` +
                 `${familySectors} sector(s) seen, but a count over a mostly-unclassified set ` +
-                "describes the classified minority, not the set"
+                "describes the classified minority, not the set. This DILUTES as breadth grows: " +
+                "the authorized source covers a bounded index universe, so newly-ready " +
+                "instruments fall outside it and further ingestion moves this the wrong way"
               : `${familySectors} of ${criteria.minSectors} sector(s) represented across ` +
                 `${classifiedReady}/${readySecurities.length} classified`,
+        // A coverage shortfall is NOT autonomous work. The authorized classification source
+        // covers a bounded universe (index constituents), so the unclassified remainder of a
+        // ready set cannot be reached by ingesting more bars — and as breadth grows the
+        // percentage dilutes toward the main-board rate rather than rising.
+        resolution:
+          familySectors === null
+            ? "EXTERNAL_DATA_DEPENDENCY"
+            : classificationCoverage < criteria.minSectorClassificationCoverage
+              ? "EXTERNAL_DATA_DEPENDENCY"
+              : familySectors >= criteria.minSectors
+                ? null
+                : "AUTONOMOUS_WORK",
       },
     ];
 
@@ -317,16 +351,28 @@ export function evaluateTrialActivation(
   const switchOn = env.MARKETPULSE_AUTONOMOUS_TRIALS === "1";
 
   const blockers: string[] = [];
-  if (poolCriterion.state !== "SATISFIED") blockers.push(`pool: ${poolCriterion.detail}`);
+  const tag = (result: CriterionResult) =>
+    result.resolution === "EXTERNAL_DATA_DEPENDENCY" ? " [EXTERNAL_DATA_DEPENDENCY]" : "";
+  if (poolCriterion.state !== "SATISFIED") {
+    blockers.push(`pool: ${poolCriterion.detail}${tag(poolCriterion)}`);
+  }
   for (const family of familyResults) {
     for (const result of family.criteria) {
-      if (result.state !== "SATISFIED") blockers.push(`${family.name} — ${result.criterion}: ${result.detail}`);
+      if (result.state !== "SATISFIED") {
+        blockers.push(`${family.name} — ${result.criterion}: ${result.detail}${tag(result)}`);
+      }
     }
   }
+
+  const externalDependencies = familyResults
+    .flatMap((family) => family.criteria)
+    .concat(poolCriterion)
+    .filter((result) => result.state !== "SATISFIED" && result.resolution === "EXTERNAL_DATA_DEPENDENCY").length;
 
   return {
     switchOn,
     criteriaSatisfied,
+    externalDependencies,
     criteriaHash: activationCriteriaHash(criteria),
     families: familyResults,
     poolCriterion,

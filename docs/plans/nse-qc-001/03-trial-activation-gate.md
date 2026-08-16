@@ -211,3 +211,45 @@ relaxed because it turned out to be hard to satisfy. That is the entire point of
 
 The intraday families are unaffected: their ready sets are 100% classified, and their bottleneck
 is 5-minute history, which AUTO genuinely can close on its own.
+
+### Typed resolution: who can close each blocker (2026-08-16 12:39)
+
+"140 of 309 classified (45%, 80% required)" reads as *keep waiting*, and that is exactly the wrong
+conclusion. Every criterion result now carries a `resolution`:
+
+- **`AUTONOMOUS_WORK`** — the machine's own ingestion and rehearsal close it with time. Family-ready
+  breadth, liquidity representation, the READY_FOR_GAUNTLET pool, and sector DIVERSITY where
+  coverage is already sufficient (the intraday families, at 6/6 classified).
+- **`EXTERNAL_DATA_DEPENDENCY`** — it cannot. The authorized classification source covers a bounded
+  index universe, so the unclassified remainder of a ready set is unreachable by ingesting more
+  bars, and the percentage **dilutes** as breadth grows.
+
+The decision surfaces `externalDependencies` as a count, `/brain` states it in amber, and each
+blocker line is tagged. Live at the time of writing: **2** — both swing sector criteria; every
+other blocker is genuinely the machine's own work.
+
+```
+OFF — the pre-registered criteria are not satisfied.
+hash 19e571a36128b1ef · externalDependencies 2
+
+· pool: 2 strategy(ies) ready to spend a trial; 10 required
+· ORB — family-ready breadth: 6 qualified; 60 required
+· ORB — liquidity representation: 1 of 3 buckets (HIGH)
+· ORB — sector representation: 4 of 5 sectors across 6/6 classified     ← autonomous: needs breadth
+· Swing momentum — sector representation: 154 of 338 classified (46%)   ← [EXTERNAL_DATA_DEPENDENCY]
+· Swing MR — sector representation: 159 of 350 classified (45%)         ← [EXTERNAL_DATA_DEPENDENCY]
+```
+
+Note the intraday sector line is deliberately NOT tagged: at 6/6 classified its shortfall is
+sector *diversity*, which more breadth genuinely fixes. The distinction is computed, not asserted.
+
+### Coverage ratings, split (owner 2026-08-16, replacing one blended number)
+
+| Dimension | Rating | Direction |
+|---|---|---|
+| Daily/historical candle coverage | 8.5/10 | ↑ AUTO actively solving |
+| Recent intraday 5m coverage | 5.5/10 | ↑ AUTO actively solving |
+| Intraday classification (current ready set) | 10/10 (6/6) | — |
+| Swing classification coverage | 4.5/10 | **structurally blocked** |
+| Data architecture | 9.5/10 | mature |
+| Source-rights governance | 9.8/10 | mature |
