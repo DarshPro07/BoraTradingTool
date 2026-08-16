@@ -48,8 +48,28 @@ export interface StoredCoverage {
  * agent cannot apply — so uniqueness is enforced here by reading the existing timestamps first.
  * That is slower than `INSERT OR IGNORE` and correct without a schema change.
  */
-export function persistCandles(candles: readonly ImportedCandle[]): { inserted: number; skipped: number } {
-  if (candles.length === 0) return { inserted: 0, skipped: 0 };
+/**
+ * Could this bar have traded as described?
+ *
+ * A bar whose open or close sits outside its own high/low is not a price series with a small
+ * error in it — it is a quote for a trade that the bar itself says never happened, and a backtest
+ * will fill at that price without hesitating. 36 such bars were found in the production daily
+ * store (`HDFCBANK 2025-10-29` at `O=H=L=1007.85, C=998.15` among them).
+ *
+ * The accumulator carried a `high < low` check of its own, so the guard existed in one caller and
+ * not at the boundary every caller shares. It belongs here.
+ */
+function coherent(candle: ImportedCandle): boolean {
+  const { open, high, low, close } = candle;
+  if (![open, high, low, close].every((price) => Number.isFinite(price))) return false;
+  if (high < low) return false;
+  return open >= low && open <= high && close >= low && close <= high;
+}
+
+export function persistCandles(
+  candles: readonly ImportedCandle[],
+): { inserted: number; skipped: number; rejected: number } {
+  if (candles.length === 0) return { inserted: 0, skipped: 0, rejected: 0 };
   const db = getDb();
 
   // One read per (ticker, resolution) pair rather than per bar. A million-row import must not
@@ -73,7 +93,14 @@ export function persistCandles(candles: readonly ImportedCandle[]): { inserted: 
 
   const fresh: ImportedCandle[] = [];
   let skipped = 0;
+  let rejected = 0;
   for (const candle of candles) {
+    // Counted, never swallowed: one malformed row must not cost the rest of a batch its history,
+    // and a silently dropped bar is a gap nobody can later account for.
+    if (!coherent(candle)) {
+      rejected += 1;
+      continue;
+    }
     const key = `${candle.ticker}\u0000${candle.resolution}`;
     const held = pairs.get(key)!;
     if (held.has(candle.time)) {
@@ -93,7 +120,7 @@ export function persistCandles(candles: readonly ImportedCandle[]): { inserted: 
     if (batch.length > 0) db.insert(schema.priceCandles).values(batch).run();
   }
 
-  return { inserted: fresh.length, skipped };
+  return { inserted: fresh.length, skipped, rejected };
 }
 
 /** Bars held locally for one instrument, oldest first. */

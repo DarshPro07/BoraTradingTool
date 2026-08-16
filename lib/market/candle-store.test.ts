@@ -39,13 +39,13 @@ describe("persisting imported bars", () => {
     // `price_candles` has no unique constraint on (ticker, resolution, time) and adding one needs
     // a migration this agent cannot apply, so uniqueness is enforced in code. If that ever breaks,
     // a re-import silently doubles every bar and every backtest built on it is wrong.
-    expect(persistCandles([bar(0), bar(1)])).toEqual({ inserted: 2, skipped: 0 });
-    expect(persistCandles([bar(0), bar(1)])).toEqual({ inserted: 0, skipped: 2 });
+    expect(persistCandles([bar(0), bar(1)])).toEqual({ inserted: 2, skipped: 0, rejected: 0 });
+    expect(persistCandles([bar(0), bar(1)])).toEqual({ inserted: 0, skipped: 2, rejected: 0 });
     expect(loadStoredCandles("IN:XNSE:RELIANCE", "1")).toHaveLength(2);
   });
 
   it("drops a duplicate inside a single batch, not just against what is stored", () => {
-    expect(persistCandles([bar(0), bar(0)])).toEqual({ inserted: 1, skipped: 1 });
+    expect(persistCandles([bar(0), bar(0)])).toEqual({ inserted: 1, skipped: 1, rejected: 0 });
   });
 
   it("keeps resolutions separate", () => {
@@ -61,7 +61,7 @@ describe("persisting imported bars", () => {
   });
 
   it("accepts an empty import without touching the database", () => {
-    expect(persistCandles([])).toEqual({ inserted: 0, skipped: 0 });
+    expect(persistCandles([])).toEqual({ inserted: 0, skipped: 0, rejected: 0 });
   });
 });
 
@@ -112,5 +112,63 @@ describe("the declaration is recorded with the import", () => {
     recordDatasetImport({ ...DECLARATION, source: "kaggle:a/first" }, { inserted: 1, skipped: 0, rejected: 0, unfitForValidation: null });
     recordDatasetImport({ ...DECLARATION, source: "kaggle:b/second" }, { inserted: 1, skipped: 0, rejected: 0, unfitForValidation: null });
     expect(importedDatasets()[0]?.source).toBe("kaggle:b/second");
+  });
+});
+
+describe("refusing a bar that could not have traded", () => {
+  /**
+   * Found by a data-quality sweep, 2026-08-16: 36 daily bars in the production store hold an
+   * open or close OUTSIDE their own high/low, including `HDFCBANK 2025-10-29` at
+   * `O=H=L=1007.85, C=998.15`. A backtest filling at that close fills at a price the bar itself
+   * says never traded.
+   *
+   * `persistCandles` is the single funnel every write passes through — the intraday accumulator
+   * and the dataset importer both call it — and it deduplicated without ever checking that a bar
+   * was internally coherent. The accumulator has its own `high < low` guard, so the check existed
+   * in one caller and not at the boundary all callers share.
+   *
+   * Rejections are counted, not swallowed: a silently dropped bar is a gap nobody can account for.
+   */
+  const coherent = (over: Partial<ImportedCandle>): ImportedCandle => ({ ...bar(0), ...over });
+
+  it("stores a coherent bar", () => {
+    const result = persistCandles([coherent({ open: 100, high: 101, low: 99, close: 100.5 })]);
+    expect(result.inserted).toBe(1);
+    expect(result.rejected).toBe(0);
+  });
+
+  it("rejects a close outside the bar's own range — the HDFCBANK shape", () => {
+    const result = persistCandles([
+      coherent({ time: T0 + 60, open: 1007.85, high: 1007.85, low: 1007.85, close: 998.15 }),
+    ]);
+    expect(result.inserted).toBe(0);
+    expect(result.rejected).toBe(1);
+    expect(loadStoredCandles("IN:XNSE:RELIANCE", "1")).toHaveLength(0);
+  });
+
+  it("rejects an open outside the range, and high below low", () => {
+    const result = persistCandles([
+      coherent({ time: T0 + 120, open: 105, high: 101, low: 99, close: 100 }),
+      coherent({ time: T0 + 180, open: 100, high: 90, low: 99, close: 95 }),
+    ]);
+    expect(result.rejected).toBe(2);
+    expect(result.inserted).toBe(0);
+  });
+
+  it("rejects a non-finite price rather than storing NaN as history", () => {
+    const result = persistCandles([coherent({ time: T0 + 240, close: Number.NaN })]);
+    expect(result.rejected).toBe(1);
+  });
+
+  it("keeps the good bars in a batch that also carries a bad one", () => {
+    // One malformed row in an import must not cost the rest their history — the same lesson the
+    // portfolio engine learned from a single 19-bar listing.
+    const result = persistCandles([
+      coherent({ time: T0 + 300 }),
+      coherent({ time: T0 + 360, open: 100, high: 90, low: 99, close: 95 }),
+      coherent({ time: T0 + 420 }),
+    ]);
+    expect(result.inserted).toBe(2);
+    expect(result.rejected).toBe(1);
   });
 });
