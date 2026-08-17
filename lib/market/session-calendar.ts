@@ -25,9 +25,9 @@ export const SESSION_OPEN_SECONDS = 9 * 3600 + 15 * 60;
  * dropped real Muhurat trading; a second revision knew about weekends but nothing about holidays,
  * and could not see 6,435 daily bars sitting on four days the exchange was shut.
  */
-import { NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS } from "./nse-calendar-data";
+import { CALENDAR_DERIVED_THROUGH, EXCHANGE_DECLARED_DATES, NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS } from "./nse-calendar-data";
 
-export { NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS };
+export { CALENDAR_DERIVED_THROUGH, EXCHANGE_DECLARED_DATES, NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS };
 
 /** The IST calendar date of a unix timestamp, as `YYYY-MM-DD`. */
 export function istDate(unixSeconds: number): string {
@@ -63,6 +63,93 @@ export function isPlausibleSessionDate(isoDate: string): boolean {
 /** Whether a daily bar's timestamp lands on a day the exchange could have been open. */
 export function isPlausibleDailyBarTime(unixSeconds: number): boolean {
   return isPlausibleSessionDate(istDate(unixSeconds));
+}
+
+/**
+ * How well the calendar knows a given date.
+ *
+ * Ingestion fails open and research fails closed, and this type is what lets those two differ
+ * without either guessing. The race it prevents:
+ *
+ * ```
+ * a bar past the calendar's coverage is ingested   (correct — never halt ingestion)
+ *   -> research runs and consumes it               (WRONG — nothing has vouched for the date)
+ *   -> the calendar is synced later
+ *   -> the date turns out to be a holiday          (too late; a backtest already saw it)
+ * ```
+ *
+ * `SESSION_UNVERIFIED` is the state that closes it. The date is not known to be bad — it is not
+ * known to be anything, and research is exactly the consumer that must not accept that.
+ */
+export type SessionVerification = "SESSION_VERIFIED" | "SESSION_IMPOSSIBLE" | "SESSION_UNVERIFIED";
+
+/**
+ * Classify a date against the calendar.
+ *
+ * Distinguishes "the exchange was shut" from "the calendar cannot say", which
+ * `isPlausibleSessionDate` deliberately cannot: it returns one boolean because a write guard needs
+ * one answer, and it treats unknown as permitted.
+ */
+export function verifySessionDate(isoDate: string): SessionVerification {
+  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+  if (day === 0 || day === 6) {
+    return NSE_WEEKEND_SESSIONS.has(isoDate) ? "SESSION_VERIFIED" : "SESSION_IMPOSSIBLE";
+  }
+  if (NSE_TRADING_HOLIDAYS.has(isoDate)) return "SESSION_IMPOSSIBLE";
+  // A weekday inside the derived span that no reference instrument missed is a real session. Past
+  // that span the holiday list came only from the API's forward window, so a weekday that is not
+  // listed is unproven rather than confirmed.
+  return isoDate <= CALENDAR_DERIVED_THROUGH ? "SESSION_VERIFIED" : "SESSION_UNVERIFIED";
+}
+
+/** Research-grade admission: only dates the calendar positively vouches for. */
+export function isResearchEligibleSessionDate(isoDate: string): boolean {
+  return verifySessionDate(isoDate) === "SESSION_VERIFIED";
+}
+
+/**
+ * How a date's session status was established — never merged into the status itself.
+ *
+ * `EXCHANGE_DECLARED` is the exchange's own published calendar. `PRICE_CONSENSUS_DERIVED` is
+ * inferred from hundreds of instruments agreeing about which days they traded. That inference is
+ * strong — it did not move when its evidence base grew from 53 instruments to 358 — but it is an
+ * inference, and a 2004 date deduced from price observations must not claim the standing of a 2026
+ * date the exchange published. `SPECIAL_SESSION_CORROBORATED` sits between: a Muhurat or Budget
+ * session confirmed across independent instrument histories.
+ *
+ * This exists because of the naming rule, applied to this module's own output: a name must not
+ * imply a stronger guarantee than the evidence establishes, and "the NSE calendar" reads as
+ * authoritative when most of it is reconstructed.
+ */
+export type SessionAuthority =
+  | "EXCHANGE_DECLARED"
+  | "SPECIAL_SESSION_CORROBORATED"
+  | "PRICE_CONSENSUS_DERIVED";
+
+export function sessionAuthority(isoDate: string): SessionAuthority {
+  if (EXCHANGE_DECLARED_DATES.has(isoDate)) return "EXCHANGE_DECLARED";
+  if (NSE_WEEKEND_SESSIONS.has(isoDate)) return "SPECIAL_SESSION_CORROBORATED";
+  return "PRICE_CONSENSUS_DERIVED";
+}
+
+/**
+ * `count` consecutive real session dates starting at or after `startIso`.
+ *
+ * Walking the calendar rather than adding 86,400 seconds. That arithmetic is how synthetic series
+ * end up with Saturday and Sunday bars — a shape no exchange ever emitted, which then fails the
+ * session guard for reasons that have nothing to do with what the caller was testing.
+ */
+export function sessionDatesFrom(startIso: string, count: number): string[] {
+  const out: string[] = [];
+  const cursor = new Date(`${startIso}T00:00:00Z`);
+  // Bounded so a caller asking for more sessions than the calendar holds terminates with a short
+  // list rather than spinning.
+  for (let guard = 0; out.length < count && guard < count * 4 + 4_000; guard += 1) {
+    const iso = cursor.toISOString().slice(0, 10);
+    if (isPlausibleSessionDate(iso)) out.push(iso);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
 }
 
 export interface CalendarAudit {

@@ -388,5 +388,38 @@ export const NSE_WEEKEND_SESSIONS: ReadonlySet<string> = new Set([
   "2026-11-08",
 ]);
 
+/**
+ * Dates the EXCHANGE ITSELF declared, via the Upstox market-holidays API.
+ *
+ * Everything not listed here carries the weaker authority `PRICE_CONSENSUS_DERIVED`: inferred
+ * from hundreds of instruments agreeing, which is a good inference and still an inference. A 2004
+ * date deduced from price observations must not claim the same standing as a 2026 date the
+ * exchange published.
+ */
+export const EXCHANGE_DECLARED_DATES: ReadonlySet<string> = new Set([
+  "2026-01-15",
+  "2026-01-26",
+  "2026-02-01",
+  "2026-02-19",
+  "2026-03-03",
+  "2026-03-19",
+  "2026-03-26",
+  "2026-03-31",
+  "2026-04-01",
+  "2026-04-03",
+  "2026-04-14",
+  "2026-05-01",
+  "2026-05-28",
+  "2026-06-26",
+  "2026-08-26",
+  "2026-09-14",
+  "2026-10-02",
+  "2026-10-20",
+  "2026-11-08",
+  "2026-11-10",
+  "2026-11-24",
+  "2026-12-25",
+]);
+
 /** The calendar is derived from data up to here; past it, only the holidays API has spoken. */
 export const CALENDAR_DERIVED_THROUGH = "2026-08-14";

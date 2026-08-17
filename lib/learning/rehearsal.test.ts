@@ -51,6 +51,7 @@ function snap(data: Record<string, Candle[]>): SnapshotResult {
     priceBasis: "SPLIT_ADJUSTED",
     inferredActionsUsed: 0,
     outOfSessionWithheld: 0,
+    sessionUnverifiedWithheld: 0,
     actionsApplied: 0,
     actionsSkipped: 0,
     actionsAmbiguous: [],

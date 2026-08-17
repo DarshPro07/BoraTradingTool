@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sessionDatesFrom, sessionOpenEpoch } from "@/lib/market/session-calendar";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -20,14 +21,17 @@ import {
 useTemporaryDatabase();
 
 const RULE: HoldoutDecisionRule = { minNetProfitFactor: 1.1, minTrades: 30 };
-const OPEN_UTC = Date.UTC(2025, 0, 6, 3, 45, 0) / 1000;
+// Real NSE sessions — see lib/market/session-calendar.ts. A flat 86,400s stride creates
+// weekend bars that never reach research, which would break the seal arithmetic below.
+const SESSIONS = sessionDatesFrom("2021-01-04", 1200).map(sessionOpenEpoch);
+const OPEN_UTC = SESSIONS[0]!;
 
 function seedDaily(ticker: string, days = 400): void {
   const db = getDb();
   const rows = Array.from({ length: days }, (_, index) => ({
     ticker,
     resolution: "D",
-    time: OPEN_UTC + index * 86_400,
+    time: SESSIONS[index]!,
     open: 100,
     high: 102,
     low: 98,
@@ -71,7 +75,7 @@ describe("sealing a window", () => {
 
   it("refuses a window too thin to satisfy the pinned minimum-trades rule", async () => {
     seedDaily("IN:XNSE:THIN");
-    const last = OPEN_UTC + 399 * 86_400;
+    const last = SESSIONS[399]!;
     const thin = await createSeal({
       market: "NSE",
       resolution: "D",

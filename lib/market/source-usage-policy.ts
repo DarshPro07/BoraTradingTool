@@ -114,17 +114,28 @@ export const SOURCE_USAGE_POLICIES: Readonly<Partial<Record<DataProviderId, Sour
   },
   "upstox-v3": {
     sourceId: "upstox-v3",
-    // A broker API used with the owner's own credentials under its developer terms — the one
-    // structured source whose automation is unambiguously intended.
+    // SCOPED 2026-08-17. This entry describes the AUTHENTICATED developer-API context only, and
+    // that scope is the whole point of the correction that produced it.
+    //
+    // The V3 historical-candle endpoint answers a request carrying no token, and 420 instruments
+    // were backfilled through it before the ambiguity was noticed. But Upstox's own documentation
+    // is internally inconsistent: the canonical V3 endpoint page specifies
+    // `Authorization: Bearer {access_token}` while a separate official sample omits it. Technical
+    // availability was VERIFIED; usage rights for that unauthenticated mode were NOT.
+    //
+    // Rights do not follow from a server answering. An undocumented access mode must not silently
+    // inherit the permissions established for the documented one, so the no-token path is governed
+    // by UNAUTHENTICATED_ACCESS_BASIS below rather than by this record.
     automationStatus: "LICENSED",
     commercialUse: "LICENSE_REQUIRED",
     redistribution: "PROHIBITED",
-    sourceTermsUrl: "https://upstox.com/developer/api-documentation/",
+    sourceTermsUrl: "https://upstox.com/developer/api-documentation/v3/get-historical-candle-data/",
     termsVerifiedAt: "2026-08-16",
     allowedPurposes: ["DISPLAY", "RESEARCH", "BACKTEST", "VALIDATION", "LIVE_TRADING"],
     note:
-      "Authenticated developer API: automation is the intended use. The strongest candidate for " +
-      "validation-grade and eventual live data, pending the owner's credentials.",
+      "AUTHENTICATED_DEVELOPER_API_CONTEXT only. Automation is the intended use *with an OAuth " +
+      "access token*, which this deployment does not hold. Does not license the no-token path — " +
+      "see UNAUTHENTICATED_ACCESS_BASIS.",
   },
   "jugaad-data": {
     sourceId: "jugaad-data",
@@ -188,7 +199,15 @@ export type UsageVerdict = "PERMITTED" | "NOT_PERMITTED" | "UNKNOWN";
 export interface UsageDecision {
   verdict: UsageVerdict;
   /** Set when the verdict is not PERMITTED — a coded reason a caller can branch on. */
-  code: "SOURCE_USAGE_NOT_PERMITTED" | "SOURCE_TERMS_UNKNOWN" | "SOURCE_TERMS_STALE" | null;
+  code:
+    | "SOURCE_USAGE_NOT_PERMITTED"
+    | "SOURCE_TERMS_UNKNOWN"
+    | "SOURCE_TERMS_STALE"
+    // How the data was FETCHED, as distinct from what the source permits. See `accessBasisPermits`.
+    | "ACCESS_BASIS_UNCONFIRMED"
+    | "ACCESS_BASIS_RESEARCH_ONLY"
+    | "DOCUMENTED_ACCESS"
+    | null;
   reason: string;
 }
 
@@ -255,4 +274,81 @@ export function usagePermitted(
   }
 
   return { verdict: "PERMITTED", code: null, reason: `${sourceId} permits ${purpose}.` };
+}
+
+/**
+ * How data already in the store was actually obtained, when that differs from the documented mode.
+ *
+ * `SOURCE_USAGE_POLICIES` answers "what may this source be used for". It cannot answer "how was
+ * this particular data fetched", and on 2026-08-17 those two came apart: 420 NSE daily series were
+ * backfilled from Upstox V3 through an endpoint that answered without an access token, while the
+ * canonical documentation for that endpoint specifies `Authorization: Bearer {access_token}`.
+ *
+ * The honest classification separates four claims that a single "LICENSED" would have collapsed:
+ *
+ *   technical access        VERIFIED  — the endpoint served the data
+ *   documented availability VERIFIED  — daily candles from January 2000
+ *   documented auth model   AMBIGUOUS — canonical docs require Bearer; a sample omits it
+ *   usage-rights basis      UNKNOWN   — not established for the unauthenticated mode
+ *
+ * The data is kept: it is real market data and its integrity work stands. What it may *do* is
+ * restricted, because a permanent statistical trial or a validation verdict resting on data whose
+ * access basis is unconfirmed is exactly the kind of claim this system exists not to make.
+ */
+export type AccessBasis = "DOCUMENTED_AUTHENTICATED" | "UNDOCUMENTED_UNAUTHENTICATED";
+
+export interface AccessBasisRecord {
+  basis: AccessBasis;
+  usageRights: "CONFIRMED" | "UNKNOWN_PENDING_CONFIRMATION";
+  /** Research and backtesting may read it; validation and trials may not rest on it. */
+  validationEligible: boolean;
+  trialEligible: boolean;
+  observedAt: string;
+  note: string;
+}
+
+export const UNAUTHENTICATED_ACCESS_BASIS: Readonly<Partial<Record<DataProviderId, AccessBasisRecord>>> =
+  Object.freeze({
+    "upstox-v3": {
+      basis: "UNDOCUMENTED_UNAUTHENTICATED",
+      usageRights: "UNKNOWN_PENDING_CONFIRMATION",
+      validationEligible: false,
+      trialEligible: false,
+      observedAt: "2026-08-17",
+      note:
+        "420 NSE daily series fetched with no access token. Data integrity is verified and the " +
+        "series are kept; rights are not established for this access mode. Owner decision: pause " +
+        "further unauthenticated calls, resume through the same adapter once an OAuth app exists.",
+    },
+  });
+
+/**
+ * Whether data obtained under a non-standard access basis may back a given purpose.
+ *
+ * Deliberately narrower than `usagePermitted`: that asks what the SOURCE allows, this asks what
+ * THIS DATA earned. Both must pass. A source may be fully licensed while a particular fetch of it
+ * was not, and the weaker of the two is the one that governs.
+ */
+export function accessBasisPermits(sourceId: DataProviderId, purpose: DataPurpose): UsageDecision {
+  const record = UNAUTHENTICATED_ACCESS_BASIS[sourceId];
+  if (!record) return { verdict: "PERMITTED", code: "DOCUMENTED_ACCESS", reason: "Standard access basis." };
+
+  // RESEARCH and BACKTEST may read it — exploring an idea against real bars costs nothing
+  // irreversible. VALIDATION and LIVE_TRADING may not: those spend a permanent statistical trial
+  // or real money, and neither should rest on data whose access basis is unconfirmed.
+  const restricted: DataPurpose[] = record.validationEligible ? [] : ["VALIDATION", "LIVE_TRADING"];
+  if (restricted.includes(purpose)) {
+    return {
+      verdict: "NOT_PERMITTED",
+      code: "ACCESS_BASIS_UNCONFIRMED",
+      reason:
+        `${sourceId} data was obtained under ${record.basis} and its usage rights are ` +
+        `${record.usageRights}. ${purpose} may not rest on it. ${record.note}`,
+    };
+  }
+  return {
+    verdict: "PERMITTED",
+    code: "ACCESS_BASIS_RESEARCH_ONLY",
+    reason: `${sourceId} data is research-eligible only under ${record.basis}.`,
+  };
 }

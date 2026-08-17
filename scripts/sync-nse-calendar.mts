@@ -85,18 +85,24 @@ interface Holiday {
   closed_exchanges?: string[];
   open_exchanges?: { exchange: string }[];
 }
-let apiAdded: string[] = [];
+const apiAdded: string[] = [];
+const apiDeclared: string[] = [];
 try {
   const response = await fetch("https://api.upstox.com/v2/market/holidays", {
     headers: { Accept: "application/json", "User-Agent": "MarketPulse/1.0 (research)" },
   });
   const payload = (await response.json()) as { data?: Holiday[] };
   for (const entry of payload.data ?? []) {
-    if ((entry.closed_exchanges ?? []).includes("NSE") && !holidays.includes(entry.date)) {
-      holidays.push(entry.date);
-      apiAdded.push(entry.date);
+    if ((entry.closed_exchanges ?? []).includes("NSE")) {
+      // Declared by the exchange's own API, whatever the price data does or does not show.
+      apiDeclared.push(entry.date);
+      if (!holidays.includes(entry.date)) {
+        holidays.push(entry.date);
+        apiAdded.push(entry.date);
+      }
     }
     const special = (entry.open_exchanges ?? []).some((e) => e.exchange === "NSE");
+    if (special) apiDeclared.push(entry.date);
     if (special && isWeekend(entry.date) && !weekendSessions.includes(entry.date)) {
       weekendSessions.push(entry.date);
     }
@@ -108,6 +114,7 @@ try {
 }
 holidays.sort();
 weekendSessions.sort();
+apiDeclared.sort();
 
 const list = (dates: string[]) => dates.map((d) => `  "${d}",`).join("\n");
 fs.writeFileSync(
@@ -130,6 +137,18 @@ ${list(holidays)}
 /** Weekend days the NSE really did trade — Muhurat sessions and Union Budget Saturdays. */
 export const NSE_WEEKEND_SESSIONS: ReadonlySet<string> = new Set([
 ${list(weekendSessions)}
+]);
+
+/**
+ * Dates the EXCHANGE ITSELF declared, via the Upstox market-holidays API.
+ *
+ * Everything not listed here carries the weaker authority \`PRICE_CONSENSUS_DERIVED\`: inferred
+ * from hundreds of instruments agreeing, which is a good inference and still an inference. A 2004
+ * date deduced from price observations must not claim the same standing as a 2026 date the
+ * exchange published.
+ */
+export const EXCHANGE_DECLARED_DATES: ReadonlySet<string> = new Set([
+${list(apiDeclared)}
 ]);
 
 /** The calendar is derived from data up to here; past it, only the holidays API has spoken. */

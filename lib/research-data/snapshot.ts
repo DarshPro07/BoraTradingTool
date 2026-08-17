@@ -4,6 +4,7 @@ import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import { normalizeSeries, type PriceBasis } from "@/lib/market/price-basis";
 import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "@/lib/market/calendar";
+import { isResearchEligibleSessionDate, istDate } from "@/lib/market/session-calendar";
 import { actionsByInstrument } from "@/lib/market/corporate-actions";
 import { activeSealFor } from "./holdout-seal";
 import type { Candle } from "@/lib/providers/types";
@@ -90,6 +91,14 @@ export interface SnapshotResult {
    * ledger records them. They simply do not reach regular-session research. Counted, never silent.
    */
   outOfSessionWithheld: number;
+  /**
+   * Bars withheld because the session calendar could not vouch for their trading date.
+   *
+   * Distinct from `outOfSessionWithheld`, which is about the minute of day within a known session.
+   * This is about the DAY itself being unproven — the fail-open/fail-closed seam between ingestion
+   * and research (`lib/market/session-calendar.ts`).
+   */
+  sessionUnverifiedWithheld: number;
 }
 
 export interface SnapshotRefusal {
@@ -246,6 +255,7 @@ function buildSnapshot(
   const quarantined: SnapshotResult["quarantined"] = [];
   let inferredActionsUsed = 0;
   let outOfSessionWithheld = 0;
+  let sessionUnverifiedWithheld = 0;
 
   /**
    * The regular continuous session, for intraday resolutions only. Daily bars have no
@@ -269,6 +279,15 @@ function buildSnapshot(
   for (const instrumentId of instrumentIds) {
     const stored = loadStoredCandles(instrumentId, storeResolution)
       .filter((bar) => includeBar(bar.time))
+      .filter((bar) => {
+        // Ingestion fails open on dates the calendar cannot vouch for; research must not. A bar
+        // beyond the calendar's coverage is not known to be bad — it is not known to be anything,
+        // and admitting it lets a date later found to be a holiday enter a backtest first.
+        if (market === "US") return true;
+        if (isResearchEligibleSessionDate(istDate(bar.time))) return true;
+        sessionUnverifiedWithheld += 1;
+        return false;
+      })
       .filter((bar) => {
         if (!intradayStore) return true;
         // Same boundary the bar audit uses: `< open || >= close`. A bar stamped AT the close is
@@ -386,6 +405,7 @@ function buildSnapshot(
       priceBasis: basis,
       inferredActionsUsed,
       outOfSessionWithheld,
+      sessionUnverifiedWithheld,
       quarantined,
       actionsApplied,
       actionsSkipped,
@@ -428,6 +448,7 @@ function buildSnapshot(
     priceBasis: basis,
     inferredActionsUsed,
     outOfSessionWithheld,
+    sessionUnverifiedWithheld,
     quarantined,
     actionsApplied,
     actionsSkipped,

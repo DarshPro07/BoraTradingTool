@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { sessionDatesFrom, sessionOpenEpoch } from "@/lib/market/session-calendar";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -34,7 +35,13 @@ afterEach(() => {
   }
 });
 
-const OPEN = Date.UTC(2026, 0, 5, 10, 0, 0) / 1000;
+// Real NSE sessions inside VERIFIED calendar coverage. Two reasons: a flat 86,400s stride
+// manufactures weekend and holiday bars; future-dated bars are SESSION_UNVERIFIED, which research
+// withholds; and dates before 2024-01-01 predate every broker cost profile, so roundTripCost
+// correctly refuses and every trade loses its economics. The window has to satisfy all three.
+// research withholds by design — either way the failure has nothing to do with pair trading.
+const SESSIONS = sessionDatesFrom("2024-01-02", 1400).map((d) => sessionOpenEpoch(d) + 2700);
+const OPEN = SESSIONS[0]!;
 const LENGTH = 700;
 
 /** B is a Gaussian random walk; A = 2·B + mean-reverting AR(1) noise; C is an unrelated walk. */
@@ -59,7 +66,7 @@ function seedCointegratedMarket(): void {
       closes.map((close, index) => ({
         ticker,
         resolution: "D",
-        time: OPEN + index * 86_400,
+        time: SESSIONS[index]!,
         open: close,
         high: close + 0.5,
         low: close - 0.5,

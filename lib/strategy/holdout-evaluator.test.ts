@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sessionDatesFrom, sessionOpenEpoch } from "@/lib/market/session-calendar";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -18,7 +19,9 @@ import { currentStage } from "./promotion";
 useTemporaryDatabase();
 
 const RULE: HoldoutDecisionRule = { minNetProfitFactor: 1.1, minTrades: 30 };
-const OPEN_UTC = Date.UTC(2025, 0, 6, 3, 45, 0) / 1000;
+// Real NSE sessions — a flat 86,400s stride would seed weekend bars research withholds.
+const SESSIONS = sessionDatesFrom("2021-01-04", 1200).map(sessionOpenEpoch);
+const OPEN_UTC = SESSIONS[0]!;
 
 function seedDaily(ticker: string, days = 400): void {
   const db = getDb();
@@ -27,7 +30,7 @@ function seedDaily(ticker: string, days = 400): void {
       .values({
         ticker,
         resolution: "D",
-        time: OPEN_UTC + index * 86_400,
+        time: SESSIONS[index]!,
         open: 100,
         high: 103,
         low: 97,
