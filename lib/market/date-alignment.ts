@@ -21,6 +21,19 @@
  *
  * The reference factor must be built from series **known** to be aligned, or the test compares two
  * displacements and finds nothing.
+ *
+ * ## What this proves, and what it does not
+ *
+ * This is a **relative** alignment invariant, not an absolute timestamp authority. It establishes
+ * that no instrument is displaced with respect to the market consensus it is measured against. It
+ * cannot detect a displacement shared by the whole consensus — if an entire source generation were
+ * shifted together, every series would agree with every other and the test would report a clean
+ * universe.
+ *
+ * That residual risk is bounded elsewhere, not here: by the session calendar (a shift puts bars on
+ * impossible dates) and by cross-source comparison against an independently dated provider. Neither
+ * of those lives in this module, and a reader who takes "0 SUSPECTED" as proof of correct
+ * timestamps has read more than the number carries.
  */
 
 export interface AlignmentVerdict {

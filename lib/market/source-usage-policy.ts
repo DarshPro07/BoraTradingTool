@@ -297,12 +297,32 @@ export function usagePermitted(
  */
 export type AccessBasis = "DOCUMENTED_AUTHENTICATED" | "UNDOCUMENTED_UNAUTHENTICATED";
 
+/**
+ * What data under a non-standard access basis may be used for.
+ *
+ * Spelled out per stage rather than as a `researchEligible` boolean, because that boolean read as
+ * "the source granted research rights" — which is precisely the inference this record exists to
+ * block. `EXPLORATORY_ONLY_UNDER_UNKNOWN_ACCESS_BASIS` says the true thing: internal idea work is
+ * permitted, and nothing that produces evidence is.
+ */
+export type ResearchStanding =
+  | "FULL"
+  | "EXPLORATORY_ONLY_UNDER_UNKNOWN_ACCESS_BASIS";
+
 export interface AccessBasisRecord {
   basis: AccessBasis;
   usageRights: "CONFIRMED" | "UNKNOWN_PENDING_CONFIRMATION";
-  /** Research and backtesting may read it; validation and trials may not rest on it. */
+  researchStanding: ResearchStanding;
+  /**
+   * Every evidence-bearing stage, enumerated. A single "validationEligible" flag left holdout,
+   * forward and paper to be inferred, and an unenumerated stage defaults to permitted — the same
+   * shape of gap that let `evaluateTrialActivation` govern nothing.
+   */
   validationEligible: boolean;
   trialEligible: boolean;
+  holdoutEligible: boolean;
+  forwardEligible: boolean;
+  paperEligible: boolean;
   observedAt: string;
   note: string;
 }
@@ -312,13 +332,21 @@ export const UNAUTHENTICATED_ACCESS_BASIS: Readonly<Partial<Record<DataProviderI
     "upstox-v3": {
       basis: "UNDOCUMENTED_UNAUTHENTICATED",
       usageRights: "UNKNOWN_PENDING_CONFIRMATION",
+      researchStanding: "EXPLORATORY_ONLY_UNDER_UNKNOWN_ACCESS_BASIS",
       validationEligible: false,
       trialEligible: false,
+      holdoutEligible: false,
+      forwardEligible: false,
+      paperEligible: false,
       observedAt: "2026-08-17",
       note:
-        "420 NSE daily series fetched with no access token. Data integrity is verified and the " +
-        "series are kept; rights are not established for this access mode. Owner decision: pause " +
-        "further unauthenticated calls, resume through the same adapter once an OAuth app exists.",
+        "420 NSE daily series fetched with no access token. DATA QUALITY: usable — integrity was " +
+        "verified and the series are kept. ACCESS BASIS: unauthenticated and ambiguous (the " +
+        "canonical V3 endpoint page specifies `Authorization: Bearer`, an official sample omits " +
+        "it). This does NOT mean Upstox granted research rights; it means an endpoint responded, " +
+        "and those are different claims. Exploratory internal hypothesis work only — never " +
+        "validation, trial, holdout, forward or paper. Owner decision 2026-08-17: pause further " +
+        "unauthenticated calls, resume through the same adapter once an OAuth app exists.",
     },
   });
 
@@ -334,8 +362,9 @@ export function accessBasisPermits(sourceId: DataProviderId, purpose: DataPurpos
   if (!record) return { verdict: "PERMITTED", code: "DOCUMENTED_ACCESS", reason: "Standard access basis." };
 
   // RESEARCH and BACKTEST may read it — exploring an idea against real bars costs nothing
-  // irreversible. VALIDATION and LIVE_TRADING may not: those spend a permanent statistical trial
-  // or real money, and neither should rest on data whose access basis is unconfirmed.
+  // irreversible, and this is explicitly EXPLORATORY standing rather than a granted right.
+  // Everything that PRODUCES EVIDENCE is refused: those spend a permanent statistical trial, burn
+  // the sealed holdout, or commit money, and none may rest on an unconfirmed access basis.
   const restricted: DataPurpose[] = record.validationEligible ? [] : ["VALIDATION", "LIVE_TRADING"];
   if (restricted.includes(purpose)) {
     return {
