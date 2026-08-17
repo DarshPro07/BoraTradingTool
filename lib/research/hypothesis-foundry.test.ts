@@ -28,6 +28,7 @@ function hypothesis(over: Partial<EconomicHypothesis> = {}): EconomicHypothesis 
     falsificationCondition: "No positive gross spread across independent eras kills the idea.",
     evidenceBasis: "LITERATURE",
     sourceReferences: ["Indian momentum/liquidity evidence, 2023"],
+    priorDirection: "POSITIVE",
     conditioning: "top liquidity cohort by 20-day median traded value",
     direction: "CROSS_SECTIONAL_SPREAD",
     requiredData: ["daily_close", "daily_volume"],

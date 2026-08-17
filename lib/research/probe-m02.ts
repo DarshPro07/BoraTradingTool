@@ -184,6 +184,11 @@ export function runM02Probe(
     if (allDates[i]!.slice(0, 7) !== allDates[i + 1]!.slice(0, 7)) monthEnds.push(allDates[i]!);
   }
 
+  // Built ONCE, not per rebalance — rebuilding it inside the loop made the probe quadratic in bar
+  // count and dominated every run.
+  const byInstrument = new Map<string, Map<string, DailyBar>>();
+  for (const [id, bars] of universe) byInstrument.set(id, new Map(bars.map((b) => [b.date, b])));
+
   const rebalances: RebalanceOutcome[] = [];
   const seen = new Set<string>();
 
@@ -197,10 +202,10 @@ export function runM02Probe(
     const liquidityStart = at - contract.liquidityLookbackSessions;
 
     const candidates: { id: string; formation: number; liquidity: number; forward: number }[] = [];
-    for (const [id, bars] of universe) {
+    for (const id of universe.keys()) {
       if (!eligibleAt(id, date)) continue;
 
-      const byDate = new Map(bars.map((b) => [b.date, b]));
+      const byDate = byInstrument.get(id)!;
       const now = byDate.get(date);
       const past = byDate.get(allDates[formationStart]!);
       const exit = byDate.get(exitDate);

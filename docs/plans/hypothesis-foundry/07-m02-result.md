@@ -74,8 +74,14 @@ byte-identical), determinism, point-in-time listing eligibility, and refusal to 
 
 **What is NOT sound:** the universe. The deep cohort was selected on 2025-2026 traded value, so every
 name that delisted or fell out of liquidity before then is absent. For a momentum study run back to
-2008 that is survivorship bias in the universe itself, and it biases *toward* finding an effect —
-which makes a negative result more credible, not less, but would block promotion on its own.
+2008 that is survivorship bias in the universe itself.
+
+**Correction to a claim made in the original commit message.** That commit said the bias "biases
+toward finding an effect, which makes a negative result more credible, not less". That is wrong.
+Current-survivor and current-liquidity selection can distort a factor in **either** direction —
+excluding the names that collapsed removes both losers that would have widened a momentum spread and
+losers that would have narrowed it, and the net sign is not knowable without the missing names. The
+bias blocks promotion; it says nothing about which way the measured number is wrong.
 
 ## What this is not
 
@@ -94,6 +100,9 @@ proxy, on this cohort, over this period, does not reproduce it.
 M02 is rejected under the predeclared kill rule — gross ≤ 0, so no Sharpe was computed. The
 rejection and its reason are recorded against the hypothesis fingerprint so an economically
 equivalent idea returning under different wording collides with it.
+
+The verdict is deliberately narrow: **M02 is rejected for this exploratory NSE cohort, this rupee-
+liquidity proxy, and this 6m/1m contract.** It is not a finding about Indian momentum.
 
 **This does not clear M01.** 3-month formation is a different claim and the evidence for it was
 weaker to begin with; the honest expectation after this is lower, not unchanged.

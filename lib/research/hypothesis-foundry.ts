@@ -31,6 +31,18 @@
  * The Foundry may generate and kill freely at the first level. What it must never do is turn a
  * thousand speculative ideas into a thousand invisible backtests and register the best one — that
  * moves overfitting one level earlier and hides it.
+ *
+ * ## Mandatory control discipline (owner policy, 2026-08-17)
+ *
+ * > **No real-data probe result is trusted until the probe has both a known-positive synthetic
+ * > world it detects, and a genuine null world in which it does not hallucinate an effect.**
+ *
+ * This is not ceremony. Building M02 produced two fixture defects that each would have yielded a
+ * confident wrong conclusion: liquidity correlated with the engineered drift, so the positive
+ * control read ~0 bps and the probe looked blind; and the first null re-randomised drift on the
+ * holding period, so it showed +44 bps at t = 2.25 and would have licensed trusting a tool that
+ * manufactures effects. A probe that cannot find a planted effect reports "nothing here" in exactly
+ * the same words as a probe examining an empty market.
  */
 import { createHash } from "node:crypto";
 
@@ -83,6 +95,15 @@ export interface EconomicHypothesis {
 
   evidenceBasis: EvidenceBasis;
   sourceReferences: readonly string[];
+  /**
+   * The sign the mechanism predicts, BEFORE any measurement — and `UNKNOWN` when the literature
+   * genuinely disagrees.
+   *
+   * A hypothesis registered with a directional prior it does not have invites the sign to be chosen
+   * after the result, which is unfalsifiable. Where the evidence conflicts, the honest registration
+   * is a question, and the probe reports the spread signed exactly as written.
+   */
+  priorDirection: "POSITIVE" | "NEGATIVE" | "UNKNOWN";
   /** Instrument conditioning — the axis that distinguishes economically different variants. */
   conditioning: string;
   direction: "LONG_WINNERS" | "SHORT_WINNERS" | "LONG_LOSERS" | "CROSS_SECTIONAL_SPREAD";

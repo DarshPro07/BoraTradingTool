@@ -34,9 +34,15 @@ const INDIAN_MOMENTUM_LIQUIDITY =
   "intermediate/long-horizon momentum stronger and more persistent among liquid stocks, reversals " +
   "concentrated among illiquid ones.";
 
-const INDIAN_LOTTERY =
-  "Lottery factor and stock returns: Evidence from India (2024) — MAX carries predictive " +
-  "information distinct from skewness, tail risk and idiosyncratic volatility.";
+const INDIAN_LOTTERY_2024 =
+  "Lottery factor and stock returns: Evidence from India (2024), 2001-2021 — MAX carries " +
+  "predictive information distinct from skewness, tail risk and idiosyncratic volatility. Does " +
+  "NOT establish that the classic 'high MAX -> underperformance' sign holds in India.";
+
+const INDIAN_LOTTERY_2019 =
+  "Investing in lottery-like stocks in India (2019), ~2,949 firms/month 2003-2017 — finds the " +
+  "OPPOSITE of the classic US MAX anomaly: high-MAX stocks OUTPERFORMED low-MAX stocks, with no " +
+  "negative MAX/future-return relation. The direct contradiction is why X01 registers no prior sign.";
 
 const INDIAN_HIGHER_MOMENTS =
   "Higher moments anomaly: evidence from the Indian equity market — 3,085 stocks, 2000-2019, " +
@@ -92,6 +98,7 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "with HAC-corrected inference.",
     evidenceBasis: "LITERATURE",
     sourceReferences: [INDIAN_MOMENTUM_LIQUIDITY],
+    priorDirection: "POSITIVE",
     conditioning: "top liquidity cohort by 20-day median traded value",
     direction: "CROSS_SECTIONAL_SPREAD",
     requiredData: PRICE_VOLUME,
@@ -126,6 +133,7 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "justify a distinct hypothesis; or failure to survive cost at the decision unit under HAC.",
     evidenceBasis: "LITERATURE",
     sourceReferences: [INDIAN_MOMENTUM_LIQUIDITY],
+    priorDirection: "POSITIVE",
     conditioning: "top liquidity cohort by 20-day median traded value",
     direction: "CROSS_SECTIONAL_SPREAD",
     requiredData: PRICE_VOLUME,
@@ -133,38 +141,43 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
   {
     id: "X01",
     klass: "LOTTERY_MAX_EFFECT",
-    title: "Lottery demand: extreme prior-month maximum daily return predicts underperformance",
+    title: "MAX / lottery effect in NSE equities — direction registered as UNKNOWN",
     mechanism:
-      "Investors overpay for lottery-like upside. A stock that printed an attention-catching " +
-      "extreme positive day is bid above fundamental value by investors buying the possibility of " +
-      "repeating it, and subsequently underperforms as that premium decays.",
+      "Extreme positive daily returns attract attention and lottery-seeking demand. In the classic " +
+      "US account that demand overprices the stock and it subsequently underperforms. In India the " +
+      "evidence points BOTH WAYS, so the registered claim is that MAX carries cross-sectional " +
+      "information about next-month returns — NOT which sign that information has.",
     counterpartyOrConstraint:
-      "Retail investors with a preference for positively skewed payoffs, who are buying a small " +
-      "chance of a large gain rather than an expected return. The behaviour is a preference, not " +
-      "an error to be corrected by learning, so the flow recurs.",
+      "Investors with a preference for positively skewed payoffs, buying a small chance of a large " +
+      "gain rather than an expected return. If the Indian positive relation holds instead, the " +
+      "counterparty story must be different — compensation for tail risk rather than overpayment — " +
+      "and identifying which is the point of the test.",
     persistenceReason:
-      "Capturing it requires shorting exactly the names that are hardest and most expensive to " +
-      "short — high-attention, high-volatility, often small — and Indian short-selling is further " +
-      "constrained by securities-lending availability. The long-only half is a weaker claim.",
+      "Whichever sign holds, capturing it means trading exactly the high-attention, high-volatility " +
+      "names that are hardest and most expensive to arbitrage, and Indian short-selling is further " +
+      "constrained by securities-lending availability.",
     formationHorizon:
-      "One month. MAX is defined as the maximum daily return over the prior month, which is the " +
-      "window over which the attention effect is documented.",
+      "One trading month. MAX is defined as the maximum daily return over the prior month, which is " +
+      "the window over which the attention effect is documented in both literatures.",
     holdingHorizon:
-      "One month. The premium is documented to decay over weeks; holding longer measures something " +
-      "other than the lottery effect.",
+      "One month. Both the positive and negative accounts describe a next-month effect, so this " +
+      "horizon is common to the competing hypotheses and does not favour either.",
     expectedGrossEffectBps: 100,
     expectedAllInCostBps: DELIVERY_COST_BPS,
     capacityConstraint:
-      "Severely limited on the short side by Indian securities-lending availability; a long-only " +
-      "implementation avoiding high-MAX names has much larger capacity but a correspondingly " +
-      "smaller expected effect. Capacity must be assessed per side, not for the spread.",
+      "Depends on the sign. A short leg is severely limited by Indian securities-lending " +
+      "availability; a long leg in high-MAX names is limited instead by their volatility and " +
+      "spread. Capacity must be assessed per side, never for the spread as a whole.",
     falsificationCondition:
-      "High-MAX names do not underperform low-MAX names gross; or the effect is entirely explained " +
-      "by size or volatility exposure; or it exists only in names that cannot in fact be shorted.",
+      "The HIGH_MAX minus LOW_MAX spread, signed exactly as written, is indistinguishable from " +
+      "zero; or its sign is unstable across eras; or either leg's advantage over its own cohort " +
+      "vanishes, marking it as cohort exposure rather than MAX selection. The sign is NOT reversed " +
+      "after observing the result.",
     evidenceBasis: "LITERATURE",
-    sourceReferences: [INDIAN_LOTTERY],
+    sourceReferences: [INDIAN_LOTTERY_2024, INDIAN_LOTTERY_2019],
+    priorDirection: "UNKNOWN",
     conditioning: "prior-month maximum daily return, cross-sectional quintiles",
-    direction: "SHORT_WINNERS",
+    direction: "CROSS_SECTIONAL_SPREAD",
     requiredData: PRICE_VOLUME,
   },
   {
@@ -196,7 +209,8 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "No monotonic relation across skewness quintiles; or the effect vanishes once MAX is " +
       "controlled for, in which case S01 is X01 wearing a different statistic and must be dropped.",
     evidenceBasis: "LITERATURE",
-    sourceReferences: [INDIAN_HIGHER_MOMENTS, INDIAN_LOTTERY],
+    sourceReferences: [INDIAN_HIGHER_MOMENTS, INDIAN_LOTTERY_2024, INDIAN_LOTTERY_2019],
+    priorDirection: "UNKNOWN",
     conditioning: "rolling 12-month return skewness, cross-sectional quintiles",
     direction: "SHORT_WINNERS",
     requiredData: PRICE_VOLUME,
@@ -236,6 +250,7 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "the hurdle illiquid conditioning requires before the backtest can be believed.",
     evidenceBasis: "LITERATURE",
     sourceReferences: [INDIAN_MOMENTUM_LIQUIDITY],
+    priorDirection: "POSITIVE",
     conditioning: "bottom liquidity quintile by 20-day median traded value (illiquid)",
     direction: "LONG_LOSERS",
     requiredData: PRICE_VOLUME,
@@ -273,6 +288,7 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "mark it as a specification artifact rather than an effect.",
     evidenceBasis: "LITERATURE",
     sourceReferences: [INDIAN_IVOL],
+    priorDirection: "UNKNOWN",
     conditioning: "12-month idiosyncratic volatility vs market factor, cross-sectional quintiles",
     direction: "CROSS_SECTIONAL_SPREAD",
     requiredData: PRICE_VOLUME,
@@ -310,6 +326,7 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
       "already captures, in which case it adds no independent evidence and must be dropped.",
     evidenceBasis: "LITERATURE",
     sourceReferences: [INDIAN_RETURN_VOLUME],
+    priorDirection: "POSITIVE",
     conditioning: "abnormal 5-day volume vs 20-day baseline, high-turnover regime",
     direction: "LONG_WINNERS",
     requiredData: PRICE_VOLUME,
