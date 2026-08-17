@@ -45,6 +45,18 @@ Full write-ups in `docs/plans/rehearsal-funnel/` and `docs/plans/intraday-fetch-
   declared variant space. `fam_qc001_xsec_momentum` stays un-seeded IN DATA — it needs a
   universe-level ranking IR, and a test asserts no family can be silently forgotten.
 
+**RESEARCH IS NOW DATA-CONSTRAINED, NOT ENGINEERING-CONSTRAINED (2026-08-17):**
+Four of the five highest-conviction research lanes hold NO data — earnings/announcements,
+pledge/insider, bulk/block, index membership. Only liquidity-conditioned momentum is runnable on
+the current store. This is NOT one procurement decision: the ₹5L NSE EOD Corporate feed plausibly
+covers announcements + fundamentals + shareholding, but index constituents are a separate NSE
+Indices subscription and bulk/block a separate rights question; pledge/insider inclusion is
+unconfirmed. History depth (2.5 years, 0 instruments beyond 750 bars) caps credible momentum
+research at ~3-6 month formation with 1-3 month holds. And `fam_qc001_xsec_momentum` declares a
+5-10 day rebalance against literature supporting 1-6 MONTH persistence — a contract-level horizon
+mismatch, preserved as a finding and NOT changed. See
+`docs/plans/rehearsal-funnel/06-data-availability-and-horizon.md`.
+
 **STILL OPEN — OWNER DECISIONS:**
 1. **NSE-QC-001 declares five families; the engine can express ONE.** All five hold zero seeded
    specs, and the factory is a breeder (inherits a parent's family, refuses to invent one), so a
