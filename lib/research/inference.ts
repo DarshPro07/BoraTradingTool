@@ -13,9 +13,16 @@
  * correct what remains for serial dependence with a Newey-West HAC estimator.
  */
 
-/** Bartlett kernel lag, by the usual T^(1/3) rule. At least 1, so adjacent dependence is seen. */
+/**
+ * Bartlett kernel lag, by the usual T^(1/3) rule. At least 1, so adjacent dependence is always seen.
+ *
+ * The epsilon is not decoration. `Math.pow(216, 1/3)` evaluates to 5.999999999999999 and
+ * `Math.pow(1000, 1/3)` to 9.999999999999998, so a bare floor returns k-1 at every perfect cube.
+ * Statistically immaterial, but it makes the function discontinuous at exactly the values a reader
+ * would use to check it by hand.
+ */
 export function bartlettLag(n: number): number {
-  return Math.max(1, Math.floor(Math.pow(n, 1 / 3)));
+  return Math.max(1, Math.floor(Math.pow(n, 1 / 3) + 1e-9));
 }
 
 export interface HacResult {
@@ -69,12 +76,23 @@ export function hacMean(series: readonly number[]): HacResult {
 }
 
 /**
- * Stationary block bootstrap: P(mean > 0) without assuming normality.
+ * Stationary block bootstrap: the FRACTION of resampled means that are positive.
+ *
+ * **This is not a p-value, and must never be reported as one.** It is the mass of an *uncentered*
+ * bootstrap distribution falling on one side of zero — a descriptive statement about where the
+ * resampled means sit, not a test of H0: mean = 0. A proper bootstrap hypothesis test centres the
+ * resampling distribution under the null (or studentises it) and compares the observed statistic
+ * against that; this does neither.
+ *
+ * The distinction is not pedantic. X01 reported 97% here alongside a HAC 95% CI of [-11, +167] bps,
+ * and the two look contradictory only if the 97% is read as significance. Correctly read there is
+ * no conflict: HAC does not reject zero, and the bootstrap distribution happens to sit mostly above
+ * it. The name is what made the misreading available, so the name changed.
  *
  * Blocks rather than individual draws, so serial dependence survives resampling. Deterministic by
- * seed — a probability that changes between runs is not evidence.
+ * seed — a quantity that changes between runs is not evidence of anything.
  */
-export function blockBootstrapPositive(
+export function bootstrapSignProbability(
   series: readonly number[],
   { blockSize = 5, draws = 4_000, seed = 20260817 } = {},
 ): number {

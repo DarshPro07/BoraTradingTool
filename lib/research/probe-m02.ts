@@ -43,7 +43,7 @@
  * review, and it is a data problem no statistic in this module can repair.
  */
 import { createHash } from "node:crypto";
-import { blockBootstrapPositive, hacMean, profitFactor, type HacResult } from "./inference";
+import { bootstrapSignProbability, hacMean, profitFactor, type HacResult } from "./inference";
 
 export const M02_CONTRACT = Object.freeze({
   hypothesisId: "M02",
@@ -123,7 +123,7 @@ export interface LegStatistics {
   netMeanBps: number;
   profitFactorGross: number;
   hac: HacResult;
-  probabilityMeanPositive: number;
+  bootstrapSignProbability: number;
 }
 
 export interface M02Result {
@@ -147,7 +147,7 @@ function statistics(series: readonly number[], costBps: number): LegStatistics {
     netMeanBps: hac.mean * BPS - costBps,
     profitFactorGross: profitFactor(series),
     hac,
-    probabilityMeanPositive: blockBootstrapPositive(series),
+    bootstrapSignProbability: bootstrapSignProbability(series),
   };
 }
 

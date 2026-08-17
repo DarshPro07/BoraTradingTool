@@ -40,7 +40,7 @@
  * well as against each other, so a leg cannot pass as selection when it is beta.
  */
 import { createHash } from "node:crypto";
-import { blockBootstrapPositive, hacMean, profitFactor, type HacResult } from "./inference";
+import { bootstrapSignProbability, hacMean, profitFactor, type HacResult } from "./inference";
 
 export const X01_CONTRACT = Object.freeze({
   hypothesisId: "X01",
@@ -111,7 +111,7 @@ export interface X01Leg {
   netMeanBps: number;
   profitFactorGross: number;
   hac: HacResult;
-  probabilityMeanPositive: number;
+  bootstrapSignProbability: number;
 }
 
 export interface X01Result {
@@ -141,7 +141,7 @@ function leg(series: readonly number[], costBps: number): X01Leg {
     netMeanBps: hac.mean * BPS - costBps,
     profitFactorGross: profitFactor(series),
     hac,
-    probabilityMeanPositive: blockBootstrapPositive(series),
+    bootstrapSignProbability: bootstrapSignProbability(series),
   };
 }
 

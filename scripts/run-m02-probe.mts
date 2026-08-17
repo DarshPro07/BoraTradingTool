@@ -74,7 +74,7 @@ const show = (name: string, s: LegStatistics, costBps: number) => {
   console.log(`  gross profit factor      : ${s.profitFactorGross.toFixed(2)}`);
   console.log(`  HAC t (lag ${String(s.hac.lag).padStart(2)})           : ${s.hac.tStatistic.toFixed(2)}`);
   console.log(`  95% CI (bps)             : [${(s.hac.ci95[0] * 10_000).toFixed(0)}, ${(s.hac.ci95[1] * 10_000).toFixed(0)}]`);
-  console.log(`  P(mean > 0) bootstrap    : ${(s.probabilityMeanPositive * 100).toFixed(0)}%\n`);
+  console.log(`  bootstrap sign prob.*   : ${(s.bootstrapSignProbability * 100).toFixed(0)}%\n`);
 };
 
 console.log(`rebalances: ${result.rebalances.length}   instruments ever ranked: ${result.instrumentsSeen}\n`);
