@@ -43,7 +43,13 @@
  * review, and it is a data problem no statistic in this module can repair.
  */
 import { createHash } from "node:crypto";
-import { bootstrapSignProbability, hacMean, profitFactor, type HacResult } from "./inference";
+import {
+  runCrossSectionalProbe,
+  ERAS,
+  type DailyBar,
+  type ProbeSpec,
+  type StatisticSummary,
+} from "./cross-sectional-runner";
 
 export const M02_CONTRACT = Object.freeze({
   hypothesisId: "M02",
@@ -90,18 +96,13 @@ export const M02_CONTRACT_HASH = createHash("sha256")
   .digest("hex")
   .slice(0, 16);
 
-/** Eras chosen for independence, predeclared with the rest of the contract. */
-export const ERAS: readonly { name: string; from: string; to: string }[] = Object.freeze([
-  { name: "2000-2007", from: "2000-01-01", to: "2007-12-31" },
-  { name: "2008-2014", from: "2008-01-01", to: "2014-12-31" },
-  { name: "2015-2019", from: "2015-01-01", to: "2019-12-31" },
-  { name: "2020-2026", from: "2020-01-01", to: "2026-12-31" },
-]);
 
-export interface DailyBar {
-  date: string;
-  close: number;
-  volume: number;
+export type { DailyBar };
+export { ERAS };
+
+/** What M02 measures about each instrument, from the formation window only. */
+interface M02Features {
+  formationReturn: number;
 }
 
 export interface RebalanceOutcome {
@@ -109,22 +110,12 @@ export interface RebalanceOutcome {
   cohortSize: number;
   winners: number;
   losers: number;
-  /** The factor spread — a research diagnosis, not an implementable portfolio. */
   longShortGross: number;
-  /** The implementable leg for a deployment that does not short delivery equities. */
   longOnlyGross: number;
-  /** The equal-weight cohort return, so the long leg can be read against its own universe. */
   cohortGross: number;
 }
 
-export interface LegStatistics {
-  observations: number;
-  grossMeanBps: number;
-  netMeanBps: number;
-  profitFactorGross: number;
-  hac: HacResult;
-  bootstrapSignProbability: number;
-}
+export type LegStatistics = StatisticSummary;
 
 export interface M02Result {
   contractHash: string;
@@ -137,145 +128,74 @@ export interface M02Result {
   instrumentsSeen: number;
 }
 
-const BPS = 10_000;
-
-function statistics(series: readonly number[], costBps: number): LegStatistics {
-  const hac = hacMean(series);
-  return {
-    observations: series.length,
-    grossMeanBps: hac.mean * BPS,
-    netMeanBps: hac.mean * BPS - costBps,
-    profitFactorGross: profitFactor(series),
-    hac,
-    bootstrapSignProbability: bootstrapSignProbability(series),
-  };
-}
+const SPEC: ProbeSpec<M02Features> = {
+  contract: {
+    lookbackSessions: M02_CONTRACT.formationSessions + M02_CONTRACT.skipSessions,
+    holdingSessions: M02_CONTRACT.holdingSessions,
+    liquidityCohortPct: M02_CONTRACT.liquidityCohortPct,
+    liquidityLookbackSessions: M02_CONTRACT.liquidityLookbackSessions,
+    minCohortSize: M02_CONTRACT.minCohortSize,
+    costBpsPerLeg: M02_CONTRACT.costBpsPerLeg,
+  },
+  features({ back, at }) {
+    // The bar at EXACTLY this session, not the nearest available one — the contract declares a
+    // 126-session formation window and a nearer substitute would measure a shorter one.
+    const past = back(M02_CONTRACT.formationSessions + M02_CONTRACT.skipSessions);
+    if (!past || past.close <= 0) return null;
+    return { formationReturn: at.close / past.close - 1 };
+  },
+  partition(cohort) {
+    const ranked = [...cohort].sort((a, b) => b.features.formationReturn - a.features.formationReturn);
+    const legSize = Math.max(1, Math.floor(ranked.length * M02_CONTRACT.portfolioFraction));
+    return { winners: ranked.slice(0, legSize), losers: ranked.slice(-legSize) };
+  },
+  statistics({ winners, losers }, cohortReturn) {
+    return {
+      longShort: winners - losers,
+      longOnly: winners,
+      longVsCohort: winners - cohortReturn,
+    };
+  },
+  primaryStatistic: "longShort",
+  legsOf: (id) => (id === "longShort" ? 2 : 1),
+};
 
 /**
  * Run the probe over a date-keyed universe.
  *
- * `eligibleAt` answers point-in-time listing: an instrument not yet listed at a rebalance date must
- * not enter the universe at that date, or the probe ranks stocks on history they did not have.
+ * Mechanics live in `runCrossSectionalProbe`; what remains here is only what makes M02 M02.
  */
 export function runM02Probe(
   universe: ReadonlyMap<string, readonly DailyBar[]>,
   eligibleAt: (instrumentId: string, date: string) => boolean,
 ): M02Result {
-  const contract = M02_CONTRACT;
-
-  // One shared session axis, so a rebalance date means the same thing for every instrument.
-  const allDates = [...new Set([...universe.values()].flatMap((bars) => bars.map((b) => b.date)))].sort();
-  const indexOf = new Map(allDates.map((d, i) => [d, i]));
-  const barsByDate = new Map<string, Map<string, DailyBar>>();
-  for (const [id, bars] of universe) {
-    for (const bar of bars) {
-      let day = barsByDate.get(bar.date);
-      if (!day) {
-        day = new Map();
-        barsByDate.set(bar.date, day);
-      }
-      day.set(id, bar);
-    }
-  }
-
-  // Rebalance on the last session of each month.
-  const monthEnds: string[] = [];
-  for (let i = 0; i < allDates.length - 1; i += 1) {
-    if (allDates[i]!.slice(0, 7) !== allDates[i + 1]!.slice(0, 7)) monthEnds.push(allDates[i]!);
-  }
-
-  // Built ONCE, not per rebalance — rebuilding it inside the loop made the probe quadratic in bar
-  // count and dominated every run.
-  const byInstrument = new Map<string, Map<string, DailyBar>>();
-  for (const [id, bars] of universe) byInstrument.set(id, new Map(bars.map((b) => [b.date, b])));
-
-  const rebalances: RebalanceOutcome[] = [];
-  const seen = new Set<string>();
-
-  for (const date of monthEnds) {
-    const at = indexOf.get(date)!;
-    const formationStart = at - contract.formationSessions - contract.skipSessions;
-    const exitIndex = at + contract.holdingSessions;
-    if (formationStart < 0 || exitIndex >= allDates.length) continue;
-
-    const exitDate = allDates[exitIndex]!;
-    const liquidityStart = at - contract.liquidityLookbackSessions;
-
-    const candidates: { id: string; formation: number; liquidity: number; forward: number }[] = [];
-    for (const id of universe.keys()) {
-      if (!eligibleAt(id, date)) continue;
-
-      const byDate = byInstrument.get(id)!;
-      const now = byDate.get(date);
-      const past = byDate.get(allDates[formationStart]!);
-      const exit = byDate.get(exitDate);
-      if (!now || !past || !exit || past.close <= 0 || now.close <= 0) continue;
-
-      // Liquidity from the lookback window ONLY — never from the holding period.
-      const window: number[] = [];
-      for (let i = liquidityStart; i <= at; i += 1) {
-        const bar = byDate.get(allDates[i]!);
-        if (bar) window.push(bar.close * bar.volume);
-      }
-      if (window.length < contract.liquidityLookbackSessions / 2) continue;
-      window.sort((a, b) => a - b);
-
-      candidates.push({
-        id,
-        formation: now.close / past.close - 1,
-        liquidity: window[Math.floor(window.length / 2)]!,
-        forward: exit.close / now.close - 1,
-      });
-      seen.add(id);
-    }
-
-    // Predeclared liquidity conditioning, applied before ranking on momentum.
-    const cohortSize = Math.floor(candidates.length * contract.liquidityCohortPct);
-    if (cohortSize < contract.minCohortSize) continue;
-    const cohort = candidates.sort((a, b) => b.liquidity - a.liquidity).slice(0, cohortSize);
-
-    const ranked = [...cohort].sort((a, b) => b.formation - a.formation);
-    const legSize = Math.max(1, Math.floor(ranked.length * contract.portfolioFraction));
-    const winners = ranked.slice(0, legSize);
-    const losers = ranked.slice(-legSize);
-
-    const mean = (xs: { forward: number }[]) => xs.reduce((s, x) => s + x.forward, 0) / xs.length;
-    const winnerReturn = mean(winners);
-    const loserReturn = mean(losers);
-    const cohortReturn = mean(cohort);
-
-    rebalances.push({
-      date,
-      cohortSize: cohort.length,
-      winners: winners.length,
-      losers: losers.length,
-      longShortGross: winnerReturn - loserReturn,
-      longOnlyGross: winnerReturn,
-      cohortGross: cohortReturn,
-    });
-  }
-
-  const ls = rebalances.map((r) => r.longShortGross);
-  const lo = rebalances.map((r) => r.longOnlyGross);
-  const excess = rebalances.map((r) => r.longOnlyGross - r.cohortGross);
-
+  const run = runCrossSectionalProbe(universe, eligibleAt, SPEC);
+  const BPS = 10_000;
   return {
     contractHash: M02_CONTRACT_HASH,
-    rebalances,
-    // Long-short pays friction on both legs; the long-only leg pays it once.
-    longShort: statistics(ls, contract.costBpsPerLeg * 2),
-    longOnly: statistics(lo, contract.costBpsPerLeg),
-    longVsCohort: statistics(excess, contract.costBpsPerLeg),
+    rebalances: run.rebalances.map((r) => ({
+      date: r.date,
+      cohortSize: r.cohortSize,
+      winners: r.groupSizes.winners!,
+      losers: r.groupSizes.losers!,
+      longShortGross: r.statistics.longShort!,
+      longOnlyGross: r.statistics.longOnly!,
+      cohortGross: r.cohortReturn,
+    })),
+    longShort: run.summaries.longShort!,
+    longOnly: run.summaries.longOnly!,
+    longVsCohort: run.summaries.longVsCohort!,
     byEra: ERAS.map((era) => {
-      const inEra = rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
-      const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+      const inEra = run.rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
+      const avg = (pick: (x: (typeof inEra)[number]) => number) =>
+        inEra.length ? (inEra.reduce((s, x) => s + pick(x), 0) / inEra.length) * BPS : 0;
       return {
         era: era.name,
         rebalances: inEra.length,
-        longShortGrossBps: avg(inEra.map((r) => r.longShortGross)) * BPS,
-        longOnlyGrossBps: avg(inEra.map((r) => r.longOnlyGross)) * BPS,
+        longShortGrossBps: avg((r) => r.statistics.longShort!),
+        longOnlyGrossBps: avg((r) => r.statistics.longOnly!),
       };
     }),
-    instrumentsSeen: seen.size,
+    instrumentsSeen: run.instrumentsSeen,
   };
 }

@@ -383,9 +383,12 @@ export const H08_POST_HOC_LEAD: EconomicHypothesis = Object.freeze({
       "NOT convert a post-hoc observation into confirmatory evidence.",
   ],
   priorDirection: "POSITIVE",
+  // Immutable: how the idea arose. Never cleared, whatever a future test says.
   postHoc: true,
   derivedFromProbeId: "V01",
   parentObservationId: "V01:cell.negNormal",
+  // Mutable: what the evidence says. The only one of these a future result may move.
+  confirmationStatus: "UNCONFIRMED",
   conditioning: "bottom quintile 5-day return, below-median abnormal volume",
   direction: "LONG_LOSERS",
   requiredData: PRICE_VOLUME,

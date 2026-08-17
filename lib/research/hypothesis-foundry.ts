@@ -115,6 +115,15 @@ export interface EconomicHypothesis {
   postHoc?: boolean;
   derivedFromProbeId?: string;
   parentObservationId?: string;
+  /**
+   * Whether independent evidence has since been obtained — SEPARATE from `postHoc`, permanently.
+   *
+   * `postHoc` records HOW THE IDEA AROSE and can never change: an idea read off a dataset was
+   * discovered post hoc forever, however well it later tests. `confirmationStatus` records WHAT THE
+   * EVIDENCE SAYS, and is the only one a future result may move. Collapsing them would let a good
+   * result erase the provenance, and years later nobody could answer where the idea came from.
+   */
+  confirmationStatus?: "UNCONFIRMED" | "INDEPENDENTLY_CONFIRMED" | "INDEPENDENTLY_REJECTED";
   /** Instrument conditioning — the axis that distinguishes economically different variants. */
   conditioning: string;
   direction: "LONG_WINNERS" | "SHORT_WINNERS" | "LONG_LOSERS" | "CROSS_SECTIONAL_SPREAD";

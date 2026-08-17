@@ -64,6 +64,18 @@ console.log(
   Math.abs(g) < cost ? "  VERDICT: interaction cannot cover its own friction — reject."
   : !stable ? "  VERDICT: clears friction but the SIGN flips across eras — reject as unstable."
   : Math.abs(r.interaction.hac.tStatistic) < 2 ? "  VERDICT: clears friction and stable, but dependence-aware evidence is null — reject."
-  : `  VERDICT: survives — volume ${g > 0 ? "AMPLIFIES continuation" : "produces REVERSAL"}. Deeper robustness warranted.`,
+  : `  VERDICT: survives the kill check — volume ${g > 0 ? "AMPLIFIES continuation" : "produces REVERSAL"}.`,
 );
+if (Math.abs(g) >= cost && stable && Math.abs(r.interaction.hac.tStatistic) >= 2) {
+  console.log(
+    [
+      "",
+      "  SURVIVING THE KILL CHECK IS NOT PASSING. This measurement sits on DISCOVERY_DATA, the",
+      "  universe carries survivorship bias of unknown direction, and the contract has now been",
+      "  executed twice with a bug fix between runs by someone who had already seen the first",
+      "  result. A threshold crossing under those conditions is a LEAD, not a finding. It requires",
+      "  confirmation on data that took no part in producing it.",
+    ].join("\n"),
+  );
+}
 console.log(`\nNo threshold is moved after this. Promotion remains FORBIDDEN on every stage.`);

@@ -46,7 +46,13 @@
  * same rebalance date, and "the portfolio rose" can never count as evidence.
  */
 import { createHash } from "node:crypto";
-import { bootstrapSignProbability, hacMean, profitFactor, type HacResult } from "./inference";
+import {
+  runCrossSectionalProbe,
+  ERAS,
+  type DailyBar,
+  type ProbeSpec,
+  type StatisticSummary,
+} from "./cross-sectional-runner";
 
 export const V01_CONTRACT = Object.freeze({
   hypothesisId: "V01",
@@ -93,16 +99,18 @@ export const V01_CONTRACT_HASH = createHash("sha256")
   .digest("hex")
   .slice(0, 16);
 
-export interface DailyBar {
-  date: string;
-  close: number;
-  volume: number;
+export type { DailyBar };
+export { ERAS };
+
+/** What V01 measures: the recent move, and how unusual the volume behind it was. */
+interface V01Features {
+  priorReturn: number;
+  volumeRatio: number;
 }
 
 export interface V01Rebalance {
   date: string;
   cohortSize: number;
-  /** Each cell's forward return in EXCESS of the same cohort on the same date. */
   posHigh: number;
   posNormal: number;
   negHigh: number;
@@ -112,19 +120,11 @@ export interface V01Rebalance {
   interaction: number;
 }
 
-export interface V01Leg {
-  observations: number;
-  grossMeanBps: number;
-  netMeanBps: number;
-  profitFactorGross: number;
-  hac: HacResult;
-  bootstrapSignProbability: number;
-}
+export type V01Leg = StatisticSummary;
 
 export interface V01Result {
   contractHash: string;
   rebalances: V01Rebalance[];
-  /** The primary statistic: does volume change what follows an extreme move? */
   interaction: V01Leg;
   highVolumeSpread: V01Leg;
   normalVolumeSpread: V01Leg;
@@ -133,170 +133,116 @@ export interface V01Result {
   instrumentsSeen: number;
 }
 
-export const ERAS: readonly { name: string; from: string; to: string }[] = Object.freeze([
-  { name: "2000-2007", from: "2000-01-01", to: "2007-12-31" },
-  { name: "2008-2014", from: "2008-01-01", to: "2014-12-31" },
-  { name: "2015-2019", from: "2015-01-01", to: "2019-12-31" },
-  { name: "2020-2026", from: "2020-01-01", to: "2026-12-31" },
-]);
+const SPEC: ProbeSpec<V01Features> = {
+  contract: {
+    lookbackSessions: V01_CONTRACT.volumeBaselineSessions,
+    holdingSessions: V01_CONTRACT.holdingSessions,
+    liquidityCohortPct: V01_CONTRACT.liquidityCohortPct,
+    liquidityLookbackSessions: V01_CONTRACT.liquidityLookbackSessions,
+    minCohortSize: V01_CONTRACT.minCohortSize,
+    costBpsPerLeg: V01_CONTRACT.costBpsPerLeg,
+  },
+  features({ back, at }) {
+    const past = back(V01_CONTRACT.formationSessions);
+    if (!past || past.close <= 0) return null;
 
-const BPS = 10_000;
+    // Recent volume against this instrument's OWN baseline, both session-indexed.
+    let recentSum = 0;
+    let recentCount = 0;
+    const baseline: number[] = [];
+    for (let n = 0; n <= V01_CONTRACT.volumeBaselineSessions; n += 1) {
+      const bar = back(n);
+      if (!bar) continue;
+      baseline.push(bar.volume);
+      if (n < V01_CONTRACT.formationSessions) {
+        recentSum += bar.volume;
+        recentCount += 1;
+      }
+    }
+    if (recentCount === 0 || baseline.length < V01_CONTRACT.volumeBaselineSessions / 2) return null;
+    const baselineMean = baseline.reduce((a, b) => a + b, 0) / baseline.length;
+    if (baselineMean <= 0) return null;
 
-function leg(series: readonly number[], costBps: number): V01Leg {
-  const hac = hacMean(series);
-  return {
-    observations: series.length,
-    grossMeanBps: hac.mean * BPS,
-    netMeanBps: hac.mean * BPS - costBps,
-    profitFactorGross: profitFactor(series),
-    hac,
-    bootstrapSignProbability: bootstrapSignProbability(series),
-  };
-}
+    return {
+      priorReturn: at.close / past.close - 1,
+      volumeRatio: recentSum / recentCount / baselineMean,
+    };
+  },
+  partition(cohort) {
+    const byVolume = [...cohort].sort((a, b) => a.features.volumeRatio - b.features.volumeRatio);
+    const medianRatio = byVolume[Math.floor(byVolume.length / 2)]!.features.volumeRatio;
+
+    const byReturn = [...cohort].sort((a, b) => b.features.priorReturn - a.features.priorReturn);
+    const extremeSize = Math.max(1, Math.floor(byReturn.length * V01_CONTRACT.extremeFraction));
+    const positives = byReturn.slice(0, extremeSize);
+    const negatives = byReturn.slice(-extremeSize);
+    const high = (x: (typeof cohort)[number]) => x.features.volumeRatio >= medianRatio;
+
+    return {
+      posHigh: positives.filter(high),
+      posNormal: positives.filter((x) => !high(x)),
+      negHigh: negatives.filter(high),
+      negNormal: negatives.filter((x) => !high(x)),
+    };
+  },
+  statistics({ posHigh, posNormal, negHigh, negNormal }, cohortReturn) {
+    // Every cell in excess of the SAME cohort on the SAME date — the rule the runner enforces.
+    const ph = posHigh - cohortReturn;
+    const pn = posNormal - cohortReturn;
+    const nh = negHigh - cohortReturn;
+    const nn = negNormal - cohortReturn;
+    return {
+      posHigh: ph,
+      posNormal: pn,
+      negHigh: nh,
+      negNormal: nn,
+      highVolumeSpread: ph - nh,
+      normalVolumeSpread: pn - nn,
+      interaction: ph - nh - (pn - nn),
+    };
+  },
+  primaryStatistic: "interaction",
+  legsOf: (id) => (id.endsWith("Spread") || id === "interaction" ? 2 : 1),
+};
 
 export function runV01Probe(
   universe: ReadonlyMap<string, readonly DailyBar[]>,
   eligibleAt: (instrumentId: string, date: string) => boolean,
 ): V01Result {
-  const c = V01_CONTRACT;
-  const allDates = [...new Set([...universe.values()].flatMap((b) => b.map((x) => x.date)))].sort();
-  const indexOf = new Map(allDates.map((d, i) => [d, i]));
-
-  const monthEnds: string[] = [];
-  for (let i = 0; i < allDates.length - 1; i += 1) {
-    if (allDates[i]!.slice(0, 7) !== allDates[i + 1]!.slice(0, 7)) monthEnds.push(allDates[i]!);
-  }
-
-  const byInstrument = new Map<string, Map<string, DailyBar>>();
-  for (const [id, bars] of universe) byInstrument.set(id, new Map(bars.map((b) => [b.date, b])));
-
-  const rebalances: V01Rebalance[] = [];
-  const seen = new Set<string>();
-
-  for (const date of monthEnds) {
-    const at = indexOf.get(date)!;
-    const returnStart = at - c.formationSessions;
-    const baselineStart = at - c.volumeBaselineSessions;
-    const exitIndex = at + c.holdingSessions;
-    if (baselineStart < 0 || exitIndex >= allDates.length) continue;
-    const exitDate = allDates[exitIndex]!;
-
-    const candidates: {
-      id: string;
-      priorReturn: number;
-      volumeRatio: number;
-      liquidity: number;
-      forward: number;
-    }[] = [];
-
-    for (const id of universe.keys()) {
-      if (!eligibleAt(id, date)) continue;
-      const byDate = byInstrument.get(id)!;
-      const now = byDate.get(date);
-      const past = byDate.get(allDates[returnStart]!);
-      const exit = byDate.get(exitDate);
-      if (!now || !past || !exit || past.close <= 0 || now.close <= 0) continue;
-
-      // Recent volume against this instrument's OWN baseline — both read only up to `at`.
-      let recentSum = 0;
-      let recentCount = 0;
-      const baseline: number[] = [];
-      for (let i = baselineStart; i <= at; i += 1) {
-        const bar = byDate.get(allDates[i]!);
-        if (!bar) continue;
-        baseline.push(bar.volume);
-        if (i > returnStart) {
-          recentSum += bar.volume;
-          recentCount += 1;
-        }
-      }
-      if (recentCount === 0 || baseline.length < c.volumeBaselineSessions / 2) continue;
-      const baselineMean = baseline.reduce((a, b) => a + b, 0) / baseline.length;
-      if (baselineMean <= 0) continue;
-
-      const traded = baseline.map((v, i) => v * (byDate.get(allDates[baselineStart + i]!)?.close ?? 0));
-      traded.sort((a, b) => a - b);
-
-      candidates.push({
-        id,
-        priorReturn: now.close / past.close - 1,
-        volumeRatio: recentSum / recentCount / baselineMean,
-        liquidity: traded[Math.floor(traded.length / 2)]!,
-        forward: exit.close / now.close - 1,
-      });
-      seen.add(id);
-    }
-
-    const cohortSize = Math.floor(candidates.length * c.liquidityCohortPct);
-    if (cohortSize < c.minCohortSize) continue;
-    const cohort = candidates.sort((a, b) => b.liquidity - a.liquidity).slice(0, cohortSize);
-
-    // The benchmark: the same eligible cohort, same date, equal weight.
-    const cohortReturn = cohort.reduce((s, x) => s + x.forward, 0) / cohort.length;
-
-    const byVolume = [...cohort].sort((a, b) => a.volumeRatio - b.volumeRatio);
-    const medianRatio = byVolume[Math.floor(byVolume.length / 2)]!.volumeRatio;
-
-    const byReturn = [...cohort].sort((a, b) => b.priorReturn - a.priorReturn);
-    const extremeSize = Math.max(1, Math.floor(byReturn.length * c.extremeFraction));
-    const positives = byReturn.slice(0, extremeSize);
-    const negatives = byReturn.slice(-extremeSize);
-
-    const cell = (group: typeof cohort, high: boolean): number | null => {
-      const members = group.filter((x) => (high ? x.volumeRatio >= medianRatio : x.volumeRatio < medianRatio));
-      if (members.length === 0) return null;
-      return members.reduce((s, x) => s + x.forward, 0) / members.length - cohortReturn;
-    };
-
-    const posHigh = cell(positives, true);
-    const posNormal = cell(positives, false);
-    const negHigh = cell(negatives, true);
-    const negNormal = cell(negatives, false);
-    // A rebalance where any cell is empty cannot form the interaction, so it is skipped rather
-    // than filled with a zero that would read as "no effect".
-    if (posHigh === null || posNormal === null || negHigh === null || negNormal === null) continue;
-
-    const highVolumeSpread = posHigh - negHigh;
-    const normalVolumeSpread = posNormal - negNormal;
-
-    rebalances.push({
-      date,
-      cohortSize: cohort.length,
-      posHigh,
-      posNormal,
-      negHigh,
-      negNormal,
-      highVolumeSpread,
-      normalVolumeSpread,
-      interaction: highVolumeSpread - normalVolumeSpread,
-    });
-  }
-
-  const series = (pick: (r: V01Rebalance) => number) => rebalances.map(pick);
-  const twoLeg = c.costBpsPerLeg * 2;
-
+  const run = runCrossSectionalProbe(universe, eligibleAt, SPEC);
+  const BPS = 10_000;
   return {
     contractHash: V01_CONTRACT_HASH,
-    rebalances,
-    interaction: leg(series((r) => r.interaction), twoLeg),
-    highVolumeSpread: leg(series((r) => r.highVolumeSpread), twoLeg),
-    normalVolumeSpread: leg(series((r) => r.normalVolumeSpread), twoLeg),
+    rebalances: run.rebalances.map((r) => ({
+      date: r.date,
+      cohortSize: r.cohortSize,
+      posHigh: r.statistics.posHigh!,
+      posNormal: r.statistics.posNormal!,
+      negHigh: r.statistics.negHigh!,
+      negNormal: r.statistics.negNormal!,
+      highVolumeSpread: r.statistics.highVolumeSpread!,
+      normalVolumeSpread: r.statistics.normalVolumeSpread!,
+      interaction: r.statistics.interaction!,
+    })),
+    interaction: run.summaries.interaction!,
+    highVolumeSpread: run.summaries.highVolumeSpread!,
+    normalVolumeSpread: run.summaries.normalVolumeSpread!,
     cells: {
-      posHigh: leg(series((r) => r.posHigh), c.costBpsPerLeg),
-      posNormal: leg(series((r) => r.posNormal), c.costBpsPerLeg),
-      negHigh: leg(series((r) => r.negHigh), c.costBpsPerLeg),
-      negNormal: leg(series((r) => r.negNormal), c.costBpsPerLeg),
+      posHigh: run.summaries.posHigh!,
+      posNormal: run.summaries.posNormal!,
+      negHigh: run.summaries.negHigh!,
+      negNormal: run.summaries.negNormal!,
     },
     byEra: ERAS.map((era) => {
-      const inEra = rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
+      const inEra = run.rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
       return {
         era: era.name,
         rebalances: inEra.length,
         interactionBps: inEra.length
-          ? (inEra.reduce((s, r) => s + r.interaction, 0) / inEra.length) * BPS
+          ? (inEra.reduce((s, r) => s + r.statistics.interaction!, 0) / inEra.length) * BPS
           : 0,
       };
     }),
-    instrumentsSeen: seen.size,
+    instrumentsSeen: run.instrumentsSeen,
   };
 }

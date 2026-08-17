@@ -40,7 +40,13 @@
  * well as against each other, so a leg cannot pass as selection when it is beta.
  */
 import { createHash } from "node:crypto";
-import { bootstrapSignProbability, hacMean, profitFactor, type HacResult } from "./inference";
+import {
+  runCrossSectionalProbe,
+  ERAS,
+  type DailyBar,
+  type ProbeSpec,
+  type StatisticSummary,
+} from "./cross-sectional-runner";
 
 export const X01_CONTRACT = Object.freeze({
   hypothesisId: "X01",
@@ -89,10 +95,12 @@ export const X01_CONTRACT_HASH = createHash("sha256")
   .digest("hex")
   .slice(0, 16);
 
-export interface DailyBar {
-  date: string;
-  close: number;
-  volume: number;
+export type { DailyBar };
+export { ERAS };
+
+/** What X01 measures: the largest daily return inside the formation month. */
+interface X01Features {
+  max: number;
 }
 
 export interface X01Rebalance {
@@ -105,14 +113,7 @@ export interface X01Rebalance {
   cohortGross: number;
 }
 
-export interface X01Leg {
-  observations: number;
-  grossMeanBps: number;
-  netMeanBps: number;
-  profitFactorGross: number;
-  hac: HacResult;
-  bootstrapSignProbability: number;
-}
+export type X01Leg = StatisticSummary;
 
 export interface X01Result {
   contractHash: string;
@@ -124,125 +125,76 @@ export interface X01Result {
   instrumentsSeen: number;
 }
 
-export const ERAS: readonly { name: string; from: string; to: string }[] = Object.freeze([
-  { name: "2000-2007", from: "2000-01-01", to: "2007-12-31" },
-  { name: "2008-2014", from: "2008-01-01", to: "2014-12-31" },
-  { name: "2015-2019", from: "2015-01-01", to: "2019-12-31" },
-  { name: "2020-2026", from: "2020-01-01", to: "2026-12-31" },
-]);
-
-const BPS = 10_000;
-
-function leg(series: readonly number[], costBps: number): X01Leg {
-  const hac = hacMean(series);
-  return {
-    observations: series.length,
-    grossMeanBps: hac.mean * BPS,
-    netMeanBps: hac.mean * BPS - costBps,
-    profitFactorGross: profitFactor(series),
-    hac,
-    bootstrapSignProbability: bootstrapSignProbability(series),
-  };
-}
+const SPEC: ProbeSpec<X01Features> = {
+  contract: {
+    lookbackSessions: X01_CONTRACT.formationSessions,
+    holdingSessions: X01_CONTRACT.holdingSessions,
+    liquidityCohortPct: X01_CONTRACT.liquidityCohortPct,
+    liquidityLookbackSessions: X01_CONTRACT.liquidityLookbackSessions,
+    minCohortSize: X01_CONTRACT.minCohortSize,
+    costBpsPerLeg: X01_CONTRACT.costBpsPerLeg,
+  },
+  features({ back }) {
+    // Session-indexed, so MAX is taken over the declared month rather than over whatever traded.
+    let max = -Infinity;
+    let observed = 0;
+    // Inclusive of `formationSessions`: the original iterated sessions [at - 21 .. at] comparing
+    // each against its predecessor, which is 22 daily returns, not 21.
+    for (let n = 0; n <= X01_CONTRACT.formationSessions; n += 1) {
+      const bar = back(n);
+      const prev = back(n + 1);
+      if (!bar || !prev || prev.close <= 0) continue;
+      max = Math.max(max, bar.close / prev.close - 1);
+      observed += 1;
+    }
+    if (observed < X01_CONTRACT.formationSessions / 2 || !Number.isFinite(max)) return null;
+    return { max };
+  },
+  partition(cohort) {
+    const ranked = [...cohort].sort((a, b) => b.features.max - a.features.max);
+    const legSize = Math.max(1, Math.floor(ranked.length * X01_CONTRACT.portfolioFraction));
+    return { highMax: ranked.slice(0, legSize), lowMax: ranked.slice(-legSize) };
+  },
+  statistics({ highMax, lowMax }, cohortReturn) {
+    return {
+      spread: highMax - lowMax,
+      highVsCohort: highMax - cohortReturn,
+      lowVsCohort: lowMax - cohortReturn,
+    };
+  },
+  primaryStatistic: "spread",
+  legsOf: (id) => (id === "spread" ? 2 : 1),
+};
 
 export function runX01Probe(
   universe: ReadonlyMap<string, readonly DailyBar[]>,
   eligibleAt: (instrumentId: string, date: string) => boolean,
 ): X01Result {
-  const c = X01_CONTRACT;
-  const allDates = [...new Set([...universe.values()].flatMap((b) => b.map((x) => x.date)))].sort();
-  const indexOf = new Map(allDates.map((d, i) => [d, i]));
-
-  const monthEnds: string[] = [];
-  for (let i = 0; i < allDates.length - 1; i += 1) {
-    if (allDates[i]!.slice(0, 7) !== allDates[i + 1]!.slice(0, 7)) monthEnds.push(allDates[i]!);
-  }
-
-  // Built ONCE. Rebuilding this inside the rebalance loop made the probe quadratic in bar count —
-  // 122 seconds for one test file, and the same waste on every real run.
-  const byInstrument = new Map<string, Map<string, DailyBar>>();
-  for (const [id, bars] of universe) byInstrument.set(id, new Map(bars.map((b) => [b.date, b])));
-
-  const rebalances: X01Rebalance[] = [];
-  const seen = new Set<string>();
-
-  for (const date of monthEnds) {
-    const at = indexOf.get(date)!;
-    const formationStart = at - c.formationSessions;
-    const exitIndex = at + c.holdingSessions;
-    if (formationStart < 1 || exitIndex >= allDates.length) continue;
-    const exitDate = allDates[exitIndex]!;
-
-    const candidates: { id: string; max: number; liquidity: number; forward: number }[] = [];
-    for (const id of universe.keys()) {
-      if (!eligibleAt(id, date)) continue;
-      const byDate = byInstrument.get(id)!;
-      const now = byDate.get(date);
-      const exit = byDate.get(exitDate);
-      if (!now || !exit || now.close <= 0) continue;
-
-      // MAX and liquidity both read ONLY the formation window — never a bar at or after exit.
-      let max = -Infinity;
-      let observed = 0;
-      const traded: number[] = [];
-      for (let i = formationStart; i <= at; i += 1) {
-        const bar = byDate.get(allDates[i]!);
-        const prev = byDate.get(allDates[i - 1]!);
-        if (bar) traded.push(bar.close * bar.volume);
-        if (!bar || !prev || prev.close <= 0) continue;
-        max = Math.max(max, bar.close / prev.close - 1);
-        observed += 1;
-      }
-      if (observed < c.formationSessions / 2 || !Number.isFinite(max)) continue;
-      if (traded.length < c.liquidityLookbackSessions / 2) continue;
-      traded.sort((a, b) => a - b);
-
-      candidates.push({
-        id,
-        max,
-        liquidity: traded[Math.floor(traded.length / 2)]!,
-        forward: exit.close / now.close - 1,
-      });
-      seen.add(id);
-    }
-
-    const cohortSize = Math.floor(candidates.length * c.liquidityCohortPct);
-    if (cohortSize < c.minCohortSize) continue;
-    const cohort = candidates.sort((a, b) => b.liquidity - a.liquidity).slice(0, cohortSize);
-
-    const ranked = [...cohort].sort((a, b) => b.max - a.max);
-    const legSize = Math.max(1, Math.floor(ranked.length * c.portfolioFraction));
-    const mean = (xs: { forward: number }[]) => xs.reduce((s, x) => s + x.forward, 0) / xs.length;
-
-    const highMax = mean(ranked.slice(0, legSize));
-    const lowMax = mean(ranked.slice(-legSize));
-
-    rebalances.push({
-      date,
-      cohortSize: cohort.length,
-      spreadGross: highMax - lowMax,
-      highMaxGross: highMax,
-      lowMaxGross: lowMax,
-      cohortGross: mean(cohort),
-    });
-  }
-
+  const run = runCrossSectionalProbe(universe, eligibleAt, SPEC);
+  const BPS = 10_000;
   return {
     contractHash: X01_CONTRACT_HASH,
-    rebalances,
-    spread: leg(rebalances.map((r) => r.spreadGross), c.costBpsPerLeg * 2),
-    highVsCohort: leg(rebalances.map((r) => r.highMaxGross - r.cohortGross), c.costBpsPerLeg),
-    lowVsCohort: leg(rebalances.map((r) => r.lowMaxGross - r.cohortGross), c.costBpsPerLeg),
+    rebalances: run.rebalances.map((r) => ({
+      date: r.date,
+      cohortSize: r.cohortSize,
+      spreadGross: r.statistics.spread!,
+      highMaxGross: r.statistics.highVsCohort! + r.cohortReturn,
+      lowMaxGross: r.statistics.lowVsCohort! + r.cohortReturn,
+      cohortGross: r.cohortReturn,
+    })),
+    spread: run.summaries.spread!,
+    highVsCohort: run.summaries.highVsCohort!,
+    lowVsCohort: run.summaries.lowVsCohort!,
     byEra: ERAS.map((era) => {
-      const inEra = rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
+      const inEra = run.rebalances.filter((r) => r.date >= era.from && r.date <= era.to);
       return {
         era: era.name,
         rebalances: inEra.length,
         spreadGrossBps: inEra.length
-          ? (inEra.reduce((s, r) => s + r.spreadGross, 0) / inEra.length) * BPS
+          ? (inEra.reduce((s, r) => s + r.statistics.spread!, 0) / inEra.length) * BPS
           : 0,
       };
     }),
-    instrumentsSeen: seen.size,
+    instrumentsSeen: run.instrumentsSeen,
   };
 }
