@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { loadStoredCandles, persistCandles } from "@/lib/market/candle-store";
+import { auditAgainstCalendar } from "@/lib/market/session-calendar";
 
 /**
  * **What MarketPulse claims can never happen:** a daily bar is stored for a day the exchange was
@@ -100,8 +101,49 @@ describe("INVARIANT: the store holds no daily bar for a day the exchange was shu
     expect(sundays, "the fixture must actually contain the fault").toBeGreaterThan(20);
 
     const result = persistCandles(shifted);
-    expect(result.rejected).toBe(sundays);
-    expect(result.inserted).toBe(shifted.length - sundays);
+    // Asserted on the fault itself rather than on an exact reject count: the guard also refuses
+    // weekday trading holidays, so a bare arithmetic equality here would break every time the
+    // calendar was resynced — and would be testing the calendar, not the shift.
+    const stored = loadStoredCandles("IN:XNSE:SHIFTED", "D");
+    expect(stored.some((c) => new Date(c.time * 1000).getUTCDay() === 0)).toBe(false);
+    expect(result.rejected).toBeGreaterThanOrEqual(sundays);
+    expect(stored.length, "real weekday sessions must still survive").toBeGreaterThan(100);
+  });
+
+  it("refuses a bar for a day the exchange was shut", () => {
+    // The weekday rule alone could not see this. 2026-06-26 was Muharram, and 1,972 instruments
+    // held a daily bar for it; 2026-05-28 was Bakri Id with 1,966. Four such dates carried 6,435
+    // fabricated bars between them, each a quote for a session that never happened.
+    const result = persistCandles([
+      daily("IN:XNSE:INFY", "2026-06-26", 1500), // Muharram — NSE closed
+      daily("IN:XNSE:INFY", "2026-05-01", 1490), // Maharashtra Day — NSE closed
+      daily("IN:XNSE:INFY", "2026-06-25", 1480), // the real session before it
+    ]);
+
+    expect(result.inserted).toBe(1);
+    expect(result.rejected).toBe(2);
+    expect(loadStoredCandles("IN:XNSE:INFY", "D").map((c) => c.close)).toEqual([1480]);
+  });
+
+  it("audits what is already stored, which no write-time guard can reach", () => {
+    // The guard fails open on dates the calendar does not cover — deliberately, so a stale calendar
+    // never halts ingestion. `auditAgainstCalendar` is what makes that safe: it reads the store
+    // after the fact and names bars that should never have got in, including any written before
+    // the guard existed.
+    const clean = auditAgainstCalendar([
+      { date: "2026-06-25", instruments: 2099 },
+      { date: "2026-02-01", instruments: 60 }, // declared Budget Sunday — real
+    ]);
+    expect(clean.impossibleDates).toEqual([]);
+    expect(clean.barsAffected).toBe(0);
+
+    const dirty = auditAgainstCalendar([
+      { date: "2026-06-26", instruments: 1972 },
+      { date: "2026-05-28", instruments: 1966 },
+      { date: "2026-06-25", instruments: 2099 },
+    ]);
+    expect(dirty.impossibleDates.map((r) => r.date)).toEqual(["2026-05-28", "2026-06-26"]);
+    expect(dirty.barsAffected).toBe(3938);
   });
 
   it("does not apply the weekday rule to intraday resolutions", () => {

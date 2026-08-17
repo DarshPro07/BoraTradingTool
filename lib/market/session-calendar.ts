@@ -17,34 +17,17 @@ export const IST_OFFSET_SECONDS = 5 * 3600 + 30 * 60;
 export const SESSION_OPEN_SECONDS = 9 * 3600 + 15 * 60;
 
 /**
- * Weekend days the NSE really did trade.
+ * Weekend days the NSE really did trade, and weekdays it did not.
  *
- * A first version of this list held Saturdays only, on the reasoning that "Sunday never trades".
- * **That was wrong**, and the provider data corrected it: NSE holds Muhurat trading on Diwali
- * whichever day it falls, and 2019-10-27, 2023-11-12 and 2026-02-01 are all Sundays with real
- * sessions. Banning Sunday outright would have deleted genuine history to protect against a
- * different fault.
- *
- * These dates are **corroborated, not assumed**: each appears independently in RELIANCE, TCS and
- * HDFCBANK's histories. A further 21 weekend dates appear in RELIANCE alone, all 2016 or earlier;
- * single-instrument evidence is not enough to call a date an exchange-wide session, so they are
- * refused — and counted and reported, never silently dropped.
- *
- * Extend this list only with corroboration. Note what it deliberately does not do: it does not
- * encode the trading-holiday calendar, because a bar on Diwali is a data question this module has
- * no source for, whereas a bar on an ordinary Sunday is arithmetic.
+ * Both lists live in `nse-calendar-data.ts`, which is **generated** rather than hand-maintained —
+ * see `scripts/sync-nse-calendar.mts`. That distinction is the whole point. An earlier revision of
+ * this module carried a hand-written list and asserted "NSE has no Sunday session", which silently
+ * dropped real Muhurat trading; a second revision knew about weekends but nothing about holidays,
+ * and could not see 6,435 daily bars sitting on four days the exchange was shut.
  */
-export const DECLARED_WEEKEND_SESSIONS: readonly string[] = Object.freeze([
-  "2019-10-27", // Sun — Muhurat trading, Diwali
-  "2020-02-01", // Sat — Union Budget live session
-  "2020-11-14", // Sat — Muhurat trading, Diwali
-  "2023-11-12", // Sun — Muhurat trading, Diwali
-  "2024-01-20", // Sat — special live trading session
-  "2024-03-02", // Sat — special live trading session
-  "2024-05-18", // Sat — special live trading session
-  "2025-02-01", // Sat — Union Budget live session
-  "2026-02-01", // Sun — Union Budget live session
-]);
+import { NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS } from "./nse-calendar-data";
+
+export { NSE_TRADING_HOLIDAYS, NSE_WEEKEND_SESSIONS };
 
 /** The IST calendar date of a unix timestamp, as `YYYY-MM-DD`. */
 export function istDate(unixSeconds: number): string {
@@ -64,17 +47,48 @@ export function sessionOpenEpoch(isoDate: string): number {
 /**
  * Could the exchange have traded on this calendar day?
  *
- * Monday to Friday always; a weekend day only if it is a declared session. This catches the fault
- * it was written for — a series stamped one day early puts a bar on *every* weekend, and no such
- * run of dates can be declared — while leaving the exchange's genuine special sessions intact.
+ * A weekend day only if it is a declared session; a weekday unless it is a known trading holiday.
+ *
+ * **Fail-open on dates the calendar does not cover**, which is deliberate. A guard that refused
+ * every date past its own coverage would silently halt ingestion the first time the calendar went
+ * unsynced — turning a stale lookup table into data loss. This refuses only what is *known* to be
+ * impossible, and `auditAgainstCalendar` exists to catch what it therefore cannot.
  */
 export function isPlausibleSessionDate(isoDate: string): boolean {
   const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
-  if (day === 0 || day === 6) return DECLARED_WEEKEND_SESSIONS.includes(isoDate);
-  return true;
+  if (day === 0 || day === 6) return NSE_WEEKEND_SESSIONS.has(isoDate);
+  return !NSE_TRADING_HOLIDAYS.has(isoDate);
 }
 
 /** Whether a daily bar's timestamp lands on a day the exchange could have been open. */
 export function isPlausibleDailyBarTime(unixSeconds: number): boolean {
   return isPlausibleSessionDate(istDate(unixSeconds));
+}
+
+export interface CalendarAudit {
+  /** Dates carrying daily bars that the calendar says were not sessions. */
+  impossibleDates: { date: string; instruments: number }[];
+  barsAffected: number;
+}
+
+/**
+ * Which dates in a set of (date, instrumentCount) pairs the exchange was shut for.
+ *
+ * The counterpart to `isPlausibleSessionDate` failing open. The guard refuses only what it *knows*
+ * is impossible at write time; this reads what is already stored and reports what should never have
+ * got in — including bars written before the guard existed, which no write-time check can reach.
+ *
+ * Takes rows rather than querying, so it can be run against the live store, a snapshot, or a
+ * fixture without three code paths.
+ */
+export function auditAgainstCalendar(
+  rows: readonly { date: string; instruments: number }[],
+): CalendarAudit {
+  const impossibleDates = rows
+    .filter((row) => !isPlausibleSessionDate(row.date))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    impossibleDates,
+    barsAffected: impossibleDates.reduce((sum, row) => sum + row.instruments, 0),
+  };
 }

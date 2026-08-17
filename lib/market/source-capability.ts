@@ -108,11 +108,25 @@ export const SOURCE_CAPABILITIES: Readonly<Partial<Record<DataProviderId, Source
     realtime: true,
     claim: {
       sourceCitation:
-        "Upstox Historical Candle Data V3: minute candles from January 2022, intervals 1-300m " +
-        "(1-15m retrievable in one-month chunks); Intraday V3 is current-day only",
-      verifiedAt: "2026-08-16",
+        "Upstox Historical Candle Data V3: DAILY candles from January 2000 (measured 2026-08-17: " +
+        "RELIANCE 6,598 bars from 2000-01-03, paged in decade windows; >decade rejects UDAPI1148). " +
+        "Minute candles from January 2022, intervals 1-300m (1-15m in one-month chunks); " +
+        "Intraday V3 is current-day only",
+      verifiedAt: "2026-08-17",
     },
-    disabledReason: "no owner credentials configured — the capability exists, the access does not",
+    // Stated at the granularity the owner has to reason about, because the two surfaces differ and
+    // one flat "disabled" would be false in both directions.
+    //
+    //   DAILY HISTORICAL  in use. The documented V3 historical-candle endpoint answers an
+    //                     unauthenticated request; 60 instruments were backfilled through it.
+    //   EVERYTHING ELSE   unavailable. Intraday history, quotes, streaming and any order path need
+    //                     an OAuth app and access token, and no owner credential exists.
+    //
+    // Owner decision 2026-08-17: keep the integration and do not open an account under time
+    // pressure. Nothing is lost by leaving the authenticated surface dormant.
+    disabledReason:
+      "AUTH_REQUIRED for intraday, quotes and orders — no owner credentials configured. Daily " +
+      "historical reads need no token and are active; see lib/providers/upstox.ts",
   },
   "jugaad-data": {
     sourceId: "jugaad-data",
