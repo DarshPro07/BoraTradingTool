@@ -104,6 +104,17 @@ export interface EconomicHypothesis {
    * is a question, and the probe reports the spread signed exactly as written.
    */
   priorDirection: "POSITIVE" | "NEGATIVE" | "UNKNOWN";
+  /**
+   * Where the idea came from, when it came from an observation rather than from reasoning.
+   *
+   * `postHoc: true` is permanent and cannot be cleared by a later good result. A hypothesis read
+   * off a dataset can never claim to have been invented before that dataset was seen, and the
+   * genealogy is what stops H08 quietly presenting itself as an independent idea about liquidity
+   * once V01 has faded from memory.
+   */
+  postHoc?: boolean;
+  derivedFromProbeId?: string;
+  parentObservationId?: string;
   /** Instrument conditioning — the axis that distinguishes economically different variants. */
   conditioning: string;
   direction: "LONG_WINNERS" | "SHORT_WINNERS" | "LONG_LOSERS" | "CROSS_SECTIONAL_SPREAD";

@@ -332,3 +332,61 @@ export const INITIAL_HYPOTHESES: readonly EconomicHypothesis[] = Object.freeze([
     requiredData: PRICE_VOLUME,
   },
 ]);
+
+/**
+ * H08 — derived from V01's `negNormal` cell, and permanently stamped as such.
+ *
+ * This is NOT a Foundry idea that happened to be tested. It was read off a dataset: V01's
+ * pre-registered interaction missed at t = 1.74, and inspecting the four cells found a large
+ * negative move on NORMAL volume reversing at +96 bps, t = 3.01. Only afterwards did the mechanism
+ * below get written down.
+ *
+ * `postHoc: true` cannot be cleared by a later good result. The genealogy is what stops this
+ * presenting itself as an independent idea about liquidity provision once V01 has faded from
+ * memory, and it means H08 can never be confirmed on the data that produced it — only on evidence
+ * that did not participate in its discovery.
+ */
+export const H08_POST_HOC_LEAD: EconomicHypothesis = Object.freeze({
+  id: "H08",
+  klass: "RETURN_VOLUME_REGIME",
+  title: "Normal-volume negative shocks reverse; heavy-volume ones do not (POST HOC from V01)",
+  mechanism:
+    "A sharp fall on ordinary volume is price pressure rather than news — a seller demanding " +
+    "immediacy where little is offered — so the price returns once the pressure clears. The same " +
+    "fall on heavy volume is a broad repricing on information, and does not revert.",
+  counterpartyOrConstraint:
+    "The liquidity demander pays the reversal as the price of immediacy. Capturing it means " +
+    "providing that liquidity, with the inventory risk that implies, and being wrong precisely " +
+    "when the fall WAS information.",
+  persistenceReason:
+    "Distinguishing pressure from news in real time is exactly what is hard; volume is a noisy " +
+    "proxy for it, so the classification errors are concentrated in the cases that hurt most.",
+  formationHorizon:
+    "Five sessions, matching the shock window that produced the observation. Any other choice " +
+    "would be a second post-hoc decision layered on the first.",
+  holdingHorizon:
+    "One month, matching V01. Same reasoning — the horizon is inherited, not re-chosen.",
+  expectedGrossEffectBps: 96,
+  expectedAllInCostBps: DELIVERY_COST_BPS,
+  capacityConstraint:
+    "Unknown, and materially so: the mechanism selects names that just fell hard on ordinary " +
+    "volume, which is a state of reduced rather than elevated liquidity. Capacity must be measured " +
+    "on the holding period, not the signal day.",
+  falsificationCondition:
+    "The effect does not appear on data that took no part in its discovery. That is the ONLY " +
+    "acceptable test: the 358-instrument exploratory cohort has already been used to find it, and " +
+    "cannot also confirm it.",
+  evidenceBasis: "PRIOR_MARKETPULSE_RESULT",
+  sourceReferences: [
+    "V01 probe, 2026-08-17: cell negNormal +96.0 bps, HAC t = 3.01, CI [34, 158], n = 261. " +
+      "Holm-adjusted p = 0.034 across the 13-look family — which controls error rates and does " +
+      "NOT convert a post-hoc observation into confirmatory evidence.",
+  ],
+  priorDirection: "POSITIVE",
+  postHoc: true,
+  derivedFromProbeId: "V01",
+  parentObservationId: "V01:cell.negNormal",
+  conditioning: "bottom quintile 5-day return, below-median abnormal volume",
+  direction: "LONG_LOSERS",
+  requiredData: PRICE_VOLUME,
+});
