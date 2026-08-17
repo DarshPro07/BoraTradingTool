@@ -138,12 +138,17 @@ export const DATA_SOURCE_REGISTRY: Readonly<Record<DataProviderId, DataSourceEnt
     resolution: "REALTIME",
     coverageStart: null,
     coverageEnd: null,
-    provenance: "Upstox Market Data Feed V3 (WebSocket/Protobuf)",
+    provenance: "Upstox Market Data Feed V3 (WebSocket/Protobuf) and V3 historical-candle REST",
     officialStatus: "UNOFFICIAL",
     license: "Upstox developer terms",
     commercialUse: "RESEARCH_ONLY",
     redistribution: "PROHIBITED",
-    adjustmentPolicy: "RAW",
+    // Corrected 2026-08-17 from "RAW", which was wrong and would have licensed a double
+    // adjustment. Measured against the raw NSE bhavcopy across RELIANCE's 2024-10-28 1:1 bonus,
+    // Upstox's pre-bonus closes sit at exactly 2.0000x — it back-adjusts. That matters: a single
+    // full-history fetch therefore carries ONE basis by construction, which is the property the
+    // accumulated Yahoo series lacks (docs/plans/rehearsal-funnel/04-corporate-action-discontinuity.md).
+    adjustmentPolicy: "ADJUSTED",
     timezone: "Asia/Kolkata",
     sessionPolicy: "NSE_CALENDAR",
     corporateActionPolicy: "EXCHANGE_REPORTED",

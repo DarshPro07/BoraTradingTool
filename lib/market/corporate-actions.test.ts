@@ -330,11 +330,21 @@ describe("out-of-session bars must not reach regular-session research", () => {
     const { snapshotFromStore } = await import("@/lib/research-data/snapshot");
 
     const ticker = "IN:XNSE:DAILYONLY";
+    // Trading days, not calendar days: a flat 86,400s stride manufactures weekend bars, which the
+    // store refuses (`tests/invariants/session-calendar.invariant.test.ts`). The point of this test
+    // is the intraday session filter, so the fixture must not trip a different guard on the way in.
+    const { sessionOpenEpoch } = await import("./session-calendar");
+    const sessions: number[] = [];
+    for (const cursor = new Date("2023-11-15T00:00:00Z"); sessions.length < 40; ) {
+      const weekday = cursor.getUTCDay();
+      if (weekday !== 0 && weekday !== 6) sessions.push(sessionOpenEpoch(cursor.toISOString().slice(0, 10)));
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
     persistCandles(
-      Array.from({ length: 40 }, (_unused, i) => ({
+      sessions.map((time) => ({
         ticker,
         resolution: "D",
-        time: 1_700_000_000 + i * 86_400,
+        time,
         open: 100,
         high: 101,
         low: 99,

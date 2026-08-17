@@ -5,6 +5,7 @@ import { useTemporaryDatabase } from "@/lib/db/testing";
 import { subscribeAll, type MarketPulseEvent } from "@/lib/brain/event-bus";
 import { applyNseSecurityMasterSync } from "@/lib/market/security-master";
 import { persistCandles } from "@/lib/market/candle-store";
+import { sessionOpenEpoch } from "@/lib/market/session-calendar";
 import type { ImportedCandle } from "@/lib/market/dataset-import";
 import { enqueue, getJob, enqueueDependent } from "@/lib/research/queue";
 import { runWorker } from "@/lib/research/worker";
@@ -153,22 +154,33 @@ describe("runInstrumentResearch — handler logic (injected core)", () => {
   });
 });
 
-/** A deterministic daily series long enough to clear the bridge's 60-bar research floor. */
+/**
+ * A deterministic daily series long enough to clear the bridge's 60-bar research floor.
+ *
+ * Walks **trading days**, not calendar days. An earlier version advanced by a flat 86,400s and so
+ * produced Saturday and Sunday bars — a series no exchange ever emitted, and one the store now
+ * refuses outright (`tests/invariants/session-calendar.invariant.test.ts`).
+ */
 function seedDailyCandles(count = 70): void {
-  const base = Math.floor(Date.parse("2026-01-01T00:00:00Z") / 1000);
+  const cursor = new Date("2026-01-01T00:00:00Z");
   const candles: ImportedCandle[] = [];
-  for (let index = 0; index < count; index += 1) {
-    const price = 100 + Math.sin(index / 5) * 4 + index * 0.1;
-    candles.push({
-      ticker: INSTRUMENT,
-      resolution: "D",
-      time: base + index * 86_400,
-      open: price,
-      high: price + 1,
-      low: price - 1,
-      close: price + 0.3,
-      volume: 1_000_000,
-    });
+  for (let index = 0; index < count; ) {
+    const weekday = cursor.getUTCDay();
+    if (weekday !== 0 && weekday !== 6) {
+      const price = 100 + Math.sin(index / 5) * 4 + index * 0.1;
+      candles.push({
+        ticker: INSTRUMENT,
+        resolution: "D",
+        time: sessionOpenEpoch(cursor.toISOString().slice(0, 10)),
+        open: price,
+        high: price + 1,
+        low: price - 1,
+        close: price + 0.3,
+        volume: 1_000_000,
+      });
+      index += 1;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   persistCandles(candles);
 }

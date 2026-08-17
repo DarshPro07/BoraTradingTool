@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import type { DatasetDeclaration, ImportedCandle } from "./dataset-import";
+import { isPlausibleDailyBarTime } from "./session-calendar";
 
 /**
  * Local storage for imported historical bars.
@@ -66,6 +67,24 @@ function coherent(candle: ImportedCandle): boolean {
   return open >= low && open <= high && close >= low && close <= high;
 }
 
+/**
+ * Could the exchange have been open on the day this bar claims?
+ *
+ * Applied to daily bars only, where the timestamp *is* a claim about a calendar day. `RELIANCE`,
+ * `TCS` and `HDFCBANK` each held 122 Sunday-dated daily bars because their whole series was
+ * stamped one day early — a full day of lookahead against every other instrument in a
+ * cross-sectional join, and invisible to every check the system had: the bars were coherent, in
+ * range, and `out_of_session` only ever examined a bar's minute of day.
+ *
+ * The guard sits here rather than in the provider that revealed it, because every ingestion path —
+ * Yahoo, Upstox, the import scripts, the accumulator — funnels through `persistCandles`, and a fix
+ * in one caller leaves its siblings broken.
+ */
+function plausibleSession(candle: ImportedCandle): boolean {
+  if (candle.resolution !== "D") return true;
+  return isPlausibleDailyBarTime(candle.time);
+}
+
 export function persistCandles(
   candles: readonly ImportedCandle[],
 ): { inserted: number; skipped: number; rejected: number } {
@@ -97,7 +116,7 @@ export function persistCandles(
   for (const candle of candles) {
     // Counted, never swallowed: one malformed row must not cost the rest of a batch its history,
     // and a silently dropped bar is a gap nobody can later account for.
-    if (!coherent(candle)) {
+    if (!coherent(candle) || !plausibleSession(candle)) {
       rejected += 1;
       continue;
     }
