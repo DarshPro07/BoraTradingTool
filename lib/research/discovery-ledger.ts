@@ -31,6 +31,30 @@
  * *after* seeing this dataset, and reusing one historical realisation for both discovery and
  * inference contaminates the inference no matter what the arithmetic says afterwards. An adjusted
  * p-value is not a retroactive pre-registration machine.
+ *
+ * ## And these adjustments are NOT anytime-valid error control
+ *
+ * A correction worth stating plainly, because the numbers this module prints invite the stronger
+ * reading. Holm and BH are **offline** procedures: they assume a family fixed in advance. This
+ * family is not. Hypotheses arrive adaptively over time, and which one is tested next depends on
+ * what earlier looks showed — V01 was run because M02 and X01 had failed, and S01's MAX control
+ * existed because X01 came first.
+ *
+ * Recomputing offline Holm over an ever-growing, adaptively-chosen family therefore gives
+ * **retrospective search-burden context**, not formal sequential FWER control. Genuine anytime-valid
+ * guarantees need online procedures — alpha-spending and its relatives — which this module does not
+ * implement and does not need to, because the protection that matters here is structural rather
+ * than statistical:
+ *
+ * ```
+ * measured on DISCOVERY_DATA   -> cannot promote
+ * POST_HOC_DISCOVERY           -> cannot promote
+ * independent confirmation     -> required, on data that did not exist at discovery
+ * ```
+ *
+ * Those are hard gates and they do the real work. The Holm column is a reader aid: it says "given
+ * everything looked at, do not treat this as surprising", and it should never be quoted as though
+ * it bounded an error rate over this sequence of decisions.
  */
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";

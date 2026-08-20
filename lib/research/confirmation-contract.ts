@@ -214,3 +214,51 @@ export const PROBE_STATUS: Readonly<Record<string, { status: ProbeStatus; note: 
       note: "Spread 53.4 bps against 76 bps friction, t 1.65. Effect halves and loses significance once MAX-extreme names are removed.",
     },
   });
+
+/**
+ * Recording the future without pretending it validates anything yet.
+ *
+ * V01's confirmation needs market data that did not exist on 2026-08-17, and that clock only runs
+ * forward. So recording prospectively from today is worth doing — every day not recorded is
+ * confirmation data that cannot be bought back later.
+ *
+ * But a record made under an unconfirmed access basis is not evidence, and the two must not blur:
+ *
+ * ```
+ * PROSPECTIVE_SHADOW_RECORD   timestamped decisions, inputs available at decision time,
+ *                             no outcome attached yet.        canPromote = false, always.
+ *
+ * FORWARD_VALIDATION          the same decisions, later reconstructed against an AUTHORISED
+ *                             source, with outcomes.          the only one that can bear evidence.
+ * ```
+ *
+ * The chronology is what a shadow record preserves — that a decision was committed before its
+ * outcome existed. That property is real and valuable and survives the rights question. What it
+ * cannot do is confer validation rights the current access basis has not earned.
+ */
+export type ProspectiveRecordKind = "PROSPECTIVE_SHADOW_RECORD" | "FORWARD_VALIDATION";
+
+export interface ProspectiveRecord {
+  kind: ProspectiveRecordKind;
+  contractId: string;
+  contractHash: string;
+  /** When the decision was committed — before any outcome existed. */
+  decidedAt: string;
+  /** The state the contract read, as it stood at decision time. */
+  inputsAtDecisionTime: Readonly<Record<string, number | string>>;
+  /** Deliberately absent on a shadow record. A record with an outcome is a different object. */
+  outcome?: never;
+  sourceAccessBasis: "UNCONFIRMED" | "AUTHORISED";
+}
+
+/**
+ * A shadow record can never promote, and an authorised source is necessary but not sufficient.
+ *
+ * Necessary because evidence may not rest on an unconfirmed access basis; not sufficient because a
+ * shadow record still carries no outcome — reconstruction against the authorised source is what
+ * turns chronology into evidence.
+ */
+export function shadowRecordCanPromote(record: ProspectiveRecord): boolean {
+  if (record.kind === "PROSPECTIVE_SHADOW_RECORD") return false;
+  return record.sourceAccessBasis === "AUTHORISED";
+}

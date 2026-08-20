@@ -5,6 +5,7 @@ import {
   BURNED_FOR_DISCOVERY,
   V01_CONFIRM_001,
   V01_CONFIRM_001_HASH,
+  shadowRecordCanPromote,
 } from "./confirmation-contract";
 
 /**
@@ -108,5 +109,35 @@ describe("observations must postdate the freeze", () => {
       V01_CONFIRM_001.frozenAt,
     );
     expect(verdict.admitted).toBe(true);
+  });
+});
+
+describe("prospective recording is not forward validation", () => {
+  const shadow = {
+    kind: "PROSPECTIVE_SHADOW_RECORD",
+    contractId: V01_CONFIRM_001.id,
+    contractHash: V01_CONFIRM_001_HASH,
+    decidedAt: "2026-08-18",
+    inputsAtDecisionTime: { cohortSize: 60 },
+    sourceAccessBasis: "UNCONFIRMED",
+  } as const;
+
+  it("refuses a shadow record even once the source becomes authorised", () => {
+    // Chronology is what the shadow record preserves — a decision committed before its outcome
+    // existed. That is real and valuable, and it is not evidence.
+    expect(shadowRecordCanPromote(shadow)).toBe(false);
+    expect(shadowRecordCanPromote({ ...shadow, sourceAccessBasis: "AUTHORISED" })).toBe(false);
+  });
+
+  it("refuses forward validation on an unconfirmed access basis", () => {
+    expect(
+      shadowRecordCanPromote({ ...shadow, kind: "FORWARD_VALIDATION", sourceAccessBasis: "UNCONFIRMED" }),
+    ).toBe(false);
+  });
+
+  it("admits forward validation only when reconstructed against an authorised source", () => {
+    expect(
+      shadowRecordCanPromote({ ...shadow, kind: "FORWARD_VALIDATION", sourceAccessBasis: "AUTHORISED" }),
+    ).toBe(true);
   });
 });

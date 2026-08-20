@@ -79,9 +79,27 @@ S01.highVsCohort                   t  2.05   raw .0404   Holm .8880
 X01r.highVsCohort.corrected        t  1.99   raw .0466   Holm .9784
 ```
 
-Note what four more looks did: `negNormal` crossed from Holm .044 to **.0503** — the strongest thing
-this cycle produced no longer clears .05 once the full search is counted. Nothing about that
-statistic changed. The denominator did, and that is the ledger working exactly as intended.
+Note what four more looks did: `negNormal` moved from Holm .044 to **.0503**. Nothing about that
+statistic changed; the denominator did.
+
+**A correction to how I first put this.** I wrote that it "no longer clears .05", which reads as a
+formal error-control statement, and it is not one. Holm and BH are **offline** procedures assuming a
+family fixed in advance. This family was not: hypotheses arrived adaptively, and which one ran next
+depended on what earlier looks showed — V01 was run because M02 and X01 had failed. Recomputing
+offline Holm over a growing, adaptively-chosen family gives **retrospective search-burden context**,
+not sequential FWER control. Anytime-valid guarantees would need online procedures (alpha-spending
+and relatives), which are not built and are not what protects this system.
+
+What protects it is structural, and those are hard gates:
+
+```
+measured on DISCOVERY_DATA   -> cannot promote
+POST_HOC_DISCOVERY           -> cannot promote
+independent confirmation     -> required, on data that did not exist at discovery
+```
+
+The Holm column says "given everything looked at, do not treat this as surprising". It should never
+be quoted as though it bounded an error rate over this sequence of decisions.
 
 ## What the cycle actually established
 
@@ -108,6 +126,12 @@ cohort is burned for it permanently.
 Not more probes. The remaining questions are about data, not code:
 
 - **V01 confirmation** needs prospective data. The clock only runs forward, and nothing shortens it.
+  Recording from today is worth doing — but as a `PROSPECTIVE_SHADOW_RECORD`, never as
+  `FORWARD_VALIDATION`. A shadow record preserves the chronology, that a decision was committed
+  before its outcome existed, and that property is real and survives the rights question. It confers
+  no validation rights the current access basis has not earned: `shadowRecordCanPromote` returns
+  false for a shadow record **even once the source becomes authorised**, because reconstruction
+  against that source is what turns chronology into evidence.
 - **DC01** needs NIFTY futures with a roll calendar and India VIX. Contract frozen; no
   futures-roll architecture built against imaginary data.
 - **The event lane** needs a procurement decision that four rejected mechanisms do not by themselves
