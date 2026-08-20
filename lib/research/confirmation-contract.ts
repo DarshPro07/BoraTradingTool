@@ -213,6 +213,19 @@ export const PROBE_STATUS: Readonly<Record<string, { status: ProbeStatus; note: 
       status: "REJECTED",
       note: "Spread 53.4 bps against 76 bps friction, t 1.65. Effect halves and loses significance once MAX-extreme names are removed.",
     },
+    M01: {
+      status: "REJECTED",
+      note:
+        "Factor spread -71.9 bps, t -1.27. Same sign as M02 at a different declared horizon; the " +
+        "long leg adds -16.2 bps over its own cohort, so its absolute +87.5 bps is cohort exposure.",
+    },
+    DC01: {
+      status: "PARKED",
+      note:
+        "NSE day-character study. Refused by the plausibility gate as REQUIRED_DATA_UNAVAILABLE: no " +
+        "NIFTY futures, no India VIX, no roll calendar. Contract frozen; no architecture built " +
+        "against imaginary data. Admitted on economics alone once the data exists.",
+    },
   });
 
 /**
