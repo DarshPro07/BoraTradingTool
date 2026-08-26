@@ -44,6 +44,28 @@ export const VALIDATION_BARS_FLOOR = 340;
  */
 export const STALE_AFTER_SECONDS = 4 * 86_400;
 
+/**
+ * Is this instrument current, relative to the universe's newest bar?
+ *
+ * Exported and shared rather than inlined, because the planner and the INGESTION EXECUTOR each had
+ * their own idea of what "needs work" meant and the two silently disagreed. The planner learned to
+ * separate depth from freshness on 2026-08-17; `ingestInstrumentHistory` did not, and answered
+ * every refresh the planner queued with `ALREADY_READY` because the instrument had enough bars.
+ * Daily ingestion was dead for ten days and the job queue reported success throughout.
+ *
+ * One predicate, imported by both, so they cannot drift apart again.
+ *
+ * Measured against the universe's newest bar rather than the wall clock: that is self-calibrating
+ * across weekends, holidays and provider outages, none of which should make the whole universe
+ * look stale at once.
+ */
+export function isFreshAgainstUniverse(
+  lastDailyBar: number | null,
+  universeLastBar: number,
+): boolean {
+  return lastDailyBar !== null && universeLastBar - lastDailyBar <= STALE_AFTER_SECONDS;
+}
+
 export const INTRADAY_SESSIONS_FLOOR = 20;
 /**
  * A session counts as COMPLETE at this share of a full day's bars. Having 40 sessions is not the
@@ -276,8 +298,7 @@ export function universeCoverage(): UniverseCoverageReport {
     // Enough history is not the same as current history. An instrument can hold three years of
     // bars and still have stopped updating a week ago — which is exactly what RELIANCE, HDFCBANK
     // and TCS did while every other name stayed current.
-    const freshnessReady =
-      lastDailyBar !== null && universeLastBar - lastDailyBar <= STALE_AFTER_SECONDS;
+    const freshnessReady = isFreshAgainstUniverse(lastDailyBar, universeLastBar);
     let missingReason: MissingReason | null = null;
     if (!researchReady) {
       missingReason =

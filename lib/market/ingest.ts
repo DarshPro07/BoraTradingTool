@@ -1,4 +1,6 @@
+import { eq, sql } from "drizzle-orm";
 import { emit } from "@/lib/brain/event-bus";
+import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles, persistCandles, recordDatasetImport } from "@/lib/market/candle-store";
 import type { ImportedCandle } from "@/lib/market/dataset-import";
 import { resolveInstrument } from "@/lib/market/instruments";
@@ -7,6 +9,7 @@ import { getNormalizedCandles } from "@/lib/market/service";
 import { auditBars } from "@/lib/market/bar-audit";
 import { recordBarIngestion } from "@/lib/market/bar-ingestion-ledger";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
+import { isFreshAgainstUniverse } from "@/lib/market/universe-coverage";
 
 /**
  * In-product historical ingestion.
@@ -78,6 +81,36 @@ const UNFIT_FOR_VALIDATION =
   "absence of delisted names makes every result optimistic by an unknown amount. Usable for " +
   "exploring an idea, not for promoting one.";
 
+/** The instrument's newest daily bar, or null when it holds none. */
+function lastStoredBar(instrumentId: string): number | null {
+  try {
+    const bars = loadStoredCandles(instrumentId, "D");
+    return bars.length === 0 ? null : bars[bars.length - 1]!.time;
+  } catch {
+    // Unreadable is not "current". Returning null makes the caller refresh rather than assume.
+    return null;
+  }
+}
+
+/**
+ * The newest daily bar anywhere in the store — the universe's own clock.
+ *
+ * Deliberately not `Date.now()`: a wall-clock comparison would call the entire universe stale on
+ * any weekend, holiday or provider outage, which is a different condition with a different remedy.
+ */
+function universeNewestBar(): number {
+  try {
+    const row = getDb()
+      .select({ newest: sql<number>`max(time)` })
+      .from(schema.priceCandles)
+      .where(eq(schema.priceCandles.resolution, "D"))
+      .get();
+    return Number(row?.newest ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
 function countStored(instrumentId: string): number {
   try {
     return loadStoredCandles(instrumentId, "D").length;
@@ -146,13 +179,20 @@ export async function ingestInstrumentHistory(rawInstrumentId: string): Promise<
   }
 
   const storedBefore = countStored(instrument.id);
-  if (storedBefore >= MIN_BARS_FOR_RESEARCH) {
+  // Enough history is not the same as current history, and conflating them is what killed daily
+  // ingestion for ten days: the planner queued 3,324 instruments as "deep but stale — refresh, not
+  // backfill" and every one was answered here with ALREADY_READY because it had enough bars.
+  //
+  // `isFreshAgainstUniverse` is the SAME predicate the planner uses, imported rather than restated,
+  // so the two layers cannot form different ideas of what the work is.
+  const fresh = isFreshAgainstUniverse(lastStoredBar(instrument.id), universeNewestBar());
+  if (storedBefore >= MIN_BARS_FOR_RESEARCH && fresh) {
     return {
       ok: true,
       code: "ALREADY_READY",
       message:
-        `The canonical store already holds ${storedBefore} daily bars for ${instrument.id}; ` +
-        `${MIN_BARS_FOR_RESEARCH} are required. Nothing to ingest.`,
+        `The canonical store already holds ${storedBefore} daily bars for ${instrument.id} and the ` +
+        `newest is current with the universe; ${MIN_BARS_FOR_RESEARCH} are required. Nothing to ingest.`,
       instrumentId: instrument.id,
       ...empty,
       storedBefore,
