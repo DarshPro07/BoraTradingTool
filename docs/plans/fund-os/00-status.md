@@ -23,9 +23,29 @@ PRD: `02-product.md`. It builds on `docs/plans/autonomous-fund/`, where the pape
 - **Mem0 builds its store on first use**, so the MCP handshake answers in under 3 s; the model load had been timing clients out.
 - **First unattended run:** research-papers on free OpenCode, 21:56, SUCCEEDED; 3 new arXiv papers are in `knowledge_sources`.
 
+## Audit, 2026-09-19 23:xx (owner-requested, low-token)
+
+- **Code and security review** (one Sonnet verifier; 8 tool calls) of the agents, intraday, crypto
+  and mem0 code, plus the automated security hook. All fixed in `5cd7007` and `fb75bb5`:
+  - Antigravity no longer auto-approves;
+  - Claude tools are scoped per job (`tools:` frontmatter), with no marketpulse wildcard;
+  - intraday carries are sold first and P&L is booked per round trip;
+  - quota detection needs specific phrases.
+- **Residual:** memory poisoning through the tools a job legitimately holds.
+- **Also fixed tonight:** `yahoo.ts` now throws on an unknown resolution (`ed604c7`). "5m" had
+  silently returned daily bars.
+- **Browser sweep** (one Playwright script over 19 screens):
+  - 12 load cleanly, with no crashes or console errors: fund, paper, command, strategies, learning,
+    research, portfolio, trades, edge-factory, experiments, library, scanner.
+  - 7 timed out on first load (brain, jobs, data-quality, memory, audit, dashboard, analyst).
+    Re-timed once compiled: /audit 4.2 s, /jobs 0.5 s. That is first-compile slowness under
+    memory pressure (0.8-1.6 GB free).
+  - **Known gap:** /data-quality takes 74 s. It is not `universeCoverage` (timed at 8.3 s); the
+    cause is elsewhere on that page and predates tonight.
+
 ## Next action
 
-Owner-requested end-to-end audit (Playwright, low token). Then S5 (lab pipeline) and S6 (watchdog).
+S5 (lab pipeline: hypothesis spec to counted backtest to DB-registered paper mandate). S6 (deterministic watchdog). Profile /data-quality. Owner: log in to `agy` once.
 
 ## Known gaps
 
