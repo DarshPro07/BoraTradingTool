@@ -780,6 +780,15 @@ async function runCycleBody(
     impair(`Fund pass failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`);
   }
 
+  // Watchdog: is every autonomous layer actually running? Read-only; failures are reported every
+  // cycle so a dead layer cannot hide behind a green badge.
+  try {
+    const { fundOsHealth } = await import("@/lib/fund/health");
+    for (const check of fundOsHealth()) if (!check.ok) skipped.push(`Health ${check.name}: ${check.detail}`);
+  } catch (caught) {
+    impair(`Watchdog failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`);
+  }
+
   // Turn hypotheses into testable strategies — the last break in the research chain.
   //
   // Placed after the worker so a hypothesis formed from a source ingested this pass is considered

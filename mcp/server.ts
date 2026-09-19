@@ -11,6 +11,7 @@ import { buildEvidencePackage } from "@/lib/ai/evidence";
 import { persistEvidencePackage } from "@/lib/ai/evidence-store";
 import { getPaperPortfolio } from "@/lib/paper/service";
 import { fundReport } from "@/lib/fund/report";
+import { fundOsHealth } from "@/lib/fund/health";
 import { getPaperRiskSummary } from "@/lib/paper/risk";
 import { fetchQuantResource } from "@/lib/quantcore/client";
 import { QUANT_RESOURCES } from "@/lib/quantcore/contract";
@@ -181,6 +182,7 @@ export function createMarketPulseMcpServer(): McpServer {
     },
     async ({ recent }) =>
       result({
+        health: fundOsHealth(),
         mandates: fundReport().map((r) => ({
           id: r.contract.id,
           title: r.contract.title,

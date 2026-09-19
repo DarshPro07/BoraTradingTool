@@ -12,7 +12,7 @@ PRD: `02-product.md`. It builds on `docs/plans/autonomous-fund/`, where the pape
 | S3 | L3 | Intraday IN1: opening-range breakout, long only (Zarattini, Barbon & Aziz 2023) on RELIANCE, HDFCBANK and ICICIBANK. First 5-min candle up means buy; stop at its low; no entry after 10:30; flat by 15:05. 0.5% of book at risk per trade, inside the engine cap. Kill: 5% drawdown stops new entries. Append-only `intraday_*` ledger; on `/fund` and the MCP fund report with gates (benefit: positive net return, benchmark cash). Windows task **MarketPulse Intraday** runs every minute, weekdays 09:14-15:39. Setup, audited: watchlist +3 names; daily paper order cap 5 to 12 | done; first live minute Mon 2026-09-21 09:14 |
 | S4 | L1 | Research job: new q-fin papers (arXiv API) and news, recorded through MCP; dedupe against `knowledge_sources` | todo |
 | S5 | L2 | Strategy lab job: hypotheses to specs to counted backtests to proposed mandates; a DB-backed mandate registry, still frozen and hashed | todo |
-| S6 | L4 | Daily review job and watchdog: lessons, anomalies, decay; code changes only as proposals | todo |
+| S6 | L4 | Watchdog `lib/fund/health.ts`, read-only, run every cycle, on `/fund` and in the MCP fund report. It checks, from each layer's own ledger: the cycle completed within 45 min; an agent success within 6h (with memory deferrals counted); on session days, today's intraday decisions; calendar lag; share of instruments current. The daily-review agent job is the AI half. First live run: all OK, with strategy-lab succeeding on Codex while Antigravity rested | done |
 | S7 | skills | Audit, then import, external skill packs (ECC) through `repo-auditor`; local skills for each layer | todo |
 
 ## Hardening, 2026-09-19 night
@@ -45,7 +45,7 @@ PRD: `02-product.md`. It builds on `docs/plans/autonomous-fund/`, where the pape
 
 ## Next action
 
-S5 (lab pipeline: hypothesis spec to counted backtest to DB-registered paper mandate). S6 (deterministic watchdog). Profile /data-quality. Owner: log in to `agy` once.
+S5: lab pipeline (hypothesis spec to counted backtest to DB-registered paper mandate). S7: skill imports. Profile /data-quality. Owner: log in to `agy` once.
 
 ## Known gaps
 

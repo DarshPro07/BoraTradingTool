@@ -1,4 +1,5 @@
 import { Panel, StatTile } from "@/components/system/Panel";
+import { fundOsHealth } from "@/lib/fund/health";
 import { fundReport, type MandateReport } from "@/lib/fund/report";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,15 @@ export default function FundPage() {
         </div>
         <span className="mode-badge">PAPER · NO BROKER</span>
       </div>
+      <Panel title="System health (watchdog)">
+        <ul data-testid="fund-health" className="text-xs font-mono space-y-1">
+          {fundOsHealth().map((c) => (
+            <li key={c.name} className={c.ok ? "text-gain" : "text-loss"}>
+              {c.ok ? "OK  " : "FAIL"} {c.name} — {c.detail}
+            </li>
+          ))}
+        </ul>
+      </Panel>
       {report.map((r) => <MandatePanel key={r.contract.id} r={r} />)}
       <p className="text-[11px] text-muted-foreground">
         Not modelled: Indian tax (crypto 30% + 1% TDS; equity STCG/LTCG). Returns shown are before tax. PRD:
