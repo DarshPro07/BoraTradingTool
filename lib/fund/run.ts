@@ -1,14 +1,18 @@
 /**
- * One pass of the autonomous paper fund: for every mandate, bars -> decide -> execute -> mark -> kill.
+ * One pass of the autonomous paper fund: for every mandate, bars -> decide -> mark -> kill -> execute.
  *
- * Called by the scheduled cycle every 15 minutes (PRD journey 1). Idempotent: a decision date is
- * decided once, a bar date is marked once, and a pass that finds nothing due does nothing.
+ * Called by the scheduled cycle every 15 minutes (PRD journey 1), under the cycle lease so passes
+ * never overlap. Idempotent: a decision date is decided once, a bar date is marked once, and a pass
+ * that finds nothing due does nothing.
  *
- * Honesty rules this enforces:
- * - Decide only on bars up to the decision date; act on the NEXT opportunity (NSE: next session).
- * - Only the LATEST due decision date is decided. A date missed while the machine was off is not
- *   decided after the fact — its outcome already exists — and counts against T1 instead.
- * - A mandate that breaches its kill drawdown goes flat and stays suspended.
+ * Honesty rules this enforces (each one a finding of the 2026-09-19 independent review):
+ * - Decide only on bars up to the decision date, and only while that date is FRESH. A date whose
+ *   outcome has already been running for days is not decided after the fact — not even the latest
+ *   one — and counts as missed against T1.
+ * - No sleeve is carved from a book whose capital is unknown: missing is not zero.
+ * - A kill goes flat in the same pass, and a suspended mandate sells even when bars are missing.
+ * - Before placing an order, a fill the ledger missed (order placed, ledger write lost) is
+ *   recovered instead of bought twice.
  */
 import { ASSUMED_NETWORK_FEE_USDC } from "@/lib/crypto/paper";
 import { isDecisionDate, mandateHash, MANDATES, signal, type Close, type MandateContract } from "./mandates";
@@ -26,15 +30,20 @@ export interface Execution {
 export interface FundDeps {
   /** Completed daily closes, oldest first. Must not include a bar still forming. */
   loadCloses(mandate: MandateContract, now: Date): Promise<Close[]>;
-  /** Starting cash of the book the mandate's sleeve is carved from. */
-  bookCapital(mandate: MandateContract): number;
+  /** Starting cash of the book the sleeve is carved from; null when the book cannot be read. */
+  bookCapital(mandate: MandateContract): number | null;
   /** Whether an order can be placed now (NSE: regular session; crypto: always). */
   canExecute(mandate: MandateContract, now: Date): boolean;
-  /** BUY: `amount` is cash to spend (NSE: an estimated share count is derived from `price`). SELL: quantity. */
+  /** BUY: `amount` is cash to spend (NSE derives a share count from `price`). SELL: quantity. */
   execute(mandate: MandateContract, side: "BUY" | "SELL", amount: number, price: number, key: string): Promise<Execution>;
+  /** FILLED orders the engine holds under keys starting with `keyPrefix`. */
+  findFilled(mandate: MandateContract, keyPrefix: string): { key: string; execution: Execution }[];
   /** The venue's trade date for `now`. */
   tradeDate(mandate: MandateContract, now: Date): string;
 }
+
+/** How long after its bar a decision date may still be decided. NSE spans a weekend plus a holiday. */
+export const DECISION_FRESH_DAYS = { NSE: 5, SOLANA: 2 } as const;
 
 export interface MandatePass {
   mandate: string;
@@ -56,6 +65,12 @@ function sleeve(capital: number, executions: readonly ExecutionRow[], throughDat
   return { cash, quantity: Math.abs(quantity) < 1e-12 ? 0 : quantity };
 }
 
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+
+const targetSide = (target: boolean, quantity: number): "BUY" | "SELL" | null =>
+  target && quantity === 0 ? "BUY" : !target && quantity > 0 ? "SELL" : null;
+
 export async function runFundPass(deps: FundDeps, now = new Date()): Promise<MandatePass[]> {
   const report: MandatePass[] = [];
   for (const mandate of MANDATES) {
@@ -72,32 +87,30 @@ export async function runFundPass(deps: FundDeps, now = new Date()): Promise<Man
 
 async function runMandate(mandate: MandateContract, deps: FundDeps, now: Date, pass: MandatePass): Promise<void> {
   const hash = mandateHash(mandate);
+  const today = deps.tradeDate(mandate, now);
   const closes = await deps.loadCloses(mandate, now);
-  if (closes.length === 0) {
-    pass.note = "no completed bars: missing is not zero, nothing decided";
-    return;
-  }
-  const suspended = readFund("kill", mandate.id).length > 0;
+  let suspended = readFund("kill", mandate.id).length > 0;
   let decisions = readFund("decision", mandate.id);
 
-  // 1. Decide — on the latest due date only, from bars up to it.
-  if (!suspended) {
+  // 1. Decide — the latest due date only, from bars up to it, and only while it is fresh.
+  if (closes.length === 0) {
+    pass.note = "no completed bars: missing is not zero, nothing decided";
+  } else if (!suspended) {
     const last = decisions.at(-1);
     const due = last
       ? [...closes].reverse().find((c) => c.date > last.decisionDate && isDecisionDate(mandate, c.date))?.date
       : closes.at(-1)!.date; // bootstrap: take a position from the current signal, then keep schedule
-    if (due) {
-      const upTo = closes.filter((c) => c.date <= due);
-      const s = signal(mandate, upTo);
+    const book = last ? null : deps.bookCapital(mandate);
+    if (due && daysBetween(due, today) > DECISION_FRESH_DAYS[mandate.venue]) {
+      pass.note = `missed decision date ${due} (${daysBetween(due, today)} days old): not decided after its outcome exists`;
+    } else if (due && !last && !(book !== null && book > 0)) {
+      pass.note = "book capital unavailable: no sleeve carved from an unknown amount";
+    } else if (due) {
+      const s = signal(mandate, closes.filter((c) => c.date <= due));
       if (s) {
         const row: DecisionRow = {
-          mandate: mandate.id,
-          hash,
-          decisionDate: due,
-          hold: s.hold,
-          inputs: s.inputs,
-          bootstrap: !last,
-          capital: last?.capital ?? mandate.sleevePct * deps.bookCapital(mandate),
+          mandate: mandate.id, hash, decisionDate: due, hold: s.hold, inputs: s.inputs, bootstrap: !last,
+          capital: last ? last.capital : mandate.sleevePct * book!,
         };
         appendFund("decision", row, `decision:${due}`);
         decisions = [...decisions, row];
@@ -109,43 +122,11 @@ async function runMandate(mandate: MandateContract, deps: FundDeps, now: Date, p
   }
   const current = decisions.at(-1);
   if (!current) return;
-
-  // 2. Execute toward the target.
   let executions = readFund("execution", mandate.id);
-  const state = sleeve(current.capital, executions);
-  const target = suspended ? false : current.hold;
-  const side = target && state.quantity === 0 ? "BUY" : !target && state.quantity > 0 ? "SELL" : null;
-  if (side && deps.canExecute(mandate, now)) {
-    const price = closes.at(-1)!.close;
-    const amount = side === "BUY" ? state.cash : state.quantity;
-    // The NSE engine accepts only [A-Za-z0-9_-]; the minute makes each retry a distinct attempt.
-    const key = `fund-${mandate.id}-${current.decisionDate}-${side}-${now.toISOString().slice(0, 16)}`.replace(/[^A-Za-z0-9_-]/g, "_");
-    const result = await deps.execute(mandate, side, amount, price, key);
-    const tradeDate = deps.tradeDate(mandate, now);
-    // One rejection row per reason per day: a stale quote at 09:15 should not write 25 rows.
-    const repeat = executions.some(
-      (e) => e.status === result.status && e.reason === result.reason && e.tradeDate === tradeDate && e.side === side,
-    );
-    if (result.status === "FILLED" || !repeat) {
-      const row: ExecutionRow = {
-        mandate: mandate.id,
-        hash,
-        decisionDate: current.decisionDate,
-        side,
-        tradeDate,
-        at: now.toISOString(),
-        ...result,
-      };
-      appendFund("execution", row, `execution:${current.decisionDate}:${side}`);
-      executions = [...executions, row];
-    }
-    pass.executed = { side, status: result.status, reason: result.reason };
-  }
 
-  // 3. Mark every completed bar since the last mark, at the sleeve as it stood that day.
-  const navs = readFund("nav", mandate.id);
+  // 2. Mark every completed bar since the last mark, at the sleeve as it stood that day.
   const start = decisions[0]!.decisionDate;
-  const lastMarked = navs.at(-1)?.date ?? "";
+  const lastMarked = readFund("nav", mandate.id).at(-1)?.date ?? "";
   for (const bar of closes) {
     if (bar.date < start || bar.date <= lastMarked) continue;
     const s = sleeve(current.capital, executions, bar.date);
@@ -157,17 +138,55 @@ async function runMandate(mandate: MandateContract, deps: FundDeps, now: Date, p
     pass.marked += 1;
   }
 
-  // 4. Kill rule.
-  if (!suspended) {
+  // 3. Kill rule, before execution so a breach goes flat in this same pass.
+  if (!suspended && closes.length > 0) {
     const series = readFund("nav", mandate.id).map((n) => n.nav);
-    if (series.length === 0) return;
-    const peak = Math.max(...series);
+    const peak = series.length ? Math.max(...series) : 0;
     const drawdown = peak > 0 ? 1 - series.at(-1)! / peak : 0;
     if (drawdown > mandate.killDrawdown) {
       appendFund("kill", { mandate: mandate.id, hash, date: closes.at(-1)!.date, drawdown }, `kill:${closes.at(-1)!.date}`);
       pass.killed = true;
+      suspended = true;
     }
   }
+
+  // 4. Execute toward the target.
+  const target = suspended ? false : current.hold;
+  let side = targetSide(target, sleeve(current.capital, executions).quantity);
+  if (!side || !deps.canExecute(mandate, now)) return;
+
+  // Recover a fill the engine holds but the ledger lost, rather than buying (or selling) twice.
+  const prefix = `fund-${mandate.id}-${current.decisionDate}-${side}-`.replace(/[^A-Za-z0-9_-]/g, "_");
+  const recorded = new Set(executions.map((e) => e.key));
+  for (const found of deps.findFilled(mandate, prefix).filter((f) => !recorded.has(f.key))) {
+    const row: ExecutionRow = {
+      mandate: mandate.id, hash, decisionDate: current.decisionDate, side, key: found.key,
+      tradeDate: today, at: now.toISOString(), recovered: true, ...found.execution,
+    };
+    appendFund("execution", row, `execution:${current.decisionDate}:${side}:recovered`);
+    executions = [...executions, row];
+  }
+  const state = sleeve(current.capital, executions);
+  side = targetSide(target, state.quantity);
+  if (!side) return;
+
+  const price = closes.at(-1)?.close ?? 0;
+  if (side === "BUY" && !(price > 0)) return;
+  // The minute makes each retry a distinct attempt; the NSE engine accepts only [A-Za-z0-9_-].
+  const key = `${prefix}${now.toISOString().slice(0, 16)}`.replace(/[^A-Za-z0-9_-]/g, "_");
+  const result = await deps.execute(mandate, side, side === "BUY" ? state.cash : state.quantity, price, key);
+  // One rejection row per reason per day: a stale quote at 09:15 should not write 25 rows.
+  const repeat = executions.some(
+    (e) => e.status === result.status && e.reason === result.reason && e.tradeDate === today && e.side === side,
+  );
+  if (result.status === "FILLED" || !repeat) {
+    appendFund(
+      "execution",
+      { mandate: mandate.id, hash, decisionDate: current.decisionDate, side, key, tradeDate: today, at: now.toISOString(), ...result },
+      `execution:${current.decisionDate}:${side}`,
+    );
+  }
+  pass.executed = { side, status: result.status, reason: result.reason };
 }
 
 /** Minimum cash left behind on a crypto buy, so the network fee is always covered. */

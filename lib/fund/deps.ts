@@ -2,7 +2,7 @@
  * The fund's real inputs and outputs: stored/refreshed bars, sessions, and the two paper engines.
  * Kept apart from `run.ts` so the pass is tested with fakes and runs in production with these.
  */
-import { eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { findVerifiedToken } from "@/lib/crypto/jupiter";
 import { placeCryptoPaperOrder } from "@/lib/crypto/paper";
@@ -47,9 +47,48 @@ export const realFundDeps: FundDeps = {
 
   bookCapital(mandate) {
     const db = getDb();
+    // Null, never 0, when the account is missing: a sleeve carved from "0" would freeze at zero.
     return mandate.venue === "NSE"
-      ? db.select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, "INR")).get()?.startingCash ?? 0
-      : db.select().from(schema.cryptoPaperAccounts).where(eq(schema.cryptoPaperAccounts.asset, "USDC")).get()?.startingCash ?? 0;
+      ? db.select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, "INR")).get()?.startingCash ?? null
+      : db.select().from(schema.cryptoPaperAccounts).where(eq(schema.cryptoPaperAccounts.asset, "USDC")).get()?.startingCash ?? null;
+  },
+
+  findFilled(mandate, keyPrefix) {
+    const db = getDb();
+    if (mandate.venue === "NSE") {
+      return db
+        .select()
+        .from(schema.paperOrders)
+        .where(and(like(schema.paperOrders.idempotencyKey, `${keyPrefix}%`), eq(schema.paperOrders.status, "FILLED")))
+        .all()
+        .map((o) => {
+          const gross = o.fillPrice! * o.quantity;
+          const buy = o.side === "BUY";
+          return {
+            key: o.idempotencyKey,
+            execution: {
+              status: "FILLED", reason: null, fillPrice: o.fillPrice, fees: o.fees,
+              quantityDelta: buy ? o.quantity : -o.quantity, cashDelta: buy ? -(gross + o.fees) : gross - o.fees,
+            },
+          };
+        });
+    }
+    return db
+      .select()
+      .from(schema.cryptoPaperOrders)
+      .where(and(like(schema.cryptoPaperOrders.idempotencyKey, `${keyPrefix}%`), eq(schema.cryptoPaperOrders.status, "FILLED")))
+      .all()
+      .map((o) => {
+        const buy = o.side === "BUY";
+        return {
+          key: o.idempotencyKey,
+          execution: {
+            status: "FILLED", reason: null, fillPrice: o.fillPrice, fees: o.feesUsdc,
+            quantityDelta: buy ? o.quantity : -o.quantity,
+            cashDelta: buy ? -(o.usdcAmount + o.feesUsdc) : o.usdcAmount - o.feesUsdc,
+          },
+        };
+      });
   },
 
   canExecute(mandate, now) {

@@ -32,6 +32,10 @@ export interface DecisionRow extends Base {
 }
 export interface ExecutionRow extends Base {
   decisionDate: string;
+  /** The engine idempotency key the order was placed under: how a lost ledger write is recovered. */
+  key?: string;
+  /** True when the row was reconstructed from an engine fill the ledger had missed. */
+  recovered?: boolean;
   side: "BUY" | "SELL";
   status: string;
   reason: string | null;

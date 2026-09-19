@@ -11,11 +11,15 @@ import { runFundPass, type Execution, type FundDeps } from "./run";
 useTemporaryDatabase();
 
 type Bars = Record<string, Close[]>;
-function fakeDeps(bars: Bars, opts: { nseOpen?: boolean } = {}) {
+function fakeDeps(
+  bars: Bars,
+  opts: { nseOpen?: boolean; capital?: number | null; filled?: (prefix: string) => { key: string; execution: Execution }[] } = {},
+) {
   const orders: { mandate: string; side: string; amount: number }[] = [];
   const deps: FundDeps = {
     loadCloses: async (m) => bars[m.id] ?? [],
-    bookCapital: (m) => (m.venue === "NSE" ? 25_000 : 300),
+    bookCapital: (m) => (opts.capital !== undefined ? opts.capital : m.venue === "NSE" ? 25_000 : 300),
+    findFilled: (_m, prefix) => opts.filled?.(prefix) ?? [],
     canExecute: (m) => m.venue === "SOLANA" || (opts.nseOpen ?? false),
     execute: async (m: MandateContract, side, amount, price): Promise<Execution> => {
       orders.push({ mandate: m.id, side, amount });
@@ -78,18 +82,47 @@ describe("runFundPass", () => {
     expect(readFund("decision", "FC1").map((d) => d.decisionDate)).toEqual(["2026-09-06", "2026-09-20"]);
   });
 
-  it("kills a mandate past its drawdown limit, goes flat, and stops deciding", async () => {
+  it("kills a mandate past its drawdown limit, goes flat in the same pass, and stops deciding", async () => {
     const up = { FC1: closes("2026-09-14", 60, 100, 150) };
     await runFundPass(fakeDeps(up).deps, new Date("2026-09-14T06:00:00Z"));
-    // A 60% crash in a week breaches FC1's 50% kill drawdown.
-    const crash = { FC1: [...up.FC1, ...closes("2026-09-21", 7, 140, 60).map((c) => c)] };
+    // A 60% crash Monday-Saturday, with no decision date in it: ONLY the kill rule can sell.
+    const crash = { FC1: [...up.FC1, ...closes("2026-09-20", 6, 140, 60)] };
     const { deps, orders } = fakeDeps(crash);
-    await runFundPass(deps, NOW);
+    const saturday = new Date("2026-09-20T06:00:00Z");
+    await runFundPass(deps, saturday);
     expect(readFund("kill", "FC1")).toHaveLength(1);
-    await runFundPass(deps, NOW);
-    expect(orders.some((o) => o.side === "SELL"), "suspended means flat").toBe(true);
+    expect(orders.map((o) => o.side), "flat in the SAME pass as the breach").toEqual(["SELL"]);
     const decisionsAfter = readFund("decision", "FC1").length;
     await runFundPass(deps, new Date("2026-09-29T06:00:00Z"));
     expect(readFund("decision", "FC1").length, "no new decisions once suspended").toBe(decisionsAfter);
+  });
+
+  it("does not decide a due date long after its outcome exists, and says it was missed", async () => {
+    // Review finding: the latest missed date was decided late and T1 counted it as on time.
+    await runFundPass(fakeDeps({ FC1: closes("2026-08-02", 60, 100, 150) }).deps, new Date("2026-08-02T06:00:00Z"));
+    // The bar feed stops at 08-23; the pass runs on 09-21. 08-23 (a Sunday) is due but 29 days old.
+    const report = await runFundPass(fakeDeps({ FC1: closes("2026-08-24", 83, 100, 150) }).deps, NOW);
+    expect(readFund("decision", "FC1").map((d) => d.decisionDate)).toEqual(["2026-08-01"]);
+    expect(report.find((p) => p.mandate === "FC1")?.note).toMatch(/missed decision date 2026-08-23/);
+  });
+
+  it("does not carve a sleeve from an unknown book: missing capital is not zero", async () => {
+    const report = await runFundPass(fakeDeps({ FC1: closes("2026-09-21", 60, 100, 150) }, { capital: null }).deps, NOW);
+    expect(readFund("decision", "FC1")).toHaveLength(0);
+    expect(report.find((p) => p.mandate === "FC1")?.note).toMatch(/book capital unavailable/);
+  });
+
+  it("recovers a fill the ledger missed instead of buying twice", async () => {
+    // Review finding: an order filled, the ledger write was lost, and the next pass bought again.
+    const lost = (prefix: string) =>
+      prefix.startsWith("fund-FC1-2026-09-20-BUY-")
+        ? [{ key: `${prefix}2026-09-21T05_45`, execution: { status: "FILLED", reason: null, fillPrice: 150, fees: 0, quantityDelta: 0.5, cashDelta: -75 } }]
+        : [];
+    const { deps, orders } = fakeDeps({ FC1: closes("2026-09-21", 60, 100, 150) }, { filled: lost });
+    await runFundPass(deps, NOW);
+    expect(orders.filter((o) => o.mandate === "FC1"), "no second buy").toHaveLength(0);
+    const execution = readFund("execution", "FC1")[0]!;
+    expect(execution.recovered).toBe(true);
+    expect(execution.quantityDelta).toBe(0.5);
   });
 });

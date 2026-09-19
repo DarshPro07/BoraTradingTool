@@ -58,12 +58,16 @@ describe("a crashed holder does not wedge autonomy forever", () => {
     expect(currentLease(file, T0 + LEASE_TTL_MS)).toBeNull();
   });
 
-  it("treats an unreadable lease as expired", () => {
-    // A lease nobody can parse is not evidence that somebody holds it. Trusting it would wedge
-    // autonomy permanently on a single truncated write.
+  it("never lets an unreadable lease wedge autonomy: it expires once older than the TTL", () => {
+    // Trusting a corrupt lease forever would wedge autonomy on a single truncated write. It used to
+    // count as expired IMMEDIATELY, which also handed a lease caught mid-write to a second driver
+    // (review finding 2026-09-19); it is now judged by the file's age, so the wedge still cannot
+    // happen and the race cannot either.
     const file = leaseFile();
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, "{not json", "utf8");
+    const aged = new Date(T0 - LEASE_TTL_MS - 1_000);
+    fs.utimesSync(file, aged, aged);
     expect(acquireLease("scheduler", file, T0)).not.toBeNull();
   });
 });
@@ -161,5 +165,38 @@ describe("a long cycle keeps its lease", () => {
     expect(outcome.result, "the heartbeat moved the stamp forward").toBe(true);
     expect(rivalGotIt).toBe(false);
     expect(currentLease(file), "released at the end").toBeNull();
+  });
+});
+
+describe("the lease under review findings (2026-09-19)", () => {
+  it("treats a lease file caught mid-write as HELD until it is older than the TTL", () => {
+    // `wx` creates the file before its contents land. A rival reading it in that window used to
+    // see "unparseable -> expired", delete it and take the lease: two holders.
+    const file = leaseFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "", "utf8"); // exists, not yet written
+    expect(acquireLease("rival", file), "a fresh empty lease is somebody's").toBeNull();
+
+    const old = new Date(Date.now() - LEASE_TTL_MS - 1_000);
+    fs.utimesSync(file, old, old);
+    expect(acquireLease("rival", file), "an empty lease older than the TTL is garbage").not.toBeNull();
+  });
+
+  it("stops renewing a run that exceeds the maximum cycle length", async () => {
+    // A hung-but-alive driver must not hold the lease forever through its own heartbeat.
+    const file = leaseFile();
+    await withCycleLease(
+      "scheduler",
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        const stampAtCap = JSON.parse(fs.readFileSync(file, "utf8")).acquiredAt as number;
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        const later = JSON.parse(fs.readFileSync(file, "utf8")).acquiredAt as number;
+        expect(later, "no renewal after the cap").toBe(stampAtCap);
+      },
+      file,
+      10,
+      50,
+    );
   });
 });

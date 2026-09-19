@@ -33,11 +33,17 @@ import { databasePath } from "@/lib/db";
  * Long enough that a genuinely slow cycle is never interrupted — the first cycle of a session
  * measured 10.1s, and a cold candle fetch across twelve instruments is the slow path.
  *
- * ponytail: a cycle that hangs past this (a socket with no timeout) will have its lease taken
- * while it is still running. The cost is one duplicated read-only cycle, not corruption. Add a
- * mid-cycle heartbeat only if that is ever actually observed.
+ * A live cycle renews the lease on a heartbeat (`withCycleLease`), so the TTL now bounds only how
+ * long a CRASHED holder blocks others. Observed 2026-09-19: a cycle ran 14.8 minutes, and without
+ * the heartbeat another driver could take the lease mid-cycle.
  */
 export const LEASE_TTL_MS = 10 * 60_000;
+
+/**
+ * The heartbeat stops after this long, so a hung-but-alive driver loses the lease within
+ * MAX_CYCLE_MS + LEASE_TTL_MS instead of holding it forever. Well above the slowest cycle observed.
+ */
+export const MAX_CYCLE_MS = 45 * 60_000;
 
 export interface LeaseHolder {
   holder: string;
@@ -75,6 +81,14 @@ export function leasePath(databaseFile = databasePath()): string {
  */
 export function researchLeasePath(databaseFile = databasePath()): string {
   return `${databaseFile}.research-lease`;
+}
+
+function fileMtime(file: string): number {
+  try {
+    return fs.statSync(file).mtimeMs;
+  } catch {
+    return 0; // gone: nothing holds it
+  }
 }
 
 function readHolder(file: string): LeaseHolder | null {
@@ -122,9 +136,10 @@ export function acquireLease(
     }
 
     const current = readHolder(file);
-    // An unreadable lease has no acquisition time, so it cannot be shown to be live. Treating it
-    // as held forever would wedge autonomy permanently on one corrupt write.
-    const expired = current === null || now - current.acquiredAt >= ttlMs;
+    // An unreadable lease is judged by the file's own age. Young, it is almost certainly a holder
+    // caught between `wx` creating it and the write landing — treating that as expired handed the
+    // lease to a second driver. Old, it is a corrupt write, and waiting out the TTL un-wedges it.
+    const expired = current === null ? now - fileMtime(file) >= ttlMs : now - current.acquiredAt >= ttlMs;
     if (!expired) return null;
 
     try {
@@ -183,6 +198,7 @@ export async function withCycleLease<T>(
   run: () => Promise<T>,
   file = leasePath(),
   heartbeatMs = LEASE_TTL_MS / 3,
+  maxCycleMs = MAX_CYCLE_MS,
 ): Promise<LeaseOutcome<T>> {
   const lease = acquireLease(holder, file);
   if (lease === null) {
@@ -190,6 +206,10 @@ export async function withCycleLease<T>(
   }
   let stamp = lease.acquiredAt;
   const heartbeat = setInterval(() => {
+    if (Date.now() - lease.acquiredAt >= maxCycleMs) {
+      clearInterval(heartbeat); // hung: let the TTL hand the lease on
+      return;
+    }
     try {
       stamp = renewLease(holder, stamp, file) ?? stamp;
     } catch {
