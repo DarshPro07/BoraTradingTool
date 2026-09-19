@@ -10,6 +10,7 @@ import { buildResearchSnapshot, getNormalizedQuote } from "@/lib/market/service"
 import { buildEvidencePackage } from "@/lib/ai/evidence";
 import { persistEvidencePackage } from "@/lib/ai/evidence-store";
 import { getPaperPortfolio } from "@/lib/paper/service";
+import { fundReport } from "@/lib/fund/report";
 import { getPaperRiskSummary } from "@/lib/paper/risk";
 import { fetchQuantResource } from "@/lib/quantcore/client";
 import { QUANT_RESOURCES } from "@/lib/quantcore/contract";
@@ -167,6 +168,32 @@ export function createMarketPulseMcpServer(): McpServer {
       const tickers = getDb().select().from(schema.userWatchlist).all().map((row) => row.ticker);
       return result({ tickers, count: tickers.length });
     },
+  );
+
+  server.registerTool(
+    "marketpulse_fund_report",
+    {
+      description:
+        "Read the autonomous paper fund: each frozen mandate's rule, prior, holding, NAV vs buy-and-hold, " +
+        "drawdown, Sharpe, trust gates T1-T3 with reasons, and recent decisions/executions. Read-only; paper only.",
+      inputSchema: z.object({ recent: z.number().int().min(0).max(50).default(5) }).strict(),
+      annotations: readOnlyAnnotations,
+    },
+    async ({ recent }) =>
+      result({
+        mandates: fundReport().map((r) => ({
+          id: r.contract.id,
+          title: r.contract.title,
+          hash: r.hash,
+          prior: r.contract.prior,
+          suspended: r.suspended,
+          holding: r.holding,
+          metrics: r.metrics,
+          gates: r.gates,
+          recentDecisions: r.decisions.slice(-recent),
+          recentExecutions: r.executions.slice(-recent),
+        })),
+      }),
   );
 
   server.registerTool(

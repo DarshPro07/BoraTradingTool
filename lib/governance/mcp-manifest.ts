@@ -11,6 +11,7 @@ export const MCP_TOOL_CAPABILITIES: Readonly<Record<string, CapabilityClass>> = 
   marketpulse_compare_instruments: "READ",
   marketpulse_get_watchlist: "READ",
   marketpulse_get_paper_portfolio: "READ",
+  marketpulse_fund_report: "READ",
   marketpulse_get_risk_summary: "READ",
   marketpulse_quantcore: "READ",
   marketpulse_memory_trace: "READ",
