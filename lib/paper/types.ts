@@ -1,3 +1,4 @@
+import type { IndiaProduct } from "./fees";
 import type { Currency, Instrument, NormalizedQuote } from "@/lib/market/types";
 import type { MarketSession } from "@/lib/market/calendar";
 
@@ -8,6 +9,12 @@ export interface PaperOrderIntent {
   orderType: "MARKET" | "LIMIT";
   limitPrice?: number;
   idempotencyKey: string;
+  /**
+   * India only. DELIVERY (default) or INTRADAY: decides the fee schedule and whether the cycle
+   * squares the position off before the close. Defaults to DELIVERY because cost assumptions must
+   * fail expensive (`lib/paper/fees.ts`).
+   */
+  product?: IndiaProduct;
 }
 
 export class PaperOrderConflict extends Error {

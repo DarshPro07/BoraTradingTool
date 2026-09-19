@@ -61,9 +61,18 @@ inference-only stances; then abstain. Note the returned analysis id.
 
 ### 6. Risk
 ```bash
-npx tsx scripts/desk.mts size <ID> --entry E --stop S --target T
+npx tsx scripts/desk.mts size <ID> --entry E --stop S --target T [--product INTRADAY]
 ```
 Anything but `SIZED` ends the trade here. Report the reason verbatim.
+
+**Delivery or intraday?** Decide it in the analysis, not after the fact.
+- **Delivery (default)** holds overnight and pays the flat ₹15.93 DP charge on the sell.
+- **`--product INTRADAY`** costs about 0.11% a round trip, but:
+  - no entry is allowed after 15:10 IST;
+  - the scheduled cycle squares it off from 15:10;
+  - the idea must be one that pays within the day.
+
+Pass the same `--product` to `buy` and `sell`. The engine refuses to mix products on one position.
 
 ### 7. Execution: only when SIZED, bullish, and the market is open (09:15–15:30 IST, trading day)
 ```bash

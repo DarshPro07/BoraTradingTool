@@ -6,6 +6,19 @@ import type { Instrument, NormalizedQuote } from "@/lib/market/types";
 import { PaperOrderConflict, type PaperDecision, type PaperOrderIntent } from "./types";
 import { evaluatePaperOrder } from "./engine";
 
+/**
+ * No new intraday BUY at or after 15:10 IST. The scheduled cycle runs every 15 minutes and squares
+ * intraday positions off from 15:10 (`squareOffIntradayPaper`); an entry after that could not be
+ * closed before the 15:30 close, and a paper "intraday" position carried overnight is a delivery
+ * position priced at intraday rates. Brokers stop MIS entries near 15:20 for the same reason.
+ */
+export const INTRADAY_LAST_ENTRY_IST_MINUTES = 15 * 60 + 10;
+
+export function istMinutes(at: Date): number {
+  const ist = new Date(at.getTime() + 330 * 60_000);
+  return ist.getUTCHours() * 60 + ist.getUTCMinutes();
+}
+
 export function getPaperState(instrument: Instrument): { cash: number; heldQuantity: number; averageCost: number } {
   const db = getDb();
   const account = db.select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, instrument.currency)).get();
@@ -29,7 +42,8 @@ export function assertPaperOrderMatchesIntent(
     && existing.side === intent.side
     && existing.quantity === intent.quantity
     && existing.orderType === intent.orderType
-    && (existing.limitPrice ?? undefined) === intent.limitPrice;
+    && (existing.limitPrice ?? undefined) === intent.limitPrice
+    && existing.product === (intent.product ?? "DELIVERY");
   if (!same) {
     throw new PaperOrderConflict("Idempotency key was already used for a different paper-order payload.");
   }
@@ -90,8 +104,15 @@ export function persistPaperOrder(
         || ticker === intent.instrument.providerSymbol.toUpperCase();
     });
 
+    const product = intent.product ?? "DELIVERY";
     let decision: PaperDecision;
-    if ((config?.dailyTradeCap ?? 5) <= acceptedToday) {
+    if (position && position.quantity > 1e-9 && position.product !== product) {
+      // One product per position: a mixed position has no single fee schedule and no single
+      // answer to "square this off at the close?".
+      decision = { status: "REJECTED", reason: "PAPER_PRODUCT_MISMATCH", feePolicy: "PAPER_POLICY_V1" };
+    } else if (intent.side === "BUY" && product === "INTRADAY" && istMinutes(now) >= INTRADAY_LAST_ENTRY_IST_MINUTES) {
+      decision = { status: "REJECTED", reason: "INTRADAY_ENTRY_CLOSED", feePolicy: "PAPER_POLICY_V1" };
+    } else if ((config?.dailyTradeCap ?? 5) <= acceptedToday) {
       decision = { status: "REJECTED", reason: "PAPER_DAILY_ORDER_CAP", feePolicy: "PAPER_POLICY_V1" };
     } else if (intent.side === "BUY" && (config?.watchlistOnly ?? true) && !isWatchlisted) {
       decision = { status: "REJECTED", reason: "PAPER_WATCHLIST_REQUIRED", feePolicy: "PAPER_POLICY_V1" };
@@ -133,6 +154,7 @@ export function persistPaperOrder(
       quoteSourceId: quote.provenance.sourceId,
       quoteQuality: quote.provenance.quality,
       simulatedFixture: quote.provenance.provider === "TEST_FIXTURE",
+      product,
     }).run();
     const orderId = Number(inserted.lastInsertRowid);
     const capturedMeta = { orderId, status: decision.status, fillPrice: decision.status === "FILLED" ? decision.fillPrice : null };
@@ -160,11 +182,12 @@ export function persistPaperOrder(
           quantity: newQuantity,
           averageCost: newAverageCost,
           realizedPnl,
+          product,
           updatedAt: now,
         })
         .onConflictDoUpdate({
           target: schema.paperPositions.instrumentId,
-          set: { quantity: newQuantity, averageCost: newAverageCost, realizedPnl, updatedAt: now },
+          set: { quantity: newQuantity, averageCost: newAverageCost, realizedPnl, product, updatedAt: now },
         })
         .run();
       tx.insert(schema.paperLedger).values([

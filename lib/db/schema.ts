@@ -295,6 +295,8 @@ export const paperOrders = sqliteTable("paper_orders", {
   quoteSourceId: text("quote_source_id"),
   quoteQuality: text("quote_quality"),
   simulatedFixture: integer("simulated_fixture", { mode: "boolean" }).notNull().default(false),
+  /** DELIVERY | INTRADAY. Decides the fee schedule and whether the cycle squares it off. */
+  product: text("product").notNull().default("DELIVERY"),
 });
 
 export const paperPositions = sqliteTable("paper_positions", {
@@ -302,6 +304,8 @@ export const paperPositions = sqliteTable("paper_positions", {
   quantity: real("quantity").notNull(),
   averageCost: real("average_cost").notNull(),
   realizedPnl: real("realized_pnl").notNull().default(0),
+  /** DELIVERY | INTRADAY. One product per position; the repository refuses to mix them. */
+  product: text("product").notNull().default("DELIVERY"),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 

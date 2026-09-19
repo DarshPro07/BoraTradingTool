@@ -32,6 +32,22 @@ export interface Explanation {
 }
 
 const EXPLANATIONS: Readonly<Record<string, Explanation>> = Object.freeze({
+  PAPER_PRODUCT_MISMATCH: {
+    headline: "Not filled — this position is held under the other product.",
+    detail:
+      "A position is either delivery or intraday, never both: the two are charged differently and only intraday is squared off at the close. Mixing them would leave neither answer true.",
+    blame: "your_order",
+    remedy: "Close the existing position first, or place the order under the product it is already held as.",
+    href: null,
+  },
+  INTRADAY_ENTRY_CLOSED: {
+    headline: "Not filled — too late in the day to open an intraday position.",
+    detail:
+      "Intraday positions are squared off from 15:10 IST so they close before the 15:30 close. A new entry after 15:10 could not be closed the same day, which would make it an overnight position priced at intraday rates.",
+    blame: "risk_policy",
+    remedy: "Enter before 15:10 IST, or place it as a delivery order.",
+    href: null,
+  },
   INELIGIBLE_QUOTE: {
     headline: "Not filled — the price was too old to trade against.",
     detail:

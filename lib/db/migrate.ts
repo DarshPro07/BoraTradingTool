@@ -85,6 +85,11 @@ const MIGRATIONS = [
   // normalization happens at read time into a declared basis. Existing snapshots are backfilled
   // to MIXED_CONTAMINATED rather than being assumed RAW.
   "0025_corporate_actions.sql",
+  // Paper product (DELIVERY | INTRADAY) on orders and positions. Owner instruction 2026-09-19,
+  // "Add intraday to paper": intraday round trips cost ~0.11% against delivery's flat DP charge, and
+  // an engine that priced everything as delivery could not measure an intraday strategy at all.
+  // Additive, defaulted to DELIVERY — how every existing row was priced.
+  "0026_paper_product.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {
@@ -171,6 +176,16 @@ function applySecurityIntegrityMigration(sqlite: Database.Database): void {
   }
 }
 
+/**
+ * 0026 as code rather than raw SQL, for the reason 0004 and 0006 are: a database upgraded from before
+ * 0001 can lack `paper_positions` entirely, and a bare ALTER TABLE would abort the whole upgrade.
+ * `drizzle/0026_paper_product.sql` states the same two columns for a reader.
+ */
+function applyPaperProductMigration(sqlite: Database.Database): void {
+  addColumnIfMissing(sqlite, "paper_orders", "product", "TEXT NOT NULL DEFAULT 'DELIVERY'");
+  addColumnIfMissing(sqlite, "paper_positions", "product", "TEXT NOT NULL DEFAULT 'DELIVERY'");
+}
+
 function applyEvidenceLifecycleMigration(sqlite: Database.Database): void {
   addColumnIfMissing(sqlite, "knowledge_sources", "content", "TEXT");
   addColumnIfMissing(sqlite, "ai_runs", "evidence_json", "TEXT");
@@ -237,6 +252,8 @@ export function migrateDatabase(
         applySecurityIntegrityMigration(sqlite);
       } else if (version === "0014_autonomy_default.sql") {
         applyAutonomyDefaultMigration(sqlite);
+      } else if (version === "0026_paper_product.sql") {
+        applyPaperProductMigration(sqlite);
       } else {
         const sql = fs.readFileSync(/* turbopackIgnore: true */ migrationPath, "utf8");
         sqlite.exec(sql);

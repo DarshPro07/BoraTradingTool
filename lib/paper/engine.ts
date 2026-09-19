@@ -7,7 +7,7 @@ export function evaluatePaperOrder(
   intent: PaperOrderIntent,
   context: PaperEvaluationContext,
 ): PaperDecision {
-  const policy = feePolicyId(intent.instrument.market);
+  const policy = feePolicyId(intent.instrument.market, intent.product);
   if (!Number.isFinite(intent.quantity) || intent.quantity <= 0 || intent.quantity > 1_000_000) {
     return { status: "REJECTED", reason: "INVALID_QUANTITY", feePolicy: policy };
   }
@@ -46,6 +46,7 @@ export function evaluatePaperOrder(
     currency: intent.instrument.currency,
     side: intent.side,
     notional,
+    product: intent.product,
   });
 
   if (intent.side === "BUY") {

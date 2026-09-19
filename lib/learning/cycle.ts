@@ -745,6 +745,22 @@ async function runCycleBody(
     );
   }
 
+  // Intraday paper positions close before the market does. Nothing is due before 15:10 IST unless
+  // a position was carried from an earlier day; a position that cannot be closed is reported, never
+  // filled at an invented price.
+  try {
+    const { squareOffIntradayPaper } = await import("@/lib/paper/service");
+    const squared = await squareOffIntradayPaper();
+    if (squared.closed > 0) actions.push(`Squared off ${squared.closed} intraday paper position(s).`);
+    for (const carried of squared.carried) {
+      skipped.push(`Intraday paper ${carried.instrumentId} could not be squared off (${carried.reason}); retrying next pass.`);
+    }
+  } catch (caught) {
+    impair(
+      `Intraday square-off failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+    );
+  }
+
   // Turn hypotheses into testable strategies — the last break in the research chain.
   //
   // Placed after the worker so a hypothesis formed from a source ingested this pass is considered

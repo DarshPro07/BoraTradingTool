@@ -9,6 +9,10 @@
  *   npx tsx scripts/desk.mts size IN:XNSE:ITC --entry 410 --stop 398 --target 440
  *   npx tsx scripts/desk.mts buy  IN:XNSE:ITC --entry 410 --stop 398 --target 440 --analysis 123
  *   npx tsx scripts/desk.mts sell IN:XNSE:ITC --qty 1 --analysis 123
+ *
+ * `--product INTRADAY` (any command) prices and places the trade as intraday: ~0.11% a round trip
+ * instead of delivery's flat DP charge, no new entry after 15:10 IST, and the scheduled cycle
+ * squares it off before the close. Default DELIVERY.
  */
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
@@ -34,6 +38,7 @@ if (!command || !rawInstrument || !["size", "buy", "sell"].includes(command)) {
   process.exit(2);
 }
 const instrument = parseInstrument(rawInstrument);
+const product = flag("product") === "INTRADAY" ? "INTRADAY" : "DELIVERY";
 const db = getDb();
 
 /** The engine's cap, read the way `persistPaperOrder` reads it (lib/paper/repository.ts, protected). */
@@ -55,6 +60,7 @@ function sizing() {
     entry: num("entry"),
     stop: num("stop"),
     target: num("target"),
+    product,
   });
 }
 
@@ -66,6 +72,7 @@ async function place(side: "BUY" | "SELL", quantity: number) {
     side,
     quantity,
     orderType: "MARKET",
+    product,
     // One order per analysis and side: re-running the desk replays instead of doubling up.
     idempotencyKey: `desk-${side}-${instrument.symbol}-${analysis}`.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 80),
   });
