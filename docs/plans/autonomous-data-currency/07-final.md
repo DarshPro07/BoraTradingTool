@@ -28,6 +28,21 @@ no human, no Claude session and no browser.
   `05-slices.md`.
 - The calendar renderer reproduces the committed calendar's data sections exactly.
 
+## Production evidence (2026-09-19, after `ff4e55b` went live at the 16:11 cycle)
+
+- The scheduled cycle extended the calendar 2026-08-14 -> 2026-09-18 from 360 reference
+  instruments, with no network and no new holidays (`b81a0c8`).
+- In 20 minutes the scheduled path finished 45 refreshes and queued 31. The 18 dead jobs are all
+  genuine `INSUFFICIENT_SOURCE_BARS`: recent listings under 60 bars.
+- Instruments current through 2026-09-18: 1,814 of 2,122, up from 45 in the morning. The catch-up
+  process and the cycle both contributed.
+
+## Gate 5
+
+An independent verifier in a fresh context confirmed the cycle ordering, the calendar's fail-closed
+stops and the canonical-store guard; 444 tests passed. Its caveat: timezone edge cases were checked
+by reading, not by an adversarial fixture.
+
 ## Not yet verified
 
 - **Production drain.** The next scheduled cycles must show `Data gaps: enqueued …` and a
@@ -36,7 +51,9 @@ no human, no Claude session and no browser.
   instruments are current, which the running catch-up is producing.
 - **The last scheduled run's `0x800710E0` result is undiagnosed.** It may be the Task Scheduler
   refusing an overlapping instance.
-- **Independent verification (Gate 5) is still to run.**
+- **A full trading day's post-close refresh**, first due Monday 2026-09-21 after 16:30 IST.
+- **Retry noise.** Recent listings under 60 bars are revived and die every 15 minutes. That wastes
+  fetches, but nothing is lost.
 
 ## Rollback
 
