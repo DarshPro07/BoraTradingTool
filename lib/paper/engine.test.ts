@@ -79,3 +79,20 @@ describe("evaluatePaperOrder", () => {
     expect(evaluate(intent({ orderType: "LIMIT", limitPrice: 101 }))).toMatchObject({ status: "FILLED", fillPrice: 100 });
   });
 });
+
+describe("paper fills pay what a real delivery sell pays", () => {
+  it("charges the depository (DP) charge on an India delivery SELL, matching the cost model", async () => {
+    // A real delivery sell pays a flat ~₹15.93 DP charge per scrip. The paper engine omitted it
+    // while `roundTripCost` included it, so the two disagreed by ₹15.93 a round trip — about 10%
+    // of a ₹150 position, the size the owner's ₹1,000 account allows. Paper P&L would have looked
+    // ten points a trade better than reality, which is the one error a paper record must not make.
+    const { roundTripCost } = await import("./cost-model");
+    const sell = intent({ instrument: parseInstrument("IN:XNSE:RELIANCE"), side: "SELL", quantity: 1 });
+    const filled = evaluate(sell, { heldQuantity: 1 });
+    expect(filled.status).toBe("FILLED");
+    if (filled.status !== "FILLED") return;
+
+    const expected = roundTripCost({ market: "IN", notional: filled.fillPrice, product: "DELIVERY", broker: "ZERODHA" });
+    expect(filled.fees, "the sell leg must carry the DP charge").toBeCloseTo(expected.legs.sell.total, 2);
+  });
+});

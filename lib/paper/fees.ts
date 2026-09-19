@@ -47,6 +47,11 @@ export const PAPER_FEE_POLICIES = Object.freeze({
     /** Discount brokers charge nothing for delivery. */
     brokerageRate: 0,
     brokerageCap: 0,
+    /**
+     * Depository charge per scrip on a delivery SELL: Zerodha's ₹13.50, GST on top ≈ ₹15.93.
+     * Flat, so it dominates small trades — about 10% of a ₹150 round trip.
+     */
+    dpChargePerScrip: 13.5,
   },
   IN_EQUITY_INTRADAY_2026_01: {
     id: "IN_EQUITY_INTRADAY_2026_01",
@@ -81,6 +86,12 @@ export interface PaperFeeInput {
    * expensive rather than cheap.
    */
   product?: IndiaProduct;
+  /**
+   * Charge the depository fee a delivery SELL incurs. Defaults to true: the paper engine fills
+   * through this function alone, and omitting DP made every small paper round trip ~₹16 cheaper
+   * than the real one. `roundTripCost` passes false because it itemizes DP as its own line.
+   */
+  includeDpCharge?: boolean;
 }
 
 export function calculatePaperFees(input: PaperFeeInput): number {
@@ -106,8 +117,14 @@ export function calculatePaperFees(input: PaperFeeInput): number {
     policy.brokerageRate === 0 ? 0 : Math.min(policy.brokerageCap, input.notional * policy.brokerageRate);
   // GST applies to the broker's and exchange's charges, never to the statutory taxes.
   const gst = (brokerage + exchange + sebi) * policy.gstRate;
+  // ponytail: DP is per scrip per DAY; two sells of one scrip in a day are charged twice here.
+  // That errs expensive, as this file requires.
+  const dp =
+    input.product !== "INTRADAY" && input.side === "SELL" && input.includeDpCharge !== false
+      ? PAPER_FEE_POLICIES.IN_EQUITY_DELIVERY_2026_01.dpChargePerScrip * (1 + policy.gstRate)
+      : 0;
 
-  return roundMoney(stt + exchange + sebi + stamp + brokerage + gst);
+  return roundMoney(stt + exchange + sebi + stamp + brokerage + gst + dp);
 }
 
 function roundMoney(value: number): number {

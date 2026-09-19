@@ -91,8 +91,8 @@ export const FEE_SCHEDULES: readonly FeeSchedule[] = Object.freeze([
     product: "DELIVERY",
     effectiveFrom: "2024-01-01",
     effectiveTo: null,
-    // ₹13.50 base; GST is applied on top, giving ≈₹15.93.
-    dpChargePerScrip: 13.5,
+    // One source for the number: the fee policy the paper engine also fills through.
+    dpChargePerScrip: PAPER_FEE_POLICIES.IN_EQUITY_DELIVERY_2026_01.dpChargePerScrip,
     gstRate: PAPER_FEE_POLICIES.IN_EQUITY_DELIVERY_2026_01.gstRate,
     source: "Zerodha published charges, retrieved 2026-08-08",
   },
@@ -226,6 +226,9 @@ export function roundTripCost(input: RoundTripInput): RoundTripCost {
     side: "BUY",
     notional: input.notional,
     product: product ?? undefined,
+    // DP is itemized as its own line below; charging it inside the statutory figure too would
+    // count it twice.
+    includeDpCharge: false,
   });
   const sellStatutory = calculatePaperFees({
     market: input.market,
@@ -233,6 +236,9 @@ export function roundTripCost(input: RoundTripInput): RoundTripCost {
     side: "SELL",
     notional: input.notional,
     product: product ?? undefined,
+    // DP is itemized as its own line below; charging it inside the statutory figure too would
+    // count it twice.
+    includeDpCharge: false,
   });
 
   const buy: LegCost = { statutory: buyStatutory, dpCharge: 0, total: round(buyStatutory + brokerageDeltaPerLeg) };
