@@ -53,7 +53,10 @@ export const MODELS: Record<string, ModelSpec> = {
   // (owner, 2026-09-19; agy replaced Gemini CLI on 2026-06-18). Terminal sandbox on.
   "antigravity": {
     id: "antigravity", provider: "antigravity",
-    command: "C:/Users/marke/AppData/Local/agy/bin/agy.exe", args: ["--sandbox", "--dangerously-skip-permissions", "--disable-slash-commands", "-p"],
+    // Safe by default: plan mode, terminal sandbox, NO auto-approval. Research jobs read untrusted
+    // text (arXiv), so an auto-approving agent could be steered into commands; agy has no per-tool
+    // allowlist flag. If plan mode also blocks MCP writes, the job fails and the router rests agy.
+    command: "C:/Users/marke/AppData/Local/agy/bin/agy.exe", args: ["--sandbox", "--mode", "plan", "--disable-slash-commands", "-p"],
     defaultRestMs: HOUR, cwd: AGENT_WORKDIR,
   },
   "codex": {
