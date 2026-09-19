@@ -761,6 +761,25 @@ async function runCycleBody(
     );
   }
 
+  // The autonomous paper fund (docs/plans/autonomous-fund): every mandate decides on schedule,
+  // executes at the next opportunity, marks its sleeve and checks its kill rule. Paper only; its
+  // ledger is append-only so the record the owner's trust rests on cannot be edited.
+  try {
+    const [{ runFundPass }, { realFundDeps }] = await Promise.all([import("@/lib/fund/run"), import("@/lib/fund/deps")]);
+    for (const pass of await runFundPass(realFundDeps)) {
+      const parts = [
+        pass.decided && `decided ${pass.decided.date} ${pass.decided.hold ? "HOLD" : "OUT"}`,
+        pass.executed && `${pass.executed.side} ${pass.executed.status}${pass.executed.reason ? ` (${pass.executed.reason})` : ""}`,
+        pass.marked > 0 && `marked ${pass.marked}`,
+        pass.killed && "KILLED",
+      ].filter(Boolean);
+      if (parts.length > 0) actions.push(`Fund ${pass.mandate}: ${parts.join(", ")}.`);
+      if (pass.note) skipped.push(`Fund ${pass.mandate}: ${pass.note}`);
+    }
+  } catch (caught) {
+    impair(`Fund pass failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`);
+  }
+
   // Turn hypotheses into testable strategies — the last break in the research chain.
   //
   // Placed after the worker so a hypothesis formed from a source ingested this pass is considered

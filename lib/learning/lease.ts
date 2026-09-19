@@ -155,18 +155,52 @@ export function currentLease(file = leasePath(), now = Date.now(), ttlMs = LEASE
   return current;
 }
 
+/**
+ * Extend a lease we still hold. Returns the new stamp, or null when it is no longer ours.
+ *
+ * Written to a temporary file and renamed over the lease: a reader that caught a half-written
+ * lease would parse nothing, treat it as expired, and take it — the exact steal this prevents.
+ */
+export function renewLease(holder: string, acquiredAt: number, file = leasePath(), now = Date.now()): number | null {
+  const current = readHolder(file);
+  if (current === null || current.holder !== holder || current.acquiredAt !== acquiredAt) return null;
+  const temporary = `${file}.${process.pid}.renew`;
+  fs.writeFileSync(temporary, JSON.stringify({ holder, acquiredAt: now }), "utf8");
+  fs.renameSync(temporary, file);
+  return now;
+}
+
+/**
+ * Run under the cycle lease, renewing it while the run is in flight.
+ *
+ * Without renewal the lease is only as long as `LEASE_TTL_MS`, and on 2026-09-19 a scheduled cycle
+ * took 14.8 minutes against a 10-minute TTL: any other driver (the in-app supervisor polls every
+ * minute) could take the "expired" lease and run a second cycle alongside the first. A heartbeat
+ * keeps the TTL as crash recovery — a dead driver stops renewing — without capping cycle length.
+ */
 export async function withCycleLease<T>(
   holder: string,
   run: () => Promise<T>,
   file = leasePath(),
+  heartbeatMs = LEASE_TTL_MS / 3,
 ): Promise<LeaseOutcome<T>> {
   const lease = acquireLease(holder, file);
   if (lease === null) {
     return { acquired: false, blockedBy: currentLease(file), result: null };
   }
+  let stamp = lease.acquiredAt;
+  const heartbeat = setInterval(() => {
+    try {
+      stamp = renewLease(holder, stamp, file) ?? stamp;
+    } catch {
+      // A failed renewal leaves the old stamp, which still expires on its own schedule.
+    }
+  }, heartbeatMs);
+  heartbeat.unref?.();
   try {
     return { acquired: true, blockedBy: null, result: await run() };
   } finally {
-    releaseLease(lease.holder, lease.acquiredAt, file);
+    clearInterval(heartbeat);
+    releaseLease(lease.holder, stamp, file);
   }
 }

@@ -139,3 +139,27 @@ describe("withCycleLease", () => {
     expect(outcomes.filter((outcome) => outcome.acquired)).toHaveLength(1);
   });
 });
+
+describe("a long cycle keeps its lease", () => {
+  it("renews while the run is in flight, so no other driver can take it mid-cycle", async () => {
+    // Measured 2026-09-19: a scheduled cycle ran 14.8 minutes against a 10-minute TTL.
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "lease-renew-")), "cycle-lease");
+    let rivalGotIt = true;
+    const outcome = await withCycleLease(
+      "scheduler",
+      async () => {
+        const first = JSON.parse(fs.readFileSync(file, "utf8")).acquiredAt as number;
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        const renewed = JSON.parse(fs.readFileSync(file, "utf8")).acquiredAt as number;
+        // A rival judging expiry as of (renewed stamp + TTL - 1ms) must still be refused.
+        rivalGotIt = acquireLease("supervisor", file, renewed + LEASE_TTL_MS - 1) !== null;
+        return renewed > first;
+      },
+      file,
+      20,
+    );
+    expect(outcome.result, "the heartbeat moved the stamp forward").toBe(true);
+    expect(rivalGotIt).toBe(false);
+    expect(currentLease(file), "released at the end").toBeNull();
+  });
+});

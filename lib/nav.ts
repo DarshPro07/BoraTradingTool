@@ -64,6 +64,7 @@ export const NAV_SECTIONS: readonly NavSection[] = Object.freeze([
     children: [
       { href: "/trades", label: "Proposals", blurb: "Fully specified tickets awaiting your confirmation" },
       MARKETS,
+      { href: "/fund", label: "Fund", blurb: "Autonomous paper fund: mandates, decisions, trust gates" },
       { href: "/portfolio", label: "Risk", blurb: "Exposure, ceilings, gate decisions" },
       { href: "/audit", label: "Audit", blurb: "Every governed decision, allowed and denied" },
     ],
