@@ -74,3 +74,17 @@ describe("runModel — a CLI that reads stdin must not hang", () => {
     expect(result.output).toMatch(/started/);
   });
 });
+
+describe("review findings: tool scope and quota false positives", () => {
+  it("maps a job's tools to exact Claude tool names — no marketpulse wildcard", async () => {
+    const { claudeToolNames } = await import("./router");
+    const names = claudeToolNames(["marketpulse_record_source", "memory_recall", "WebFetch"]);
+    expect(names).toEqual(["mcp__marketpulse__marketpulse_record_source", "mcp__mem0__memory_recall", "WebFetch"]);
+    expect(names.some((n) => n.endsWith("*"))).toBe(false);
+  });
+
+  it("does not mistake a short answer that mentions quotas for a rate limit", () => {
+    expect(restUntil("Reviewed 2 papers on quota-based liquidity rules.", MODELS.codex!, NOW)).toBeNull();
+    expect(restUntil("You have hit your usage limit.", MODELS.codex!, NOW)).not.toBeNull();
+  });
+});

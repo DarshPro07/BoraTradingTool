@@ -76,7 +76,8 @@ export interface OrbExecutionRow {
   day: string;
   instrumentId: string;
   side: "BUY" | "SELL";
-  reason: "ENTRY" | "STOP" | "EOD";
+  /** CARRIED: shares left over from an earlier day whose exit never filled; sold first. */
+  reason: "ENTRY" | "STOP" | "EOD" | "CARRIED";
   status: string;
   quantity: number;
   fillPrice: number | null;
@@ -152,11 +153,36 @@ export async function runIntradayPass(deps: IntradayDeps, now = new Date()): Pro
   const out: IntradayPass[] = [];
   const suspended = orbDrawdown(deps.book().startingCash) > ORB_CONTRACT.killDrawdown;
   const decisions = readOrb("decision").filter((d) => d.day === day);
-  const executions = readOrb("execution").filter((e) => e.day === day);
+  const allExecutions = readOrb("execution");
+  const executions = allExecutions.filter((e) => e.day === day);
 
   for (const instrumentId of ORB_CONTRACT.universe) {
     const log = (action: string) => out.push({ instrumentId, action });
     let decision = decisions.find((d) => d.instrumentId === instrumentId);
+    const keyFor = (side: string) => `orb-IN1-${day}-${instrumentId.split(":").pop()}-${side}-${minute}`.replace(/[^A-Za-z0-9_-]/g, "_");
+
+    // 0. Shares carried from an earlier day (an exit that never filled) are invisible to a
+    //    today-only view: they would be left unmanaged and a second position opened beside them.
+    //    Count across all days, sell the carry first, and take no new position in that name today.
+    const carried = allExecutions
+      .filter((e) => e.instrumentId === instrumentId && e.status === "FILLED" && e.day < day)
+      .reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
+    const soldCarryToday = executions.some((e) => e.instrumentId === instrumentId && e.reason === "CARRIED");
+    if (carried > 1e-9 || soldCarryToday) {
+      if (carried > 1e-9) {
+        const r = await deps.place(instrumentId, "SELL", carried, keyFor("SELL"));
+        const filled = r.status === "FILLED";
+        const row: OrbExecutionRow = {
+          hash: ORB_HASH, day, instrumentId, side: "SELL", reason: "CARRIED", status: r.status, quantity: carried,
+          fillPrice: r.fillPrice, fees: filled ? r.fees : 0, cashDelta: filled ? r.fillPrice! * carried - r.fees : 0,
+          refusal: filled ? null : r.reason, at: now.toISOString(),
+        };
+        append("execution", row, `${day}:${instrumentId}:SELL:carried:${minute}`);
+        executions.push(row);
+        log(`SELL CARRIED ${r.status}${filled ? ` @ ${r.fillPrice}` : ` (${r.reason})`}`);
+      }
+      continue;
+    }
 
     // 1. Decide once the first candle has closed.
     if (!decision && minute >= 9 * 60 + 15 + ORB_CONTRACT.firstCandleMinutes) {
@@ -175,10 +201,9 @@ export async function runIntradayPass(deps: IntradayDeps, now = new Date()): Pro
     const mine = executions.filter((e) => e.instrumentId === instrumentId && e.status === "FILLED");
     const held = mine.reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
     const entered = mine.some((e) => e.side === "BUY");
-    const key = (side: string) => `orb-IN1-${day}-${instrumentId.split(":").pop()}-${side}-${minute}`.replace(/[^A-Za-z0-9_-]/g, "_");
 
     const record = async (side: "BUY" | "SELL", quantity: number, reason: OrbExecutionRow["reason"]) => {
-      const r = await deps.place(instrumentId, side, quantity, key(side));
+      const r = await deps.place(instrumentId, side, quantity, keyFor(side));
       const filled = r.status === "FILLED";
       const gross = filled ? r.fillPrice! * quantity : 0;
       const row: OrbExecutionRow = {
@@ -227,22 +252,30 @@ export async function runIntradayPass(deps: IntradayDeps, now = new Date()): Pro
   return out;
 }
 
-/** Realized P&L per session from the ledger alone (a session counts once flat). */
+/**
+ * Realized P&L per session, by ROUND TRIP: a position's cash flows are realized on the day its
+ * quantity returns to zero, whichever day it opened. (Grouping by day alone made a carried
+ * position's buy and sell land on different days, and neither day ever counted as flat.)
+ */
 export function orbDailyPnl(): { day: string; pnl: number; trades: number }[] {
-  const byDay = new Map<string, { pnl: number; trades: number; open: number }>();
+  const open = new Map<string, { quantity: number; cash: number }>();
+  const byDay = new Map<string, { pnl: number; trades: number }>();
   for (const e of readOrb("execution")) {
     if (e.status !== "FILLED") continue;
-    const d = byDay.get(e.day) ?? { pnl: 0, trades: 0, open: 0 };
-    d.pnl += e.cashDelta;
-    d.open += e.side === "BUY" ? e.quantity : -e.quantity;
-    if (e.side === "SELL") d.trades += 1;
-    byDay.set(e.day, d);
+    const position = open.get(e.instrumentId) ?? { quantity: 0, cash: 0 };
+    position.quantity += e.side === "BUY" ? e.quantity : -e.quantity;
+    position.cash += e.cashDelta;
+    if (Math.abs(position.quantity) < 1e-9) {
+      const d = byDay.get(e.day) ?? { pnl: 0, trades: 0 };
+      d.pnl += position.cash;
+      d.trades += 1;
+      byDay.set(e.day, d);
+      open.delete(e.instrumentId);
+    } else {
+      open.set(e.instrumentId, position);
+    }
   }
-  // A day still holding a position has an unrealized leg; counting its buy alone would book a loss.
-  return [...byDay]
-    .filter(([, d]) => Math.abs(d.open) < 1e-9)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([day, d]) => ({ day, pnl: d.pnl, trades: d.trades }));
+  return [...byDay].sort(([x], [y]) => x.localeCompare(y)).map(([day, d]) => ({ day, ...d }));
 }
 
 /** Drawdown of `book` + cumulative realized ORB P&L from its peak (0 with no history). */

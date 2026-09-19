@@ -90,7 +90,9 @@ export const TIERS: Record<Tier, string[]> = {
   deep: ["claude-opus", "codex", "antigravity", "claude-sonnet"],
 };
 
-const QUOTA = /usage limit|rate[ -]?limit|quota|RESOURCE_EXHAUSTED|too many requests|\b429\b|limit (?:reached|exceeded)|out of credits/i;
+// Specific phrases only: a bare "quota" or "rate limit" inside a short, legitimate answer once
+// rested a working model for an hour (review 2026-09-19).
+const QUOTA = /usage limit|rate[ -]?limit(?:ed| reached| exceeded)|quota (?:exceeded|exhausted|reached)|RESOURCE_EXHAUSTED|too many requests|\b429\b|limit (?:reached|exceeded)|out of credits/i;
 
 /**
  * When a quota error says when it lifts, believe it; otherwise rest for the model's default.
@@ -147,8 +149,24 @@ export interface RunResult {
   durationMs: number;
 }
 
-/** Run one prompt on one model, headless, from the repository root (so its MCP config applies). */
-export function runModel(spec: ModelSpec, prompt: string, timeoutMs: number, cwd = process.cwd()): Promise<RunResult> {
+/**
+ * The tools a job may use, as Claude tool names. `marketpulse_*` and `memory_*` map to their MCP
+ * servers. Without a list a job gets read-only web access and nothing that writes: the review found
+ * the old `mcp__marketpulse__*` wildcard let text injected into a paper write "known" claims.
+ */
+export function claudeToolNames(tools: readonly string[]): string[] {
+  return tools.map((t) =>
+    t.startsWith("marketpulse_") ? `mcp__marketpulse__${t}` : t.startsWith("memory_") ? `mcp__mem0__${t}` : t,
+  );
+}
+
+/** Run one prompt on one model, headless. Claude's --allowedTools is narrowed to the job's list. */
+export function runModel(spec: ModelSpec, prompt: string, timeoutMs: number, cwd = process.cwd(), tools?: readonly string[]): Promise<RunResult> {
+  if (spec.provider === "claude") {
+    const i = spec.args.indexOf("--allowedTools");
+    const allowed = tools?.length ? claudeToolNames(tools) : ["WebSearch", "WebFetch"];
+    spec = { ...spec, args: [...spec.args.slice(0, i + 1), ...allowed, ...spec.args.slice(i + 1 + MCP_TOOLS.length)] };
+  }
   const started = Date.now();
   return new Promise((resolve) => {
     // stdin closed: several CLIs read piped stdin to EOF before starting, and an open pipe that never
@@ -185,7 +203,7 @@ export function runModel(spec: ModelSpec, prompt: string, timeoutMs: number, cwd
  * broken CLI cannot stall a layer. At most one attempt per model per call; every attempt recorded.
  */
 export async function routeJob(
-  job: { id: string; tier: Tier; prompt: string; timeoutMs: number; preferred?: string[] },
+  job: { id: string; tier: Tier; prompt: string; timeoutMs: number; preferred?: string[]; tools?: string[] },
   run: typeof runModel = runModel,
 ): Promise<RunResult | null> {
   const tried = new Set<string>();
@@ -202,7 +220,7 @@ export async function routeJob(
     const identity = `You are the "${id}" model running MarketPulse job "${job.id}". Use agent="${id}" in memory_remember.
 
 `;
-    last = await run(spec, identity + job.prompt, job.timeoutMs);
+    last = await run(spec, identity + job.prompt, job.timeoutMs, undefined, job.tools);
     recordRun(job.id, spec, last, startedAt);
     if (last.status === "SUCCEEDED") return last;
     const until =

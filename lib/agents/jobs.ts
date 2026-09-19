@@ -27,6 +27,8 @@ export interface AgentJob {
   cadenceMs: number;
   timeoutMs: number;
   preferred: string[];
+  /** Tools the job may use (MCP short names, WebFetch/WebSearch). Enforced for Claude runs. */
+  tools: string[];
   prompt: string;
 }
 
@@ -50,6 +52,7 @@ export function parseJob(text: string): AgentJob {
     cadenceMs: Number(meta.cadenceMinutes ?? 120) * 60_000,
     timeoutMs: Number(meta.timeoutMinutes ?? 15) * 60_000,
     preferred: (meta.preferred ?? "").split(",").map((s: string) => s.trim()).filter(Boolean),
+    tools: (meta.tools ?? "").split(",").map((s: string) => s.trim()).filter(Boolean),
     prompt: match[2]!.trim(),
   };
 }

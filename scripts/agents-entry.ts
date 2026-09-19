@@ -35,7 +35,7 @@ export async function runAgentsPass(holder: string): Promise<number> {
         .sort((a, b) => b.overdue - a.overdue);
       if (due.length === 0) return "no agent job due";
       const { job } = due[0]!;
-      const result = await routeJob({ id: job.id, tier: job.tier, prompt: job.prompt, timeoutMs: job.timeoutMs, preferred: job.preferred });
+      const result = await routeJob({ id: job.id, tier: job.tier, prompt: job.prompt, timeoutMs: job.timeoutMs, preferred: job.preferred, tools: job.tools });
       return result ? `${job.id} on ${result.model}: ${result.status} (${Math.round(result.durationMs / 1000)}s)` : `${job.id}: every model is resting`;
     }, path.resolve(process.cwd(), "marketpulse.db.agents-lease"));
     process.stdout.write(`[${holder}] ${outcome.acquired ? outcome.result : `skipped, ${outcome.blockedBy?.holder} holds the agents lease`}\n`);

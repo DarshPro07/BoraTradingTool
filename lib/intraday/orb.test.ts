@@ -84,3 +84,45 @@ describe("runIntradayPass", () => {
     expect(readOrb("decision")[0]?.long).toBe(false);
   });
 });
+
+describe("positions never leak across days (review finding 2026-09-19)", () => {
+  useTemporaryDatabase();
+  const at = (day: string, hhmm: string) => new Date(`${day}T${hhmm}:00+05:30`);
+  const [A] = ORB_CONTRACT.universe;
+
+  function deps(prices: Record<string, number>, sellFails = false) {
+    const orders: { side: string; qty: number }[] = [];
+    const d: IntradayDeps = {
+      firstCandle: async () => ({ open: 100, high: 103, low: 90, close: 102 }),
+      lastPrice: async (id) => prices[id] ?? null,
+      sessionOpen: () => true,
+      book: () => ({ startingCash: 25_000, cash: 25_000, capPct: 15 }),
+      place: async (id, side, qty) => {
+        orders.push({ side, qty });
+        if (side === "SELL" && sellFails) return { status: "REJECTED", fillPrice: null, fees: 0, reason: "INELIGIBLE_QUOTE" };
+        return { status: "FILLED", fillPrice: prices[id]!, fees: 1, reason: null };
+      },
+    };
+    return { d, orders };
+  }
+
+  it("sells a position carried from yesterday before anything else, and does not buy again that day", async () => {
+    const monday = deps({ [A!]: 100 }, true); // the 15:05 exit is refused all afternoon
+    await runIntradayPass(monday.d, at("2026-09-21", "09:21"));
+    await runIntradayPass(monday.d, at("2026-09-21", "15:05"));
+
+    const tuesday = deps({ [A!]: 101 });
+    await runIntradayPass(tuesday.d, at("2026-09-22", "09:21"));
+    expect(tuesday.orders.map((o) => o.side), "carried shares go first; no second position").toEqual(["SELL"]);
+  });
+
+  it("realizes a carried round trip on the day it closes", async () => {
+    const monday = deps({ [A!]: 100 }, true);
+    await runIntradayPass(monday.d, at("2026-09-21", "09:21"));
+    await runIntradayPass(monday.d, at("2026-09-21", "15:05"));
+    await runIntradayPass(deps({ [A!]: 104 }).d, at("2026-09-22", "09:21"));
+    const pnl = orbDailyPnl();
+    expect(pnl.map((d) => d.day)).toEqual(["2026-09-22"]);
+    expect(pnl[0]!.pnl).toBeGreaterThan(0);
+  });
+});
