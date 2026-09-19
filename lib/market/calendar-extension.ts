@@ -214,15 +214,18 @@ export function extendDerivedCalendar(nowMs = Date.now()): { advanced: boolean; 
     };
   }
 
+  const file = path.resolve(process.cwd(), CALENDAR_FILE);
+  // Keep where the base calendar came from; only the extension line is replaced each time.
+  const base = /\* (Derived from [\s\S]*?\.)\n/.exec(fs.readFileSync(file, "utf8"))?.[1];
   fs.writeFileSync(
-    path.resolve(process.cwd(), CALENDAR_FILE),
+    file,
     renderCalendarFile({
       holidays: [...NSE_TRADING_HOLIDAYS, ...judgement.addedHolidays],
       weekendSessions: [...NSE_WEEKEND_SESSIONS, ...judgement.addedWeekendSessions],
       declared: [...EXCHANGE_DECLARED_DATES],
       derivedThrough: judgement.derivedThrough,
       provenance:
-        `Extended ${CALENDAR_DERIVED_THROUGH} -> ${judgement.derivedThrough} from ${referenceLastDates.length} ` +
+        `${base ? `${base}\n * ` : ""}Extended to ${judgement.derivedThrough} from ${referenceLastDates.length} ` +
         `reference instruments (>= ${REFERENCE_MIN_BARS} bars, quorum ${QUORUM}), no network.`,
     }),
     "utf8",

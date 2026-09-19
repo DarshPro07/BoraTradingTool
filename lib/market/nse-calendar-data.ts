@@ -2,10 +2,12 @@
  * The NSE trading calendar — GENERATED. Do not edit by hand.
  *
  * Regenerate with `npx tsx scripts/sync-nse-calendar.mts`, which documents the two sources and
- * why neither alone is sufficient.
+ * why neither alone is sufficient. Extended session by session, derived-only, by
+ * `lib/market/calendar-extension.ts` in the scheduled cycle.
  *
  * Derived from 358 instruments spanning 2000-01-03..2026-08-14 (6598 real sessions),
  * extended by the Upstox market-holidays API.
+ * Extended to 2026-09-18 from 360 reference instruments (>= 750 bars, quorum 0.5), no network.
  */
 
 /** Weekdays the NSE was closed. */
@@ -422,4 +424,4 @@ export const EXCHANGE_DECLARED_DATES: ReadonlySet<string> = new Set([
 ]);
 
 /** The calendar is derived from data up to here; past it, only the holidays API has spoken. */
-export const CALENDAR_DERIVED_THROUGH = "2026-08-14";
+export const CALENDAR_DERIVED_THROUGH = "2026-09-18";
