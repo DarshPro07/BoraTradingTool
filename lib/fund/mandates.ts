@@ -11,7 +11,7 @@
 import { createHash } from "node:crypto";
 import { isPlausibleSessionDate } from "@/lib/market/session-calendar";
 
-export type MandateId = "FN1" | "FC1" | "FC2";
+export type MandateId = "FN1" | "FC1" | "FC2" | "IN1";
 
 export interface MandateContract {
   id: MandateId;
@@ -25,7 +25,7 @@ export interface MandateContract {
   /** Sleeve drawdown (fraction) that flattens and suspends the mandate. */
   killDrawdown: number;
   /** What the mandate claims to deliver against buy-and-hold — the T2 gate tests exactly this. */
-  declaredBenefit: "DRAWDOWN" | "RETURN_AND_DRAWDOWN";
+  declaredBenefit: "DRAWDOWN" | "RETURN_AND_DRAWDOWN" | "POSITIVE_NET_RETURN";
   prior: string;
   sources: readonly string[];
 }

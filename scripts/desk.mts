@@ -17,7 +17,7 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { parseInstrument } from "@/lib/market/instruments";
-import { sizeDeskTrade } from "@/lib/paper/desk";
+import { enginePositionCapPct, sizeDeskTrade } from "@/lib/paper/desk";
 import { explainRejection } from "@/lib/paper/explain";
 import { getPaperState } from "@/lib/paper/repository";
 import { placePaperOrder } from "@/lib/paper/service";
@@ -41,22 +41,12 @@ const instrument = parseInstrument(rawInstrument);
 const product = flag("product") === "INTRADAY" ? "INTRADAY" : "DELIVERY";
 const db = getDb();
 
-/** The engine's cap, read the way `persistPaperOrder` reads it (lib/paper/repository.ts, protected). */
-function positionCapPct(): number {
-  const config = db.select().from(schema.agentConfig).where(eq(schema.agentConfig.id, 1)).get();
-  const strategies = db.select().from(schema.strategies).all();
-  const active =
-    strategies.find((s) => s.id === config?.activeStrategyId) ?? strategies.find((s) => s.isDefault) ?? strategies[0];
-  const configured = config?.maxPositionPct ?? 15;
-  return Math.min(configured, active?.maxPositionPct ?? configured);
-}
-
 function sizing() {
   const account = db.select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, instrument.currency)).get();
   return sizeDeskTrade({
     cash: getPaperState(instrument).cash,
     startingCash: account?.startingCash ?? 0,
-    maxPositionPct: positionCapPct(),
+    maxPositionPct: enginePositionCapPct(),
     entry: num("entry"),
     stop: num("stop"),
     target: num("target"),

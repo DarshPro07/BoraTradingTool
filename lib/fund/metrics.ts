@@ -112,7 +112,7 @@ export interface TrustGates {
 }
 
 /** PRD §7, frozen. The system reports these; it never acts on them toward real money. */
-export function trustGates(mandate: MandateContract, metrics: MandateMetrics, facts: GateFacts): TrustGates {
+export function trustGates(mandate: Pick<MandateContract, "declaredBenefit">, metrics: MandateMetrics, facts: GateFacts): TrustGates {
   const reasons: string[] = [];
   const t1 =
     metrics.daysLive >= 30 && facts.decisionDatesRecorded >= facts.decisionDatesDue && facts.unexplainedFailures === 0;
@@ -121,7 +121,12 @@ export function trustGates(mandate: MandateContract, metrics: MandateMetrics, fa
   const drawdownOk = metrics.maxDrawdown <= metrics.benchmarkMaxDrawdown;
   const returnOk =
     metrics.totalReturn !== null && metrics.benchmarkReturn !== null && metrics.totalReturn >= metrics.benchmarkReturn;
-  const benefit = mandate.declaredBenefit === "DRAWDOWN" ? drawdownOk : drawdownOk && returnOk;
+  const benefit =
+    mandate.declaredBenefit === "DRAWDOWN"
+      ? drawdownOk
+      : mandate.declaredBenefit === "POSITIVE_NET_RETURN"
+        ? metrics.totalReturn !== null && metrics.totalReturn > 0 // intraday: no buy-and-hold twin; beat cash
+        : drawdownOk && returnOk;
   const t2 = metrics.daysLive >= 90 && facts.decisionPoints >= 3 && benefit;
   if (!t2) reasons.push(`T2 needs >= 90 days, >= 3 decisions and the declared benefit (${mandate.declaredBenefit}) vs buy-and-hold.`);
 

@@ -2,12 +2,17 @@
  * Everything the owner reads about the fund, computed from the ledger alone — so every figure on
  * `/fund` or in `scripts/fund.mts report` traces back to recorded decisions and cited closes.
  */
-import { isDecisionDate, mandateHash, MANDATES, type MandateContract } from "./mandates";
+import { eq } from "drizzle-orm";
+import { getDb, schema } from "@/lib/db";
+import { ORB_CONTRACT, ORB_HASH, orbDailyPnl, orbDrawdown, readOrb } from "@/lib/intraday/orb";
+import { isPlausibleSessionDate } from "@/lib/market/session-calendar";
+import { isDecisionDate, mandateHash, MANDATES, shiftDate, type MandateContract } from "./mandates";
 import { readFund, type DecisionRow, type ExecutionRow } from "./ledger";
 import { mandateMetrics, trustGates, type MandateMetrics, type NavPoint, type TrustGates } from "./metrics";
 
 export interface MandateReport {
-  contract: MandateContract;
+  /** What the page and the MCP report read; IN1 (intraday) has no daily rule, sleeve or schedule. */
+  contract: Pick<MandateContract, "id" | "title" | "venue" | "prior" | "declaredBenefit"> & { asset: { symbol: string } };
   hash: string;
   suspended: boolean;
   holding: number;
@@ -48,6 +53,46 @@ export function mandateReport(contract: MandateContract): MandateReport {
   };
 }
 
+/** IN1, the intraday ORB trader, in the same shape — from its own ledger. Benchmark: cash. */
+export function intradayReport(): MandateReport {
+  const decisionRows = readOrb("decision");
+  const executionRows = readOrb("execution");
+  const book = getDb().select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, "INR")).get()?.startingCash ?? 0;
+  let cumulative = book;
+  const nav: NavPoint[] = orbDailyPnl().map((d) => ({ date: d.day, nav: (cumulative += d.pnl), benchmark: book }));
+  const days = [...new Set(decisionRows.map((d) => d.day))].sort();
+  const metrics = mandateMetrics(nav, 248);
+  let due = 0;
+  if (days.length) {
+    const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+    for (let d = days[0]!; d <= today; d = shiftDate(d, 1)) if (isPlausibleSessionDate(d)) due += 1;
+  }
+  const gates = trustGates(ORB_CONTRACT, metrics, {
+    decisionDatesDue: due,
+    decisionDatesRecorded: days.length,
+    unexplainedFailures: executionRows.filter((e) => e.status !== "FILLED" && !e.refusal).length,
+    decisionPoints: days.length,
+  });
+  const today = days.at(-1);
+  return {
+    contract: { id: "IN1", title: ORB_CONTRACT.title, venue: "NSE", prior: ORB_CONTRACT.prior, declaredBenefit: ORB_CONTRACT.declaredBenefit, asset: { symbol: "shares (3 names)" } },
+    hash: ORB_HASH,
+    suspended: orbDrawdown(book) > ORB_CONTRACT.killDrawdown,
+    holding: executionRows.filter((e) => e.status === "FILLED" && e.day === today).reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0),
+    decisions: decisionRows.map((d) => ({
+      mandate: "IN1", hash: d.hash, decisionDate: d.day, hold: d.long, bootstrap: false, capital: book,
+      inputs: { instrument: d.instrumentId, stop: d.stop, open: d.first.open, close: d.first.close },
+    })),
+    executions: executionRows.map((e) => ({
+      mandate: "IN1", hash: e.hash, decisionDate: e.day, side: e.side, status: e.status, reason: e.refusal ?? `${e.reason} ${e.instrumentId}`,
+      quantityDelta: e.side === "BUY" ? e.quantity : -e.quantity, cashDelta: e.cashDelta, fillPrice: e.fillPrice, fees: e.fees, tradeDate: e.day, at: e.at,
+    })),
+    nav,
+    metrics,
+    gates,
+  };
+}
+
 export function fundReport(): MandateReport[] {
-  return MANDATES.map(mandateReport);
+  return [...MANDATES.map(mandateReport), intradayReport()];
 }

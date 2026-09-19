@@ -11,6 +11,8 @@
  * authority and re-checks everything here; this exists so the desk refuses BEFORE it asks, with a
  * reason a human can act on.
  */
+import { eq } from "drizzle-orm";
+import { getDb, schema } from "@/lib/db";
 import { roundTripCost } from "./cost-model";
 import type { IndiaProduct } from "./fees";
 
@@ -89,3 +91,18 @@ export function sizeDeskTrade(input: {
     reason: `${quantity} share(s), ₹${notional.toFixed(0)}; risk ₹${sized.riskAmount.toFixed(2)}, cost ₹${cost.total.toFixed(2)}.`,
   };
 }
+
+/**
+ * The paper engine's position cap, read exactly as `persistPaperOrder` reads it
+ * (lib/paper/repository.ts, protected): the configured cap, tightened by the active strategy's.
+ */
+export function enginePositionCapPct(): number {
+  const db = getDb();
+  const config = db.select().from(schema.agentConfig).where(eq(schema.agentConfig.id, 1)).get();
+  const strategies = db.select().from(schema.strategies).all();
+  const active =
+    strategies.find((s) => s.id === config?.activeStrategyId) ?? strategies.find((s) => s.isDefault) ?? strategies[0];
+  const configured = config?.maxPositionPct ?? 15;
+  return Math.min(configured, active?.maxPositionPct ?? configured);
+}
+
