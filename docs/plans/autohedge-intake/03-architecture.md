@@ -22,6 +22,10 @@ MCP tool, and Execution is the existing paper engine. New code: `lib/paper/desk.
 Found and fixed on the way: paper delivery sells did not pay the ₹15.93 DP charge (`11e9e56`).
 Paper P&L at ₹1,000 would have read about 10 points per trade better than reality.
 
+## Built: intraday paper (slice 2, `d3662ec`)
+
+Product on every paper order/position (migration 0026), intraday fees, no mixing, no entry from 15:10 IST, cycle square-off from 15:10 or at once if carried.
+
 ## Designed, not built: Kite (real money, NSE)
 
 Nothing is wired. What must be true before a real order can leave this machine:
@@ -41,7 +45,11 @@ When built, the adapter takes the same intent `placePaperOrder` takes and sits b
 
 Every live order is recorded beside its paper twin.
 
-## Next slice: Solana (paper first)
+## Built: Solana paper (slice 3, 2026-09-19)
+
+`lib/crypto/jupiter.ts` (read-only; keyless 30/min, `JUPITER_API_KEY` for 60/min), `lib/crypto/paper.ts` (fills = real Jupiter quote for the exact size + stated 0.02 USDC network fee; verified tokens only, impact <= 1%, 25% position cap, 10 fills/day), migration 0027 (300 USDC book), `scripts/crypto-desk.mts` (quant / buy / sell / status). Live round trip: 10 USDC -> 0.0894 SOL at 111.88 -> 10.0006 USDC; book 299.96.
+
+### Original plan
 
 This system has no crypto data, instruments, cost model or risk model. The minimum honest slice:
 1. Read-only prices from Jupiter's price API. AutoHedge's `jupiter_price.py` shows the shape; it is

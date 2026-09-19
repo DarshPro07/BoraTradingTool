@@ -1226,3 +1226,40 @@ export const sectorClassifications = sqliteTable("sector_classifications", {
 });
 
 export type SectorClassificationRow = typeof sectorClassifications.$inferSelect;
+
+/** Solana paper book (0027). Separate from the NSE paper tables: different asset, costs and hours. */
+export const cryptoPaperAccounts = sqliteTable("crypto_paper_accounts", {
+  asset: text("asset").primaryKey(),
+  startingCash: real("starting_cash").notNull(),
+  cash: real("cash").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const cryptoPaperPositions = sqliteTable("crypto_paper_positions", {
+  mint: text("mint").primaryKey(),
+  symbol: text("symbol").notNull(),
+  quantity: real("quantity").notNull(),
+  averageCost: real("average_cost").notNull(),
+  realizedPnl: real("realized_pnl").notNull().default(0),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const cryptoPaperOrders = sqliteTable("crypto_paper_orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  mint: text("mint").notNull(),
+  symbol: text("symbol").notNull(),
+  side: text("side").notNull(),
+  quantity: real("quantity").notNull(),
+  usdcAmount: real("usdc_amount").notNull(),
+  fillPrice: real("fill_price"),
+  feesUsdc: real("fees_usdc").notNull().default(0),
+  /** Fraction of the quote's price impact, as Jupiter reported it. */
+  priceImpact: real("price_impact").notNull(),
+  route: text("route"),
+  status: text("status").notNull(),
+  reason: text("reason"),
+  /** Why the desk took the trade. Every paper swap carries its reasoning. */
+  thesis: text("thesis").notNull(),
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});

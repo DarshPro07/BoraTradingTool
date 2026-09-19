@@ -95,6 +95,31 @@ open positions. If every candidate died at `UNAFFORDABLE` or `COST_EXCEEDS_EDGE`
 that capital, not analysis, is the binding constraint. On delivery trades the flat ₹15.93 DP
 charge is about 11% of a ₹150 position.
 
+## Crypto (Solana): paper only
+
+Same roles, a separate book (300 USDC paper), and fills at **real Jupiter quotes for the exact
+size**. Nothing holds a wallet key or signs a transaction.
+
+```bash
+npx tsx scripts/crypto-desk.mts quant SOL          # verified token, live price, computed daily technicals
+npx tsx scripts/crypto-desk.mts buy SOL --usdc 20 --thesis "why, and what would prove it wrong"
+npx tsx scripts/crypto-desk.mts sell SOL --all --thesis "why now"
+npx tsx scripts/crypto-desk.mts status              # positions marked at a live EXIT quote
+```
+
+**Rules the book enforces:**
+- Jupiter-verified tokens only.
+- Price impact of 1% or less.
+- A position may use at most 25% of starting capital.
+- 10 fills a day.
+
+**Your rules on top:**
+- Stick to liquid, established tokens.
+- A memecoin's technicals are not evidence.
+- `INSUFFICIENT_HISTORY` or `UNAVAILABLE` from `quant` means abstain.
+- Crypto trades 24/7, so review positions every pass.
+- Real Indian tax applies: 30% on gains and 1% TDS on transfers. Any edge must clear it.
+
 ## What this desk is not
 
 It has no demonstrated edge. The Foundry's five probes found none on this data, and an LLM reading

@@ -90,6 +90,9 @@ const MIGRATIONS = [
   // an engine that priced everything as delivery could not measure an intraday strategy at all.
   // Additive, defaulted to DELIVERY — how every existing row was priced.
   "0026_paper_product.sql",
+  // Solana paper book: account, positions, orders. Owner instruction 2026-09-19. New tables only,
+  // seeded at 300 USDC; fills come from real Jupiter quotes and nothing holds a key.
+  "0027_crypto_paper.sql",
 ] as const;
 
 function tableExists(sqlite: Database.Database, table: string): boolean {

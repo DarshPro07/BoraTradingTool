@@ -11,6 +11,9 @@ brain, NSE and Solana.
 |---|---|
 | `11e9e56` | Paper delivery sells now pay the ₹15.93 DP charge. Before, paper was about 10% a trade optimistic at ₹1,000 |
 | `cd2ff0f` | The desk: `trading-desk` skill, `lib/paper/desk.ts` sizing, `scripts/desk.mts` paper execution |
+| `f8a9710` | INR paper capital 1,000 -> 25,000, audited (paper only) |
+| `d3662ec` | Intraday paper product, cut-off and cycle square-off |
+| (this) | Solana paper book at live Jupiter quotes |
 
 ## Evidence
 
@@ -33,7 +36,8 @@ brain, NSE and Solana.
   ₹1,000, and the market was closed.
 - **Kite: designed only.** It needs owner changes to protected capability and governance files,
   plus credentials, daily login and SEBI checks.
-- **Solana: designed only, as the next slice.**
+- **Solana: paper built and verified live** (10 USDC round trip, book 299.96). Real execution still needs the owner's go-ahead and a wallet key.
+- **Intraday square-off in a live session:** tested with fixtures and clock; first real check is the next trading day's 15:15 cycle.
 
 ## Honest outcome for the owner's goal
 
