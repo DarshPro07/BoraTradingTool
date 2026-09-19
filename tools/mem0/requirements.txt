@@ -1,0 +1,6 @@
+# Shared agent memory (tools/mem0/server.py). Install into D:/marketpulse-mem0/venv:
+#   python -m venv D:/marketpulse-mem0/venv && D:/marketpulse-mem0/venv/Scripts/python -m pip install -r tools/mem0/requirements.txt
+mem0ai==2.1.0
+fastembed
+faiss-cpu
+mcp>=2

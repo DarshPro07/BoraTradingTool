@@ -2,12 +2,20 @@
   "mcpServers": {
     "marketpulse": {
       "command": "node",
-      "args": ["dist/mcp/server.mjs"],
+      "args": [
+        "dist/mcp/server.mjs"
+      ],
       "env": {
         "MARKETPULSE_DB_PATH": "marketpulse.db",
         "QUANT_CORE_ROOT": "E:/Trading_BOT",
         "QUANT_CORE_URL": "http://127.0.0.1:8787"
       }
+    },
+    "mem0": {
+      "command": "D:/marketpulse-mem0/venv/Scripts/python.exe",
+      "args": [
+        "E:/BoraTradingTool/tools/mem0/server.py"
+      ]
     }
   }
 }
