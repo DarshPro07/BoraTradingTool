@@ -57,6 +57,17 @@ if (!account) {
     .set({ startingCash: amount, cash: amount, updatedAt: new Date() })
     .where(eq(schema.paperAccounts.currency, currency))
     .run();
+  // A capital change reframes every later paper result, so it leaves a record.
+  db.insert(schema.auditEvents)
+    .values({
+      actor: "owner",
+      action: "paper_capital_set",
+      decision: "allowed",
+      subject: `paper_accounts:${currency}`,
+      detail: JSON.stringify({ before: account.startingCash, after: amount, paperOnly: true }),
+      createdAt: new Date(),
+    })
+    .run();
   console.log(
     `${currency} paper account set to ${amount.toLocaleString("en-IN")} ` +
       `(was ${account.startingCash.toLocaleString("en-IN")}, untraded so nothing was lost).`,
