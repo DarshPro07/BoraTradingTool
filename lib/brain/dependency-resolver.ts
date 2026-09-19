@@ -92,11 +92,16 @@ export async function resolveDataRequirement(requirement: DataRequirement): Prom
         "for it would create a phantom instrument. Nothing was queued.",
     };
   }
-  if (readiness.ready) {
+  // Satisfied means deep AND current. Depth alone is what this line used to check, and it answered
+  // every deep-but-stale instrument the planner handed it with SATISFIED — the third layer of the
+  // same depth-versus-freshness defect, after the planner (fixed 2026-08-17) and the executor
+  // (fixed 2026-08-26). Daily ingestion stayed dead on the scheduled path for three weeks after the
+  // second fix was reported as complete.
+  if (readiness.ready && readiness.freshAgainstUniverse) {
     return {
       state: "SATISFIED",
       jobId: null,
-      detail: `${readiness.stored} of ${readiness.required} required bars already stored.`,
+      detail: `${readiness.stored} of ${readiness.required} required bars stored, and current.`,
     };
   }
 
@@ -106,6 +111,8 @@ export async function resolveDataRequirement(requirement: DataRequirement): Prom
     payload: { instrumentId },
     dedupeKey: dedupeKeyFor(instrumentId),
     priority: PRIORITY[requirement.purpose],
+    // A refresh is recurring work: an earlier successful ingest must not stand in for today's.
+    refreshSucceeded: readiness.ready,
   });
 
   if (!queued.deduped) {

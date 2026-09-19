@@ -173,7 +173,27 @@ export interface EnqueueInput {
   maxAttempts?: number;
   dedupeKey?: string;
   availableAt?: Date;
+  /**
+   * Re-queue a SUCCEEDED row answering for this dedupe key, once `REFRESH_COOLDOWN_MS` has passed.
+   *
+   * Opt-in, because for most job kinds a success genuinely settles the key. Recurring work does not
+   * fit that model: an instrument's history ingested once in August must be refreshed in September,
+   * and deduping against the August success silently froze 2,077 instruments for three weeks. The
+   * only instrument that kept updating was one whose job kept FAILING, because only a dead row was
+   * revivable — a queue that retries failures but never repeats successes.
+   */
+  refreshSucceeded?: boolean;
 }
+
+/**
+ * How long a succeeded row must rest before `refreshSucceeded` may re-queue it.
+ *
+ * Hours rather than the dead-row cooldown's minutes. Before the close a refresh can succeed and
+ * leave the instrument still behind because the provider has no new bar yet, and a suspended stock
+ * never gains one; without a long rest the enqueue cadence itself becomes a polling loop against
+ * the provider. Six hours bounds that to four attempts a day.
+ */
+export const REFRESH_COOLDOWN_MS = 6 * 60 * 60_000;
 
 export interface ClaimedJob {
   id: number;
@@ -244,6 +264,25 @@ function enqueueInTransaction(
             "revived",
             `Retryable failure cooled down; attempts reset. Was: ${existing.lastError?.slice(0, 300) ?? "unknown"}`,
           );
+          return { id: existing.id, deduped: false, revived: true };
+        }
+      }
+      if (input.refreshSucceeded && existing.status === "succeeded") {
+        const rested = now.getTime() - existing.updatedAt.getTime() >= REFRESH_COOLDOWN_MS;
+        if (rested) {
+          db.update(schema.researchJobs)
+            .set({
+              status: "queued",
+              attempts: 0,
+              lastError: null,
+              availableAt: now,
+              lockedBy: null,
+              lockedUntil: null,
+              updatedAt: now,
+            })
+            .where(eq(schema.researchJobs.id, existing.id))
+            .run();
+          logEvent(existing.id, "refreshed", "Recurring work: a past success re-queued after its rest period.");
           return { id: existing.id, deduped: false, revived: true };
         }
       }

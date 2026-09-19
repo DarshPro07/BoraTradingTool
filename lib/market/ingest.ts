@@ -344,7 +344,14 @@ export function instrumentReadiness(rawInstrumentId: string): {
   known: boolean;
   stored: number;
   required: number;
+  /** Enough history for research. Says NOTHING about whether that history is current. */
   ready: boolean;
+  /**
+   * Whether the newest stored bar is current with the universe — the SAME predicate the planner and
+   * the executor use. Reported separately from `ready` because the resolver that consumes this read
+   * `ready` as "nothing to do", and a deep-but-stale instrument then never got refreshed.
+   */
+  freshAgainstUniverse: boolean;
 } {
   try {
     const instrument = resolveInstrument(rawInstrumentId);
@@ -356,6 +363,7 @@ export function instrumentReadiness(rawInstrumentId: string): {
       stored,
       required: MIN_BARS_FOR_RESEARCH,
       ready: known && stored >= MIN_BARS_FOR_RESEARCH,
+      freshAgainstUniverse: isFreshAgainstUniverse(lastStoredBar(instrument.id), universeNewestBar()),
     };
   } catch {
     return {
@@ -364,6 +372,7 @@ export function instrumentReadiness(rawInstrumentId: string): {
       stored: 0,
       required: MIN_BARS_FOR_RESEARCH,
       ready: false,
+      freshAgainstUniverse: false,
     };
   }
 }

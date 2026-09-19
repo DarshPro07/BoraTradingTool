@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { persistCandles } from "@/lib/market/candle-store";
@@ -137,5 +138,93 @@ describe("INVARIANT: depth never turns away work the planner queued as a refresh
     expect(outcome.code).toBe("ALREADY_READY");
     expect(spy, "a current instrument needs no provider call").not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+describe("INVARIANT: the SCHEDULED path queues refresh work, not only the executor", () => {
+  /**
+   * The previous fix covered the planner and the executor, and was reported as fixing daily
+   * ingestion. It did not. Three weeks later 2,077 of 2,122 instruments were 24 days stale and
+   * exactly ONE instrument updated per session.
+   *
+   * Two more layers sat between planner and executor on the scheduled path, each judging "done" on
+   * depth alone:
+   *
+   *   resolveDataRequirement  asked instrumentReadiness(), depth-only -> SATISFIED for stale names
+   *   enqueue()               deduped against a past SUCCEEDED row for the same key, forever
+   *
+   * A manual catch-up that called the executor directly worked, which is precisely what hid them:
+   * the one path that got exercised was the one path that was not broken. The lone instrument that
+   * did update was the one whose job kept FAILING — only a dead row was revivable.
+   *
+   * So this drives `resolveUniverseDataGaps`, the function the cycle actually calls.
+   */
+  function seedSucceededJob(symbol: string, updatedAt: Date): void {
+    getDb()
+      .insert(schema.researchJobs)
+      .values({
+        kind: "ingest_history",
+        payload: JSON.stringify({ instrumentId: `IN:XNSE:${symbol}` }),
+        status: "succeeded",
+        priority: 100,
+        attempts: 1,
+        maxAttempts: 3,
+        dedupeKey: `ingest-history-IN:XNSE:${symbol}`,
+        availableAt: updatedAt,
+        createdAt: updatedAt,
+        updatedAt,
+      })
+      .run();
+  }
+
+  const jobFor = (symbol: string) =>
+    getDb()
+      .select()
+      .from(schema.researchJobs)
+      .where(eq(schema.researchJobs.dedupeKey, `ingest-history-IN:XNSE:${symbol}`))
+      .get();
+
+  it("re-queues a deep-but-stale instrument whose last ingest SUCCEEDED long ago", async () => {
+    seedListing("NOWCO");
+    seedListing("LAGCO");
+    seedBars("NOWCO", 400, 0);
+    seedBars("LAGCO", 400, 12);
+    seedSucceededJob("LAGCO", new Date(Date.now() - 3 * 86_400_000));
+
+    const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
+    await resolveUniverseDataGaps({ quota: 50 });
+
+    expect(
+      jobFor("LAGCO")?.status,
+      "a past success must not stand in for today's refresh",
+    ).toBe("queued");
+  });
+
+  it("leaves a deep AND current instrument alone, even with a succeeded job on file", async () => {
+    // Refreshing everything every cycle would hammer the provider for bars that do not exist yet.
+    seedListing("OKCO");
+    seedBars("OKCO", 400, 0);
+    seedSucceededJob("OKCO", new Date(Date.now() - 3 * 86_400_000));
+
+    const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
+    await resolveUniverseDataGaps({ quota: 50 });
+
+    expect(jobFor("OKCO")?.status).toBe("succeeded");
+  });
+
+  it("does not re-queue a stale instrument refreshed moments ago", async () => {
+    // Before the close, a refresh can succeed and leave the instrument still "stale" because the
+    // provider has no new bar yet. Without a cooldown, every cycle would re-queue it — the enqueue
+    // cadence would become the retry loop.
+    seedListing("FRESHNOW");
+    seedListing("JUSTRAN");
+    seedBars("FRESHNOW", 400, 0);
+    seedBars("JUSTRAN", 400, 12);
+    seedSucceededJob("JUSTRAN", new Date());
+
+    const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
+    await resolveUniverseDataGaps({ quota: 50 });
+
+    expect(jobFor("JUSTRAN")?.status).toBe("succeeded");
   });
 });
