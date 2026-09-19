@@ -11,6 +11,7 @@
  * `audit_events` (append-only), so "why did Codex stop being used?" always has an answer.
  */
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
@@ -19,39 +20,48 @@ export type Tier = "routine" | "standard" | "deep";
 
 export interface ModelSpec {
   id: string;
-  provider: "opencode" | "gemini" | "codex" | "claude";
+  provider: "opencode" | "antigravity" | "codex" | "claude";
   /** Executable and argument prefix; the prompt is appended as the final argument. */
   command: string;
   args: string[];
   /** Rest applied when a quota error names no reset time. */
   defaultRestMs: number;
+  /**
+   * Where the CLI runs. Non-Claude CLIs run in an empty work folder OUTSIDE the repository, so no
+   * tool of theirs can edit the code even by accident; their MCP servers are registered globally.
+   * Claude runs in the repo (its MCP servers come from the project `.mcp.json`) and is confined to
+   * MCP and web tools by --allowedTools.
+   */
+  cwd?: string;
 }
 
 const NODE = process.execPath;
 const NPM = "D:/npm-global/node_modules";
 const MCP_TOOLS = ["mcp__marketpulse__*", "mcp__mem0__*", "WebSearch", "WebFetch"];
 const HOUR = 3_600_000;
+export const AGENT_WORKDIR = "D:/marketpulse-agents/work";
 
 export const MODELS: Record<string, ModelSpec> = {
   // Free: routine reading and summarising.
   "opencode-free": {
     id: "opencode-free", provider: "opencode",
-    command: `${NPM}/opencode-ai/bin/opencode.exe`, args: ["run", "-m", "opencode/nemotron-3-ultra-free"],
-    defaultRestMs: HOUR / 2,
+        // The read-only "plan" agent: MCP tools yes, file edits and shell no.
+    command: `${NPM}/opencode-ai/bin/opencode.exe`, args: ["run", "--agent", "plan", "-m", "opencode/nemotron-3-ultra-free"],
+    defaultRestMs: HOUR / 2, cwd: AGENT_WORKDIR,
   },
-  "gemini": {
-    id: "gemini", provider: "gemini",
-    // One value per flag: `--allowed-mcp-server-names marketpulse mem0` made "mem0" a positional
-    // prompt, and Gemini refused both a positional and -p (smoke test, 2026-09-19).
-    command: NODE, args: [`${NPM}/@google/gemini-cli/bundle/gemini.js`, "-y", "--allowed-mcp-server-names", "marketpulse", "--allowed-mcp-server-names", "mem0", "-p"],
-    defaultRestMs: HOUR,
+  // Gemini Pro now runs through Antigravity: Gemini CLI login redirects individual accounts to it
+  // (owner, 2026-09-19; agy replaced Gemini CLI on 2026-06-18). Terminal sandbox on.
+  "antigravity": {
+    id: "antigravity", provider: "antigravity",
+    command: "C:/Users/marke/AppData/Local/agy/bin/agy.exe", args: ["--sandbox", "--dangerously-skip-permissions", "--disable-slash-commands", "-p"],
+    defaultRestMs: HOUR, cwd: AGENT_WORKDIR,
   },
   "codex": {
     id: "codex", provider: "codex",
     // Read-only sandbox, no approval prompts: it may read and call MCP tools, never edit the repo.
     command: NODE, args: [`${NPM}/@openai/codex/bin/codex.js`, "exec", "--skip-git-repo-check", "-s", "read-only", "-c", 'approval_policy="never"'],
     // A weekly limit rarely prints a precise reset; re-probe every 6h rather than wait a week blind.
-    defaultRestMs: 6 * HOUR,
+    defaultRestMs: 6 * HOUR, cwd: AGENT_WORKDIR,
   },
   "claude-haiku": {
     id: "claude-haiku", provider: "claude",
@@ -72,9 +82,9 @@ export const MODELS: Record<string, ModelSpec> = {
 
 /** Cheapest first. A job names its tier; the router walks the list past any model at rest. */
 export const TIERS: Record<Tier, string[]> = {
-  routine: ["opencode-free", "gemini", "claude-haiku", "codex"],
-  standard: ["gemini", "codex", "claude-sonnet", "opencode-free"],
-  deep: ["claude-opus", "codex", "gemini", "claude-sonnet"],
+  routine: ["opencode-free", "antigravity", "claude-haiku", "codex"],
+  standard: ["antigravity", "codex", "claude-sonnet", "opencode-free"],
+  deep: ["claude-opus", "codex", "antigravity", "claude-sonnet"],
 };
 
 const QUOTA = /usage limit|rate[ -]?limit|quota|RESOURCE_EXHAUSTED|too many requests|\b429\b|limit (?:reached|exceeded)|out of credits/i;
@@ -140,7 +150,9 @@ export function runModel(spec: ModelSpec, prompt: string, timeoutMs: number, cwd
   return new Promise((resolve) => {
     // stdin closed: several CLIs read piped stdin to EOF before starting, and an open pipe that never
     // ends hung OpenCode for the full 12-minute timeout with no output (smoke test, 2026-09-19).
-    const child = spawn(spec.command, [...spec.args, prompt], { cwd, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    const workdir = spec.cwd ?? cwd;
+    fs.mkdirSync(workdir, { recursive: true });
+    const child = spawn(spec.command, [...spec.args, prompt], { cwd: workdir, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     child.stdout!.on("data", (chunk) => (output += chunk));
     child.stderr!.on("data", (chunk) => (output += chunk));
@@ -183,7 +195,11 @@ export async function routeJob(
     tried.add(id);
     const spec = MODELS[id]!;
     const startedAt = new Date();
-    last = await run(spec, job.prompt, job.timeoutMs);
+    // Each model is told who it is: a free model once filed its memories as "claude" (2026-09-19).
+    const identity = `You are the "${id}" model running MarketPulse job "${job.id}". Use agent="${id}" in memory_remember.
+
+`;
+    last = await run(spec, identity + job.prompt, job.timeoutMs);
     recordRun(job.id, spec, last, startedAt);
     if (last.status === "SUCCEEDED") return last;
     const until =

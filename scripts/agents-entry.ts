@@ -5,7 +5,7 @@
  */
 import os from "node:os";
 import path from "node:path";
-import { closeDatabase } from "@/lib/db";
+import { closeDatabase, getDb, schema } from "@/lib/db";
 import { loadJobs, overdueBy } from "@/lib/agents/jobs";
 import { routeJob } from "@/lib/agents/router";
 import { withCycleLease } from "@/lib/learning/lease";
@@ -18,6 +18,12 @@ export const MIN_FREE_BYTES = 1.5 * 1024 ** 3;
 
 export async function runAgentsPass(holder: string): Promise<number> {
   if (os.freemem() < MIN_FREE_BYTES) {
+    // Recorded, so "why did no agent run for two hours?" has an answer that is not a guess.
+    getDb().insert(schema.auditEvents).values({
+      actor: "agent-conductor", action: "agent_pass_deferred", decision: "limited", subject: holder,
+      detail: JSON.stringify({ freeGb: Number((os.freemem() / 1024 ** 3).toFixed(2)), needGb: 1.5 }), createdAt: new Date(),
+    }).run();
+    closeDatabase();
     process.stdout.write(`[${holder}] deferred: ${(os.freemem() / 1024 ** 3).toFixed(1)} GB free, need 1.5\n`);
     return 0;
   }

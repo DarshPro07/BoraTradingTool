@@ -12,8 +12,8 @@ describe("restUntil — believe a stated reset, otherwise the model's default", 
     expect(until.getTime() - NOW.getTime()).toBe((3 * 24 + 4) * 3_600_000);
   });
   it("falls back to the default rest when no time is named", () => {
-    const until = restUntil("429 RESOURCE_EXHAUSTED", MODELS.gemini!, NOW)!;
-    expect(until.getTime() - NOW.getTime()).toBe(MODELS.gemini!.defaultRestMs);
+    const until = restUntil("429 RESOURCE_EXHAUSTED", MODELS.antigravity!, NOW)!;
+    expect(until.getTime() - NOW.getTime()).toBe(MODELS.antigravity!.defaultRestMs);
   });
   it("is null for output that is not a quota error", () => {
     expect(restUntil("Recorded 2 sources and 1 hypothesis.", MODELS.codex!, NOW)).toBeNull();
@@ -23,7 +23,7 @@ describe("restUntil — believe a stated reset, otherwise the model's default", 
 describe("pickModel", () => {
   it("takes the cheapest available model in the tier, skipping any at rest", () => {
     expect(pickModel("routine", new Map())).toBe("opencode-free");
-    expect(pickModel("routine", new Map([["opencode-free", NOW]]))).toBe("gemini");
+    expect(pickModel("routine", new Map([["opencode-free", NOW]]))).toBe("antigravity");
     expect(pickModel("standard", new Map(), ["codex"])).toBe("codex");
   });
 });
@@ -32,7 +32,7 @@ describe("routeJob — never stalls on one broken or exhausted model", () => {
   useTemporaryDatabase();
 
   it("falls back past a rate-limited and a failing model, records every attempt and rest", async () => {
-    const outcomes: Record<string, RunResult["status"]> = { "opencode-free": "RATE_LIMITED", gemini: "FAILED", "claude-haiku": "SUCCEEDED" };
+    const outcomes: Record<string, RunResult["status"]> = { "opencode-free": "RATE_LIMITED", antigravity: "FAILED", "claude-haiku": "SUCCEEDED" };
     const result = await routeJob(
       { id: "t-job", tier: "routine", prompt: "p", timeoutMs: 1_000 },
       async (spec) => ({ status: outcomes[spec.id] ?? "FAILED", output: outcomes[spec.id] === "RATE_LIMITED" ? "usage limit reached, try again in 2 hours" : "", model: spec.id, durationMs: 1 }),
@@ -40,7 +40,7 @@ describe("routeJob — never stalls on one broken or exhausted model", () => {
     expect(result?.model).toBe("claude-haiku");
     expect(getDb().select().from(schema.agentRuns).all().map((r) => r.status)).toEqual(["RATE_LIMITED", "FAILED", "SUCCEEDED"]);
     const resting = restingModels();
-    expect([...resting.keys()].sort()).toEqual(["gemini", "opencode-free"]);
+    expect([...resting.keys()].sort()).toEqual(["antigravity", "opencode-free"]);
     expect(resting.get("opencode-free")!.getTime() - Date.now()).toBeGreaterThan(1.9 * 3_600_000);
   });
 });
