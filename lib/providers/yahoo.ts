@@ -205,7 +205,10 @@ export async function getYahooCandles(
     // into extended hours instead of freezing at the regular-session close.
     url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${rangeConf.range}&interval=${rangeConf.interval}&includePrePost=true`;
   } else {
-    const interval = PERIOD_INTERVAL[resolution] ?? "1d";
+    // No silent default: an unknown resolution ("5m" instead of "5") used to fall back to "1d" and
+    // return DAILY bars labelled as intraday — one bar per session stamped 09:15 (2026-09-19).
+    const interval = PERIOD_INTERVAL[resolution];
+    if (!interval) throw new Error(`Unsupported candle resolution "${resolution}" for Yahoo.`);
     url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${from}&period2=${to}&interval=${interval}`;
   }
 
