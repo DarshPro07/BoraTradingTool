@@ -97,7 +97,7 @@ export async function resolveDataRequirement(requirement: DataRequirement): Prom
   // same depth-versus-freshness defect, after the planner (fixed 2026-08-17) and the executor
   // (fixed 2026-08-26). Daily ingestion stayed dead on the scheduled path for three weeks after the
   // second fix was reported as complete.
-  if (readiness.ready && readiness.freshAgainstUniverse) {
+  if (readiness.ready && readiness.currentThroughLatestSession) {
     return {
       state: "SATISFIED",
       jobId: null,

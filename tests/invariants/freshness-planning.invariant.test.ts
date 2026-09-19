@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { persistCandles } from "@/lib/market/candle-store";
@@ -93,6 +93,14 @@ describe("INVARIANT: end to end, from real rows — a stale name is planned for 
    */
   const NOW = new Date("2026-08-16T00:00:00Z");
   const DAY = 86_400;
+
+  // "Current" is judged against the latest session the calendar says should exist by now, so the
+  // clock is pinned: Sunday 08-16 05:30 IST, whose latest session is Friday 08-14.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
   const LATEST = Math.floor(NOW.getTime() / 1000);
 
   function seedListing(symbol: string): void {
@@ -155,7 +163,7 @@ describe("INVARIANT: end to end, from real rows — a stale name is planned for 
 
     // Depth and currency are answered separately, from real data.
     expect(stale?.historyReady, "400 bars is plenty of depth").toBe(true);
-    expect(stale?.freshnessReady, "ten days behind the universe is stale").toBe(false);
+    expect(stale?.freshnessReady, "ten days behind the latest session is stale").toBe(false);
     expect(current?.freshnessReady).toBe(true);
 
     const plan = planUniverseIngestion(20, report);

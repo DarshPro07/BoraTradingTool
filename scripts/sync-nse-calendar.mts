@@ -26,6 +26,7 @@
 import fs from "node:fs";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
+import { renderCalendarFile } from "@/lib/market/calendar-extension";
 
 const MIN_BARS = Number(process.argv[process.argv.indexOf("--min-bars") + 1]) || 750;
 /** Below this, "no reference instrument traded" means nothing about the exchange. */
@@ -116,44 +117,17 @@ holidays.sort();
 weekendSessions.sort();
 apiDeclared.sort();
 
-const list = (dates: string[]) => dates.map((d) => `  "${d}",`).join("\n");
 fs.writeFileSync(
   OUT,
-  `/**
- * The NSE trading calendar — GENERATED. Do not edit by hand.
- *
- * Regenerate with \`npx tsx scripts/sync-nse-calendar.mts\`, which documents the two sources and
- * why neither alone is sufficient.
- *
- * Derived from ${reference.length} instruments spanning ${first}..${last} (${sessions.length} real sessions),
- * extended by the Upstox market-holidays API.
- */
-
-/** Weekdays the NSE was closed. */
-export const NSE_TRADING_HOLIDAYS: ReadonlySet<string> = new Set([
-${list(holidays)}
-]);
-
-/** Weekend days the NSE really did trade — Muhurat sessions and Union Budget Saturdays. */
-export const NSE_WEEKEND_SESSIONS: ReadonlySet<string> = new Set([
-${list(weekendSessions)}
-]);
-
-/**
- * Dates the EXCHANGE ITSELF declared, via the Upstox market-holidays API.
- *
- * Everything not listed here carries the weaker authority \`PRICE_CONSENSUS_DERIVED\`: inferred
- * from hundreds of instruments agreeing, which is a good inference and still an inference. A 2004
- * date deduced from price observations must not claim the same standing as a 2026 date the
- * exchange published.
- */
-export const EXCHANGE_DECLARED_DATES: ReadonlySet<string> = new Set([
-${list(apiDeclared)}
-]);
-
-/** The calendar is derived from data up to here; past it, only the holidays API has spoken. */
-export const CALENDAR_DERIVED_THROUGH = "${last}";
-`,
+  renderCalendarFile({
+    holidays,
+    weekendSessions,
+    declared: apiDeclared,
+    derivedThrough: last,
+    provenance:
+      `Derived from ${reference.length} instruments spanning ${first}..${last} (${sessions.length} real sessions),\n` +
+      ` * extended by the Upstox market-holidays API.`,
+  }),
   "utf8",
 );
 

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -45,6 +45,20 @@ beforeAll(() => {
 afterAll(() => {
   if (previousTestMode === undefined) delete process.env.MARKETPULSE_TEST_MODE;
   else process.env.MARKETPULSE_TEST_MODE = previousTestMode;
+});
+
+
+/**
+ * The test-mode provider serves fixture bars ending 2025-09-17 (`fixtureCandles`). "Current" is
+ * judged against the latest session the calendar expects by now, so the clock is pinned to that
+ * session's evening; on the wall clock the fixture is correctly a year stale.
+ */
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2025-09-17T12:00:00Z"));
+});
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("the self-resolution loop", () => {

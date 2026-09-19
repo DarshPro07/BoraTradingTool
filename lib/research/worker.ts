@@ -248,11 +248,20 @@ async function runValidationJob(job: ClaimedJob): Promise<Record<string, unknown
 /**
  * Drains up to `maxJobs` from the queue. This is the deterministic half of the system:
  * it runs on a schedule with Claude Code closed and needs no model to make progress.
+ *
+ * `budgetMs` stops CLAIMING new jobs once spent; a job already running is never interrupted. A
+ * count alone cannot bound a pass whose jobs are network fetches of 1-6 seconds each, and the
+ * scheduled cycle must finish inside its lease or the next cycle takes over mid-pass.
  */
-export async function runWorker(workerId = "worker-1", maxJobs = 10): Promise<WorkerResult> {
+export async function runWorker(
+  workerId = "worker-1",
+  maxJobs = 10,
+  { budgetMs = Number.POSITIVE_INFINITY }: { budgetMs?: number } = {},
+): Promise<WorkerResult> {
   const result: WorkerResult = { processed: 0, succeeded: 0, failed: 0, dead: 0, idle: true };
+  const deadline = Date.now() + budgetMs;
 
-  for (let index = 0; index < maxJobs; index += 1) {
+  for (let index = 0; index < maxJobs && Date.now() < deadline; index += 1) {
     const job = claimNextJob(workerId);
     if (!job) break;
 

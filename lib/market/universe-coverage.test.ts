@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -169,6 +169,14 @@ describe("the universe readiness index", () => {
   });
 
   it("plans deterministically: referenced/partial first, then symbol order; in-flight, blocked, ready and non-main-board excluded; limit respected", () => {
+    // DONE's newest bar is 2024-02-22 IST. "Ready" means deep AND current through the latest
+    // session, so the clock is pinned to that evening; left on the wall clock, DONE is correctly
+    // two years stale and belongs on the worklist.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2024-02-22T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     seedListing("AAA"); // untouched main board
     seedListing("BBB");
     seedListing("PART");

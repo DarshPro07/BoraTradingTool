@@ -2,6 +2,7 @@ import { eq, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
 import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "./calendar";
+import { isPlausibleSessionDate, istDate } from "./session-calendar";
 
 /**
  * The NSE universe readiness index (owner directive 2026-08-16): separate the LISTED universe
@@ -36,34 +37,56 @@ import { sessionCloseMinute, sessionOpenMinute, sessionStamps } from "./calendar
 export const BACKTEST_BARS_FLOOR = 250;
 export const VALIDATION_BARS_FLOOR = 340;
 /**
- * How far behind the universe's newest bar an instrument may fall before it counts as stale.
- *
- * Four days spans a weekend plus a public holiday, so a normal market closure never trips it.
- * Measured 2026-08-16: exactly three instruments were behind — RELIANCE, HDFCBANK and TCS, at
- * eight days against a universe that had moved on.
+ * Minutes after IST midnight from which a session's daily bar can be expected to exist: the 15:30
+ * close plus the provider's publication lag. Before this, today's bar is not late, it is not yet
+ * possible.
  */
-export const STALE_AFTER_SECONDS = 4 * 86_400;
+export const DAILY_BAR_AVAILABLE_AFTER_IST_MINUTES = 16 * 60 + 30;
+
+const IST_OFFSET_MS = 330 * 60_000;
 
 /**
- * Is this instrument current, relative to the universe's newest bar?
+ * The newest session whose daily bar should already exist, as an ISO date in IST.
  *
- * Exported and shared rather than inlined, because the planner and the INGESTION EXECUTOR each had
- * their own idea of what "needs work" meant and the two silently disagreed. The planner learned to
- * separate depth from freshness on 2026-08-17; `ingestInstrumentHistory` did not, and answered
- * every refresh the planner queued with `ALREADY_READY` because the instrument had enough bars.
- * Daily ingestion was dead for ten days and the job queue reported success throughout.
+ * Judged against the calendar and the clock. The previous rule measured freshness against the
+ * store's own newest bar, and that rule had a fixed point it could never leave: if ingestion
+ * stopped for EVERY instrument at once, every instrument was exactly as current as the newest bar,
+ * nothing was stale, nothing was queued, and the newest bar never moved again. In production it
+ * was broken only by one instrument whose job kept failing and being revived; 2,077 of 2,122 names
+ * sat 22 days behind while reported current.
  *
- * One predicate, imported by both, so they cannot drift apart again.
- *
- * Measured against the universe's newest bar rather than the wall clock: that is self-calibrating
- * across weekends, holidays and provider outages, none of which should make the whole universe
- * look stale at once.
+ * The concern that rule answered is kept: weekends and calendar holidays are never expected
+ * sessions, so a closed market raises no alarm. A holiday MISSING from the calendar does read as
+ * one missed session — bounded by the refresh cooldown to a few extra passes, and the lesser error.
+ * Fails open (`isPlausibleSessionDate`), as ingestion does: an unverified weekday is still worth
+ * fetching.
  */
-export function isFreshAgainstUniverse(
+export function latestExpectedSession(nowMs = Date.now()): string {
+  const ist = new Date(nowMs + IST_OFFSET_MS);
+  const minutes = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  const cursor = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
+  if (minutes < DAILY_BAR_AVAILABLE_AFTER_IST_MINUTES) cursor.setUTCDate(cursor.getUTCDate() - 1);
+  // Bounded: the longest NSE closure is a few days; a calendar that rejects a month is broken.
+  for (let guard = 0; guard < 31; guard += 1) {
+    const iso = cursor.toISOString().slice(0, 10);
+    if (isPlausibleSessionDate(iso)) return iso;
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  return cursor.toISOString().slice(0, 10);
+}
+
+/**
+ * Does this instrument hold the latest session's bar?
+ *
+ * ONE predicate, imported by the planner, the ingestion executor and the dependency resolver. They
+ * once each had their own idea of "needs work" and silently disagreed, which killed daily
+ * ingestion twice (2026-08-16 and 2026-09-19) while the queue reported success.
+ */
+export function isCurrentThroughLatestSession(
   lastDailyBar: number | null,
-  universeLastBar: number,
+  nowMs = Date.now(),
 ): boolean {
-  return lastDailyBar !== null && universeLastBar - lastDailyBar <= STALE_AFTER_SECONDS;
+  return lastDailyBar !== null && istDate(lastDailyBar) >= latestExpectedSession(nowMs);
 }
 
 export const INTRADAY_SESSIONS_FLOOR = 20;
@@ -119,7 +142,7 @@ export interface SecurityCoverage {
   /** DEPTH: does it hold enough bars? */
   historyReady: boolean;
   /**
-   * CURRENCY: is it keeping up with the rest of the universe?
+   * CURRENCY: does it hold the latest session's bar? (`isCurrentThroughLatestSession`)
    *
    * Separate from depth because the planner excluded anything already `researchReady` from its
    * worklist, so an instrument that had enough history could never re-enter the queue and simply
@@ -190,7 +213,7 @@ function ingestStates(): Map<string, MissingReason> {
   return states;
 }
 
-export function universeCoverage(): UniverseCoverageReport {
+export function universeCoverage(nowMs = Date.now()): UniverseCoverageReport {
   const db = getDb();
 
   // Current listings only (effective_to null). One row per ISIN by construction of the sync.
@@ -217,15 +240,6 @@ export function universeCoverage(): UniverseCoverageReport {
   const dailyByTicker = new Map<string, number>(dailyRows.map((row) => [row.ticker, Number(row.bars)]));
   const lastBarByTicker = new Map<string, number>(dailyRows.map((row) => [row.ticker, Number(row.lastBar)]));
 
-  /**
-   * The freshness reference: the newest daily bar anywhere in the universe.
-   *
-   * Measured against the universe rather than the wall clock on purpose — holidays, weekends and
-   * a paused ingest all move the whole market together, and calling every instrument stale on a
-   * public holiday would be a false alarm every few weeks. What matters is falling BEHIND the
-   * rest of the market.
-   */
-  const universeLastBar = dailyRows.reduce((newest, row) => Math.max(newest, Number(row.lastBar)), 0);
 
   // Session geometry in SQL as well. Stamping every 5-minute bar through Intl.DateTimeFormat was
   // the remaining seconds of this page's render, and it scales the wrong way: the store is
@@ -298,7 +312,7 @@ export function universeCoverage(): UniverseCoverageReport {
     // Enough history is not the same as current history. An instrument can hold three years of
     // bars and still have stopped updating a week ago — which is exactly what RELIANCE, HDFCBANK
     // and TCS did while every other name stayed current.
-    const freshnessReady = isFreshAgainstUniverse(lastDailyBar, universeLastBar);
+    const freshnessReady = isCurrentThroughLatestSession(lastDailyBar, nowMs);
     let missingReason: MissingReason | null = null;
     if (!researchReady) {
       missingReason =
@@ -410,7 +424,7 @@ export function planUniverseIngestion(limit: number, report = universeCoverage()
         instrumentId: security.instrumentId,
         tier,
         reason: staleOnly
-          ? `deep but stale (${security.dailyBars} bars, last bar behind the universe) — refresh, not backfill`
+          ? `deep but stale (${security.dailyBars} bars, last bar before the latest session) — refresh, not backfill`
           : isReferenced
           ? "referenced by an active strategy/challenger/watchlist"
           : partiallyCovered

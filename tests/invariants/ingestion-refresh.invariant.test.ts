@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
@@ -35,8 +37,23 @@ import { planUniverseIngestion, universeCoverage } from "@/lib/market/universe-c
 
 useTemporaryDatabase();
 
-const NOW = new Date("2026-08-26T00:00:00Z");
-const SESSIONS = sessionDatesFrom("2024-01-02", 700).map(sessionOpenEpoch);
+/**
+ * 17:30 IST on Wednesday 2026-08-26 — after the close, so 08-26 itself is the latest session whose
+ * bar should exist. Pinned, because "current" is now judged against the calendar and the clock
+ * rather than against whatever the store happens to hold.
+ */
+const NOW = new Date("2026-08-26T12:00:00Z");
+const LATEST_SESSION = "2026-08-26";
+const SESSIONS = sessionDatesFrom("2023-01-02", 1_200)
+  .filter((date) => date <= LATEST_SESSION)
+  .slice(-700)
+  .map(sessionOpenEpoch);
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
+});
+afterEach(() => vi.useRealTimers());
 
 function seedListing(symbol: string): void {
   const db = getDb();
@@ -67,6 +84,22 @@ function seedListing(symbol: string): void {
       sourceSyncId: "sync-refresh-invariant",
     })
     .run();
+}
+
+/** Bars on exactly these session dates. */
+function seedSessions(symbol: string, dates: readonly string[]): void {
+  persistCandles(
+    dates.map((date) => ({
+      ticker: `IN:XNSE:${symbol}`,
+      resolution: "D",
+      time: sessionOpenEpoch(date),
+      open: 100,
+      high: 101,
+      low: 99,
+      close: 100,
+      volume: 1_000,
+    })),
+  );
 }
 
 /** `count` real sessions ending `endedSessionsAgo` before the newest session in `SESSIONS`. */
@@ -227,4 +260,104 @@ describe("INVARIANT: the SCHEDULED path queues refresh work, not only the execut
 
     expect(jobFor("JUSTRAN")?.status).toBe("succeeded");
   });
+});
+
+describe("INVARIANT: current means current through the latest SESSION, not the latest bar we hold", () => {
+  /**
+   * Freshness used to be measured against the store's own newest bar. That rule has a fixed point
+   * it can never leave: if ingestion stops for EVERY instrument at once, every instrument is exactly
+   * as current as the newest bar, nothing is stale, nothing is queued, and the newest bar never
+   * moves again. The only thing that broke it in production was one instrument whose job kept
+   * failing and being revived.
+   */
+  it("reads a universe that stopped TOGETHER as stale — a paused ingest is not a quiet market", () => {
+    const symbols = ["PAUSEA", "PAUSEB", "PAUSEC"];
+    for (const symbol of symbols) {
+      seedListing(symbol);
+      seedBars(symbol, 400, 2);
+    }
+
+    const report = universeCoverage();
+    for (const symbol of symbols) {
+      expect(
+        report.securities.find((s) => s.symbol === symbol)?.freshnessReady,
+        `${symbol} is two sessions behind the latest session, whatever its neighbours hold`,
+      ).toBe(false);
+    }
+    expect(
+      planUniverseIngestion(20, report).map((item) => item.instrumentId).sort(),
+      "every paused instrument must re-enter the worklist",
+    ).toEqual(symbols.map((symbol) => `IN:XNSE:${symbol}`));
+  });
+
+  it("does not call a calendar holiday staleness", () => {
+    // The reason the relative rule existed. Monday 2026-09-14 is an NSE holiday: at 17:30 IST that
+    // day the latest session is Friday 09-11, and an instrument current through Friday is current.
+    vi.setSystemTime(new Date("2026-09-14T12:00:00Z"));
+    seedListing("HOLIDAYCO");
+    seedSessions("HOLIDAYCO", sessionDatesFrom("2025-01-01", 600).filter((d) => d <= "2026-09-11").slice(-400));
+
+    const security = universeCoverage().securities.find((s) => s.symbol === "HOLIDAYCO");
+    expect(security?.freshnessReady, "a holiday is not a missing bar").toBe(true);
+  });
+
+  it("does not expect today's bar before the provider can have published it", () => {
+    // 07:30 IST on Thursday 08-27: the market has not opened, so Wednesday's bar is the newest
+    // that can exist.
+    vi.setSystemTime(new Date("2026-08-27T02:00:00Z"));
+    seedListing("EARLYCO");
+    seedBars("EARLYCO", 400, 0);
+
+    const security = universeCoverage().securities.find((s) => s.symbol === "EARLYCO");
+    expect(security?.freshnessReady).toBe(true);
+  });
+});
+
+describe("INVARIANT: the scheduled CYCLE refreshes stale data with nothing else wrong", () => {
+  /**
+   * Layers 1-4 of this defect were fixed and each fix was tested at its own layer, including
+   * `resolveUniverseDataGaps` called directly. The cycle never called it: its only call site sat
+   * inside the branch for a strategy whose universe had NO bars at all. A universe that was merely
+   * stale never entered that branch, so on the scheduled path nothing ever queued a refresh.
+   *
+   * This drives `runLearningCycle` — the body the Windows task runs — with no strategy, no outage,
+   * one stale instrument, and asserts the refresh is queued AND attempted in the same pass.
+   */
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const key of ["MARKETPULSE_TEST_MODE", "QUANT_CORE_URL", "QUANT_CORE_ROOT"]) saved[key] = process.env[key];
+    // Empty provider: the test asserts the attempt, not a network call.
+    process.env.MARKETPULSE_TEST_MODE = "1";
+    process.env.QUANT_CORE_URL = "off";
+    process.env.QUANT_CORE_ROOT = path.join(os.tmpdir(), "marketpulse-no-quant-core");
+  });
+  afterEach(() => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  it("queues and drains a deep-but-stale instrument", async () => {
+    const { setLearningMode } = await import("@/lib/governance/runtime");
+    setLearningMode("learning", "owner");
+    seedListing("CYCLECO");
+    seedBars("CYCLECO", 400, 3);
+
+    const { runLearningCycle } = await import("@/lib/learning/cycle");
+    await runLearningCycle(
+      "invariant-cycle",
+      async () => ({}),
+      async () => ({ dataset: {}, reference: [], references: {} }) as never,
+      async () => ({ failed: false, reason: "intake off", enqueued: 0, deduped: 0, rejected: 0 }),
+    );
+
+    const job = getDb()
+      .select()
+      .from(schema.researchJobs)
+      .where(eq(schema.researchJobs.dedupeKey, "ingest-history-IN:XNSE:CYCLECO"))
+      .get();
+    expect(job, "the cycle itself must queue the refresh — no strategy outage required").toBeDefined();
+    expect(job!.attempts, "and drain it in the same pass").toBeGreaterThan(0);
+  }, 60_000);
 });

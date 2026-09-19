@@ -141,3 +141,16 @@ describe("holdout_decision is gated and truthful", () => {
     expect(job?.lastError).toMatch(/NO_ACTIVE_SEAL/);
   });
 });
+
+describe("runWorker budget", () => {
+  useTemporaryDatabase();
+
+  it("stops claiming once the budget is spent, and never before the first job", async () => {
+    // The scheduled cycle holds a 10-minute lease. A job count cannot bound a pass whose jobs are
+    // 1-6 second fetches; a claim budget can.
+    for (let i = 0; i < 3; i += 1) enqueue({ kind: "memory_validate", payload: {}, dedupeKey: `budget-${i}` });
+
+    expect((await runWorker("budget-test", 10, { budgetMs: 0 })).processed, "a spent budget claims nothing").toBe(0);
+    expect((await runWorker("budget-test", 10, { budgetMs: 60_000 })).processed).toBe(3);
+  });
+});

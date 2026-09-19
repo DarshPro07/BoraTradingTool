@@ -205,6 +205,15 @@ export async function runLearningCycle(
  * `classifyRegime` returns null, `scanForSignals` evaluates nothing.
  */
 /** Every market the loop is responsible for. India first: it is the one the owner trades. */
+/**
+ * The worker's share of one scheduled cycle. The cycle lease (`LEASE_TTL_MS`) is 10 minutes and
+ * the rest of the cycle needs room; ingestion jobs are 1-6 second fetches. About 100 refreshes a
+ * cycle, ~400 an hour, puts the whole ~2,100-name universe through in about five hours after the
+ * close. Ten a cycle — the previous count — was ~960 a day against ~2,100 needed.
+ */
+const WORKER_MAX_JOBS = 100;
+const WORKER_BUDGET_MS = 4 * 60_000;
+
 export const MARKETS = ["IN", "US"] as const satisfies readonly Market[];
 
 /**
@@ -698,12 +707,42 @@ async function runCycleBody(
     );
   }
 
-  const worker = await runWorker(workerId, 10);
+  // Keep the store current, every cycle. This call used to live only inside the rehearsal-outage
+  // branch below, which fires when a strategy's universe holds NO bars — so a universe that was
+  // merely stale never queued a refresh, and daily ingestion died on the scheduled path while every
+  // layer beneath it had been fixed and tested (docs/plans/autonomous-data-currency). Placed before
+  // the worker so a refresh found this pass is drained this pass.
+  let gapSummary = "Data gaps were not resolved this pass.";
+  try {
+    const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
+    gapSummary = (await resolveUniverseDataGaps({ quota: WORKER_MAX_JOBS })).summary;
+    actions.push(gapSummary);
+  } catch (caught) {
+    impair(
+      `Ingestion remediation could not be enqueued: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+    );
+  }
+
+  const worker = await runWorker(workerId, WORKER_MAX_JOBS, { budgetMs: WORKER_BUDGET_MS });
   report.worker = worker;
   report.queue = queueStats();
   actions.push(`Processed ${worker.processed} research job(s).`);
   if (worker.dead > 0) {
     actions.push(`${worker.dead} job(s) exhausted retries and were written to failure memory.`);
+  }
+
+  // Let research see the sessions the worker just stored. Research withholds every date past the
+  // calendar's derived span, and that span used to move only when a human ran the sync script — so
+  // it sat at 2026-08-14 for five weeks while forward shadow and paper starved. Derived-only and
+  // fail-closed; takes effect for the next cycle, which re-bundles.
+  try {
+    const { extendDerivedCalendar } = await import("@/lib/market/calendar-extension");
+    const calendar = extendDerivedCalendar();
+    (calendar.advanced ? actions : skipped).push(calendar.summary);
+  } catch (caught) {
+    impair(
+      `Calendar extension failed: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
+    );
   }
 
   // Turn hypotheses into testable strategies — the last break in the research chain.
@@ -825,20 +864,7 @@ async function runCycleBody(
        * comment gave: a verdict must be pinned to a recorded snapshot, not to whatever the
        * network returned mid-judgement.
        */
-      let gapSummary = "Ingestion jobs for the gap are already queued or running.";
-      try {
-        // The generic resolver, not bespoke enqueueing: the same call any blocked surface makes.
-        // It answers with durable truth — queued, revived after cooldown, already active, cooling
-        // down, or permanently unresolvable — so this branch can no longer dedupe against a
-        // corpse and report it as work in flight.
-        const { resolveUniverseDataGaps } = await import("@/lib/brain/dependency-resolver");
-        const gaps = await resolveUniverseDataGaps({ quota: 30 });
-        gapSummary = gaps.summary;
-      } catch (caught) {
-        impair(
-          `Ingestion remediation could not be enqueued: ${caught instanceof Error ? caught.message.split("\n")[0] : String(caught)}`,
-        );
-      }
+      // Remediation already ran this pass, before the worker; its summary is the durable truth.
       note({
         code: "DATA_HISTORY_MISSING",
         category: "DEPENDENCY",

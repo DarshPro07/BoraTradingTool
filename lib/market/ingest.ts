@@ -1,6 +1,4 @@
-import { eq, sql } from "drizzle-orm";
 import { emit } from "@/lib/brain/event-bus";
-import { getDb, schema } from "@/lib/db";
 import { loadStoredCandles, persistCandles, recordDatasetImport } from "@/lib/market/candle-store";
 import type { ImportedCandle } from "@/lib/market/dataset-import";
 import { resolveInstrument } from "@/lib/market/instruments";
@@ -9,7 +7,7 @@ import { getNormalizedCandles } from "@/lib/market/service";
 import { auditBars } from "@/lib/market/bar-audit";
 import { recordBarIngestion } from "@/lib/market/bar-ingestion-ledger";
 import { MIN_BARS_FOR_RESEARCH } from "@/lib/research/bridge";
-import { isFreshAgainstUniverse } from "@/lib/market/universe-coverage";
+import { isCurrentThroughLatestSession } from "@/lib/market/universe-coverage";
 
 /**
  * In-product historical ingestion.
@@ -92,25 +90,6 @@ function lastStoredBar(instrumentId: string): number | null {
   }
 }
 
-/**
- * The newest daily bar anywhere in the store — the universe's own clock.
- *
- * Deliberately not `Date.now()`: a wall-clock comparison would call the entire universe stale on
- * any weekend, holiday or provider outage, which is a different condition with a different remedy.
- */
-function universeNewestBar(): number {
-  try {
-    const row = getDb()
-      .select({ newest: sql<number>`max(time)` })
-      .from(schema.priceCandles)
-      .where(eq(schema.priceCandles.resolution, "D"))
-      .get();
-    return Number(row?.newest ?? 0);
-  } catch {
-    return 0;
-  }
-}
-
 function countStored(instrumentId: string): number {
   try {
     return loadStoredCandles(instrumentId, "D").length;
@@ -183,16 +162,16 @@ export async function ingestInstrumentHistory(rawInstrumentId: string): Promise<
   // ingestion for ten days: the planner queued 3,324 instruments as "deep but stale — refresh, not
   // backfill" and every one was answered here with ALREADY_READY because it had enough bars.
   //
-  // `isFreshAgainstUniverse` is the SAME predicate the planner uses, imported rather than restated,
-  // so the two layers cannot form different ideas of what the work is.
-  const fresh = isFreshAgainstUniverse(lastStoredBar(instrument.id), universeNewestBar());
+  // `isCurrentThroughLatestSession` is the SAME predicate the planner uses, imported rather than
+  // restated, so the two layers cannot form different ideas of what the work is.
+  const fresh = isCurrentThroughLatestSession(lastStoredBar(instrument.id));
   if (storedBefore >= MIN_BARS_FOR_RESEARCH && fresh) {
     return {
       ok: true,
       code: "ALREADY_READY",
       message:
         `The canonical store already holds ${storedBefore} daily bars for ${instrument.id} and the ` +
-        `newest is current with the universe; ${MIN_BARS_FOR_RESEARCH} are required. Nothing to ingest.`,
+        `newest is current through the latest session; ${MIN_BARS_FOR_RESEARCH} are required. Nothing to ingest.`,
       instrumentId: instrument.id,
       ...empty,
       storedBefore,
@@ -347,11 +326,11 @@ export function instrumentReadiness(rawInstrumentId: string): {
   /** Enough history for research. Says NOTHING about whether that history is current. */
   ready: boolean;
   /**
-   * Whether the newest stored bar is current with the universe — the SAME predicate the planner and
+   * Whether the newest stored bar is current through the latest session — the SAME predicate the planner and
    * the executor use. Reported separately from `ready` because the resolver that consumes this read
    * `ready` as "nothing to do", and a deep-but-stale instrument then never got refreshed.
    */
-  freshAgainstUniverse: boolean;
+  currentThroughLatestSession: boolean;
 } {
   try {
     const instrument = resolveInstrument(rawInstrumentId);
@@ -363,7 +342,7 @@ export function instrumentReadiness(rawInstrumentId: string): {
       stored,
       required: MIN_BARS_FOR_RESEARCH,
       ready: known && stored >= MIN_BARS_FOR_RESEARCH,
-      freshAgainstUniverse: isFreshAgainstUniverse(lastStoredBar(instrument.id), universeNewestBar()),
+      currentThroughLatestSession: isCurrentThroughLatestSession(lastStoredBar(instrument.id)),
     };
   } catch {
     return {
@@ -372,7 +351,7 @@ export function instrumentReadiness(rawInstrumentId: string): {
       stored: 0,
       required: MIN_BARS_FOR_RESEARCH,
       ready: false,
-      freshAgainstUniverse: false,
+      currentThroughLatestSession: false,
     };
   }
 }
