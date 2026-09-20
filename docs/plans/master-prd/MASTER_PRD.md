@@ -1,4 +1,4 @@
-# Jarvis — Master PRD
+# MarketPulse OS — Master PRD
 
 **The whole system, A to Z: what works, what half-works, what does not exist.**
 
@@ -12,7 +12,7 @@ which remain the detail for their slices.
 
 ---
 
-## 0. What Jarvis is meant to be
+## 0. What this system is meant to be
 
 The owner's words, across this build: *"a master automated hedge fund company style less cost
 system … automated research self evolving learning build observing adjusting calibrating
@@ -164,14 +164,17 @@ does not exist.
 
 **Acceptance:** both under 5s warm, measured by `scripts/audit-live.mjs`.
 
-### 4.4 P1 — The system cannot tell the owner anything
+### 4.4 CLOSED BY THE OWNER — no alerting; the watchdog stays on the page
 
-The watchdog knows when a layer dies. It writes to a page. During today's five-hour outage
-nothing reached the owner. For an unattended system that is the difference between autonomy and
-absence.
+The watchdog knows when a layer dies, and writes it to `/fund`. During today's five-hour outage
+nothing reached the owner.
 
-**Acceptance:** one channel (Telegram or email) firing on watchdog FAIL, on a kill-switch trip,
-and on a trial being spent. Nothing else — noise is how alerting dies.
+**Owner's decision, 2026-09-20: keep it on the page.** No Telegram, no email. The cost is
+accepted knowingly: an overnight or weekend outage stays invisible until someone opens `/fund`,
+which is why the scheduled-task time limits (§3, defect 5) matter more than they otherwise would
+— they cap a single failure at 40 minutes instead of letting it run for five hours.
+
+Revisit only if the owner asks.
 
 ### 4.5 P1 — 8 e2e artifacts and 28 dead jobs sit in the production database
 
@@ -202,8 +205,7 @@ Each item states the falsifiable condition that ends it. Nothing is "done" becau
 1. **Watch Monday's intraday session end to end** (§4.2). If IN1 produces no decision, that is the
    week's only work until it does.
 2. **Owner: `! agy`** (§4.6). One minute of human time.
-3. **Alerting** (§4.4): watchdog FAIL reaches the owner's phone. Three triggers, no more.
-4. **Profile `/brain` and `/data-quality`** (§4.3) the way `storedCoverage` was profiled: measure
+3. **Profile `/brain` and `/data-quality`** (§4.3) the way `storedCoverage` was profiled: measure
    first, fix the measured thing, measure again.
 
 **Weeks 2–5**
@@ -253,6 +255,6 @@ execution does not exist to be switched on.
 ## 8. Open questions for the owner
 
 1. **Training capital**: stay at ₹25,000, or raise to ₹50,000? (`TRAINING_CAPITAL` is one constant.)
-2. **Alert channel**: Telegram bot, or email?
+2. ~~Alert channel~~ — answered 2026-09-20: none; the watchdog stays on the page (§4.4).
 3. **The 8 e2e rows**: quarantine (recommended) or delete?
 4. **Intraday universe**: RELIANCE, HDFCBANK, ICICIBANK only, or widen once Monday proves the lane?

@@ -1,4 +1,4 @@
-# Jarvis master — status (read this first)
+# Master PRD — status (read this first)
 
 **The PRD is [`MASTER_PRD.md`](./MASTER_PRD.md).** It is the A-to-Z: every capability with its
 state and the evidence behind it, every gap with its acceptance condition, and the build order.

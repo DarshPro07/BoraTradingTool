@@ -1,6 +1,6 @@
 # Fund OS — status (read this first after any restart)
 
-> **The system-wide picture is now `docs/plans/jarvis-master/MASTER_PRD.md`** (2026-09-20 audit:
+> **The system-wide picture is now `docs/plans/master-prd/MASTER_PRD.md`** (2026-09-20 audit:
 > every capability with its evidence, every gap with its acceptance condition, the build order).
 > This file remains the detail for the Fund OS slices.
 
