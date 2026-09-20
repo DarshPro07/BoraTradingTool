@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import type { DatasetDeclaration, ImportedCandle } from "./dataset-import";
 import { isPlausibleDailyBarTime } from "./session-calendar";
@@ -181,32 +181,26 @@ export function loadStoredCandles(
  * beginning at the epoch, which is the sort of plausible number that survives review.
  */
 export function storedCoverage(ticker?: string): StoredCoverage[] {
-  const rows = getDb()
-    .select()
-    .from(schema.priceCandles)
-    .where(ticker ? eq(schema.priceCandles.ticker, ticker) : undefined)
-    .all();
-
-  const grouped = new Map<string, StoredCoverage>();
-  for (const row of rows) {
-    const key = `${row.ticker}\u0000${row.resolution}`;
-    const entry = grouped.get(key);
-    if (!entry) {
-      grouped.set(key, {
-        ticker: row.ticker,
-        resolution: row.resolution,
-        bars: 1,
-        firstTime: row.time,
-        lastTime: row.time,
-      });
-      continue;
-    }
-    entry.bars += 1;
-    if (entry.firstTime === null || row.time < entry.firstTime) entry.firstTime = row.time;
-    if (entry.lastTime === null || row.time > entry.lastTime) entry.lastTime = row.time;
-  }
-
-  return [...grouped.values()].sort((a, b) => b.bars - a.bars);
+  // Counted in SQL, not in JavaScript.
+  //
+  // This used to SELECT every candle and group them in a Map. On 2026-09-20 that was 3,574,571
+  // rows materialised as objects on every render, costing 12.8s here and another 17.2s through
+  // `intradayDepth`, which is what made /data-quality take over two minutes to answer a question
+  // about row counts. The (ticker, resolution, time) index answers it without reading a row body.
+  const rows = getDb().all<{ ticker: string; resolution: string; bars: number; firstTime: number | null; lastTime: number | null }>(
+    ticker
+      ? sql`SELECT ticker, resolution, count(*) AS bars, min(time) AS firstTime, max(time) AS lastTime
+            FROM price_candles WHERE ticker = ${ticker} GROUP BY ticker, resolution ORDER BY bars DESC`
+      : sql`SELECT ticker, resolution, count(*) AS bars, min(time) AS firstTime, max(time) AS lastTime
+            FROM price_candles GROUP BY ticker, resolution ORDER BY bars DESC`,
+  );
+  return rows.map((row) => ({
+    ticker: row.ticker,
+    resolution: row.resolution,
+    bars: row.bars,
+    firstTime: row.firstTime,
+    lastTime: row.lastTime,
+  }));
 }
 
 /**
