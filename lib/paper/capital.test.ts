@@ -5,6 +5,8 @@ import { CostModelError, roundTripCost } from "./cost-model";
 import {
   MAX_POSITION_PCT,
   OWNER_CAPITAL,
+  TRAINING_CAPITAL,
+  liveBasis,
   breedingBasis,
   costsForCapital,
   maxViablePositions,
@@ -121,9 +123,13 @@ describe("what the factory breeds against", () => {
     expect(basis.capital).toBeGreaterThan(0);
   });
 
-  it("flags that the figure is assumed, and names the owner's real one", () => {
+  it("breeds at the stated TRAINING capital and names the owner's real one beside it", () => {
+    // Owner, 2026-09-20: "train on 25k ... later we would give it the actual 5k". The basis is no
+    // longer a figure the system assumed for want of a tradable one; it is stated. It must still
+    // say what the real account is, so no reader mistakes training evidence for live capacity.
     const basis = breedingBasis();
-    expect(basis.assumed).toBe(true);
+    expect(basis.assumed, "a stated training figure, not an assumption").toBe(false);
+    expect(basis.capital).toBe(TRAINING_CAPITAL.amount);
     expect(basis.capital).toBeGreaterThan(OWNER_CAPITAL.amount);
     expect(basis.reason).toContain(String(OWNER_CAPITAL.amount));
   });
@@ -138,13 +144,15 @@ describe("what the factory breeds against", () => {
     expect(cost.pctOfNotional).toBeLessThanOrEqual(0.005);
   });
 
-  it("reaches the owner's ₹1,000 far more closely on intraday than delivery would", () => {
-    // Delivery would have forced the basis to ₹32,000. Intraday brings it within one doubling of
-    // what the owner actually has, which is the difference between research they can act on and
-    // research about somebody else's account.
-    const basis = breedingBasis();
-    expect(basis.product).toBe("INTRADAY");
-    expect(basis.capital).toBeLessThanOrEqual(OWNER_CAPITAL.amount * 4);
+  it("reports the owner's REAL capital as intraday-only, whatever training uses", () => {
+    // Training may hold overnight at ₹25,000 of paper; the real account cannot. `liveBasis` is the
+    // figure a real-money proposal has to clear, and at ₹5,000 delivery is out of reach — the
+    // difference between research the owner could act on and research about somebody else's
+    // account.
+    const live = liveBasis();
+    expect(live.capital).toBe(OWNER_CAPITAL.amount);
+    expect(live.product).toBe("INTRADAY");
+    expect(breedingBasis().product, "training holds overnight; live does not").toBe("DELIVERY");
   });
 
   it("funds at least the four positions the concentration cap requires", () => {
@@ -219,7 +227,7 @@ describe("the capital this market actually requires", () => {
     // Four positions, each large enough that a ~₹15.93 flat charge plus 0.22% statutory cost
     // stays under half a percent a round trip. Both inputs are published; neither is a judgement.
     const floor = minimumTradableCapital(IN);
-    expect(floor).toBeGreaterThan(OWNER_CAPITAL.amount * 10);
+    expect(floor, "still multiples of the owner's real ₹5,000").toBeGreaterThan(OWNER_CAPITAL.amount * 4);
     expect(floor).toBeLessThan(50_000);
   });
 

@@ -65,7 +65,8 @@ describe("gauntlet survivors carry a named next action", () => {
       entry: { feature: "close", op: "gt", value: 0 },
       exit: { afterDays: 5, stopLossPct: 2 },
       sizing: { maxPositionPct: 25 },
-      costs: { commissionBps: 5, slippageBps: 7 },
+      // ~62 bps: what a daily round trip costs at the training capital (see capital.ts).
+      costs: { commissionBps: 16, slippageBps: 16 },
     });
     const specId = recordStrategySpec({ name: dsl.name, dsl, createdBy: "test" });
     const db = getDb();

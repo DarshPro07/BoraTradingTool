@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { closeDbForTests, getDb, schema } from "@/lib/db";
 import { evaluateAutonomousAction } from "@/lib/governance/policy";
 import { recordStrategySpec } from "@/lib/knowledge/repository";
+import { liveBasis, OWNER_CAPITAL } from "@/lib/paper/capital";
 import { StrategyDslSchema, type StrategyDsl } from "./dsl";
 import {
   runAutonomousGauntlet,
@@ -76,7 +77,7 @@ function eligibleDsl(name = "orb_probe"): StrategyDsl {
   });
 }
 
-/** A daily spec: needs delivery, which the owner's capital cannot fund. */
+/** A daily spec: needs delivery. Honest at the training capital (~62 bps a round trip). */
 function dailyDsl(name = "daily_probe"): StrategyDsl {
   return StrategyDslSchema.parse({
     name,
@@ -84,8 +85,13 @@ function dailyDsl(name = "daily_probe"): StrategyDsl {
     entry: { feature: "close", op: "gt", value: 0 },
     exit: { afterDays: 5, stopLossPct: 2 },
     sizing: { maxPositionPct: 25 },
-    costs: { commissionBps: 5, slippageBps: 7 },
+    costs: { commissionBps: 16, slippageBps: 16 },
   });
+}
+
+/** A daily spec priced for the old ₹1,000 basis: 24 bps where ~62 is honest, so cost_honest fails. */
+function underpricedDsl(name = "underpriced_probe"): StrategyDsl {
+  return StrategyDslSchema.parse({ ...dailyDsl(name), costs: { commissionBps: 5, slippageBps: 7 } });
 }
 
 function seed(dsl: StrategyDsl, verdict: string | null): string {
@@ -140,15 +146,16 @@ describe("the five guards", () => {
     expect(guard(candidate, "rehearsal_would_pass")?.detail).toMatch(/Never rehearsed/);
   });
 
-  it("refuses a daily strategy, because the owner's capital cannot fund delivery", () => {
-    // ₹1,000 trades intraday only — delivery needs ₹23,000. Validating a strategy the account
-    // cannot execute spends a permanent resource on a hypothetical one.
+  it("funds a daily strategy at TRAINING capital, while live would still refuse it", () => {
+    // Owner, 2026-09-20: train at ₹25,000 of paper, fund the real ₹5,000 later. Training may
+    // measure a daily rule; going live is a separate claim, and at ₹5,000 delivery is out of reach.
     seed(dailyDsl(), "would_pass");
     const [candidate] = selectTrialCandidates();
+    expect(guard(candidate, "tradable_at_capital")?.passed, "delivery is fundable at ₹25,000").toBe(true);
 
-    expect(candidate.eligible).toBe(false);
-    expect(guard(candidate, "tradable_at_capital")?.passed).toBe(false);
-    expect(guard(candidate, "tradable_at_capital")?.detail).toMatch(/delivery/);
+    const live = liveBasis();
+    expect(live.capital).toBe(OWNER_CAPITAL.amount);
+    expect(live.product, "the real account can only day-trade").toBe("INTRADAY");
   });
 
   it("refuses a candidate whose declared cost is below what the owner pays", () => {
@@ -225,7 +232,17 @@ describe("the governance boundary", () => {
     // is off unless the owner sets MARKETPULSE_AUTONOMOUS_TRIALS. The default posture is
     // recommend-only, whatever the mode.
     seed(eligibleDsl(), "would_pass");
-    const report = await runAutonomousGauntlet({ mode: "evolving", researchData: noData });
+    // Explicit: the owner's machine now sets this variable for real, and a test that reads the
+    // developer's environment tests the machine rather than the code.
+    const previous = process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+    delete process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+    let report;
+    try {
+      report = await runAutonomousGauntlet({ mode: "evolving", researchData: noData });
+    } finally {
+      if (previous === undefined) delete process.env.MARKETPULSE_AUTONOMOUS_TRIALS;
+      else process.env.MARKETPULSE_AUTONOMOUS_TRIALS = previous;
+    }
 
     expect(report.policyAllowed, "lane off ⇒ no authorization").toBe(false);
     expect(report.spent).toBeNull();
@@ -258,7 +275,7 @@ describe("the governance boundary", () => {
 
   it("still evaluates every guard while refused, so the recommendation is fully checked", async () => {
     seed(eligibleDsl(), "would_pass");
-    seed(dailyDsl(), "would_pass");
+    seed(underpricedDsl(), "would_pass"); // honest on rehearsal, refused on cost
     const report = await runAutonomousGauntlet({ mode: "evolving", researchData: noData });
 
     expect(report.candidates).toHaveLength(2);
@@ -284,7 +301,7 @@ describe("the governance boundary", () => {
 
 describe("the ordering the owner reads", () => {
   it("puts eligible candidates first, then those failing fewest guards", () => {
-    seed(dailyDsl("far_off"), null); // fails rehearsal + tradability
+    seed(underpricedDsl("far_off"), null); // fails rehearsal + cost
     seed(eligibleDsl("ready"), "would_pass"); // fails nothing
     seed(eligibleDsl("nearly"), "would_fail"); // fails rehearsal only
 

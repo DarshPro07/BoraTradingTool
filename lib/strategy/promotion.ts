@@ -3,10 +3,11 @@ import { classifySpec, marketOfDsl, type SpecOrigin } from "./research-eligibili
 import { getDb, schema } from "@/lib/db";
 import { advanceStrategy, type Advance, type Stage, type StageEvidence } from "./lifecycle";
 import { costStanding, type CostVerdict } from "./cost-gate";
+import type { IndiaProduct } from "@/lib/paper/fees";
 import { CostModelError } from "@/lib/paper/cost-model";
 import { checkRediscovery } from "./graveyard";
 import { holdoutStanding } from "./holdout";
-import { StrategyDslSchema } from "./dsl";
+import { isIntradayResolution, StrategyDslSchema } from "./dsl";
 
 /**
  * Where each strategy actually stands, and what it needs next.
@@ -47,9 +48,14 @@ export interface Standing {
  * The cost verdict, or a stated block when the fee engine cannot price this market at all.
  * Exported (with an injectable standing fn) so the fail-closed branch is directly testable.
  */
-export function costVerdictOrBlocked(dslJson: string, standing: (d: string) => CostVerdict = costStanding): CostVerdict {
+export function costVerdictOrBlocked(
+  dslJson: string,
+  standing: (d: string, product?: IndiaProduct) => CostVerdict = costStanding,
+  /** Price at the strategy's own product; without it the basis product is used. */
+  product?: IndiaProduct,
+): CostVerdict {
   try {
-    return standing(dslJson);
+    return standing(dslJson, product);
   } catch (caught) {
     if (caught instanceof CostModelError) {
       return {
@@ -79,9 +85,15 @@ export function evidenceFor(specId: string, dslJson: string): StageEvidence {
   const latest = validations[0];
 
   let rediscovered = false;
+  // The product the spec implies. Without it every intraday spec was priced with the delivery DP
+  // charge it never pays, read as cost-understating, and pinned at `draft` for ever (2026-09-20).
+  let product: IndiaProduct | undefined;
   try {
     const parsed = StrategyDslSchema.safeParse(JSON.parse(dslJson));
-    if (parsed.success) rediscovered = checkRediscovery(parsed.data).rediscovered;
+    if (parsed.success) {
+      rediscovered = checkRediscovery(parsed.data).rediscovered;
+      product = isIntradayResolution(parsed.data.universe.resolution) ? "INTRADAY" : "DELIVERY";
+    }
   } catch {
     // A spec whose DSL will not parse cannot be checked against the graveyard. Treated as not
     // buried rather than buried — a parse failure is not evidence that an idea was tried.
@@ -99,7 +111,7 @@ export function evidenceFor(specId: string, dslJson: string): StageEvidence {
   // 13b economics rule: when realistic costs CANNOT be computed (no fee schedule in force for
   // this market), promotion fails closed. The inspector may abstain per-trade for display;
   // a promotion decision may not proceed on unpriceable evidence.
-  const cost: CostVerdict = costVerdictOrBlocked(dslJson);
+  const cost: CostVerdict = costVerdictOrBlocked(dslJson, costStanding, product);
 
   // The rehearsal's own verdict, read from where the cycle now records it.
   //

@@ -1,4 +1,5 @@
 import { breedingBasis, costsForCapital, OWNER_CAPITAL } from "@/lib/paper/capital";
+import type { IndiaProduct } from "@/lib/paper/fees";
 import { roundTripCostBps, type StrategyDsl } from "./dsl";
 
 /**
@@ -44,19 +45,22 @@ export interface CostVerdict {
  * configuration that can actually be traded — and it is the same figure new candidates are bred
  * against, so a strategy is measured against the market its siblings were built for.
  */
-export function requiredCostBps(): number {
+export function requiredCostBps(product?: IndiaProduct): number {
   const basis = breedingBasis();
+  // Priced at the strategy's OWN product when one is given. The basis carries a single product
+  // (delivery at training capital), and pricing an intraday strategy as delivery made every honest
+  // intraday spec look understated — the DP charge it will never pay (2026-09-20).
   const costs = costsForCapital({
     capital: basis.capital,
     positions: basis.positions,
     market: OWNER_CAPITAL.market,
-    product: basis.product,
+    product: product ?? basis.product,
   });
   return roundTripCostBps({ costs } as StrategyDsl);
 }
 
-export function costStanding(dslJson: string): CostVerdict {
-  const required = requiredCostBps();
+export function costStanding(dslJson: string, product?: IndiaProduct): CostVerdict {
+  const required = requiredCostBps(product);
 
   let declared: number;
   try {

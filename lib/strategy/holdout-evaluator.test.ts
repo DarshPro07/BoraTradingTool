@@ -47,7 +47,10 @@ const DSL = StrategyDslSchema.parse({
   entry: { feature: "close", op: "gt", value: 0 },
   exit: { afterDays: 3, stopLossPct: 5 },
   sizing: { maxPositionPct: 25 },
-  costs: { commissionBps: 5, slippageBps: 7 },
+  // Daily implies delivery; at the TRAINING capital (₹25,000, 4 positions) an honest daily round
+  // trip is ~62 bps. 24 bps was priced for the old ₹1,000 intraday basis and now reads as
+  // understated, which correctly pins a spec at draft (2026-09-20).
+  costs: { commissionBps: 16, slippageBps: 16 },
 });
 
 /** A validated-stage spec with identity and a POST-SEAL gauntlet experiment. */

@@ -1,7 +1,8 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { type LearningMode } from "@/lib/governance/policy";
-import { breedingBasis } from "@/lib/paper/capital";
+import { breedingBasis, liveBasis, maxViablePositions, OWNER_CAPITAL } from "@/lib/paper/capital";
+import type { IndiaProduct } from "@/lib/paper/fees";
 import { runPortfolioBacktest } from "@/lib/backtest/portfolio";
 import type { ResearchDatasetSource } from "@/lib/learning/rehearsal";
 import { costStanding, type CostVerdict } from "./cost-gate";
@@ -100,7 +101,7 @@ export function selectTrialCandidates(
   now = new Date(),
   budget = DEFAULT_DAILY_TRIAL_BUDGET,
   /** Injectable like promotion's own wrapper, so the fail-closed branch is directly testable. */
-  standing: (dslJson: string) => CostVerdict = costStanding,
+  standing: (dslJson: string, product?: IndiaProduct) => CostVerdict = costStanding,
 ): TrialCandidate[] {
   const specs = getDb().select().from(schema.strategySpecs).all();
   const basis = breedingBasis();
@@ -157,24 +158,38 @@ export function selectTrialCandidates(
     //    the cycle's impairment — every other candidate unevaluated because one was unpriceable.
     //    The wrapper converts the throw into that one spec's own fail-closed refusal, exactly as
     //    the promotion ladder already does.
-    const cost = costVerdictOrBlocked(spec.dsl, standing);
+    // Priced at the product this resolution implies: an intraday spec must not be charged the
+    //    delivery DP fee it will never pay.
+    const impliedProduct: IndiaProduct = isIntradayResolution(dsl.universe.resolution) ? "INTRADAY" : "DELIVERY";
+    const cost = costVerdictOrBlocked(spec.dsl, standing, impliedProduct);
     guards.push({
       name: "cost_honest",
       passed: !cost.understated,
       detail: cost.reason,
     });
 
-    // 4. It must be tradable at the owner's capital. A daily strategy needs delivery, which needs
-    //    ₹23,000; the owner has ₹1,000, tradable only intraday. Validating a strategy the account
-    //    cannot execute spends a permanent resource on a hypothetical one.
-    const impliedProduct = isIntradayResolution(dsl.universe.resolution) ? "INTRADAY" : "DELIVERY";
+    // 4. It must be fundable at the TRAINING capital (owner instruction 2026-09-20: train at
+    //    ₹25,000 of paper, fund the real ₹5,000 later). Asked as "is this product affordable
+    //    here?", not "is it the one product this capital picked": a capital that can hold
+    //    overnight can obviously also day-trade, and the equality test refused every intraday
+    //    candidate the moment training capital rose to delivery size.
+    //
+    //    Live is a separate claim: `liveBasis()` is what a real-money proposal must clear, and
+    //    at ₹5,000 that is intraday only. Validating here never grants that.
+    let fundable = false;
+    let fundableDetail = "";
+    try {
+      const positions = maxViablePositions(basis.capital, { market: OWNER_CAPITAL.market, product: impliedProduct });
+      fundable = positions >= 1;
+      fundableDetail = `${dsl.universe.resolution} implies ${impliedProduct.toLowerCase()}; ${basis.capital} funds ${positions} such position(s).`;
+    } catch (caught) {
+      fundableDetail = `${dsl.universe.resolution} implies ${impliedProduct.toLowerCase()}, which ${basis.capital} cannot fund. ${caught instanceof Error ? caught.message : String(caught)}`;
+    }
+    const live = liveBasis();
     guards.push({
       name: "tradable_at_capital",
-      passed: impliedProduct === basis.product,
-      detail:
-        impliedProduct === basis.product
-          ? `${dsl.universe.resolution} implies ${impliedProduct.toLowerCase()}, which ${basis.capital} can trade.`
-          : `${dsl.universe.resolution} implies ${impliedProduct.toLowerCase()}, but ${basis.capital} can only trade ${basis.product.toLowerCase()}. ${basis.reason}`,
+      passed: fundable,
+      detail: `${fundableDetail} Live would need ${live.capital}, which trades ${live.product ?? "nothing"}.`,
     });
 
     // 5. The daily budget. Checked per candidate rather than once, so the report says plainly that

@@ -33,11 +33,33 @@ import type { IndiaProduct } from "./fees";
  * owner has said this figure grows — a capital number without a date silently becomes a lie.
  */
 export const OWNER_CAPITAL = Object.freeze({
-  amount: 1_000,
+  amount: 5_000,
   market: "IN" as Market,
   product: "DELIVERY" as IndiaProduct,
-  statedOn: "2026-08-08",
-  note: "Stated in the owner interview as a starting figure that grows. Update the amount and the date together.",
+  statedOn: "2026-09-20",
+  note:
+    "Owner, 2026-09-20: \"let it first train on 25 or 50k and later once trained then we would give it the actual 5k\". " +
+    "This is the REAL money figure and gates anything live. Training runs on TRAINING_CAPITAL. " +
+    "Was ₹1,000 from 2026-08-08. Update the amount and the date together.",
+});
+
+/**
+ * What the lab may breed and validate against while everything is paper.
+ *
+ * Separate from `OWNER_CAPITAL` on purpose. At ₹5,000 nothing can be held overnight — delivery
+ * needs about ₹23,000 because of the flat DP charge — so every daily strategy was refused before
+ * it could ever be judged, and the trials switch the owner turned on could never fire. Training at
+ * the paper book's size lets a daily rule be measured; it does NOT make it tradable for real.
+ *
+ * A strategy validated here carries that basis in its record: going live additionally requires it
+ * to be tradable at `OWNER_CAPITAL`, and that is the owner's decision, never the system's.
+ */
+export const TRAINING_CAPITAL = Object.freeze({
+  amount: 25_000,
+  market: "IN" as Market,
+  product: "DELIVERY" as IndiaProduct,
+  statedOn: "2026-09-20",
+  note: "Paper-only training basis, matching the INR paper book. Owner may raise it to ₹50,000.",
 });
 
 /** Per-side market-impact assumption, in basis points. Not measured — stated. */
@@ -246,20 +268,20 @@ export interface BreedingBasis {
  * produces candidates whose backtests are unreachable at the account they were bred for.
  */
 export function breedingBasis(at?: Date): BreedingBasis {
-  const options = { market: OWNER_CAPITAL.market, product: OWNER_CAPITAL.product, at };
+  const options = { market: TRAINING_CAPITAL.market, product: TRAINING_CAPITAL.product, at };
 
-  // The owner's own capital first, on whichever product it can actually trade. Jumping straight
-  // to a larger assumed figure — which an earlier version did — silently discarded the case that
-  // matters most: a small account that is tradable on intraday even though delivery is out of
-  // reach.
+  // Training capital, not the owner's real money (owner instruction 2026-09-20: train at 25k, fund
+  // the real 5k later). Judging a daily rule at ₹5,000 refused it before it could be measured,
+  // because delivery needs ~₹23,000. Whatever is validated here still has to clear OWNER_CAPITAL
+  // before anything goes live — see `liveBasis`.
   try {
-    const own = viableConfiguration(OWNER_CAPITAL.amount, OWNER_CAPITAL.market, at);
+    const own = viableConfiguration(TRAINING_CAPITAL.amount, TRAINING_CAPITAL.market, at);
     return {
-      capital: OWNER_CAPITAL.amount,
+      capital: TRAINING_CAPITAL.amount,
       positions: own.positions,
       product: own.product,
       assumed: false,
-      reason: `Breeding against the owner's stated capital of ${OWNER_CAPITAL.amount}. ${own.reason}`,
+      reason: `Training against ${TRAINING_CAPITAL.amount} (paper); the owner's real capital is ${OWNER_CAPITAL.amount}. ${own.reason}`,
     };
   } catch {
     // Not tradable at any product. Fall through and find the nearest figure that is.
@@ -268,12 +290,12 @@ export function breedingBasis(at?: Date): BreedingBasis {
   // Doubling rather than solving: the viability function is piecewise (brokerage is capped, and
   // the granularity floor is a step), so a closed form would be wrong at the joins. Bounded,
   // because an unbounded search on a misconfigured market would spin.
-  let capital = OWNER_CAPITAL.amount;
+  let capital = TRAINING_CAPITAL.amount;
   for (let step = 0; step < 40; step += 1) {
     capital *= 2;
     let found: ViableConfiguration;
     try {
-      found = viableConfiguration(capital, OWNER_CAPITAL.market, at);
+      found = viableConfiguration(capital, TRAINING_CAPITAL.market, at);
     } catch {
       continue;
     }
@@ -330,3 +352,23 @@ function classify(costPerRoundTripPct: number): Viability {
   if (costPerRoundTripPct > 0.002) return "WORKABLE";
   return "COMFORTABLE";
 }
+
+/**
+ * What the owner's REAL capital can trade — the basis any live proposal must clear.
+ *
+ * Training (`breedingBasis`) may validate a daily strategy at ₹25,000 of paper. Going live with it
+ * is a different claim, and this is the figure that claim has to survive.
+ */
+export function liveBasis(at?: Date): { capital: number; product: IndiaProduct | null; reason: string } {
+  try {
+    const own = viableConfiguration(OWNER_CAPITAL.amount, OWNER_CAPITAL.market, at);
+    return { capital: OWNER_CAPITAL.amount, product: own.product, reason: own.reason };
+  } catch (caught) {
+    return {
+      capital: OWNER_CAPITAL.amount,
+      product: null,
+      reason: caught instanceof Error ? caught.message : String(caught),
+    };
+  }
+}
+
