@@ -3,7 +3,7 @@ import { getDb, schema } from "@/lib/db";
 import { emit } from "@/lib/brain/event-bus";
 import { recordAudit } from "@/lib/knowledge/repository";
 import { ASSUMED_SLIPPAGE_BPS, OWNER_CAPITAL, paperBookDrift } from "@/lib/paper/capital";
-import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
+import { repairDeclaredCosts } from "@/lib/strategy/cost-repair";
 
 /**
  * What the system fixes about itself, and what it refuses to fix.
@@ -96,30 +96,21 @@ export function runSelfRepair(actor = "self-repair"): SelfRepairReport {
  */
 function repairUnderstatedCosts(actor: string): Repair[] {
   const db = getDb();
-  const required = requiredCostBps();
-  const perSide = Math.max(0, Math.ceil(required / 2) - ASSUMED_SLIPPAGE_BPS);
   const repairs: Repair[] = [];
 
   for (const spec of db.select().from(schema.strategySpecs).all()) {
-    const standing = costStanding(spec.dsl);
-    if (!standing.understated) continue;
-
-    let updated: string;
-    try {
-      const parsed = JSON.parse(spec.dsl) as Record<string, unknown>;
-      parsed.costs = { commissionBps: perSide, slippageBps: ASSUMED_SLIPPAGE_BPS };
-      updated = JSON.stringify(parsed);
-    } catch {
-      // A spec whose DSL will not parse cannot be repaired without guessing its shape. Reported
-      // rather than rewritten: inventing a structure for it would destroy whatever it held.
+    const repair = repairDeclaredCosts(spec.dsl);
+    if (repair.kind === "sound") continue;
+    if (repair.kind === "unrepairable") {
       repairs.push({
         defect: "cost_understated",
         subject: spec.name,
         outcome: "failed",
-        detail: `${spec.name} declares too little cost, but its DSL will not parse, so it cannot be repaired without guessing its shape.`,
+        detail: `${spec.name} declares too little cost, but ${repair.message}, so it was left as it is.`,
       });
       continue;
     }
+    const { json: updated, product, declaredBps, requiredBps: required } = repair;
 
     try {
       db.update(schema.strategySpecs).set({ dsl: updated }).where(eq(schema.strategySpecs.id, spec.id)).run();
@@ -131,8 +122,8 @@ function repairUnderstatedCosts(actor: string): Repair[] {
         .all().length;
 
       const detail =
-        `Declared cost raised from ${standing.declaredBps} to ${required} bps to match the published ` +
-        `schedule at the owner's capital.` +
+        `Declared cost raised from ${declaredBps} to ${required} bps to match the published ` +
+        `${product} schedule at the owner's capital.` +
         (stale
           ? ` ${stale} validation result(s) were computed against the old figure and are now stale — ` +
             `they are left in place for review rather than deleted on a schedule.`

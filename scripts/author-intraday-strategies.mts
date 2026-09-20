@@ -33,12 +33,24 @@
  * assumed spread. The owner's capital requires at least 24, so these are priced honestly and
  * slightly conservatively. A trade must clear 0.29% before it has earned anything at all.
  *
- * Usage:  npx tsx scripts/author-intraday-strategies.mts
+ * Usage:  npx tsx scripts/author-intraday-strategies.mts [--restore]
+ *
+ * `--restore` rewrites an existing row whose stored DSL can no longer be read back. That state was
+ * real: the cost repair used to replace the whole `costs` object, dropping the `assumedSpreadBps`
+ * the DSL requires at intraday resolution, and every cycle then refused the spec as unreadable.
+ * Restoration is not invention — the definition here, with its stated 5 bps spread, is the source
+ * these rows were authored from.
  */
-import { recordStrategySpec } from "@/lib/knowledge/repository";
+import { eq } from "drizzle-orm";
+import { getDb, schema } from "@/lib/db";
+import { recordAudit, recordStrategySpec } from "@/lib/knowledge/repository";
 import { StrategyDslSchema, compileStrategy } from "@/lib/strategy/dsl";
 import { costStanding } from "@/lib/strategy/cost-gate";
+import { impliedProduct } from "@/lib/strategy/cost-repair";
+import { parseStrategyDefinition } from "@/lib/strategy/definition";
 import { checkRediscovery } from "@/lib/strategy/graveyard";
+
+const restore = process.argv.includes("--restore");
 
 /**
  * Statutory + assumed cost at the owner's tradable capital (₹2,000 intraday, 4 positions).
@@ -128,7 +140,11 @@ for (const candidate of SPECS) {
   // Checked here rather than left to the promotion ladder. A spec authored below the owner's real
   // cost would sit in the registry looking testable and be blocked at every rung, and the reason
   // belongs at the moment it can still be changed cheaply.
-  const cost = costStanding(JSON.stringify(parsed.data));
+  // Priced at the product this resolution implies. Measuring a 5m strategy against the DELIVERY
+  // schedule charges it Zerodha's flat DP fee, which intraday never pays, and refused every
+  // intraday spec this script has ever been asked to author.
+  const authoredJson = JSON.stringify(parsed.data);
+  const cost = costStanding(authoredJson, impliedProduct(authoredJson));
   if (cost.understated) {
     refused += 1;
     console.error(`COST_UNDERSTATED — ${cost.reason}`);
@@ -145,7 +161,35 @@ for (const candidate of SPECS) {
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : String(caught);
     if (/UNIQUE constraint failed: strategy_specs/i.test(message)) {
-      console.log(`${parsed.data.name} already exists at this version — left untouched.`);
+      const existing = getDb()
+        .select()
+        .from(schema.strategySpecs)
+        .where(eq(schema.strategySpecs.name, parsed.data.name))
+        .get();
+      const readable = existing ? parseStrategyDefinition(existing.dsl) : { ok: true as const };
+      if (existing && !readable.ok && restore) {
+        getDb()
+          .update(schema.strategySpecs)
+          .set({ dsl: authoredJson })
+          .where(eq(schema.strategySpecs.id, existing.id))
+          .run();
+        recordAudit({
+          actor: "claude-code:intraday-restore-2026-09-20",
+          action: "strategy_spec_restored",
+          decision: "allowed",
+          subject: existing.id,
+          detail:
+            `${parsed.data.name} could not be read back (${readable.message}) after the cost repair ` +
+            `dropped assumedSpreadBps. Restored to the definition this script authors, declaring ` +
+            `${cost.declaredBps} bps against ${cost.requiredBps} required.`,
+        });
+        console.log(`${parsed.data.name} — RESTORED (was unreadable: ${readable.message})`);
+        continue;
+      }
+      console.log(
+        `${parsed.data.name} already exists at this version — left untouched` +
+          (existing && !readable.ok ? `, but its stored DSL cannot be read (${readable.message}). Re-run with --restore.` : "."),
+      );
       continue;
     }
     throw caught;

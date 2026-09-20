@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { breedingBasis } from "@/lib/paper/capital";
+import { breedingBasis, OWNER_CAPITAL, maxViablePositions, liveBasis } from "@/lib/paper/capital";
 import { compileStrategy, isIntradayResolution } from "@/lib/strategy/dsl";
 import { breedGeneration } from "./breed";
 
@@ -46,9 +46,14 @@ describe("bred candidates are tradable at the owner's capital", () => {
       const impliedProduct = isIntradayResolution(candidate.dsl.universe.resolution)
         ? "INTRADAY"
         : "DELIVERY";
-      // The exact comparison `tradable_at_capital` makes. Before the fix this was
-      // DELIVERY vs INTRADAY for every candidate.
-      expect(impliedProduct).toBe(basis.product);
+      // The exact question `tradable_at_capital` asks: can the breeding book afford a position in
+      // the product this candidate implies? Equality was the old test, and it was wrong in both
+      // directions -- it refused a daily candidate while the basis said INTRADAY, and once training
+      // moved to 25,000 it would have refused every intraday candidate the live book needs.
+      expect(
+        maxViablePositions(basis.capital, { market: OWNER_CAPITAL.market, product: impliedProduct }),
+        `${candidate.dsl.name} implies ${impliedProduct}, unaffordable at ${basis.capital}`,
+      ).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -63,11 +68,17 @@ describe("bred candidates are tradable at the owner's capital", () => {
       seed: 12,
     });
 
-    for (const candidate of report.candidates) {
-      if (!isIntradayResolution(candidate.dsl.universe.resolution)) continue;
+    // The premise this test depends on: SOMETHING here can trade intraday. Training at 25,000
+    // cannot, but the owner's real 5,000 can trade nothing else -- and the factory breeds for both.
+    expect(liveBasis().product).toBe("INTRADAY");
+    const intradayBred = report.candidates.filter((candidate) =>
+      isIntradayResolution(candidate.dsl.universe.resolution),
+    );
+    expect(intradayBred.length, "the live book's lane must still be fed").toBeGreaterThan(0);
+    for (const candidate of intradayBred) {
       expect(candidate.dsl.costs.assumedSpreadBps).toBeGreaterThan(0);
     }
-    expect(basis.product).toBe("INTRADAY"); // pins the premise this test depends on
+    expect(basis.product).toBe("DELIVERY"); // the training book, stated so a change is visible
   });
 
   it("omits afterDays on intraday specs, because it counts bars rather than days", () => {

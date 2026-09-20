@@ -4,6 +4,8 @@ import {
   OWNER_CAPITAL,
   breedingBasis,
   costsForCapital,
+  liveBasis,
+  maxViablePositions,
   type BreedingBasis,
 } from "@/lib/paper/capital";
 import { compileStrategy, type StrategyDsl } from "@/lib/strategy/dsl";
@@ -176,8 +178,34 @@ function basis(): BreedingBasis {
  */
 const ASSUMED_INTRADAY_SPREAD_BPS = 5;
 
+/** Half the population, so neither book's strategies crowd the other out. */
+const INTRADAY_SHARE = 0.5;
+
 function baseDsl(name: string, entry: Condition, random: () => number, market: string): StrategyDsl {
-  const { capital, positions, product } = basis();
+  const training = basis();
+  const live = liveBasis();
+
+  // Breed for BOTH books, not only the one training happens to use.
+  //
+  // Training moved to ₹25,000 of paper on 2026-09-20, which affords DELIVERY — and because this
+  // function read one product, the factory stopped generating intraday candidates entirely. The
+  // owner's real ₹5,000 can trade nothing BUT intraday, so the lane that will actually hold real
+  // money was the lane that stopped being fed. It was invisible: every candidate was valid, the
+  // gauntlet accepted them, and the only symptom was that no new intraday strategy ever appeared.
+  const liveIntraday =
+    live.product === "INTRADAY" && market === (OWNER_CAPITAL.market === "IN" ? "NSE" : "US");
+  const liveSeats = liveIntraday
+    ? maxViablePositions(live.capital, { market: OWNER_CAPITAL.market, product: "INTRADAY" })
+    : 0;
+  const intraday =
+    training.product === "INTRADAY" || (liveIntraday && liveSeats > 0 && random() < INTRADAY_SHARE);
+
+  // An intraday candidate bred for the live book is sized by the live book: the seats ₹5,000 buys,
+  // not the seats ₹25,000 would.
+  const forLiveBook = intraday && training.product !== "INTRADAY";
+  const capital = forLiveBook ? live.capital : training.capital;
+  const positions = forLiveBook ? liveSeats : training.positions;
+  const product = intraday ? ("INTRADAY" as const) : ("DELIVERY" as const);
 
   // Breed at a resolution the capital can actually trade.
   //
@@ -190,7 +218,6 @@ function baseDsl(name: string, entry: Condition, random: () => number, market: s
   // product implied by the resolution, saw DELIVERY, and refused. The factory manufactured
   // candidates its own sibling module could never accept, so nothing ever reached `validated`,
   // nothing reached paper forward, and the trade board was empty by construction.
-  const intraday = product === "INTRADAY";
   const resolution = intraday ? "5m" : "D";
 
   return {

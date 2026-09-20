@@ -19,36 +19,30 @@
  */
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
-import { ASSUMED_SLIPPAGE_BPS } from "@/lib/paper/capital";
+import { requiredCostBps } from "@/lib/strategy/cost-gate";
+import { repairDeclaredCosts } from "@/lib/strategy/cost-repair";
 
 const apply = process.argv.includes("--apply");
 const db = getDb();
-const required = requiredCostBps();
 
-console.log(`Required round-trip cost at the owner's capital: ${required} bps\n`);
+console.log(
+  `Required round-trip cost at the owner's capital: ${requiredCostBps("DELIVERY")} bps delivery, ` +
+    `${requiredCostBps("INTRADAY")} bps intraday (each spec is priced at the one its resolution implies).
+`,
+);
 
 const specs = db.select().from(schema.strategySpecs).all();
 let repaired = 0;
 let clearedRows = 0;
 
 for (const spec of specs) {
-  const standing = costStanding(spec.dsl);
-  if (!standing.understated) continue;
-
-  // Half, because `roundTripCostBps` treats commission and slippage as per-side and doubles both.
-  // Slippage is left at its stated assumption so the measured and estimated halves stay separable.
-  const perSide = Math.max(0, Math.ceil(required / 2) - ASSUMED_SLIPPAGE_BPS);
-
-  let updated: string;
-  try {
-    const parsed = JSON.parse(spec.dsl) as Record<string, unknown>;
-    parsed.costs = { commissionBps: perSide, slippageBps: ASSUMED_SLIPPAGE_BPS };
-    updated = JSON.stringify(parsed);
-  } catch {
-    console.log(`  SKIP ${spec.name} — DSL will not parse, so it cannot be repaired safely.`);
+  const repair = repairDeclaredCosts(spec.dsl);
+  if (repair.kind === "sound") continue;
+  if (repair.kind === "unrepairable") {
+    console.log(`  SKIP ${spec.name} — ${repair.message}.`);
     continue;
   }
+  const { json: updated, product, declaredBps, requiredBps: required } = repair;
 
   const rows = db
     .select()
@@ -57,7 +51,7 @@ for (const spec of specs) {
     .all();
 
   console.log(
-    `  ${apply ? "REPAIR" : "would repair"} ${spec.name}: ${standing.declaredBps} → ${required} bps` +
+    `  ${apply ? "REPAIR" : "would repair"} ${spec.name} (${product}): ${declaredBps} → ${required} bps` +
       (rows.length ? `, discarding ${rows.length} validation result(s) computed at the old cost` : ""),
   );
 

@@ -119,7 +119,10 @@ describe("INVARIANT: end to end, from real rows — fixtures never reach the poo
         entry: { feature: "close", op: "gt", value: 10 },
         exit: { afterDays: 5, stopLossPct: 4 },
         sizing: { maxPositionPct: 10 },
-        costs: { commissionBps: 5, slippageBps: 7 },
+        // Priced at the DELIVERY schedule the training book pays (62 bps): a spec that declares
+        // less is refused by the cost gate and would never reach the pool, which would make this
+        // invariant pass for the wrong reason.
+        costs: { commissionBps: 16, slippageBps: 16 },
       } as never,
     });
     // `would_pass` is what carries a draft to `rehearsed`, which is what puts it in the pool.

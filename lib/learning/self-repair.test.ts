@@ -5,6 +5,7 @@ import { useTemporaryDatabase } from "@/lib/db/testing";
 import { recordStrategySpec } from "@/lib/knowledge/repository";
 import { OWNER_CAPITAL, TRAINING_CAPITAL } from "@/lib/paper/capital";
 import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
+import { parseStrategyDefinition } from "@/lib/strategy/definition";
 import { runSelfRepair } from "./self-repair";
 
 /**
@@ -29,6 +30,15 @@ const UNDERSTATED = {
   exit: { afterDays: 10, stopLossPct: 5 },
   sizing: { maxPositionPct: 25 },
   costs: { commissionBps: 1, slippageBps: 1 },
+};
+
+const UNDERSTATED_INTRADAY = {
+  name: "orb_cheap_5m",
+  universe: { market: "NSE", maxPositions: 4, resolution: "5m" },
+  entry: { feature: "close", op: "gt", value: 0 },
+  exit: { stopLossPct: 0.5 },
+  sizing: { maxPositionPct: 25 },
+  costs: { commissionBps: 1, slippageBps: 1, assumedSpreadBps: 8 },
 };
 
 /** `recordStrategySpec` stringifies the DSL itself — handing it a string double-encodes it. */
@@ -149,5 +159,41 @@ describe("a clean system", () => {
     const report = runSelfRepair();
     expect(report.repairs).toHaveLength(0);
     expect(report.summary).toMatch(/nothing/i);
+  });
+});
+
+describe("repairing a cost without destroying the strategy", () => {
+  it("keeps the declared spread, so the repaired intraday spec can still be read", () => {
+    // Found in production: all ten intraday specs in the live database had lost
+    // assumedSpreadBps, and every cycle refused them with "Stored definition cannot be read ...
+    // It cannot be replayed until it is recompiled." The repair was the thing breaking them --
+    // it replaced the whole costs object with two fields, and the DSL requires the third at
+    // intraday resolution. A repair that leaves the subject unreadable is not a repair.
+    const id = saveSpec(UNDERSTATED_INTRADAY, "orb_cheap_5m");
+
+    runSelfRepair();
+
+    const row = getDb()
+      .select()
+      .from(schema.strategySpecs)
+      .where(eq(schema.strategySpecs.id, id))
+      .get();
+    const definition = parseStrategyDefinition(row!.dsl);
+    expect(definition.ok).toBe(true);
+    expect(JSON.parse(row!.dsl).costs.assumedSpreadBps).toBe(8);
+  });
+
+  it("prices an intraday strategy at the intraday schedule, not the delivery one", () => {
+    // The delivery round trip carries Zerodha's flat DP fee; intraday does not. Repairing an
+    // intraday spec to the delivery figure overstates its cost and buries a real edge.
+    const id = saveSpec(UNDERSTATED_INTRADAY, "orb_cheap_5m_priced");
+
+    runSelfRepair();
+
+    const row = getDb().select().from(schema.strategySpecs).where(eq(schema.strategySpecs.id, id)).get();
+    const costs = JSON.parse(row!.dsl).costs;
+    const declared = (costs.commissionBps + costs.slippageBps) * 2 + costs.assumedSpreadBps;
+    expect(declared).toBeLessThan(requiredCostBps("DELIVERY"));
+    expect(declared).toBeGreaterThanOrEqual(requiredCostBps("INTRADAY"));
   });
 });
