@@ -7,6 +7,7 @@ import {
   OWNER_CAPITAL,
   TRAINING_CAPITAL,
   liveBasis,
+  paperBookDrift,
   breedingBasis,
   costsForCapital,
   maxViablePositions,
@@ -247,5 +248,26 @@ describe("the owner's declared capital", () => {
 
   it("carries the date it was stated, because capital that grows makes a stale figure a lie", () => {
     expect(OWNER_CAPITAL.statedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("paperBookDrift", () => {
+  it("is silent when the book holds the training basis the owner stated", () => {
+    // The live /paper screen showed the opposite before this existed: a book at the intended
+    // 25,000 was reported as drifted from the owner's real 5,000, with instructions to "align" it.
+    expect(paperBookDrift(TRAINING_CAPITAL.amount)).toBeNull();
+    expect(paperBookDrift(TRAINING_CAPITAL.amount + 0.5)).toBeNull();
+  });
+
+  it("speaks when the book holds a figure nobody stated, and names both capitals", () => {
+    const drift = paperBookDrift(1_000);
+    expect(drift).toContain("1,000");
+    expect(drift).toContain(TRAINING_CAPITAL.amount.toLocaleString("en-IN"));
+    expect(drift).toContain(OWNER_CAPITAL.amount.toLocaleString("en-IN"));
+  });
+
+  it("does not mistake the owner's real capital for an aligned book", () => {
+    // 5,000 in the paper book would mean training had quietly switched to live size.
+    expect(paperBookDrift(OWNER_CAPITAL.amount)).not.toBeNull();
   });
 });

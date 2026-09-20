@@ -11,7 +11,7 @@ import { NSE_QC_001 } from "@/lib/strategy/campaigns/nse-qc-001";
 import { intradayQueueStrata } from "@/lib/strategy/trial-activation";
 import { loadStoredCandles } from "@/lib/market/candle-store";
 import type { Market } from "@/lib/market/types";
-import { breedingBasis, OWNER_CAPITAL } from "@/lib/paper/capital";
+import { breedingBasis, OWNER_CAPITAL, paperBookDrift } from "@/lib/paper/capital";
 import type { Candle } from "@/lib/providers/types";
 import { produceResearchJobs, type ProduceResult } from "@/lib/research/producer";
 import { queueStats } from "@/lib/research/queue";
@@ -492,13 +492,8 @@ async function runCycleBody(
       .from(schema.paperAccounts)
       .where(eq(schema.paperAccounts.currency, "INR"))
       .get();
-    if (inr && Math.abs(inr.startingCash - OWNER_CAPITAL.amount) > 1) {
-      skipped.push(
-        `The INR paper account starts at ${inr.startingCash.toLocaleString("en-IN")} but the owner's ` +
-          `stated capital is ${OWNER_CAPITAL.amount.toLocaleString("en-IN")}. Paper results describe an ` +
-          `account that does not exist. Run \`npx tsx scripts/set-paper-capital.mts\` to align them.`,
-      );
-    }
+    const drift = inr ? paperBookDrift(inr.startingCash) : null;
+    if (drift) skipped.push(drift);
   } catch {
     // A missing paper account is not a cycle failure; the paper screens report it themselves.
   }

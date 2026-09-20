@@ -372,3 +372,26 @@ export function liveBasis(at?: Date): { capital: number; product: IndiaProduct |
   }
 }
 
+
+/**
+ * Does the INR paper book hold a figure nobody stated?
+ *
+ * The book is the TRAINING basis, not the owner's real money: the owner's decision on 2026-09-20
+ * was to train at ₹25,000 of paper and hand the real ₹5,000 over only once something has earned
+ * it. Comparing the book against `OWNER_CAPITAL` — which is what all three call sites used to do —
+ * made the intended state look like a defect and told the owner to destroy it with
+ * `set-paper-capital.mts`. One predicate, so the paper screen, the cycle and self-repair cannot
+ * drift apart on what "aligned" means.
+ *
+ * Returns null when the book is correct, and the sentence to show when it is not.
+ */
+export function paperBookDrift(startingCash: number): string | null {
+  if (Math.abs(startingCash - TRAINING_CAPITAL.amount) <= 1) return null;
+  const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+  return (
+    `The INR paper account starts at ${inr(startingCash)} but the training basis stated on ` +
+    `${TRAINING_CAPITAL.statedOn} is ${inr(TRAINING_CAPITAL.amount)}. Paper results describe an account ` +
+    `that does not exist. (The owner's real capital is ${inr(OWNER_CAPITAL.amount)}; this system never ` +
+    `trades it — see liveBasis.) Run \`npx tsx scripts/set-paper-capital.mts --amount ${TRAINING_CAPITAL.amount}\` to align them.`
+  );
+}

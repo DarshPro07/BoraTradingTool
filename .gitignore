@@ -83,3 +83,7 @@ next-env.d.ts
 
 # Thread engineering scratch
 threads/
+
+# Runtime lease files: the live cycle rewrites these every few minutes, which turns any
+# stash, rebase or merge into a conflict over state that is not source.
+marketpulse.db.*-lease

@@ -5,7 +5,9 @@ import {
   MAX_POSITION_PCT,
   MIN_POSITION_VALUE,
   OWNER_CAPITAL,
+  TRAINING_CAPITAL,
   minimumTradableCapital,
+  paperBookDrift,
   viableConfiguration,
 } from "@/lib/paper/capital";
 import { costDrag, roundTripCost, CostModelError } from "@/lib/paper/cost-model";
@@ -41,11 +43,11 @@ export function CostViabilityPanel() {
     .where(eq(schema.paperAccounts.currency, "INR"))
     .get();
 
-  // The paper account is the truth about what is being simulated; `OWNER_CAPITAL` is what the
-  // owner said. When they disagree, the paper results describe an account that does not exist —
-  // so the disagreement is shown rather than silently resolved in favour of either.
-  const capital = account?.startingCash ?? OWNER_CAPITAL.amount;
-  const drifted = Math.abs(capital - OWNER_CAPITAL.amount) > 1;
+  // The paper account is the truth about what is being simulated; `TRAINING_CAPITAL` is what the
+  // owner said to train against. When they disagree, the paper results describe an account that
+  // does not exist — so the disagreement is shown rather than silently resolved in favour of either.
+  const capital = account?.startingCash ?? TRAINING_CAPITAL.amount;
+  const drift = paperBookDrift(capital);
 
   const intradayFloor = safely(() => minimumTradableCapital({ market: "IN", product: "INTRADAY" }));
   const deliveryFloor = safely(() => minimumTradableCapital({ market: "IN", product: "DELIVERY" }));
@@ -72,16 +74,12 @@ export function CostViabilityPanel() {
 
   return (
     <Panel title="COST & CAPITAL VIABILITY">
-      {drifted ? (
-        <p className="text-[11px] text-amber mb-3 border border-amber/40 bg-amber/5 px-2 py-1.5">
-          The paper account starts at {rupees(capital)} but the owner&rsquo;s stated capital is{" "}
-          {rupees(OWNER_CAPITAL.amount)}. Paper results describe an account that does not exist — run{" "}
-          <code>npx tsx scripts/set-paper-capital.mts</code> to align them.
-        </p>
+      {drift ? (
+        <p className="text-[11px] text-amber mb-3 border border-amber/40 bg-amber/5 px-2 py-1.5">{drift}</p>
       ) : null}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <StatTile label="Capital" value={rupees(capital)} hint={`stated ${OWNER_CAPITAL.statedOn}`} />
+        <StatTile label="Capital" value={rupees(capital)} hint={`training basis, stated ${TRAINING_CAPITAL.statedOn}`} />
         <StatTile
           label="Tradable product"
           value={current ? current.product : "NONE"}

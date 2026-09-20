@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { emit } from "@/lib/brain/event-bus";
 import { recordAudit } from "@/lib/knowledge/repository";
-import { ASSUMED_SLIPPAGE_BPS, OWNER_CAPITAL } from "@/lib/paper/capital";
+import { ASSUMED_SLIPPAGE_BPS, OWNER_CAPITAL, paperBookDrift } from "@/lib/paper/capital";
 import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
 
 /**
@@ -180,7 +180,8 @@ function reportCapitalDrift(): Repair[] {
       .where(eq(schema.paperAccounts.currency, "INR"))
       .get();
     if (!account) return [];
-    if (Math.abs(account.startingCash - OWNER_CAPITAL.amount) <= 1) return [];
+    const drift = paperBookDrift(account.startingCash);
+    if (!drift) return [];
 
     return [
       {
@@ -188,10 +189,8 @@ function reportCapitalDrift(): Repair[] {
         subject: "INR paper account",
         outcome: "reported",
         detail:
-          `The INR paper account starts at ${account.startingCash.toLocaleString("en-IN")} but the owner's ` +
-          `stated capital is ${OWNER_CAPITAL.amount.toLocaleString("en-IN")}. Not repaired automatically: ` +
-          "which figure is current is the owner's to say, and a system that rewrites either has decided " +
-          "how much money they have. Run `npx tsx scripts/set-paper-capital.mts` to align them.",
+          `${drift} Not repaired automatically: which figure is current is the owner's to say, and a ` +
+          "system that rewrites either has decided how much money they have.",
       },
     ];
   } catch {

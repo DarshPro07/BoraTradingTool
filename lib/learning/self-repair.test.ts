@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { useTemporaryDatabase } from "@/lib/db/testing";
 import { recordStrategySpec } from "@/lib/knowledge/repository";
-import { OWNER_CAPITAL } from "@/lib/paper/capital";
+import { OWNER_CAPITAL, TRAINING_CAPITAL } from "@/lib/paper/capital";
 import { costStanding, requiredCostBps } from "@/lib/strategy/cost-gate";
 import { runSelfRepair } from "./self-repair";
 
@@ -128,17 +128,23 @@ describe("refusing to repair the owner's judgement", () => {
     expect(account?.startingCash).toBe(wrong);
   });
 
-  it("says nothing when the two figures agree", () => {
-    setPaperCapital(OWNER_CAPITAL.amount);
+  it("says nothing when the book holds the training basis, not the owner's real capital", () => {
+    // The owner trains at 25,000 of paper and keeps the real 5,000 out of the machine, so the
+    // book agreeing with TRAINING_CAPITAL is the intended state -- and agreeing with
+    // OWNER_CAPITAL is not.
+    setPaperCapital(TRAINING_CAPITAL.amount);
     expect(runSelfRepair().repairs.some((item) => item.defect === "capital_drift")).toBe(false);
+
+    setPaperCapital(OWNER_CAPITAL.amount);
+    expect(runSelfRepair().repairs.some((item) => item.defect === "capital_drift")).toBe(true);
   });
 });
 
 describe("a clean system", () => {
   it("reports finding nothing rather than inventing work", () => {
-    // Aligned first: migrations seed an INR account whose balance is not the owner's figure, so a
+    // Aligned first: migrations seed an INR account whose balance is not the training basis, so a
     // fresh database legitimately has one thing to report. "Clean" has to be arranged.
-    setPaperCapital(OWNER_CAPITAL.amount);
+    setPaperCapital(TRAINING_CAPITAL.amount);
 
     const report = runSelfRepair();
     expect(report.repairs).toHaveLength(0);
