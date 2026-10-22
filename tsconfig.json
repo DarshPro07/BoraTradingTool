@@ -88,7 +88,17 @@
     ".tmp/crash-dist-msubrd3d/types/**/*.ts",
     ".tmp/crash-dist-msubrd3d/dev/types/**/*.ts",
     ".tmp/crash-dist-msudtz4i/types/**/*.ts",
-    ".tmp/crash-dist-msudtz4i/dev/types/**/*.ts"
+    ".tmp/crash-dist-msudtz4i/dev/types/**/*.ts",
+    ".tmp/housekeeping-build/types/**/*.ts",
+    ".tmp/housekeeping-build/dev/types/**/*.ts",
+    ".tmp/crash-dist-msuq09jd/types/**/*.ts",
+    ".tmp/crash-dist-msuq09jd/dev/types/**/*.ts",
+    ".tmp/coverage-verify-dist/types/**/*.ts",
+    ".tmp/coverage-verify-dist/dev/types/**/*.ts",
+    ".tmp/dataos-verify-dist/types/**/*.ts",
+    ".tmp/dataos-verify-dist/dev/types/**/*.ts",
+    ".tmp/promote-build/types/**/*.ts",
+    ".tmp/promote-build/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

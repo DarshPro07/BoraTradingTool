@@ -1,0 +1,180 @@
+
+Running 34 tests using 1 worker
+
+[1A[2K[1/34] [identity] › e2e\identity.setup.ts:49:6 › the server under test is the build under test
+[1A[2K[identity] › e2e\identity.setup.ts:49:6 › the server under test is the build under test
+[identity] http://127.0.0.1:3000
+           build   c3a814f-dirty.6a321a7a
+           mode    development
+           pid     20324, up since 2026-08-11T22:02:05.238Z
+           schema  0018_job_dependencies.sql (19 applied)
+           db      c05ea58b166fc130
+
+[1A[2K[2/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:74:7 › NSE 30-stock breadth matrix › catalog contains at least 30 unique canonical NSE instruments
+[1A[2K[desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:74:7 › NSE 30-stock breadth matrix › catalog contains at least 30 unique canonical NSE instruments
+[matrix] Catalog has 78 instruments
+
+[1A[2K[matrix] Canonical XNSE instruments: 56
+
+[1A[2K[3/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › RELIANCE — analyze page renders without errors
+[1A[2K[4/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › TCS — analyze page renders without errors
+[1A[2K[5/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › HDFCBANK — analyze page renders without errors
+[1A[2K[6/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › INFY — analyze page renders without errors
+[1A[2K[7/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › ICICIBANK — analyze page renders without errors
+[1A[2K[8/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › HINDUNILVR — analyze page renders without errors
+[1A[2K  1) [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › HINDUNILVR — analyze page renders without errors 
+
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://127.0.0.1:3000/analyze/IN%3AXNSE%3AHINDUNILVR", waiting until "domcontentloaded"[22m
+
+
+      105 |       const errors = collectPageErrors(page);
+      106 |
+    > 107 |       const response = await page.goto(`/analyze/${encodeInstrument(stock.symbol)}`, {
+          |                                   ^
+      108 |         waitUntil: "domcontentloaded",
+      109 |         timeout: 30_000,
+      110 |       });
+        at E:\BoraTradingTool\e2e\nse-30-stock-matrix.spec.ts:107:35
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-edbf1-page-renders-without-errors-desktop-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\nse-30-stock-matrix-NSE-30-edbf1-page-renders-without-errors-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-edbf1-page-renders-without-errors-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\nse-30-stock-matrix-NSE-30-edbf1-page-renders-without-errors-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[9/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › SBIN — analyze page renders without errors
+[1A[2K  2) [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › SBIN — analyze page renders without errors 
+
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://127.0.0.1:3000/analyze/IN%3AXNSE%3ASBIN", waiting until "domcontentloaded"[22m
+
+
+      105 |       const errors = collectPageErrors(page);
+      106 |
+    > 107 |       const response = await page.goto(`/analyze/${encodeInstrument(stock.symbol)}`, {
+          |                                   ^
+      108 |         waitUntil: "domcontentloaded",
+      109 |         timeout: 30_000,
+      110 |       });
+        at E:\BoraTradingTool\e2e\nse-30-stock-matrix.spec.ts:107:35
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-06e89-page-renders-without-errors-desktop-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\nse-30-stock-matrix-NSE-30-06e89-page-renders-without-errors-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-06e89-page-renders-without-errors-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\nse-30-stock-matrix-NSE-30-06e89-page-renders-without-errors-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[10/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BHARTIARTL — analyze page renders without errors
+[1A[2K  3) [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BHARTIARTL — analyze page renders without errors 
+
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://127.0.0.1:3000/analyze/IN%3AXNSE%3ABHARTIARTL", waiting until "domcontentloaded"[22m
+
+
+      105 |       const errors = collectPageErrors(page);
+      106 |
+    > 107 |       const response = await page.goto(`/analyze/${encodeInstrument(stock.symbol)}`, {
+          |                                   ^
+      108 |         waitUntil: "domcontentloaded",
+      109 |         timeout: 30_000,
+      110 |       });
+        at E:\BoraTradingTool\e2e\nse-30-stock-matrix.spec.ts:107:35
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-a2f43-page-renders-without-errors-desktop-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\nse-30-stock-matrix-NSE-30-a2f43-page-renders-without-errors-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-a2f43-page-renders-without-errors-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\nse-30-stock-matrix-NSE-30-a2f43-page-renders-without-errors-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[11/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › ITC — analyze page renders without errors
+[1A[2K  4) [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › ITC — analyze page renders without errors 
+
+    TimeoutError: page.goto: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - navigating to "http://127.0.0.1:3000/analyze/IN%3AXNSE%3AITC", waiting until "domcontentloaded"[22m
+
+
+      105 |       const errors = collectPageErrors(page);
+      106 |
+    > 107 |       const response = await page.goto(`/analyze/${encodeInstrument(stock.symbol)}`, {
+          |                                   ^
+      108 |         waitUntil: "domcontentloaded",
+      109 |         timeout: 30_000,
+      110 |       });
+        at E:\BoraTradingTool\e2e\nse-30-stock-matrix.spec.ts:107:35
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-8c616-page-renders-without-errors-desktop-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\nse-30-stock-matrix-NSE-30-8c616-page-renders-without-errors-desktop-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\nse-30-stock-matrix-NSE-30-8c616-page-renders-without-errors-desktop-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\nse-30-stock-matrix-NSE-30-8c616-page-renders-without-errors-desktop-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[12/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › LT — analyze page renders without errors
+[1A[2K[13/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › TATAMOTORS — analyze page renders without errors
+[1A[2K[14/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › SUNPHARMA — analyze page renders without errors
+[1A[2K[15/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › TATASTEEL — analyze page renders without errors
+[1A[2K[16/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › WIPRO — analyze page renders without errors
+[1A[2K[17/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › ASIANPAINT — analyze page renders without errors
+[1A[2K[18/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › MARUTI — analyze page renders without errors
+[1A[2K[19/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › TITAN — analyze page renders without errors
+[1A[2K[20/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BAJFINANCE — analyze page renders without errors
+[1A[2K[21/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › HCLTECH — analyze page renders without errors
+[1A[2K[22/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › POWERGRID — analyze page renders without errors
+[1A[2K[23/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BECTORFOOD — analyze page renders without errors
+[1A[2K[24/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › JYOTHYLAB — analyze page renders without errors
+[1A[2K[25/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › CHAMBLFERT — analyze page renders without errors
+[1A[2K[26/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › GAIL — analyze page renders without errors
+[1A[2K[27/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › SIEMENS — analyze page renders without errors
+[1A[2K[28/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › AMBUJACEM — analyze page renders without errors
+[1A[2K[29/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BERGEPAINT — analyze page renders without errors
+[1A[2K[30/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › DABUR — analyze page renders without errors
+[1A[2K[31/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › COLPAL — analyze page renders without errors
+[1A[2K[32/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › MCDOWELL-N — analyze page renders without errors
+[1A[2K[33/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:131:7 › NSE identity verification — no BSE contamination › analyze page shows NSE exchange for NSE instruments
+[1A[2K[34/34] [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:141:7 › NSE identity verification — no BSE contamination › search returns NSE instruments
+[1A[2K  4 failed
+    [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › HINDUNILVR — analyze page renders without errors 
+    [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › SBIN — analyze page renders without errors 
+    [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › BHARTIARTL — analyze page renders without errors 
+    [desktop-chromium] › e2e\nse-30-stock-matrix.spec.ts:103:9 › NSE 30-stock breadth matrix › ITC — analyze page renders without errors 
+  30 passed (8.0m)
