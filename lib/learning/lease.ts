@@ -197,12 +197,12 @@ export async function withCycleLease<T>(
   holder: string,
   run: () => Promise<T>,
   file = leasePath(),
-  heartbeatMs = LEASE_TTL_MS / 3,
-  maxCycleMs = MAX_CYCLE_MS,
+  // Every user of one lease file must pass the same ttlMs: expiry is judged by the reader.
+  { ttlMs = LEASE_TTL_MS, heartbeatMs = ttlMs / 3, maxCycleMs = MAX_CYCLE_MS }: { ttlMs?: number; heartbeatMs?: number; maxCycleMs?: number } = {},
 ): Promise<LeaseOutcome<T>> {
-  const lease = acquireLease(holder, file);
+  const lease = acquireLease(holder, file, Date.now(), ttlMs);
   if (lease === null) {
-    return { acquired: false, blockedBy: currentLease(file), result: null };
+    return { acquired: false, blockedBy: currentLease(file, Date.now(), ttlMs), result: null };
   }
   let stamp = lease.acquiredAt;
   const heartbeat = setInterval(() => {

@@ -53,8 +53,11 @@ export function mandateReport(contract: MandateContract): MandateReport {
   };
 }
 
+/** IN1's first session (PRD v2 TL-1). Its trust denominator counts from here, not from its first decision. */
+export const IN1_ACTIVATED = "2026-09-21";
+
 /** IN1, the intraday ORB trader, in the same shape — from its own ledger. Benchmark: cash. */
-export function intradayReport(): MandateReport {
+export function intradayReport(now = new Date()): MandateReport {
   const decisionRows = readOrb("decision");
   const executionRows = readOrb("execution");
   const book = getDb().select().from(schema.paperAccounts).where(eq(schema.paperAccounts.currency, "INR")).get()?.startingCash ?? 0;
@@ -62,10 +65,15 @@ export function intradayReport(): MandateReport {
   const nav: NavPoint[] = orbDailyPnl().map((d) => ({ date: d.day, nav: (cumulative += d.pnl), benchmark: book }));
   const days = [...new Set(decisionRows.map((d) => d.day))].sort();
   const metrics = mandateMetrics(nav, 248);
+  // TL-1: every session since activation, so a clock that never decided reads 0/N, not 0/0. Today
+  // counts once decided or closed, so the ratio never dips before 09:20. Weekend special sessions
+  // (Muhurat) are closed for IN1 (EC-7).
+  const ist = new Date(now.getTime() + 330 * 60_000);
+  const todayIst = ist.toISOString().slice(0, 10);
+  const closedToday = ist.getUTCHours() * 60 + ist.getUTCMinutes() >= 15 * 60 + 30 || days.includes(todayIst);
   let due = 0;
-  if (days.length) {
-    const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
-    for (let d = days[0]!; d <= today; d = shiftDate(d, 1)) if (isPlausibleSessionDate(d)) due += 1;
+  for (let d = IN1_ACTIVATED; d < todayIst || (d === todayIst && closedToday); d = shiftDate(d, 1)) {
+    if (new Date(`${d}T00:00:00Z`).getUTCDay() % 6 !== 0 && isPlausibleSessionDate(d)) due += 1;
   }
   const gates = trustGates(ORB_CONTRACT, metrics, {
     decisionDatesDue: due,

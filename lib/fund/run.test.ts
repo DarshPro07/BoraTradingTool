@@ -106,6 +106,13 @@ describe("runFundPass", () => {
     expect(report.find((p) => p.mandate === "FC1")?.note).toMatch(/missed decision date 2026-08-23/);
   });
 
+  it("EC-6: records a missed decision date once, as a ledger row and not only a pass note", async () => {
+    await runFundPass(fakeDeps({ FC1: closes("2026-08-02", 60, 100, 150) }).deps, new Date("2026-08-02T06:00:00Z"));
+    await runFundPass(fakeDeps({ FC1: closes("2026-08-24", 83, 100, 150) }).deps, NOW);
+    await runFundPass(fakeDeps({ FC1: closes("2026-08-24", 83, 100, 150) }).deps, NOW);
+    expect(readFund("missed", "FC1").map((m) => m.decisionDate)).toEqual(["2026-08-23"]);
+  });
+
   it("does not carve a sleeve from an unknown book: missing capital is not zero", async () => {
     const report = await runFundPass(fakeDeps({ FC1: closes("2026-09-21", 60, 100, 150) }, { capital: null }).deps, NOW);
     expect(readFund("decision", "FC1")).toHaveLength(0);

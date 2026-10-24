@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 import { backupDefaultDatabase, migrateDatabase } from "./migrate";
+import { installCloudGuard, ledgerOwnedByCloud, removeCloudGuard } from "../ledger/writer";
 
 let database: ReturnType<typeof drizzle<typeof schema>> | null = null;
 let sqliteConnection: Database.Database | null = null;
@@ -40,14 +41,33 @@ export function openDatabase(filePath: string) {
   sqlite.pragma("busy_timeout = 5000");
   migrateDatabase(sqlite);
   seedDefaults(sqlite);
+  // While the cloud clock owns this database's paper ledger, no path here may write it
+  // (docs/plans/cloud-clock): two writers would record two sets of paper decisions.
+  if (ledgerOwnedByCloud(filePath)) installCloudGuard(sqlite);
   return { db: drizzle(sqlite, { schema }), sqlite };
 }
 
+let cloudGuarded = false;
+let writerCheckedAt = 0;
+
 export function getDb() {
   if (!database) {
-    const opened = openDatabase(databasePath());
+    const file = databasePath();
+    const opened = openDatabase(file);
     database = opened.db;
     sqliteConnection = opened.sqlite;
+    cloudGuarded = ledgerOwnedByCloud(file);
+    writerCheckedAt = Date.now();
+  } else if (Date.now() - writerCheckedAt > 1_000) {
+    // A long-lived connection (the Next server, an MCP server) follows a cutover or a promote made
+    // after it opened, within a second; the triggers change only when the switch does.
+    writerCheckedAt = Date.now();
+    const owned = ledgerOwnedByCloud(databasePath());
+    if (owned !== cloudGuarded) {
+      if (owned) installCloudGuard(sqliteConnection!);
+      else removeCloudGuard(sqliteConnection!);
+      cloudGuarded = owned;
+    }
   }
   return database;
 }
@@ -56,6 +76,7 @@ export function closeDatabase(): void {
   sqliteConnection?.close();
   sqliteConnection = null;
   database = null;
+  cloudGuarded = false;
 }
 
 /**

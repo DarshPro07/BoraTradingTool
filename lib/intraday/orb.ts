@@ -15,8 +15,9 @@
  * the cycle's 15:10 square-off. Every decision and fill is appended to `audit_events`.
  */
 import { createHash } from "node:crypto";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, like } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import { getLearningMode } from "@/lib/governance/runtime";
 
 export const ORB_CONTRACT = Object.freeze({
   id: "IN1" as const,
@@ -76,8 +77,11 @@ export interface OrbExecutionRow {
   day: string;
   instrumentId: string;
   side: "BUY" | "SELL";
-  /** CARRIED: shares left over from an earlier day whose exit never filled; sold first. */
-  reason: "ENTRY" | "STOP" | "EOD" | "CARRIED";
+  /**
+   * CARRIED: shares left over from an earlier day whose exit never filled; sold first.
+   * SQUARED: sold by the cycle's square-off, not by IN1 (EC-13); booked from the engine's fill.
+   */
+  reason: "ENTRY" | "STOP" | "EOD" | "CARRIED" | "SQUARED";
   status: string;
   quantity: number;
   fillPrice: number | null;
@@ -104,12 +108,19 @@ function append(kind: keyof typeof ACTION, row: OrbDecisionRow | OrbExecutionRow
     .run();
 }
 
-export function readOrb<K extends keyof typeof ACTION>(kind: K): K extends "decision" ? OrbDecisionRow[] : OrbExecutionRow[] {
+export function orbRowsQuery(kind: keyof typeof ACTION) {
+  // ponytail: `decision` is filtered only to reach idx_audit_decision (decision, action); append()
+  // writes no other value. Without it every pass scanned all of audit_events (916k rows): after the
+  // 2026-10-23 reboot that read a cold disk at ~0.7 MB/s and the pass outlived its 3-minute limit.
   return getDb()
     .select()
     .from(schema.auditEvents)
-    .where(eq(schema.auditEvents.action, ACTION[kind]))
-    .orderBy(asc(schema.auditEvents.id))
+    .where(and(inArray(schema.auditEvents.decision, ["allowed", "limited"]), eq(schema.auditEvents.action, ACTION[kind])))
+    .orderBy(asc(schema.auditEvents.id));
+}
+
+export function readOrb<K extends keyof typeof ACTION>(kind: K): K extends "decision" ? OrbDecisionRow[] : OrbExecutionRow[] {
+  return orbRowsQuery(kind)
     .all()
     .flatMap((row) => {
       try {
@@ -118,6 +129,49 @@ export function readOrb<K extends keyof typeof ACTION>(kind: K): K extends "deci
         return [];
       }
     }) as never;
+}
+
+/**
+ * EC-13: book the cycle's square-off fills to IN1. When the minute task misses its 15:05 exit, the
+ * 15:10+ square-off sells the engine position, but IN1's ledger still showed the shares: the next
+ * day it tried to sell them every minute (refused, INSUFFICIENT_HOLDINGS) and never traded that
+ * name again. Idempotent: once the shares are booked, IN1 holds nothing and this is a no-op.
+ * Call it only under the intraday lease (it runs at the top of every IN1 pass): two unleased
+ * callers could both read the shares as held and book one square-off twice.
+ */
+export function reconcileOrbSquareOffs(): string[] {
+  const booked: string[] = [];
+  const executions = readOrb("execution");
+  for (const instrumentId of ORB_CONTRACT.universe) {
+    const mine = executions.filter((e) => e.instrumentId === instrumentId && e.status === "FILLED");
+    let held = mine.reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
+    if (held <= 1e-9) continue;
+    const squareOffs = getDb()
+      .select()
+      .from(schema.paperOrders)
+      .where(and(
+        eq(schema.paperOrders.instrumentId, instrumentId), eq(schema.paperOrders.side, "SELL"), eq(schema.paperOrders.status, "FILLED"),
+        eq(schema.paperOrders.product, "INTRADAY"), like(schema.paperOrders.idempotencyKey, "squareoff-%"),
+        gt(schema.paperOrders.createdAt, new Date(mine.at(-1)!.at)),
+      ))
+      .orderBy(asc(schema.paperOrders.createdAt))
+      .all();
+    for (const order of squareOffs) {
+      if (held <= 1e-9 || order.fillPrice === null) break;
+      // The square-off sells the whole engine position, which may include shares that are not IN1's.
+      const quantity = Math.min(held, order.quantity);
+      const fees = (order.fees * quantity) / order.quantity;
+      const day = new Date(order.createdAt.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+      const row: OrbExecutionRow = {
+        hash: ORB_HASH, day, instrumentId, side: "SELL", reason: "SQUARED", status: "FILLED", quantity,
+        fillPrice: order.fillPrice, fees, cashDelta: order.fillPrice * quantity - fees, refusal: null, at: order.createdAt.toISOString(),
+      };
+      append("execution", row, `${day}:${instrumentId}:SELL:squared:${order.id}`);
+      held -= quantity;
+      booked.push(`${instrumentId}: ${quantity} squared off @ ${order.fillPrice} booked to IN1`);
+    }
+  }
+  return booked;
 }
 
 // ── The pass ────────────────────────────────────────────────────────────────────────────────────
@@ -146,11 +200,16 @@ const istParts = (now: Date) => {
 /**
  * One minute's work. Called every minute in session by the "MarketPulse Intraday" task, under its
  * own lease. Idempotent per day: one decision per instrument, one entry, one exit.
+ *
+ * `decideOnly` is the cycle's backstop (EC-4): it records a missing decision and places nothing.
+ * Learning mode OFF (GV-8) stops new entries; exits still run, because the cycle's square-off
+ * does not run while OFF and a held intraday position must not go overnight.
  */
-export async function runIntradayPass(deps: IntradayDeps, now = new Date()): Promise<IntradayPass[]> {
-  if (!deps.sessionOpen(now)) return [];
+export async function runIntradayPass(deps: IntradayDeps, now = new Date(), { decideOnly = false } = {}): Promise<IntradayPass[]> {
+  const out: IntradayPass[] = reconcileOrbSquareOffs().map((action) => ({ instrumentId: "IN1", action }));
+  if (!deps.sessionOpen(now)) return out;
   const { day, minute } = istParts(now);
-  const out: IntradayPass[] = [];
+  const paused = getLearningMode() === "off";
   const suspended = orbDrawdown(deps.book().startingCash) > ORB_CONTRACT.killDrawdown;
   const decisions = readOrb("decision").filter((d) => d.day === day);
   const allExecutions = readOrb("execution");
@@ -158,95 +217,105 @@ export async function runIntradayPass(deps: IntradayDeps, now = new Date()): Pro
 
   for (const instrumentId of ORB_CONTRACT.universe) {
     const log = (action: string) => out.push({ instrumentId, action });
-    let decision = decisions.find((d) => d.instrumentId === instrumentId);
-    const keyFor = (side: string) => `orb-IN1-${day}-${instrumentId.split(":").pop()}-${side}-${minute}`.replace(/[^A-Za-z0-9_-]/g, "_");
+    // EC-9: one instrument's provider error must not cost the others their decision.
+    try {
+      let decision = decisions.find((d) => d.instrumentId === instrumentId);
+      const keyFor = (side: string) => `orb-IN1-${day}-${instrumentId.split(":").pop()}-${side}-${minute}`.replace(/[^A-Za-z0-9_-]/g, "_");
 
-    // 0. Shares carried from an earlier day (an exit that never filled) are invisible to a
-    //    today-only view: they would be left unmanaged and a second position opened beside them.
-    //    Count across all days, sell the carry first, and take no new position in that name today.
-    const carried = allExecutions
-      .filter((e) => e.instrumentId === instrumentId && e.status === "FILLED" && e.day < day)
-      .reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
-    const soldCarryToday = executions.some((e) => e.instrumentId === instrumentId && e.reason === "CARRIED");
-    if (carried > 1e-9 || soldCarryToday) {
-      if (carried > 1e-9) {
-        const r = await deps.place(instrumentId, "SELL", carried, keyFor("SELL"));
+      // 0. Shares carried from an earlier day (an exit that never filled) are invisible to a
+      //    today-only view: they would be left unmanaged and a second position opened beside them.
+      //    Count across all days, sell the carry first, and take no new position in that name today.
+      const carried = allExecutions
+        .filter((e) => e.instrumentId === instrumentId && e.status === "FILLED" && e.day < day)
+        .reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
+      const soldCarryToday = executions.some((e) => e.instrumentId === instrumentId && e.reason === "CARRIED");
+      if (carried > 1e-9 || soldCarryToday) {
+        if (carried > 1e-9 && !decideOnly) {
+          const r = await deps.place(instrumentId, "SELL", carried, keyFor("SELL"));
+          const filled = r.status === "FILLED";
+          const row: OrbExecutionRow = {
+            hash: ORB_HASH, day, instrumentId, side: "SELL", reason: "CARRIED", status: r.status, quantity: carried,
+            fillPrice: r.fillPrice, fees: filled ? r.fees : 0, cashDelta: filled ? r.fillPrice! * carried - r.fees : 0,
+            refusal: filled ? null : r.reason, at: now.toISOString(),
+          };
+          append("execution", row, `${day}:${instrumentId}:SELL:carried:${minute}`);
+          executions.push(row);
+          log(`SELL CARRIED ${r.status}${filled ? ` @ ${r.fillPrice}` : ` (${r.reason})`}`);
+        }
+        continue;
+      }
+
+      // 1. Decide once the first candle has closed.
+      if (!decision && minute >= 9 * 60 + 15 + ORB_CONTRACT.firstCandleMinutes) {
+        const first = await deps.firstCandle(instrumentId, day);
+        if (!first) {
+          log("first candle unavailable");
+          continue;
+        }
+        const d = orbDecision(first);
+        decision = { hash: ORB_HASH, day, instrumentId, long: d.long, stop: d.stop, first };
+        append("decision", decision, `${day}:${instrumentId}:decision`);
+        log(d.long ? `decided LONG, stop ${d.stop}` : "decided NO TRADE (first candle not up)");
+      }
+      if (!decision?.long || decideOnly) continue;
+
+      const mine = executions.filter((e) => e.instrumentId === instrumentId && e.status === "FILLED");
+      const held = mine.reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
+      const entered = mine.some((e) => e.side === "BUY");
+
+      const record = async (side: "BUY" | "SELL", quantity: number, reason: OrbExecutionRow["reason"]) => {
+        const r = await deps.place(instrumentId, side, quantity, keyFor(side));
         const filled = r.status === "FILLED";
+        const gross = filled ? r.fillPrice! * quantity : 0;
         const row: OrbExecutionRow = {
-          hash: ORB_HASH, day, instrumentId, side: "SELL", reason: "CARRIED", status: r.status, quantity: carried,
-          fillPrice: r.fillPrice, fees: filled ? r.fees : 0, cashDelta: filled ? r.fillPrice! * carried - r.fees : 0,
+          hash: ORB_HASH, day, instrumentId, side, reason, status: r.status, quantity,
+          fillPrice: r.fillPrice, fees: filled ? r.fees : 0,
+          cashDelta: filled ? (side === "BUY" ? -(gross + r.fees) : gross - r.fees) : 0,
           refusal: filled ? null : r.reason, at: now.toISOString(),
         };
-        append("execution", row, `${day}:${instrumentId}:SELL:carried:${minute}`);
+        append("execution", row, `${day}:${instrumentId}:${side}:${minute}`);
         executions.push(row);
-        log(`SELL CARRIED ${r.status}${filled ? ` @ ${r.fillPrice}` : ` (${r.reason})`}`);
-      }
-      continue;
-    }
-
-    // 1. Decide once the first candle has closed.
-    if (!decision && minute >= 9 * 60 + 15 + ORB_CONTRACT.firstCandleMinutes) {
-      const first = await deps.firstCandle(instrumentId, day);
-      if (!first) {
-        log("first candle unavailable");
-        continue;
-      }
-      const d = orbDecision(first);
-      decision = { hash: ORB_HASH, day, instrumentId, long: d.long, stop: d.stop, first };
-      append("decision", decision, `${day}:${instrumentId}:decision`);
-      log(d.long ? `decided LONG, stop ${d.stop}` : "decided NO TRADE (first candle not up)");
-    }
-    if (!decision?.long) continue;
-
-    const mine = executions.filter((e) => e.instrumentId === instrumentId && e.status === "FILLED");
-    const held = mine.reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
-    const entered = mine.some((e) => e.side === "BUY");
-
-    const record = async (side: "BUY" | "SELL", quantity: number, reason: OrbExecutionRow["reason"]) => {
-      const r = await deps.place(instrumentId, side, quantity, keyFor(side));
-      const filled = r.status === "FILLED";
-      const gross = filled ? r.fillPrice! * quantity : 0;
-      const row: OrbExecutionRow = {
-        hash: ORB_HASH, day, instrumentId, side, reason, status: r.status, quantity,
-        fillPrice: r.fillPrice, fees: filled ? r.fees : 0,
-        cashDelta: filled ? (side === "BUY" ? -(gross + r.fees) : gross - r.fees) : 0,
-        refusal: filled ? null : r.reason, at: now.toISOString(),
+        log(`${side} ${reason} ${r.status}${filled ? ` @ ${r.fillPrice}` : ` (${r.reason})`}`);
       };
-      append("execution", row, `${day}:${instrumentId}:${side}:${minute}`);
-      executions.push(row);
-      log(`${side} ${reason} ${r.status}${filled ? ` @ ${r.fillPrice}` : ` (${r.reason})`}`);
-    };
 
-    // 2. Enter once, inside the entry window.
-    if (!entered && held === 0) {
-      if (minute > ORB_CONTRACT.lastEntryMinute) continue;
-      if (suspended) {
-        log("suspended: kill drawdown breached, no new entries");
+      // 2. Enter once, inside the entry window.
+      if (!entered && held === 0) {
+        if (minute > ORB_CONTRACT.lastEntryMinute) continue;
+        if (paused) {
+          log("learning mode OFF: no new entries");
+          continue;
+        }
+        if (suspended) {
+          log("suspended: kill drawdown breached, no new entries");
+          continue;
+        }
+        const price = await deps.lastPrice(instrumentId);
+        if (price === null) {
+          log("no live price");
+          continue;
+        }
+        const book = deps.book();
+        const quantity = orbQuantity({ entry: price, stop: decision.stop, book: book.startingCash, cash: book.cash, capPct: book.capPct });
+        if (quantity < 1) {
+          log(price <= decision.stop ? "price already at/below stop: no entry" : "size rounds to 0");
+          continue;
+        }
+        await record("BUY", quantity, "ENTRY");
         continue;
       }
-      const price = await deps.lastPrice(instrumentId);
-      if (price === null) {
-        log("no live price");
-        continue;
-      }
-      const book = deps.book();
-      const quantity = orbQuantity({ entry: price, stop: decision.stop, book: book.startingCash, cash: book.cash, capPct: book.capPct });
-      if (quantity < 1) {
-        log(price <= decision.stop ? "price already at/below stop: no entry" : "size rounds to 0");
-        continue;
-      }
-      await record("BUY", quantity, "ENTRY");
-      continue;
-    }
 
-    // 3. Exit: stop, or end of day.
-    if (held > 0) {
-      if (minute >= ORB_CONTRACT.exitMinute) {
-        await record("SELL", held, "EOD");
-        continue;
+      // 3. Exit: stop, or end of day.
+      if (held > 0) {
+        if (minute >= ORB_CONTRACT.exitMinute) {
+          await record("SELL", held, "EOD");
+          continue;
+        }
+        const price = await deps.lastPrice(instrumentId);
+        if (price !== null && price <= decision.stop) await record("SELL", held, "STOP");
       }
-      const price = await deps.lastPrice(instrumentId);
-      if (price !== null && price <= decision.stop) await record("SELL", held, "STOP");
+    } catch (caught) {
+      // Reported in this minute's lines, beside the others' work; the entry exits 1 on it.
+      log(`failed: ${caught instanceof Error ? caught.message : String(caught)}`);
     }
   }
   return out;

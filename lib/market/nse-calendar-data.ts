@@ -5,7 +5,7 @@
  * why neither alone is sufficient. Extended session by session, derived-only, by
  * `lib/market/calendar-extension.ts` in the scheduled cycle.
  *
- * Extended to 2026-10-21 from 362 reference instruments (>= 750 bars, quorum 0.5), no network.
+ * Extended to 2026-10-22 from 362 reference instruments (>= 750 bars, quorum 0.5), no network.
  */
 
 /** Weekdays the NSE was closed. */
@@ -422,4 +422,4 @@ export const EXCHANGE_DECLARED_DATES: ReadonlySet<string> = new Set([
 ]);
 
 /** The calendar is derived from data up to here; past it, only the holidays API has spoken. */
-export const CALENDAR_DERIVED_THROUGH = "2026-10-21";
+export const CALENDAR_DERIVED_THROUGH = "2026-10-22";

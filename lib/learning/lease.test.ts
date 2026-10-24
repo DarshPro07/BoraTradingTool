@@ -160,7 +160,7 @@ describe("a long cycle keeps its lease", () => {
         return renewed > first;
       },
       file,
-      20,
+      { heartbeatMs: 20 },
     );
     expect(outcome.result, "the heartbeat moved the stamp forward").toBe(true);
     expect(rivalGotIt).toBe(false);
@@ -195,8 +195,18 @@ describe("the lease under review findings (2026-09-19)", () => {
         expect(later, "no renewal after the cap").toBe(stampAtCap);
       },
       file,
-      10,
-      50,
+      { heartbeatMs: 10, maxCycleMs: 50 },
     );
+  });
+});
+
+describe("the intraday lease (EC-9, 2026-10-23)", () => {
+  it("takes over a 2-minute lease once its holder has been dead for 2 minutes, not 10", async () => {
+    // 09:36-09:46 and 09:52-10:02: an orphaned node.exe held the 10-minute lease and IN1 missed both windows.
+    const file = leaseFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ holder: "orphan", acquiredAt: Date.now() - 121_000 }), "utf8");
+    const outcome = await withCycleLease("intraday-scheduler", async () => "ran", file, { ttlMs: 120_000 });
+    expect(outcome.acquired).toBe(true);
   });
 });

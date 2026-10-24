@@ -14,6 +14,7 @@ const ACTION = {
   execution: "fund_execution",
   nav: "fund_nav",
   kill: "fund_kill",
+  missed: "fund_decision_missed",
 } as const;
 type Kind = keyof typeof ACTION;
 
@@ -58,7 +59,13 @@ export interface KillRow extends Base {
   date: string;
   drawdown: number;
 }
-type RowOf = { decision: DecisionRow; execution: ExecutionRow; nav: NavRow; kill: KillRow };
+/** EC-6: a decision date that went stale before any pass could decide it. */
+export interface MissedRow extends Base {
+  decisionDate: string;
+  daysLate: number;
+  freshnessDays: number;
+}
+type RowOf = { decision: DecisionRow; execution: ExecutionRow; nav: NavRow; kill: KillRow; missed: MissedRow };
 
 export function appendFund<K extends Kind>(kind: K, row: RowOf[K], key: string): void {
   const limited = kind === "kill" || (kind === "execution" && (row as ExecutionRow).status !== "FILLED");

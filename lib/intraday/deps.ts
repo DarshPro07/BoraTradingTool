@@ -1,4 +1,5 @@
 /** The intraday trader's real inputs and outputs: live 5-minute bars, live quotes, the NSE session, the paper engine. */
+import path from "node:path";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { getMarketSession } from "@/lib/market/calendar";
@@ -12,6 +13,14 @@ const istMinuteOf = (t: number) => {
   const ist = new Date((t + 19_800) * 1000);
   return { day: ist.toISOString().slice(0, 10), minute: ist.getUTCHours() * 60 + ist.getUTCMinutes() };
 };
+
+/** The minute task and the cycle's backstop (EC-4) share this lease file, so they never trade at once. */
+export const intradayLeaseFile = () => path.resolve(process.cwd(), "marketpulse.db.intraday-lease");
+/**
+ * EC-9: a dead holder frees it in 2 minutes, not 10 (the 09:36 and 09:52 freezes on 2026-10-23).
+ * Renewal stops at 150 s, inside the task's 3-minute limit, so a hung run cannot keep it alive.
+ */
+export const INTRADAY_LEASE = { ttlMs: 120_000, maxCycleMs: 150_000 } as const;
 
 export const realIntradayDeps: IntradayDeps = {
   async firstCandle(instrumentId, day) {

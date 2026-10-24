@@ -10,7 +10,7 @@ import { getDb, schema } from "@/lib/db";
 import { CALENDAR_DERIVED_THROUGH } from "@/lib/market/nse-calendar-data";
 import { isPlausibleSessionDate } from "@/lib/market/session-calendar";
 import { latestExpectedSession } from "@/lib/market/universe-coverage";
-import { ORB_CONTRACT } from "@/lib/intraday/orb";
+import { ORB_CONTRACT, readOrb } from "@/lib/intraday/orb";
 
 export interface HealthCheck {
   name: string;
@@ -44,10 +44,18 @@ export function fundOsHealth(now = new Date()): HealthCheck[] {
   const ist = new Date(now.getTime() + 330 * MIN);
   const day = ist.toISOString().slice(0, 10);
   const minute = ist.getUTCHours() * 60 + ist.getUTCMinutes();
-  if (isPlausibleSessionDate(day) && minute >= 9 * 60 + 25) {
-    const decided = db.select().from(schema.auditEvents).where(eq(schema.auditEvents.action, "intraday_decision")).all()
-      .filter((row) => (row.detail ?? "").includes(`"day":"${day}"`)).length;
+  // readOrb goes through idx_audit_decision; the old filter scanned all of audit_events (EC-9).
+  const session = isPlausibleSessionDate(day);
+  if (session && minute >= 9 * 60 + 25) {
+    const decided = readOrb("decision").filter((d) => d.day === day).length;
     checks.push({ name: "intraday", ok: decided >= ORB_CONTRACT.universe.length, detail: `${decided}/${ORB_CONTRACT.universe.length} first-candle decisions recorded today` });
+  }
+
+  // EC-13: outside the session window IN1 holds nothing. Shares here mean an exit and the square-off
+  // both missed, or the square-off was not booked to IN1, and tomorrow would start with a carry.
+  if (!session || minute >= 15 * 60 + 40) {
+    const held = readOrb("execution").filter((e) => e.status === "FILLED").reduce((q, e) => q + (e.side === "BUY" ? e.quantity : -e.quantity), 0);
+    checks.push({ name: "intraday-flat", ok: held <= 1e-9, detail: held <= 1e-9 ? "IN1 flat" : `IN1 holds ${held} share(s) after the close` });
   }
 
   // Research sees only sessions the calendar vouches for.

@@ -90,3 +90,5 @@ marketpulse.db.*-lease
 
 # Scheduled-task stdout, so a crashed autonomous run leaves a diagnosis behind.
 logs/
+# docs/plans/cloud-clock: this machine's ledger writer switch
+marketpulse.db.writer

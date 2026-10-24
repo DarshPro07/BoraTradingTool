@@ -15,6 +15,9 @@ import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
+import os from "node:os";
+import path from "node:path";
+import { codexLockdownArgs, codexToolsUsed } from "./tool-audit";
 
 export type Tier = "routine" | "standard" | "deep";
 
@@ -38,6 +41,16 @@ export interface ModelSpec {
 const NODE = process.execPath;
 const NPM = "D:/npm-global/node_modules";
 const MCP_TOOLS = ["mcp__marketpulse__*", "mcp__mem0__*", "WebSearch", "WebFetch"];
+// SEC-1 (PRD v2.1): jobs read untrusted text (arXiv). --allowedTools only pre-approves, so the project's
+// allow rules (Bash(node:*), Bash(npx:*), ...) would still let an injected prompt run code unprompted.
+// --tools narrows the built-in set (MCP tools are separate); --disallowedTools beats any allow rule.
+// --strict-mcp-config: only the project's MCP servers (marketpulse, mem0). Without it a canary job saw
+// ~200 user/plugin MCP tools, including browser control the project pre-allows (2026-10-23).
+const CLAUDE_LOCKDOWN = [
+  "--tools", "WebSearch,WebFetch",
+  "--disallowedTools", "Bash,Edit,Write,NotebookEdit",
+  "--strict-mcp-config", "--mcp-config", ".mcp.json",
+];
 const HOUR = 3_600_000;
 export const AGENT_WORKDIR = "D:/marketpulse-agents/work";
 
@@ -45,7 +58,8 @@ export const MODELS: Record<string, ModelSpec> = {
   // Free: routine reading and summarising.
   "opencode-free": {
     id: "opencode-free", provider: "opencode",
-        // The read-only "plan" agent: MCP tools yes, file edits and shell no.
+        // NOT read-only: in @opencode/cli 2.x the "plan" agent has shell, edit and write tools (canary
+        // 2026-10-23 ran `node -v`). Out of TIERS until a locked-down agent passes a canary (SEC-11).
     command: `${NPM}/opencode-ai/bin/opencode.exe`, args: ["run", "--agent", "plan", "-m", "opencode/nemotron-3-ultra-free"],
     defaultRestMs: HOUR / 2, cwd: AGENT_WORKDIR,
   },
@@ -68,26 +82,26 @@ export const MODELS: Record<string, ModelSpec> = {
   },
   "claude-haiku": {
     id: "claude-haiku", provider: "claude",
-    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "haiku", "--allowedTools", ...MCP_TOOLS, "-p"],
+    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "haiku", ...CLAUDE_LOCKDOWN, "--allowedTools", ...MCP_TOOLS, "-p"],
     defaultRestMs: HOUR,
   },
   "claude-sonnet": {
     id: "claude-sonnet", provider: "claude",
-    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "sonnet", "--allowedTools", ...MCP_TOOLS, "-p"],
+    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "sonnet", ...CLAUDE_LOCKDOWN, "--allowedTools", ...MCP_TOOLS, "-p"],
     defaultRestMs: HOUR,
   },
   "claude-opus": {
     id: "claude-opus", provider: "claude",
-    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "opus", "--allowedTools", ...MCP_TOOLS, "-p"],
+    command: "C:/Users/marke/.local/bin/claude.exe", args: ["--model", "opus", ...CLAUDE_LOCKDOWN, "--allowedTools", ...MCP_TOOLS, "-p"],
     defaultRestMs: HOUR,
   },
 };
 
 /** Cheapest first. A job names its tier; the router walks the list past any model at rest. */
 export const TIERS: Record<Tier, string[]> = {
-  routine: ["opencode-free", "antigravity", "claude-haiku", "codex"],
-  standard: ["antigravity", "codex", "claude-sonnet", "opencode-free"],
-  deep: ["claude-opus", "codex", "antigravity", "claude-sonnet"],
+  routine: ["claude-haiku", "codex"],
+  standard: ["codex", "claude-sonnet"],
+  deep: ["claude-opus", "codex", "claude-sonnet"],
 };
 
 // Specific phrases only: a bare "quota" or "rate limit" inside a short, legitimate answer once
@@ -167,6 +181,11 @@ export function runModel(spec: ModelSpec, prompt: string, timeoutMs: number, cwd
     const allowed = tools?.length ? claudeToolNames(tools) : ["WebSearch", "WebFetch"];
     spec = { ...spec, args: [...spec.args.slice(0, i + 1), ...allowed, ...spec.args.slice(i + 1 + MCP_TOOLS.length)] };
   }
+  if (spec.provider === "codex") {
+    // SEC-6: Codex otherwise loads every server, plugin and ChatGPT app in the user's config.toml.
+    const config = path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"), "config.toml");
+    spec = { ...spec, args: [...spec.args, ...codexLockdownArgs(tools ?? [], fs.existsSync(config) ? fs.readFileSync(config, "utf8") : "")] };
+  }
   const started = Date.now();
   return new Promise((resolve) => {
     // stdin closed: several CLIs read piped stdin to EOF before starting, and an open pipe that never
@@ -221,7 +240,7 @@ export async function routeJob(
 
 `;
     last = await run(spec, identity + job.prompt, job.timeoutMs, undefined, job.tools);
-    recordRun(job.id, spec, last, startedAt);
+    recordRun(job.id, spec, last, startedAt, job.tools);
     if (last.status === "SUCCEEDED") return last;
     const until =
       last.status === "RATE_LIMITED"
@@ -235,7 +254,11 @@ export async function routeJob(
   }
 }
 
-function recordRun(jobId: string, spec: ModelSpec, result: RunResult, startedAt: Date): void {
+function recordRun(jobId: string, spec: ModelSpec, result: RunResult, startedAt: Date, allowed?: readonly string[]): void {
+  // GV-7: Claude is held to `allowed` by --allowedTools; Codex is not, so what it called is read
+  // back from its session log. Null means not recorded, never "called nothing".
+  const toolsUsed = spec.provider === "codex" ? codexToolsUsed(startedAt, spec.cwd ?? process.cwd()) : null;
+  const outsideAllowlist = toolsUsed && allowed ? toolsUsed.filter((t) => !allowed.includes(t)) : null;
   getDb().insert(schema.agentRuns).values({
     id: randomUUID(),
     capability: jobId,
@@ -245,7 +268,7 @@ function recordRun(jobId: string, spec: ModelSpec, result: RunResult, startedAt:
     trigger: "SCHEDULED",
     agentId: jobId,
     // The tail is what matters (the answer, or the error); the full transcript is not kept.
-    envelope: JSON.stringify({ durationMs: result.durationMs, outputTail: result.output.slice(-2000) }),
+    envelope: JSON.stringify({ durationMs: result.durationMs, outputTail: result.output.slice(-2000), allowedTools: allowed ?? null, toolsUsed, outsideAllowlist }),
     refusalCode: result.status === "SUCCEEDED" ? null : result.status,
     startedAt,
     completedAt: new Date(),

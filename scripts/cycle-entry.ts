@@ -1,5 +1,12 @@
+import fs from "node:fs";
 import { runLearningCycle } from "@/lib/learning/cycle";
-import { closeDatabase } from "@/lib/db";
+import { closeDatabase, databasePath } from "@/lib/db";
+import { recordSessionCoverage } from "@/lib/intraday/coverage";
+import { INTRADAY_LEASE, intradayLeaseFile, realIntradayDeps } from "@/lib/intraday/deps";
+import { runIntradayPass } from "@/lib/intraday/orb";
+import { withCycleLease } from "@/lib/learning/lease";
+import { pullCloudLedger } from "@/lib/ledger/pull";
+import { ledgerOwnedByCloud } from "@/lib/ledger/writer";
 
 /**
  * One learning cycle, with no Next.js server and no browser.
@@ -14,6 +21,31 @@ import { closeDatabase } from "@/lib/db";
  */
 export async function runOneCycle(holder: string): Promise<number> {
   const startedAt = Date.now();
+  if (ledgerOwnedByCloud(databasePath())) {
+    // docs/plans/cloud-clock: the cloud clock runs IN1, the fund and coverage; this machine mirrors
+    // its ledger so the reports, the MCP server and a later promote see the current record.
+    try {
+      process.stdout.write(`  cloud ledger: ${await pullCloudLedger()}\n`);
+    } catch (caught) {
+      process.stderr.write(`[${holder}] cloud ledger pull failed: ${caught instanceof Error ? caught.message : String(caught)}\n`);
+    }
+  } else {
+    // EC-4: if the minute task is down, IN1's decisions are still recorded, at most one cycle late.
+    // Decisions only, under the minute task's own lease. Its own try/catch: it never stops the cycle.
+    try {
+      const intraday = await withCycleLease(holder, () => runIntradayPass(realIntradayDeps, new Date(), { decideOnly: true }), intradayLeaseFile(), INTRADAY_LEASE);
+      for (const r of intraday.result ?? []) process.stdout.write(`  intraday backstop: ${r.instrumentId}: ${r.action}\n`);
+    } catch (caught) {
+      process.stderr.write(`[${holder}] intraday backstop failed: ${caught instanceof Error ? caught.message : String(caught)}\n`);
+    }
+    // EC-1: after the close, one coverage row per session from logs/intraday.log.
+    try {
+      const log = fs.existsSync("logs/intraday.log") ? fs.readFileSync("logs/intraday.log", "utf8") : "";
+      for (const row of recordSessionCoverage(log)) process.stdout.write(`  coverage: ${row}\n`);
+    } catch (caught) {
+      process.stderr.write(`[${holder}] coverage failed: ${caught instanceof Error ? caught.message : String(caught)}\n`);
+    }
+  }
   try {
     const report = await runLearningCycle(holder);
 

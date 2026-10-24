@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
-import { getDb, schema } from "@/lib/db";
+import { databasePath, getDb, schema } from "@/lib/db";
 import { getLearningMode } from "@/lib/governance/runtime";
+import { ledgerOwnedByCloud } from "@/lib/ledger/writer";
 import { quantCoreStatus } from "@/lib/quantcore/client";
 import { generateQuantCoreArtifacts } from "@/lib/quantcore/generate";
 import { runFactoryGeneration } from "@/lib/factory/generation";
@@ -740,10 +741,15 @@ async function runCycleBody(
     );
   }
 
+  // docs/plans/cloud-clock: while the cloud clock owns the paper ledger, it squares off and runs the
+  // fund; doing either here too would record a second set of decisions.
+  const cloudOwnsLedger = ledgerOwnedByCloud(databasePath());
+  if (cloudOwnsLedger) skipped.push("Paper ledger: the cloud clock owns it, so the square-off and the fund pass run there.");
+
   // Intraday paper positions close before the market does. Nothing is due before 15:10 IST unless
   // a position was carried from an earlier day; a position that cannot be closed is reported, never
   // filled at an invented price.
-  try {
+  if (!cloudOwnsLedger) try {
     const { squareOffIntradayPaper } = await import("@/lib/paper/service");
     const squared = await squareOffIntradayPaper();
     if (squared.closed > 0) actions.push(`Squared off ${squared.closed} intraday paper position(s).`);
@@ -759,7 +765,7 @@ async function runCycleBody(
   // The autonomous paper fund (docs/plans/autonomous-fund): every mandate decides on schedule,
   // executes at the next opportunity, marks its sleeve and checks its kill rule. Paper only; its
   // ledger is append-only so the record the owner's trust rests on cannot be edited.
-  try {
+  if (!cloudOwnsLedger) try {
     const [{ runFundPass }, { realFundDeps }] = await Promise.all([import("@/lib/fund/run"), import("@/lib/fund/deps")]);
     for (const pass of await runFundPass(realFundDeps)) {
       const parts = [

@@ -103,6 +103,9 @@ async function runMandate(mandate: MandateContract, deps: FundDeps, now: Date, p
     const book = last ? null : deps.bookCapital(mandate);
     if (due && daysBetween(due, today) > DECISION_FRESH_DAYS[mandate.venue]) {
       pass.note = `missed decision date ${due} (${daysBetween(due, today)} days old): not decided after its outcome exists`;
+      if (!readFund("missed", mandate.id).some((m) => m.decisionDate === due)) {
+        appendFund("missed", { mandate: mandate.id, hash, decisionDate: due, daysLate: daysBetween(due, today), freshnessDays: DECISION_FRESH_DAYS[mandate.venue] }, `missed:${due}`);
+      }
     } else if (due && !last && !(book !== null && book > 0)) {
       pass.note = "book capital unavailable: no sleeve carved from an unknown amount";
     } else if (due) {
