@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    # The ledger's hand-over files (seed, promoted marker) change no code; each would otherwise
+    # cost an hour of browser tests.
+    paths-ignore: ["ledger/**"]
   pull_request:
 
 env:
@@ -14,6 +17,7 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 90 # the browser suite alone runs about an hour
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,7 +53,8 @@ jobs:
       - name: Browser tests
         env:
           MARKETPULSE_TEST_MODE: "1"
-        run: npm run test:e2e
+        # github: each failure is also an annotation, which the API serves without a login.
+        run: npm run test:e2e -- --reporter=github,list
 
       - name: Production dependency audit
         run: npm run audit:prod
