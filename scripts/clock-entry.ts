@@ -24,8 +24,8 @@ import { INTRADAY_LEASE, intradayLeaseFile, realIntradayDeps } from "@/lib/intra
 import { ORB_CONTRACT, readOrb, runIntradayPass } from "@/lib/intraday/orb";
 import { withCycleLease } from "@/lib/learning/lease";
 import { openBundle, sealBundle, type LedgerMeta } from "@/lib/ledger/bundle";
-import { downloadAsset, ensureStateRelease, getStateRelease, latestStateAsset, uploadState, type GitHub, type Release } from "@/lib/ledger/release";
-import { clockPlan, inMarketHours, isSessionDay, istParts } from "@/lib/ledger/schedule";
+import { downloadAsset, ensureStateRelease, getStateRelease, latestStateAsset, restoreSource, uploadState, type GitHub, type Release } from "@/lib/ledger/release";
+import { clockPlan, inMarketHours, isSessionDay, istParts, nextPassAt } from "@/lib/ledger/schedule";
 import { parseInstrument } from "@/lib/market/instruments";
 import { getNormalizedQuote } from "@/lib/market/service";
 import { squareOffIntradayPaper } from "@/lib/paper/service";
@@ -75,18 +75,9 @@ async function restore(gh: GitHub, key: string, dir: string, writable: boolean):
   if (promoted && (!seed || promoted.epoch > seed.epoch)) throw new Error("the laptop took the ledger back (ledger/promoted-*): run `node scripts/ledger.mjs cutover` again");
   const release = await getStateRelease(gh);
   const published = latestStateAsset(release);
-  let sealed: Buffer;
-  let source: string;
-  if (seed && (!published || seed.epoch > published.epoch)) {
-    sealed = fs.readFileSync(seed.file);
-    source = `seed ${seed.epoch}`;
-  } else if (published) {
-    sealed = await downloadAsset(gh, published.asset);
-    source = `release ${published.epoch}`;
-  } else {
-    // Never an empty ledger: that would silently restart every record the owner's trust rests on.
-    throw new Error("no ledger: run `node scripts/ledger.mjs cutover` on the laptop first");
-  }
+  const fromSeed = restoreSource(seed?.epoch ?? null, published?.epoch ?? null, Date.now()) === "seed";
+  const sealed = fromSeed ? fs.readFileSync(seed!.file) : await downloadAsset(gh, published!.asset);
+  const source = fromSeed ? `seed ${seed!.epoch}` : `release ${published!.epoch}`;
   const bundle = openBundle(sealed, key);
   if (bundle.meta.writer !== "cloud") throw new Error("this ledger was not handed to the cloud");
   for (const name of Object.values(FILES)) fs.writeFileSync(path.join(dir, name), bundle.files[name] ?? Buffer.alloc(0));
@@ -197,12 +188,13 @@ async function runSession(state: State, deadline: Date): Promise<number> {
   let lastCheck = 0;
   let first = true;
   while (!stopping && Date.now() < deadline.getTime()) {
-    // The first pass runs at once, so a hand-over between two runs leaves the shortest gap; later
-    // ones wait for the next minute, never past the deadline.
+    // The first pass runs at once and the last hands over at once (nextPassAt), so a hand-over
+    // between two runs leaves the shortest gap; the others wait for the next minute.
     if (!first) {
-      const next = Math.min((Math.floor(Date.now() / 60_000) + 1) * 60_000 + 1_000, deadline.getTime());
+      const next = nextPassAt(Date.now(), deadline.getTime());
+      if (next === null) break;
       while (!stopping && Date.now() < next) await new Promise((resolve) => setTimeout(resolve, Math.min(1_000, next - Date.now())));
-      if (stopping || Date.now() >= deadline.getTime()) break;
+      if (stopping) break;
     }
     first = false;
     const now = new Date();

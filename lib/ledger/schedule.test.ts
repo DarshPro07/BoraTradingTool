@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clockPlan, inMarketHours } from "./schedule";
+import { clockPlan, inMarketHours, nextPassAt } from "./schedule";
 
 const ist = (s: string) => new Date(`${s}:00+05:30`);
 const hhmm = (d: Date) => new Date(d.getTime() + 330 * 60_000).toISOString().slice(11, 16);
@@ -28,5 +28,13 @@ describe("what a cloud clock run does, by when it starts (docs/plans/cloud-clock
     expect(inMarketHours(ist("2026-10-26T09:10"))).toBe(false);
     expect(inMarketHours(ist("2026-10-26T15:35"))).toBe(false);
     expect(inMarketHours(ist("2026-10-24T10:00"))).toBe(false);
+  });
+
+  it("hands over right after the last pass, not after idling to the deadline", () => {
+    // Review 2026-10-24: idling up to 60 s before the hand-over pushed the gap between runs past
+    // the 120 s coverage rule, so most sessions would read PARTIAL by construction.
+    const deadline = Date.parse("2026-10-26T08:08:30Z");
+    expect(nextPassAt(Date.parse("2026-10-26T08:07:10Z"), deadline)).toBe(Date.parse("2026-10-26T08:08:01Z"));
+    expect(nextPassAt(Date.parse("2026-10-26T08:08:05Z"), deadline)).toBeNull();
   });
 });

@@ -31,6 +31,16 @@ export function clockPlan(start: Date): { mode: "session" | "once"; deadline: Da
   return { mode: "session", deadline: new Date(Math.min(start.getTime() + MAX_LOOP_MS, close)) };
 }
 
+/**
+ * When the next minute pass runs (one second past the next minute), or null when that is past the
+ * deadline: the run then hands over at once, right after its last pass. Idling to the deadline added
+ * up to 60 s to the gap between runs, against coverage's 120 s rule (review 2026-10-24).
+ */
+export function nextPassAt(now: number, deadline: number): number | null {
+  const next = (Math.floor(now / 60_000) + 1) * 60_000 + 1_000;
+  return next <= deadline ? next : null;
+}
+
 /** Market hours, when a quote must be live: a stale one then means the data source stopped answering. */
 export const inMarketHours = (at: Date) => {
   const { day, minute } = istParts(at);

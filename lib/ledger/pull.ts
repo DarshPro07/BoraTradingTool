@@ -23,6 +23,8 @@ interface ImportRecord {
   epoch: number;
   cloudAuditThrough: number;
   auditRows: number;
+  /** The cutover this bundle descends from; absent in records written before 2026-10-25. */
+  seededAt?: string;
 }
 
 export function lastImport(sqlite: Database.Database): ImportRecord | null {
@@ -46,6 +48,12 @@ export function importCloudLedger(sqlite: Database.Database, databaseFile: strin
     return sqlite.transaction((): ImportRecord => {
       const previous = lastImport(sqlite);
       if (previous && previous.epoch >= meta.epoch) return { ...previous, auditRows: 0 };
+      // Same cutover, but fewer clock rows than already imported: the cloud's ledger went backwards
+      // (a deleted release, a bad save). Its books would roll this copy back too (review 2026-10-24).
+      const cloudMax = (sqlite.prepare("SELECT coalesce(max(id), 0) AS id FROM cloud.audit_events").get() as { id: number }).id;
+      if (previous?.seededAt === meta.seededAt && cloudMax < previous.cloudAuditThrough) {
+        throw new Error(`the cloud ledger went backwards (clock rows through ${cloudMax}, imported through ${previous.cloudAuditThrough}): import refused, this copy kept`);
+      }
       const after = Math.max(meta.seedMaxAuditId, previous?.cloudAuditThrough ?? 0);
       const instruments = sharedColumns(sqlite, "instruments", "cloud").join(", ");
       sqlite.exec(`INSERT OR IGNORE INTO main.instruments (${instruments}) SELECT ${instruments} FROM cloud.instruments`);
@@ -57,8 +65,7 @@ export function importCloudLedger(sqlite: Database.Database, databaseFile: strin
       // New ids here: this machine has written its own audit rows since the cutover.
       const columns = sharedColumns(sqlite, "audit_events", "cloud", ["id"]).join(", ");
       const auditRows = sqlite.prepare(`INSERT INTO main.audit_events (${columns}) SELECT ${columns} FROM cloud.audit_events WHERE id > ? ORDER BY id`).run(after).changes;
-      const cloudAuditThrough = (sqlite.prepare("SELECT coalesce(max(id), 0) AS id FROM cloud.audit_events").get() as { id: number }).id;
-      const record: ImportRecord = { epoch: meta.epoch, cloudAuditThrough: Math.max(after, cloudAuditThrough), auditRows };
+      const record: ImportRecord = { epoch: meta.epoch, cloudAuditThrough: Math.max(after, cloudMax), auditRows, seededAt: meta.seededAt };
       sqlite
         .prepare("INSERT INTO audit_events (actor, action, decision, subject, detail, created_at) VALUES ('ledger-import', ?, 'allowed', ?, ?, ?)")
         .run(IMPORT_ACTION, `cloud:${meta.epoch}`, JSON.stringify({ ...record, writtenAt: meta.writtenAt }), Math.floor(Date.now() / 1000));

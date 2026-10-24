@@ -73,6 +73,8 @@ describe("the laptop mirrors the cloud's ledger", () => {
     const source = laptop();
     const slim = file("slim");
     const { maxAuditId } = buildSlimLedger(source, slim);
+    const before = file("before"); // the ledger as the cloud got it: a copy that later goes "backwards"
+    fs.copyFileSync(slim, before);
     setLedgerWriter(source, "cloud");
     // The cloud trades and decides; the laptop keeps researching.
     const cloud = openDatabase(slim).sqlite;
@@ -84,7 +86,7 @@ describe("the laptop mirrors the cloud's ledger", () => {
     cloud.close();
     const main = openDatabase(source).sqlite; // cloud-owned: the guard is on
     main.prepare("INSERT INTO audit_events (actor, action, decision, subject, detail, created_at) VALUES ('t', 'learning_cycle', 'allowed', 'research-2', '{}', 2)").run();
-    return { source, slim, main, maxAuditId };
+    return { source, slim, before, main, maxAuditId };
   }
 
   it("takes the cloud's books and its new clock rows once, keeps its own rows, and keeps the guard", () => {
@@ -103,6 +105,16 @@ describe("the laptop mirrors the cloud's ledger", () => {
     expect(again.auditRows, "the same bundle twice (a manual pull landing on a cycle) imports nothing").toBe(0);
     expect(main.prepare("SELECT count(*) AS n FROM audit_events WHERE action = 'cloud_ledger_imported'").get()).toEqual({ n: 2 });
     expect(() => main.prepare("UPDATE paper_accounts SET cash = 0").run(), "the guard is back").toThrow(/LEDGER_OWNED_BY_CLOUD/);
+    main.close();
+  });
+
+  it("refuses a cloud ledger that went backwards, and keeps its own copy", () => {
+    // Review 2026-10-24: the mirror replaced its books with whatever the newest bundle held, so a
+    // rolled-back cloud ledger would have rolled the laptop's copy back too.
+    const { source, slim, before, main, maxAuditId } = cutover();
+    importCloudLedger(main, source, slim, meta(maxAuditId));
+    expect(() => importCloudLedger(main, source, before, meta(maxAuditId, 3))).toThrow(/went backwards/);
+    expect(main.prepare("SELECT count(*) AS n FROM paper_orders").get(), "the books are untouched").toEqual({ n: 2 });
     main.close();
   });
 

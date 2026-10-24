@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { downloadAsset, latestStateAsset, uploadState, type Asset, type Release } from "./release";
+import { activeClockRuns, downloadAsset, latestStateAsset, restoreSource, uploadState, type Asset, type Release } from "./release";
 
 const asset = (id: number, name: string): Asset => ({ id, name, url: `https://api.github.com/assets/${id}`, size: 1 });
 
@@ -56,5 +56,32 @@ describe("the ledger's release assets (docs/plans/cloud-clock)", () => {
   it("reads the newest bundle by its epoch, not by its position", () => {
     expect(latestStateAsset({ id: 1, assets: [asset(2, "ledger-900.bin"), asset(1, "ledger-1000.bin"), asset(3, "x.bin")] })?.epoch).toBe(1000);
     expect(latestStateAsset(null)).toBeNull();
+  });
+
+  it("skips an asset whose upload never finished", () => {
+    const release: Release = { id: 1, assets: [asset(1, "ledger-100.bin"), { ...asset(2, "ledger-200.bin"), state: "starter" }] };
+    expect(latestStateAsset(release)?.epoch).toBe(100);
+  });
+
+  it("resumes from the seed only right after a cutover, never as a silent rollback", () => {
+    // Review 2026-10-24: a deleted release made every run resume from the cutover seed, quietly.
+    const day = 86_400_000;
+    expect(restoreSource(1_000, null, 1_000 + 3_600_000)).toBe("seed");
+    expect(restoreSource(5_000, 1_000, 6_000)).toBe("seed"); // a new cutover after a promote
+    expect(restoreSource(1_000, 5_000, 6_000)).toBe("release");
+    expect(() => restoreSource(1_000, null, 1_000 + 2 * day)).toThrow(/release/);
+    expect(() => restoreSource(null, null, 0)).toThrow(/no ledger/);
+  });
+
+  it("lists Clock runs that are queued or running", async () => {
+    // Review 2026-10-24: promote checked only the last bundle, so a run already started could keep
+    // writing after the laptop took the ledger back.
+    let url = "";
+    const fake = (async (u: string) => {
+      url = u;
+      return new Response(JSON.stringify({ workflow_runs: [{ id: 1, status: "queued" }, { id: 2, status: "completed" }, { id: 3, status: "in_progress" }] }), { status: 200 });
+    }) as typeof fetch;
+    expect((await activeClockRuns({ repo: "o/r", fetch: fake })).map((r) => r.status)).toEqual(["queued", "in_progress"]);
+    expect(url).toContain("/repos/o/r/actions/workflows/clock.yml/runs");
   });
 });

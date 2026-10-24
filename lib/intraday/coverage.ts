@@ -19,7 +19,11 @@ export const COVERAGE_FROM = "2026-10-26";
 export function runLog(holder: string, at: Date, outcome: LeaseOutcome<IntradayPass[]>): string {
   const head = `[${holder}] ${at.toISOString()}`;
   if (!outcome.acquired) return `${head} skipped: ${outcome.blockedBy?.holder ?? "another run"} holds the intraday lease\n`;
-  return [`${head} ran`, ...(outcome.result ?? []).map((r) => `  ${r.instrumentId}: ${r.action}`)].join("\n") + "\n";
+  const result = outcome.result ?? [];
+  // A minute whose every instrument failed did no clock work: an error, which is not a heartbeat
+  // (review 2026-10-24: a dead feed otherwise read COVERED).
+  const status = result.length > 0 && result.every((r) => r.action.startsWith("failed:")) ? "error: every instrument failed" : "ran";
+  return [`${head} ${status}`, ...result.map((r) => `  ${r.instrumentId}: ${r.action}`)].join("\n") + "\n";
 }
 
 /** Heartbeat times (ms) from the log. An `error` line is a run that did not work, so it does not count. */

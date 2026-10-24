@@ -23,6 +23,8 @@ export interface Asset {
   name: string;
   url: string;
   size: number;
+  /** GitHub's upload state: "uploaded" once complete. */
+  state?: string;
 }
 
 export interface Release {
@@ -92,9 +94,40 @@ export function latestStateAsset(release: Release | null): { asset: Asset; epoch
   let best: { asset: Asset; epoch: number } | null = null;
   for (const asset of release?.assets ?? []) {
     const epoch = epochOf(asset.name);
+    // An upload that never finished would fail every restore after it.
+    if (asset.state !== undefined && asset.state !== "uploaded") continue;
     if (epoch !== null && (!best || epoch > best.epoch)) best = { asset, epoch };
   }
   return best;
+}
+
+/** A seed is resumed only this soon after its cutover. */
+const SEED_MAX_AGE_MS = 24 * 3_600_000;
+
+/**
+ * Where a run resumes from. The seed only when nothing newer is published: right after a cutover.
+ * A day-old seed with no published ledger means the release was deleted or emptied, and resuming from
+ * it would silently roll the ledger back to the cutover (review 2026-10-24), so that throws.
+ */
+export function restoreSource(seedEpoch: number | null, publishedEpoch: number | null, now: number): "seed" | "release" {
+  if (seedEpoch !== null && (publishedEpoch === null || seedEpoch > publishedEpoch)) {
+    if (publishedEpoch === null && now - seedEpoch > SEED_MAX_AGE_MS) {
+      throw new Error(`the ${STATE_TAG} release holds no ledger, and the seed is from ${new Date(seedEpoch).toISOString()}: was the release deleted? Resuming would roll the ledger back; cut over again on purpose`);
+    }
+    return "seed";
+  }
+  if (publishedEpoch !== null) return "release";
+  // Never an empty ledger: that would silently restart every record the owner's trust rests on.
+  throw new Error("no ledger: run `node scripts/ledger.mjs cutover` on the laptop first");
+}
+
+/** Clock runs queued or running on GitHub: a promote must wait until there are none. */
+export async function activeClockRuns(gh: GitHub): Promise<{ id: number; status: string }[]> {
+  const runs = await json<{ workflow_runs: { id: number; status: string }[] }>(
+    await call(gh, "GET", `/repos/${gh.repo}/actions/workflows/clock.yml/runs?per_page=20`),
+    "listing the Clock runs",
+  );
+  return runs.workflow_runs.filter((run) => run.status !== "completed").map(({ id, status }) => ({ id, status }));
 }
 
 // The laptop has fetched release assets at 2.4 KB/s (2026-10-24): about 6 min for a 906 KB ledger.

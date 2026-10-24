@@ -16,7 +16,7 @@ import path from "node:path";
 import { closeDatabase, databasePath } from "@/lib/db";
 import { ledgerKey, openBundle, sealBundle, type LedgerMeta } from "@/lib/ledger/bundle";
 import { pullCloudLedger } from "@/lib/ledger/pull";
-import { DEFAULT_REPO, downloadAsset, getStateRelease, latestStateAsset } from "@/lib/ledger/release";
+import { activeClockRuns, DEFAULT_REPO, downloadAsset, getStateRelease, latestStateAsset } from "@/lib/ledger/release";
 import { buildSlimLedger } from "@/lib/ledger/seed";
 import { ledgerOwnedByCloud, setLedgerWriter } from "@/lib/ledger/writer";
 
@@ -72,6 +72,14 @@ async function promote(main: string, key: string, acknowledged: boolean): Promis
   if (!acknowledged) {
     say("First set CLOUD_WRITER to false on GitHub (Settings > Secrets and variables > Actions > Variables), so no");
     say("new cloud run starts. Then: node scripts/ledger.mjs promote --cloud-is-off");
+    return 1;
+  }
+  // A run that started (or queued) before CLOUD_WRITER went false keeps trading after a promote: it
+  // checked the variable and the promoted marker once, at its start (review 2026-10-24).
+  const live = await activeClockRuns(gh);
+  if (live.length) {
+    say(`${live.length} Clock run(s) still on GitHub (${live.map((run) => run.status).join(", ")}). Pause the cron-job.org jobs,`);
+    say("cancel those runs in the Actions tab, then promote again.");
     return 1;
   }
   const latest = latestStateAsset(await getStateRelease(gh));

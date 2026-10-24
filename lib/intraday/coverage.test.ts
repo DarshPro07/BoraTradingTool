@@ -20,6 +20,22 @@ describe("EC-2: every run leaves a line", () => {
       .toBe("[intraday-scheduler] 2026-09-21T03:50:04.000Z skipped: cycle holds the intraday lease\n");
   });
 
+  it("writes an error, not a heartbeat, when every instrument failed", () => {
+    // Review 2026-10-24: a minute whose feed failed for all three names still read `ran`, so a dead
+    // feed could make a session COVERED.
+    const at = new Date("2026-10-26T04:00:04Z");
+    const line = runLog("cloud-intraday", at, {
+      acquired: true,
+      blockedBy: null,
+      result: [
+        { instrumentId: "IN:XNSE:RELIANCE", action: "failed: quote UNAVAILABLE" },
+        { instrumentId: "IN:XNSE:HDFCBANK", action: "failed: quote UNAVAILABLE" },
+      ],
+    });
+    expect(line.split("\n")[0]).toBe("[cloud-intraday] 2026-10-26T04:00:04.000Z error: every instrument failed");
+    expect(heartbeats(line)).toEqual([]);
+  });
+
   it("reads back ran and skipped lines only", () => {
     const log = [
       "[intraday-scheduler] 2026-09-21T03:50:04.000Z ran",
