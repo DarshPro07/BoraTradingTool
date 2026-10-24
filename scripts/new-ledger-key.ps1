@@ -11,7 +11,8 @@ if ((Test-Path $envFile) -and (Select-String -Path $envFile -Pattern '^LEDGER_KE
 $bytes = New-Object byte[] 32
 [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
 $key = [Convert]::ToBase64String($bytes)
-Add-Content -Path $envFile -Value "LEDGER_KEY=$key"
+# The leading newline: a file whose last line has none would otherwise get the key glued onto it.
+Add-Content -Path $envFile -Value "`nLEDGER_KEY=$key"
 Set-Clipboard -Value $key
 'LEDGER_KEY written to .env.local and copied to the clipboard.'
 'Paste it on GitHub: Settings > Secrets and variables > Actions > New repository secret, name LEDGER_KEY.'

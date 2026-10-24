@@ -43,4 +43,15 @@ describe("the sealed bundle (docs/plans/cloud-clock)", () => {
       if (previous !== undefined) process.env.LEDGER_KEY = previous;
     }
   });
+
+  it("trims the environment value: a pasted GitHub secret can end in a newline", () => {
+    const previous = process.env.LEDGER_KEY;
+    process.env.LEDGER_KEY = `${KEY}\n`;
+    try {
+      expect(ledgerKey("no-such-file")).toBe(KEY);
+    } finally {
+      if (previous === undefined) delete process.env.LEDGER_KEY;
+      else process.env.LEDGER_KEY = previous;
+    }
+  });
 });

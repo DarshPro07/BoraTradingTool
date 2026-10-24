@@ -65,7 +65,9 @@ export function openBundle(sealed: Buffer, passphrase: string): Bundle {
 
 /** LEDGER_KEY from the environment, else that one line of `.env.local`: the rest of the file is never loaded. */
 export function ledgerKey(envFile = ".env.local"): string | null {
-  if (process.env.LEDGER_KEY) return process.env.LEDGER_KEY;
+  // Trimmed like the .env.local line below: a pasted GitHub secret can end in a newline.
+  const fromEnv = process.env.LEDGER_KEY?.trim();
+  if (fromEnv) return fromEnv;
   try {
     const line = fs.readFileSync(envFile, "utf8").split(/\r?\n/).find((l) => l.startsWith("LEDGER_KEY="));
     return line ? line.slice("LEDGER_KEY=".length).trim().replace(/^["']|["']$/g, "") || null : null;
