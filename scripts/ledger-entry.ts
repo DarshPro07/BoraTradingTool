@@ -128,6 +128,9 @@ export async function runLedger(command: string, flags: readonly string[]): Prom
         say("usage: node scripts/ledger.mjs status|cutover|pull|promote --cloud-is-off");
         return 2;
     }
+  } catch (caught) {
+    say(`${command} failed: ${caught instanceof Error ? caught.message : String(caught)}`);
+    return 1;
   } finally {
     closeDatabase();
   }

@@ -36,18 +36,19 @@ export const epochOf = (name: string): number | null => {
 };
 
 /**
- * One request with a 30 s timeout. Reads and deletes are retried on a network error, a 429 or a
- * 5xx (three attempts); an upload is not, because a retried POST could leave a duplicate asset.
+ * One request, 30 s unless given longer. Reads and deletes are retried on a network error, a 429 or
+ * a 5xx (three attempts); an upload is not, because a retried POST could leave a duplicate asset,
+ * and a timeout is not, because on a slow link a retry starts again from zero.
  * A failed upload is retried by the next save under a new epoch.
  */
-async function call(gh: GitHub, method: string, url: string, body?: BodyInit, headers: Record<string, string> = {}): Promise<Response> {
+async function call(gh: GitHub, method: string, url: string, body?: BodyInit, headers: Record<string, string> = {}, timeoutMs = 30_000): Promise<Response> {
   const attempts = method === "POST" ? 1 : 3;
   for (let attempt = 1; ; attempt += 1) {
     try {
       const response = await (gh.fetch ?? fetch)(url.startsWith("https://") ? url : `https://api.github.com${url}`, {
         method,
         body,
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(timeoutMs),
         headers: {
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
@@ -59,7 +60,7 @@ async function call(gh: GitHub, method: string, url: string, body?: BodyInit, he
       if (attempt < attempts && (response.status === 429 || response.status >= 500)) throw new Error(`GitHub ${response.status}`);
       return response;
     } catch (caught) {
-      if (attempt >= attempts) throw caught;
+      if (attempt >= attempts || (caught as { name?: unknown } | null)?.name === "TimeoutError") throw caught;
       await new Promise((resolve) => setTimeout(resolve, 2_000 * attempt));
     }
   }
@@ -96,8 +97,11 @@ export function latestStateAsset(release: Release | null): { asset: Asset; epoch
   return best;
 }
 
+// The laptop has fetched release assets at 2.4 KB/s (2026-10-24): about 6 min for a 906 KB ledger.
+const DOWNLOAD_TIMEOUT_MS = 10 * 60_000;
+
 export async function downloadAsset(gh: GitHub, asset: Asset): Promise<Buffer> {
-  const response = await call(gh, "GET", asset.url, undefined, { Accept: "application/octet-stream" });
+  const response = await call(gh, "GET", asset.url, undefined, { Accept: "application/octet-stream" }, DOWNLOAD_TIMEOUT_MS);
   if (!response.ok) throw new Error(`GitHub ${response.status} downloading ${asset.name}`);
   return Buffer.from(await response.arrayBuffer());
 }

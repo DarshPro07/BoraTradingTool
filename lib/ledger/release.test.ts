@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { latestStateAsset, uploadState, type Asset, type Release } from "./release";
+import { downloadAsset, latestStateAsset, uploadState, type Asset, type Release } from "./release";
 
 const asset = (id: number, name: string): Asset => ({ id, name, url: `https://api.github.com/assets/${id}`, size: 1 });
 
@@ -19,6 +19,18 @@ describe("the ledger's release assets (docs/plans/cloud-clock)", () => {
       "DELETE /repos/o/r/releases/assets/1",
     ]);
     expect(release.assets.map((a) => a.name)).toEqual(["ledger-400.bin", "ledger-300.bin"]);
+  });
+
+  it("does not restart a download that timed out", async () => {
+    // 2026-10-24: the laptop fetched release assets at 2.4 KB/s, about 6 min for a 906 KB ledger;
+    // 30 s attempts, each restarting from zero, never finished one.
+    let calls = 0;
+    const fake = (async () => {
+      calls += 1;
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    }) as typeof fetch;
+    await expect(downloadAsset({ repo: "o/r", fetch: fake }, asset(9, "ledger-400.bin"))).rejects.toThrow(/timeout/);
+    expect(calls).toBe(1);
   });
 
   it("deletes nothing when the upload fails", async () => {
