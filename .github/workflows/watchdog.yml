@@ -1,0 +1,42 @@
+# The cloud clock's watchdog (docs/plans/cloud-clock). It fails, and GitHub emails the owner, when
+# the clock is dead (ledger not saved for 15 min), blind (no usable live quote for 20 min), short of
+# IN1's 3 decisions after 09:30 IST, or missing the day's coverage row after 15:50 IST.
+# Read-only: it restores a copy of the sealed ledger and changes nothing.
+name: Watchdog
+
+on:
+  schedule:
+    - cron: "7 4 * * 1-5"    # 09:37 IST
+    - cron: "37 6 * * 1-5"   # 12:07 IST
+    - cron: "57 8 * * 1-5"   # 14:27 IST
+    - cron: "27 10 * * 1-5"  # 15:57 IST
+  workflow_dispatch:
+
+# Not gated on CLOUD_WRITER: with it off it still fails when a cutover seed is waiting, which means
+# the laptop has stopped writing and nobody records the clock.
+jobs:
+  watchdog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - id: modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Check the clock
+        env:
+          CLOUD_WRITER: ${{ vars.CLOUD_WRITER }}
+          LEDGER_KEY: ${{ secrets.LEDGER_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/clock.mjs watchdog

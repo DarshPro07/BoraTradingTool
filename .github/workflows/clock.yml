@@ -1,0 +1,57 @@
+# The cloud clock (docs/plans/cloud-clock): IN1 every minute in the NSE session and the slim cycle
+# (square-off, fund pass, coverage), on the paper ledger sealed in the `ledger-state` release.
+# Paper only: no broker, no real order.
+#
+# Inert until the repository variable CLOUD_WRITER is "true" (set it after `node scripts/ledger.mjs
+# cutover`). Needs the repository secret LEDGER_KEY.
+#
+# Cron is best-effort on GitHub (runs can start late or be dropped), so the schedule is redundant:
+# one group, never cancelled, so a run started while another loops waits and continues after it.
+# A run in the session window loops for at most 5 h 25 min (the job limit is 6 h); outside it,
+# the slim cycle runs once. Times are UTC: IST = UTC + 5:30.
+name: Clock
+
+on:
+  schedule:
+    - cron: "43 2 * * 1-5"   # 08:13 IST: the morning run
+    - cron: "3 3 * * 1-5"    # 08:33 IST: the same, if that one was late or dropped
+    - cron: "19 3 * * 1-5"   # 08:49 IST
+    - cron: "47 6 * * 1-5"   # 12:17 IST: waits, then continues the afternoon
+    - cron: "47 7 * * 1-5"   # 13:17 IST
+    - cron: "17 9 * * 1-5"   # 14:47 IST: waits, then the after-close cycle (coverage)
+    - cron: "37 9 * * 1-5"   # 15:07 IST
+    - cron: "29 */3 * * *"   # every 3 hours, every day: the crypto mandates and the off-hours fund pass
+  workflow_dispatch:
+
+concurrency:
+  group: ledger
+  cancel-in-progress: false
+
+jobs:
+  clock:
+    if: vars.CLOUD_WRITER == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    permissions:
+      contents: write # the release assets that hold the sealed ledger
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # the write token reaches only the clock step, never npm's install scripts
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # the laptop's runtime
+      # node_modules from the lockfile: the hand-over between two runs is mostly set-up time, and
+      # every second of it is a minute IN1 may not run. Holds packages only, no secret.
+      - id: modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Run the clock
+        env:
+          LEDGER_KEY: ${{ secrets.LEDGER_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/clock.mjs run

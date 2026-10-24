@@ -58,7 +58,9 @@ jobs:
 
       - name: No broker execution path may be introduced
         run: |
-          if grep -rInE "place_equity_order|placeEquityOrder|submit_order|submitOrder|force_close" \
+          # Test files are excluded: lib/governance/policy.test.ts lists these names to prove they are
+          # absent, and matching it failed every run (the first push, 2026-10-22).
+          if grep -rInE --exclude='*.test.ts' "place_equity_order|placeEquityOrder|submit_order|submitOrder|force_close" \
             lib app mcp components 2>/dev/null; then
             echo "::error::A broker order-mutation call reached source. This system has no execution path."
             exit 1

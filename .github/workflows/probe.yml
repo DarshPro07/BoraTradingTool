@@ -1,0 +1,53 @@
+# Gate 0 of docs/plans/cloud-clock: can the clock's own data code reach Yahoo from a GitHub runner?
+# Runs on the push that adds it and three times on 2026-10-24 (13:11, 16:11 and 19:11 IST), so the
+# owner need not be at the laptop; by hand any time: Actions tab -> Probe -> Run workflow.
+# It prints statuses, counts and dates only (scripts/probe-entry.ts): this repo is public, so its
+# Actions logs are too. Any FAILED line or a 403/429 below means the cloud clock cannot work here.
+name: Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/probe.yml, scripts/probe-entry.ts]
+  schedule:
+    # Day 24 of month 10 only: these fire on no other day this year.
+    - cron: "41 7,10,13 24 10 *"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04 # the clock's image (clock.yml), not ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # the laptop's runtime (v24.12.0)
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Raw HTTP status codes (the cookie and crumb Yahoo needs first, then a chart)
+        run: |
+          for url in "https://fc.yahoo.com/" "https://query1.finance.yahoo.com/v1/test/getcrumb" \
+                     "https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS?interval=5m&range=5d" \
+                     "https://lite-api.jup.ag/tokens/v2/search?query=SOL"; do
+            echo "$(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0' --max-time 20 "$url") $url"
+          done | tee -a probe.txt
+
+      - name: The clock's own data path, on an empty database
+        shell: bash # with pipefail, so the probe's exit code survives the tee
+        env:
+          MARKETPULSE_DB_PATH: ${{ runner.temp }}/probe.db
+        run: |
+          npx esbuild scripts/probe-entry.ts --bundle --platform=node --format=esm --packages=external \
+            --outfile=dist/scripts/probe-entry.mjs --log-level=error
+          node --input-type=module -e 'const m = await import("./dist/scripts/probe-entry.mjs"); process.exitCode = await m.runProbe();' | tee -a probe.txt
+
+      # The same lines as one annotation: the API serves a public repo's annotations without a login,
+      # and its logs only with one.
+      - if: always()
+        run: echo "::notice title=Probe results::$(paste -sd '|' probe.txt 2>/dev/null)"
