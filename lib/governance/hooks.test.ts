@@ -46,7 +46,8 @@ function write(file_path: string, content = "placeholder") {
 }
 
 describe("guard-writes hook", () => {
-  it("blocks the governance policy from amending itself", () => {
+  // A drive-letter path is absolute only on Windows, the one platform this hook runs on.
+  it.runIf(process.platform === "win32")("blocks the governance policy from amending itself", () => {
     const result = runHook("guard-writes.mjs", write("E:/BoraTradingTool/lib/governance/policy.ts"));
     expect(result.denied).toBe(true);
     expect(result.reason).toMatch(/cannot amend itself/);

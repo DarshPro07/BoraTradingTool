@@ -6,7 +6,6 @@ on:
   pull_request:
 
 env:
-  MARKETPULSE_TEST_MODE: "1"
   # No quant core in CI: the bridge must degrade to explicit unavailable states, and the
   # conformance tests skip themselves rather than failing.
   QUANT_CORE_URL: "off"
@@ -45,7 +44,11 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      # Test mode here only. Job-wide, it seeded a fixture security master into every unit test's
+      # empty database, and six tests that `npm run check` passes on the laptop failed (2026-10-24).
       - name: Browser tests
+        env:
+          MARKETPULSE_TEST_MODE: "1"
         run: npm run test:e2e
 
       - name: Production dependency audit

@@ -13,6 +13,10 @@ import {
 } from "./policy";
 import { authorizeWrite, checkProtectedPath, normalizePath, resolveOwner } from "./paths";
 
+// A drive-letter path is absolute only on Windows, the one platform the write guard runs on. On
+// Linux (GitHub CI) `E:/...` is a relative path, so those cases are asserted on Windows only.
+const onWindows = process.platform === "win32";
+
 const ALL_ACTORS: Actor[] = ["owner", "claude_interactive", "autonomous_worker", "research_agent"];
 const ALL_MODES: LearningMode[] = ["off", "observing", "learning", "evolving"];
 
@@ -160,6 +164,9 @@ describe("auditToolSet", () => {
 describe("path protection", () => {
   it("protects the governance policy from itself", () => {
     expect(checkProtectedPath("lib/governance/policy.ts").protected).toBe(true);
+  });
+
+  it.runIf(onWindows)("protects the governance policy from itself by its Windows path", () => {
     expect(checkProtectedPath("E:/BoraTradingTool/lib/governance/paths.ts").protected).toBe(true);
     expect(checkProtectedPath("E:\\BoraTradingTool\\lib\\governance\\policy.ts").protected).toBe(true);
   });
@@ -222,8 +229,7 @@ describe("path protection", () => {
     for (const candidate of [
       "lib/market/../governance/policy.ts",
       "app/../lib/security/request.ts",
-      "E:/BoraTradingTool/app/../mcp/server.ts",
-      "E:/Trading_BOT/runtime/bridge/../../src/risk/kernel.py",
+      ...(onWindows ? ["E:/BoraTradingTool/app/../mcp/server.ts", "E:/Trading_BOT/runtime/bridge/../../src/risk/kernel.py"] : []),
     ]) {
       expect(checkProtectedPath(candidate).protected, `${candidate} bypassed protection`).toBe(true);
     }
@@ -252,7 +258,7 @@ describe("tree ownership", () => {
     expect(authorizeWrite("C:/Users/marke/.ssh/id_rsa", "claude").allowed).toBe(false);
   });
 
-  it("blocks protected paths even inside the owned tree", () => {
+  it.runIf(onWindows)("blocks protected paths even inside the owned tree", () => {
     const decision = authorizeWrite("E:/BoraTradingTool/lib/governance/policy.ts", "claude");
     expect(decision.allowed).toBe(false);
     expect(decision.code).toBe("PROTECTED_PATH");
