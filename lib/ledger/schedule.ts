@@ -9,8 +9,12 @@
 import { isPlausibleSessionDate } from "@/lib/market/session-calendar";
 
 const IST_MS = 330 * 60_000;
-/** Early enough that a run delayed by GitHub's queue still starts before the 09:20 decision. */
-export const LOOP_FROM_IST_MINUTES = 8 * 60 + 10;
+/**
+ * GitHub starts this repository's crons 2-2.6 hours late (2026-10-24..26: the 08:13 run had not begun
+ * at 09:11), so the session starts from the first run after 03:30. An early run idles harmlessly:
+ * IN1 returns before the session opens (lib/intraday/orb.ts:210).
+ */
+export const LOOP_FROM_IST_MINUTES = 3 * 60 + 30;
 /** After IN1's window (15:39) and the 15:31 coverage step. */
 export const LOOP_UNTIL_IST_MINUTES = 15 * 60 + 42;
 /** Inside the 6-hour job limit, with room for setup and the final save. */
@@ -24,11 +28,24 @@ export const istParts = (at: Date) => {
 /** Weekend special sessions (Muhurat) are closed for IN1 (EC-7). */
 export const isSessionDay = (day: string) => new Date(`${day}T00:00:00Z`).getUTCDay() % 6 !== 0 && isPlausibleSessionDate(day);
 
-export function clockPlan(start: Date): { mode: "session" | "once"; deadline: Date } {
+/**
+ * Hand-overs one lineage of runs may chain; a cron start begins a new lineage at 0. A lineage needs at
+ * most three (a start at 03:30-03:44 ends before 09:10, then 09:10, then ~14:36), so four leaves one
+ * spare. Past it a run queues none.
+ */
+export const MAX_HANDOVERS = 4;
+export const nextChain = (chain: number): number | null => (chain < MAX_HANDOVERS ? chain + 1 : null);
+
+/** handOver: the run stops at its cap before the close, so it must start its successor itself. */
+export function clockPlan(start: Date): { mode: "session" | "once"; deadline: Date; handOver: boolean } {
   const { day, minute } = istParts(start);
-  if (!isSessionDay(day) || minute < LOOP_FROM_IST_MINUTES || minute >= LOOP_UNTIL_IST_MINUTES) return { mode: "once", deadline: start };
+  if (!isSessionDay(day) || minute < LOOP_FROM_IST_MINUTES || minute >= LOOP_UNTIL_IST_MINUTES) return { mode: "once", deadline: start, handOver: false };
   const close = Date.parse(`${day}T15:42:00+05:30`);
-  return { mode: "session", deadline: new Date(Math.min(start.getTime() + MAX_LOOP_MS, close)) };
+  // A run from before 09:10 hands over by then, outside 09:20-15:30: the session (6 h 20 min) is longer
+  // than GitHub's 6-hour job, so one hand-over inside it is unavoidable, but never two.
+  const preOpen = minute < 9 * 60 + 10 ? Date.parse(`${day}T09:10:00+05:30`) : Infinity;
+  const deadline = Math.min(start.getTime() + MAX_LOOP_MS, preOpen, close);
+  return { mode: "session", deadline: new Date(deadline), handOver: deadline < close };
 }
 
 /**
@@ -45,4 +62,10 @@ export function nextPassAt(now: number, deadline: number): number | null {
 export const inMarketHours = (at: Date) => {
   const { day, minute } = istParts(at);
   return isSessionDay(day) && minute >= 9 * 60 + 16 && minute <= 15 * 60 + 29;
+};
+
+/** After the session's coverage row (written by the 15:31 step, checked by the watchdog from 15:50): the day's record is complete. */
+export const daySnapshotDue = (at: Date) => {
+  const { day, minute } = istParts(at);
+  return isSessionDay(day) && minute >= 15 * 60 + 50;
 };

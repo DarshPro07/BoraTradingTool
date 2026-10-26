@@ -24,8 +24,8 @@ import { INTRADAY_LEASE, intradayLeaseFile, realIntradayDeps } from "@/lib/intra
 import { ORB_CONTRACT, readOrb, runIntradayPass } from "@/lib/intraday/orb";
 import { withCycleLease } from "@/lib/learning/lease";
 import { openBundle, sealBundle, type LedgerMeta } from "@/lib/ledger/bundle";
-import { downloadAsset, ensureStateRelease, getStateRelease, latestStateAsset, restoreSource, uploadState, type GitHub, type Release } from "@/lib/ledger/release";
-import { clockPlan, inMarketHours, isSessionDay, istParts, nextPassAt } from "@/lib/ledger/schedule";
+import { DAYS_TAG, dispatchClock, downloadAsset, ensureStateRelease, getStateRelease, latestStateAsset, restoreSource, uploadDaySnapshot, uploadState, type GitHub, type Release } from "@/lib/ledger/release";
+import { clockPlan, daySnapshotDue, inMarketHours, isSessionDay, istParts, MAX_HANDOVERS, nextChain, nextPassAt } from "@/lib/ledger/schedule";
 import { parseInstrument } from "@/lib/market/instruments";
 import { getNormalizedQuote } from "@/lib/market/service";
 import { squareOffIntradayPaper } from "@/lib/paper/service";
@@ -98,9 +98,10 @@ function ledgerSignature(): string {
   return [row.audit, row.orders, row.crypto].join(":");
 }
 
-async function save(state: State, final: boolean): Promise<void> {
+/** The sealed bytes just uploaded, or null when a heartbeat had nothing to save. */
+async function save(state: State, final: boolean): Promise<Buffer | null> {
   const signature = ledgerSignature();
-  if (!final && signature === state.signature && Date.now() - state.savedAt < HEARTBEAT_MS) return;
+  if (!final && signature === state.signature && Date.now() - state.savedAt < HEARTBEAT_MS) return null;
   const snapshot = path.join(state.dir, "snapshot.db");
   fs.rmSync(snapshot, { force: true });
   getDb().$client.prepare("VACUUM INTO ?").run(snapshot); // a consistent copy while the database stays open
@@ -111,10 +112,12 @@ async function save(state: State, final: boolean): Promise<void> {
     [FILES.intraday]: fs.readFileSync(path.join(state.dir, FILES.intraday)),
     [FILES.cycle]: fs.readFileSync(path.join(state.dir, FILES.cycle)),
   };
-  await uploadState(state.gh, state.release!, epoch, sealBundle({ meta, files }, state.key));
+  const sealed = sealBundle({ meta, files }, state.key);
+  await uploadState(state.gh, state.release!, epoch, sealed);
   state.meta = meta;
   state.signature = signature;
   state.savedAt = Date.now();
+  return sealed;
 }
 
 /** IN1's minute, logged in the laptop task's format so the coverage step reads it unchanged. */
@@ -288,16 +291,40 @@ export async function runCloudClock(command: string): Promise<number> {
   let code = 0;
   try {
     if (plan.mode === "session") {
-      say(`session run until ${hhmm(plan.deadline)} IST`);
+      say(`session run until ${hhmm(plan.deadline)} IST${process.env.CLOCK_FROM_RUN ? ` (hand-over ${process.env.CLOCK_CHAIN} from run ${process.env.CLOCK_FROM_RUN})` : ""}`);
       code = await runSession(state, plan.deadline);
+      // Queued now, it starts the moment this job ends: no wait on a cron GitHub runs hours late.
+      // Not after a cancel or timeout (stopping): a cancel means stop.
+      if (plan.handOver && !stopping) {
+        const chain = nextChain(Number(process.env.CLOCK_CHAIN) || 0);
+        try {
+          if (chain === null) say(`hand-over cap (${MAX_HANDOVERS}) reached: no run queued, the crons are the fallback`);
+          else {
+            await dispatchClock(gh, chain, process.env.GITHUB_RUN_ID ?? "");
+            say(`handed the session on: hand-over ${chain} queued`);
+          }
+        } catch (caught) {
+          say(`hand-over failed, the crons are the fallback: ${message(caught)}`);
+        }
+      }
     } else {
       say("outside the session window: the slim cycle once");
       if ((await slimCycle(state, new Date())) > 0) say("a slim-cycle step failed (in the sealed log)");
     }
   } finally {
     try {
-      await save(state, true);
+      const sealed = await save(state, true);
       say("saved the ledger");
+      const now = new Date();
+      if (sealed && daySnapshotDue(now)) {
+        try {
+          const day = istParts(now).day;
+          const days = await ensureStateRelease(gh, DAYS_TAG);
+          say((await uploadDaySnapshot(gh, days, day, sealed)) ? `uploaded the ${day} day snapshot` : `the ${day} day snapshot is already there`);
+        } catch (caught) {
+          say(`day snapshot failed (the save stands): ${message(caught)}`);
+        }
+      }
     } catch (caught) {
       say(`FINAL SAVE FAILED: ${message(caught)}`);
       code = 1;

@@ -7,16 +7,20 @@
  *   node scripts/ledger.mjs pull      import the cloud's newest ledger now (each cycle does this too)
  *   node scripts/ledger.mjs promote --cloud-is-off
  *                                     take the ledger back, after CLOUD_WRITER is false on GitHub
+ *   node scripts/ledger.mjs verify    download and open the newest two rolling bundles and the newest
+ *                                     day snapshot (sha256 checked); needs the key; minutes per file
+ *                                     on a slow link; exits 1 on any failure
  *
  * Paper only: nothing here reaches a broker.
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { closeDatabase, databasePath } from "@/lib/db";
 import { ledgerKey, openBundle, sealBundle, type LedgerMeta } from "@/lib/ledger/bundle";
 import { pullCloudLedger } from "@/lib/ledger/pull";
-import { activeClockRuns, DEFAULT_REPO, downloadAsset, getStateRelease, latestStateAsset } from "@/lib/ledger/release";
+import { activeClockRuns, DAYS_TAG, DEFAULT_REPO, downloadAsset, epochOf, finished, getStateRelease, latestStateAsset, type Asset } from "@/lib/ledger/release";
 import { buildSlimLedger } from "@/lib/ledger/seed";
 import { ledgerOwnedByCloud, setLedgerWriter } from "@/lib/ledger/writer";
 
@@ -26,6 +30,44 @@ const say = (line: string) => process.stdout.write(`${line}\n`);
 async function cloudMeta(key: string): Promise<LedgerMeta | null> {
   const latest = latestStateAsset(await getStateRelease(gh));
   return latest ? openBundle(await downloadAsset(gh, latest.asset), key).meta : null;
+}
+
+/** Opens the newest two rolling bundles and the newest day snapshot; true only when every one opens. */
+async function verify(key: string): Promise<boolean> {
+  const assets = (await getStateRelease(gh))?.assets ?? [];
+  const rolling = assets.filter((a) => epochOf(a.name) !== null && finished(a)).sort((a, b) => epochOf(b.name)! - epochOf(a.name)!).slice(0, 2);
+  const days = (await getStateRelease(gh, DAYS_TAG))?.assets ?? [];
+  const day = days.filter((a) => /^ledger-day-\d{4}-\d{2}-\d{2}\.bin$/.test(a.name) && finished(a)).sort((a, b) => b.name.localeCompare(a.name))[0];
+  const targets: Asset[] = [...rolling, ...(day ? [day] : [])];
+  if (rolling.length === 0) say("verify: no rolling bundle in the release.");
+  if (!day) say("verify: no day snapshot yet (the first is uploaded after 15:50 IST on a session day).");
+  say(`Downloading ${targets.length} asset(s); on this laptop's slow link each takes minutes.`);
+  let ok = rolling.length > 0 && day !== undefined;
+  for (const asset of targets) {
+    try {
+      const sealed = await downloadAsset(gh, asset);
+      if (asset === day) {
+        const hash = createHash("sha256").update(sealed).digest("hex");
+        if (asset.label !== `sha256:${hash}`) throw new Error(`sha256 ${hash} does not match the label ${asset.label ?? "(none)"}`);
+      }
+      const { meta } = openBundle(sealed, key);
+      say(`${asset.name}: opened. writtenAt ${meta.writtenAt}, final ${meta.final}, ${sealed.length} bytes.`);
+    } catch (caught) {
+      const why = caught instanceof Error ? caught.message : String(caught);
+      // The cloud prunes the older rolling bundle at its next save: gone is not corrupt, but only when
+      // a fresh listing shows a newer save, else a lost fallback would read as healthy.
+      if (asset === rolling[1] && why.includes("GitHub 404")) {
+        const now = (await getStateRelease(gh))?.assets ?? [];
+        if (!now.some((a) => a.id === asset.id) && now.some((a) => (epochOf(a.name) ?? 0) > epochOf(rolling[0]!.name)!)) {
+          say(`${asset.name}: pruned by a newer save since the listing (not a failure).`);
+          continue;
+        }
+      }
+      ok = false;
+      say(`${asset.name}: FAILED. ${why}`);
+    }
+  }
+  return ok;
 }
 
 async function cutover(main: string, key: string): Promise<number> {
@@ -132,8 +174,10 @@ export async function runLedger(command: string, flags: readonly string[]): Prom
         return 0;
       case "promote":
         return await promote(main, key!, flags.includes("--cloud-is-off"));
+      case "verify":
+        return (await verify(key!)) ? 0 : 1;
       default:
-        say("usage: node scripts/ledger.mjs status|cutover|pull|promote --cloud-is-off");
+        say("usage: node scripts/ledger.mjs status|cutover|pull|promote --cloud-is-off|verify");
         return 2;
     }
   } catch (caught) {

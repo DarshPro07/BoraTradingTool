@@ -5,23 +5,40 @@
 # Inert until the repository variable CLOUD_WRITER is "true" (set it after `node scripts/ledger.mjs
 # cutover`). Needs the repository secret LEDGER_KEY.
 #
-# Cron is best-effort on GitHub (runs can start late or be dropped), so the schedule is redundant:
-# one group, never cancelled, so a run started while another loops waits and continues after it.
-# A run in the session window loops for at most 5 h 25 min (the job limit is 6 h); outside it,
-# the slim cycle runs once. Times are UTC: IST = UTC + 5:30.
+# Cron is best-effort on GitHub, and this repository's crons start 2-2.6 h late (2026-10-24..26: the
+# 08:13 run had not begun at 09:11), so the morning starters begin at 03:43 IST and a run from 03:30
+# already belongs to the session (lib/ledger/schedule.ts). One group, never cancelled: a run started
+# while another loops waits and continues after it. A session run loops for at most 5 h 25 min (the
+# job limit is 6 h), an early one until 09:10, then queues its own successor with this workflow's
+# token (workflow_dispatch), so the session never waits on a late cron; the afternoon crons are only a
+# fallback. Outside the session the slim cycle runs once. Times are UTC: IST = UTC + 5:30.
 name: Clock
 
 on:
   schedule:
-    - cron: "43 2 * * 1-5"   # 08:13 IST: the morning run
-    - cron: "3 3 * * 1-5"    # 08:33 IST: the same, if that one was late or dropped
+    - cron: "13 22 * * 0-4"  # 03:43 IST Mon-Fri (still the previous day in UTC): the morning starters
+    - cron: "43 22 * * 0-4"  # 04:13 IST
+    - cron: "13 23 * * 0-4"  # 04:43 IST
+    - cron: "43 23 * * 0-4"  # 05:13 IST
+    - cron: "13 0 * * 1-5"   # 05:43 IST
+    - cron: "43 0 * * 1-5"   # 06:13 IST
+    - cron: "13 1 * * 1-5"   # 06:43 IST
+    - cron: "43 2 * * 1-5"   # 08:13 IST
+    - cron: "3 3 * * 1-5"    # 08:33 IST
     - cron: "19 3 * * 1-5"   # 08:49 IST
-    - cron: "47 6 * * 1-5"   # 12:17 IST: waits, then continues the afternoon
+    - cron: "47 6 * * 1-5"   # 12:17 IST: a fallback, only if a hand-over's dispatch failed
     - cron: "47 7 * * 1-5"   # 13:17 IST
-    - cron: "17 9 * * 1-5"   # 14:47 IST: waits, then the after-close cycle (coverage)
+    - cron: "17 9 * * 1-5"   # 14:47 IST: the same, then the after-close cycle (coverage)
     - cron: "37 9 * * 1-5"   # 15:07 IST
     - cron: "29 */3 * * *"   # every 3 hours, every day: the crypto mandates and the off-hours fund pass
   workflow_dispatch:
+    inputs: # set by a run that hands the session on; leave them empty when starting by hand
+      chain:
+        description: "Hand-overs before this run today (capped; see lib/ledger/schedule.ts)"
+        default: "0"
+      from_run:
+        description: "The run that queued this one"
+        default: ""
 
 concurrency:
   group: ledger
@@ -34,6 +51,7 @@ jobs:
     timeout-minutes: 350
     permissions:
       contents: write # the release assets that hold the sealed ledger
+      actions: write # queue the next Clock run at a hand-over (workflow_dispatch)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -54,4 +72,6 @@ jobs:
         env:
           LEDGER_KEY: ${{ secrets.LEDGER_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
+          CLOCK_CHAIN: ${{ inputs.chain || '0' }} # empty on a cron start
+          CLOCK_FROM_RUN: ${{ inputs.from_run || '' }}
         run: node scripts/clock.mjs run
