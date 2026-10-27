@@ -14,6 +14,9 @@ describe("what a cloud clock run does, by when it starts (docs/plans/cloud-clock
   it("hands an early run over at 09:10, so only one hand-over falls inside the 09:20-15:30 window", () => {
     expect(hhmm(clockPlan(ist("2026-10-26T04:15")).deadline)).toBe("09:10");
     expect(hhmm(clockPlan(ist("2026-10-26T08:13")).deadline)).toBe("09:10");
+    // Tue 10-27: successors started at 09:09:02 and 09:09:24 were cut to 09:10 and hopped twice in a
+    // minute, using the whole hand-over cap. A run from 09:00 runs its full 5 h 25 min instead.
+    expect(hhmm(clockPlan(ist("2026-10-27T09:09")).deadline)).toBe("14:34");
   });
 
   it("ends a late or continuing run at 15:42, after IN1's window and the 15:31 coverage step", () => {

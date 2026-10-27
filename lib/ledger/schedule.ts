@@ -41,9 +41,10 @@ export function clockPlan(start: Date): { mode: "session" | "once"; deadline: Da
   const { day, minute } = istParts(start);
   if (!isSessionDay(day) || minute < LOOP_FROM_IST_MINUTES || minute >= LOOP_UNTIL_IST_MINUTES) return { mode: "once", deadline: start, handOver: false };
   const close = Date.parse(`${day}T15:42:00+05:30`);
-  // A run from before 09:10 hands over by then, outside 09:20-15:30: the session (6 h 20 min) is longer
+  // A run from before 09:00 hands over by 09:10, outside 09:20-15:30: the session (6 h 20 min) is longer
   // than GitHub's 6-hour job, so one hand-over inside it is unavoidable, but never two.
-  const preOpen = minute < 9 * 60 + 10 ? Date.parse(`${day}T09:10:00+05:30`) : Infinity;
+  // Only runs from before 09:00: one from 09:00-09:10 would hop again within minutes (10-27).
+  const preOpen = minute < 9 * 60 ? Date.parse(`${day}T09:10:00+05:30`) : Infinity;
   const deadline = Math.min(start.getTime() + MAX_LOOP_MS, preOpen, close);
   return { mode: "session", deadline: new Date(deadline), handOver: deadline < close };
 }
